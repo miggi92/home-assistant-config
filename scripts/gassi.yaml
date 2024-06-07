@@ -1,0 +1,31 @@
+---
+# Gassi script
+gassi:
+  sequence:
+    - service: script.notify_engine
+      data:
+        title: |
+          🐕‍🦺 Maja Gassi 🐕‍🦺
+        value1: |
+          In 1 min läuft der Staubsauger los um die Wohnung sauber zu machen (sofern die Einstellung aktiv ist), während ihr Gassi seid.
+        who: "home"
+        tag_id: "information"
+        group: "Dog"
+    - delay:
+        hours: 0
+        minutes: 1
+        seconds: 0
+        milliseconds: 0
+    - service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.maja_home
+      data: {}
+    - delay:
+        hours: 0
+        minutes: 45
+        seconds: 0
+        milliseconds: 0
+    - service: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.maja_home
+      data: {}

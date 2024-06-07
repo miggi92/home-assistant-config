@@ -1,0 +1,38 @@
+---
+# Sendet eine Nachricht mitm TV Programm
+alias: TVProgEvening
+id: 9eceacec-30fe-415a-81c0-50e54b00b6e4
+description: "Benachrichtigt über das TV Programm um 20:15"
+trigger:
+  - platform: time
+    at: "20:05:00"
+
+condition:
+  - condition: state
+    entity_id: group.residents
+    state: "home"
+action:
+  - service: button.press
+    data: {}
+    target:
+      entity_id: button.tv_prog_2015_refresh_button
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 30
+      milliseconds: 0
+  - service: script.notify_engine
+    data:
+      title: |
+        📺 TV Programm heut abend 📺
+      value1: >-
+        {% set tvProg = states.sensor.tv_prog_2015.attributes %}
+        {% for i in tvProg %}
+        {% if not((i == "icon" or i == "friendly_name"))%}
+          - {{ state_attr('sensor.tv_prog_2015',i) }} ({{ i }})
+        {% endif %}
+        {% endfor %}
+      who: "home"
+      tag_id: "information"
+      group: "TV"
+mode: single

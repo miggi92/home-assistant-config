@@ -1,0 +1,16 @@
+---
+# Sunrise automation
+alias: Sunrise
+id: 4ee75af6-8365-4e9f-85a8-4e71b2c9c67a
+description: "Sonnenaufgangsautomation"
+trigger:
+  - platform: sun
+    # Possible values: sunset, sunrise
+    event: sunrise
+    # Optional time offset. This example will trigger 0,5 hour before sunset.
+    offset: "-00:30:00"
+condition: []
+action:
+  - service: script.sunrise_script
+    data: {}
+mode: single

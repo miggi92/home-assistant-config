@@ -1,0 +1,15 @@
+---
+# REWE Offers card
+type: markdown
+content: >-
+  {% set categories = state_attr("sensor.rewe_offer_api", "categories") %}
+  {% for category in categories %}
+    <details>
+      <summary>{{ category.title }}</summary>
+    {% for offer in category.offers %}
+    {% if (offer.cellType != 'MOOD') %}
+    {{ offer.title }} - {{ offer.priceData.price | default('') }} €
+    {% endif %}
+    {% endfor %}
+    </details>
+  {% endfor %}

@@ -1,0 +1,30 @@
+---
+# TV Programm
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      | Sender   |      Jetzt      |      20:15 Uhr       |
+      |----------|:---------------:|:--------------------:|
+      | ARD | {{ state_attr("sensor.tv_prog_now", "ard") }} | {{ state_attr("sensor.tv_prog_2015", "ard") }} |
+      | ZDF | {{ state_attr("sensor.tv_prog_now", "zdf") }} | {{ state_attr("sensor.tv_prog_2015", "zdf") }} |
+      | Pro7 | {{ state_attr("sensor.tv_prog_now", "pro7") }} | {{ state_attr("sensor.tv_prog_2015", "pro7") }} |
+      | Sat1 | {{ state_attr("sensor.tv_prog_now", "sat1") }} | {{ state_attr("sensor.tv_prog_2015", "sat1") }} |
+      | RTL | {{ state_attr("sensor.tv_prog_now", "rtl") }} | {{ state_attr("sensor.tv_prog_2015", "rtl") }} |
+      | RTL2 | {{ state_attr("sensor.tv_prog_now", "rtl2") }} | {{ state_attr("sensor.tv_prog_2015", "rtl2") }} |
+      | Kabel1 | {{ state_attr("sensor.tv_prog_now", "kabel1") }} | {{ state_attr("sensor.tv_prog_2015", "kabel1") }} |
+      | Vox | {{ state_attr("sensor.tv_prog_now", "vox") }} | {{ state_attr("sensor.tv_prog_2015", "vox") }} |
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: button.tv_prog_now_refresh_button
+        layout: vertical
+        name: Refresh Aktuelles Programm
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        layout: vertical
+        entity: button.tv_prog_2015_refresh_button
+        name: "Refresh 20:15 Uhr"
+        tap_action:
+          action: toggle

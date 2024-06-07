@@ -1,0 +1,18 @@
+---
+id: f317e27f-defe-4805-86a0-d1ad678f5e40
+alias: onAlarm
+description: Alarm Automation
+trigger:
+  - platform: state
+    entity_id: alarm_control_panel.home_alarm
+    to: "triggered"
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: "🚨 ALARM 🚨"
+      value1: "Der Alarm daheim wurde ausgelöst!!!!!"
+      who: "home"
+      tag_id: "emergency"
+      group: "Alarm"
+mode: single

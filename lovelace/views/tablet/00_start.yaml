@@ -1,0 +1,281 @@
+---
+title: Tablet Dashboard
+path: start
+icon: mdi:home
+cards:
+  - type: custom:layout-card
+    layout_type: custom:grid-layout
+    theme: Backend-selected
+    title: Grid layout
+    layout:
+      grid-template-columns: 60% auto 60%
+      grid-template-rows: auto
+      grid-template-areas: |
+        "left header right"
+        "left messages right"
+        "left middle right"
+        "left footer right"
+    cards:
+      - type: horizontal-stack
+        view_layout:
+          grid-area: header
+        cards:
+          - !include ../../cards/residents.yaml
+      - type: vertical-stack
+        view_layout:
+          grid-area: left
+        cards:
+          - type: custom:clock-weather-card
+            entity: weather.home
+            title: Home
+            sun_entity: sun.sun
+            temperature_sensor: sensor.daikinap90134_outside_temperature
+            weather_icon_type: line
+            animated_icon: true
+            forecast_rows: 5
+            locale: de
+            time_format: 24
+            hide_today_section: false
+            hide_forecast_section: false
+            hide_clock: false
+            hide_date: false
+            hourly_forecast: false
+            use_browser_time: true
+          - type: custom:mushroom-template-card
+            primary: |-
+              {% set time = now().hour %}
+              {% if (time >= 18) %}
+                Guten Abend, {{user}}!
+              {% elif (time >= 12) %}
+                Guten Tag, {{user}}!
+              {% elif (time >= 5) %}
+                Guten Morgen, {{user}}!
+              {% else %}
+                Hello, {{user}}!
+              {% endif %}
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: alarm-control-panel
+                entity: alarm_control_panel.home_alarm
+              - type: entity
+                icon: mdi:lightbulb
+                icon_color: yellow
+                entity: sensor.count_lights_on
+                tap_action:
+                  action: navigate
+                  navigation_path: lights
+              - type: template
+                entity: sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch
+                icon_color: green
+                icon: |-
+                  {% if is_state(entity, 'talking') %}
+                    mdi:phone-in-talk
+                  {% elif is_state(entity, 'ringing') %}
+                    mdi:phone-incoming
+                  {% elif is_state(entity, 'dialing') %}
+                    mdi:phone-outgoing
+                  {% else %}
+                    mdi:phone
+                  {% endif %}
+                content: |-
+                  {% if is_state(entity, 'talking') %}
+                    {{state_attr(entity, 'with')}} - {{state_attr(entity, 'with_name')}}
+                  {% elif is_state(entity, 'ringing') %}
+                    {{ state_attr('sensor.phone', 'from') }} - {{ state_attr('sensor.phone', 'from_name') }}
+                  {% elif is_state(entity, 'dialing') %}
+                    {{ state_attr(entity, 'to') }} - {{ state_attr(entity, 'to_name') }}
+                  {% endif %}
+                tap_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      title: "Letzte Anrufe"
+                      content:
+                        type: vertical-stack
+                        cards:
+                          - type: logbook
+                            hours_to_show: 720
+                            entities:
+                              - input_text.callmon_lastcaller
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: group.residents
+                layout: vertical
+              - type: custom:mushroom-entity-card
+                entity: group.parents
+                layout: vertical
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                content: "{{states(entity) }} °C"
+                icon: mdi:thermometer
+                entity: sensor.wohnungstemperatur
+                icon_color: |-
+                  {% set temp = states(entity) %}
+                  {% if temp >= '22' %}
+                    red
+                  {% elif temp < '17' %}
+                    blue
+                  {% else %}
+                    green
+                  {% endif %}
+                tap_action:
+                  action: more-info
+              - type: template
+                icon: mdi:water-percent
+                entity: sensor.wohnungsfeuchtigkeit
+                content: "{{states(entity) }} %"
+                icon_color: |-
+                  {% set hum = states(entity) %}
+                  {% if hum >= '60' or hum <= '40' %}
+                    red
+                  {% else %}
+                    blue
+                  {% endif %}
+                tap_action:
+                  action: more-info
+              - type: template
+                entity: sensor.wohnungsluftdruck
+                content: "{{states(entity) }} hPa"
+                icon: mdi:gauge
+                tap_action:
+                  action: more-info
+          - type: grid
+            cards:
+              - type: custom:decluttering-card
+                template: navigation_card_template
+                variables:
+                  - title: Einstellungen
+                  - nav_path: settings
+                  - icon: mdi:cog
+                  - icon_color: purple
+      - type: horizontal-stack
+        view_layout:
+          grid-area: messages
+        cards:
+          - type: conditional
+            conditions:
+              - entity: sensor.dwd_home_current_warning_level
+                state_not: "0"
+            card:
+              type: custom:mushroom-template-card
+              icon: mdi:cloud-alert
+              icon_color: red
+              primary: Es gibt aktuelle Wetterwarnungen
+              secondary: |-
+                Anzahl der Warnungen: {{ state_attr("sensor.dwd_home_current_warning_level", "warning_count") + state_attr("sensor.dwd_home_current_advanced_warning_level", "warning_count")}}
+              card_mod:
+                style:
+                  mushroom-shape-icon$: |
+                    ha-icon {
+                      --icon-animation: surprise 3s ease infinite;
+                    }
+                    @keyframes surprise {
+                      0%, 20%, 100% { transform: translateY(0); }
+                      2.5% { transform: translateY(-6px) rotate(-14deg); }
+                      5% { transform: translateY(-6px) rotate(11deg); }
+                      7.5% { transform: translateY(-6px) rotate(-8deg); }
+                      10% { transform: translateY(-6px) rotate(5deg); }
+                      12.5% { transform: translateY(0); }
+                      15% { transform: translateY(-3px) }
+                    }
+              tap_action:
+                action: navigate
+                navigation_path: dwd
+          - type: conditional
+            conditions:
+              - entity: calendar.geburtstage
+                state: "on"
+            card:
+              type: custom:mushroom-template-card
+              icon: mdi:gift
+              icon_color: deep-orange
+              primary: |-
+                {{ state_attr("calendar.geburtstage","message") }}
+              card_mod:
+                style:
+                  mushroom-shape-icon$: |
+                    ha-icon {
+                      --icon-animation: surprise 3s ease infinite;
+                    }
+                    @keyframes surprise {
+                      0%, 20%, 100% { transform: translateY(0); }
+                      2.5% { transform: translateY(-6px) rotate(-14deg); }
+                      5% { transform: translateY(-6px) rotate(11deg); }
+                      7.5% { transform: translateY(-6px) rotate(-8deg); }
+                      10% { transform: translateY(-6px) rotate(5deg); }
+                      12.5% { transform: translateY(0); }
+                      15% { transform: translateY(-3px) }
+                    }
+      - type: vertical-stack
+        view_layout:
+          grid-area: right
+        cards:
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Wohnzimmer
+              - icon: mdi:sofa
+              - nav_path: living
+              - light: light.wohnzimmer
+              - temperature: sensor.wohnzimmer_heizung_temperature
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Schlafzimmer
+              - icon: mdi:bed-double
+              - nav_path: sleep
+              - light: light.schlafzimmerlicht
+              - temperature: sensor.schlafzimmertemperatur
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Flur
+              - icon: mdi:coat-rack
+              - nav_path: hallway
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Küche
+              - icon: mdi:countertop
+              - nav_path: kitchen
+              - temperature: sensor.kuchentemperatursensor_temperature
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Bad
+              - icon: mdi:shower
+              - nav_path: bath
+              - temperature: sensor.badtempsensor_temperature
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Abstellkammer
+              - icon: mdi:library-shelves
+              - nav_path: storage
+              - light: light.abstellkammerlicht
+              - temperature: sensor.abstellkammertemperatursensor_temperature
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Arbeitszimmer
+              - icon: mdi:chair-rolling
+              - nav_path: office
+              - light: light.buro
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Kinderzimmer
+              - icon: mdi:teddy-bear
+              - nav_path: child
+              - light: light.kinderzimmerlicht
+              - temperature: sensor.kinderzimmertemperatursensor_temperature
+          - type: custom:decluttering-card
+            template: room_card_template
+            variables:
+              - title: Außen
+              - icon: mdi:tree
+              - nav_path: outdoor
+              - temperature: sensor.daikinap90134_outside_temperature

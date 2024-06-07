@@ -1,0 +1,36 @@
+---
+# nina Warnungen
+alias: NINA Warnungen
+id: a708dd34-6dd1-4745-a971-debf244734a5
+description: "NINA Warnungen"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.warning_home_1
+    to: "on"
+  - platform: state
+    entity_id: binary_sensor.warning_home_2
+    to: "on"
+  - platform: state
+    entity_id: binary_sensor.warning_home_3
+    to: "on"
+  - platform: state
+    entity_id: binary_sensor.warning_home_4
+    to: "on"
+  - platform: state
+    entity_id: binary_sensor.warning_home_5
+    to: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: "🌩️  {{ trigger.to_state.attributes.headline }} (NINA) 🌩️"
+      value1: >-
+        {{ trigger.to_state.attributes.description }}
+
+        *Zeitraum*
+        ⏰ _{{ as_datetime(trigger.to_state.attributes.start).astimezone().strftime("%a %H:%M")  ~ " - " ~  as_datetime(trigger.to_state.attributes.expires).astimezone().strftime("%a %H:%M")  }}_
+
+        *Warnung von:*
+        {{ trigger.to_state.attributes.sender }}
+      who: "home"
+      tag_id: "information"
+      group: "Wetter"

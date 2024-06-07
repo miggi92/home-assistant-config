@@ -1,0 +1,4 @@
+---
+# Multiscrape
+# https://github.com/danieldotnl/ha-multiscrape
+multiscrape: !include_dir_list ../entities/multiscrape

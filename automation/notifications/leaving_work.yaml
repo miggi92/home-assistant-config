@@ -1,0 +1,30 @@
+---
+# Leaving work notification
+alias: LeavingWork
+id: 8cf24a78-fe6c-452c-8845-eb16ddad0b10
+description: "Benachrichtigt wenn ich die Arbeit verlasse."
+trigger:
+  - platform: state
+    entity_id:
+      - zone.work_miguel
+    to: "0"
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+condition:
+  - condition: state
+    entity_id: binary_sensor.workday_sensor
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🚗 Miguel ist unterwegs heim 🚗
+      value1: |
+        Miguel hat gerade das Geschäft verlassen und kommt vermutlich bald heim.
+        Geschätzte Zeit: {{ states('sensor.miguel_eta_home') }} {{ state_attr('sensor.miguel_eta_home', 'unit_of_measurement') }}.
+      who: "home"
+      tag_id: "information"
+      group: "Moving"
+mode: single

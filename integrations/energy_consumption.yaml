@@ -1,0 +1,16 @@
+---
+# Energy consumptions
+
+utility_meter:
+  klima_daily:
+    source: sensor.daikinap90134_today_s_total_energy_consumption
+    cycle: daily
+
+powercalc:
+  energy_sensor_naming: "{} kWh consumed"
+  create_utility_meters: true
+  create_domain_groups:
+    - light
+  utility_meter_types:
+    - daily
+    - yearly

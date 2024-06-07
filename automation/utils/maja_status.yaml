@@ -1,0 +1,41 @@
+---
+# Maja automatic status
+alias: majaStatus
+id: af0110f3-a36b-4434-8fde-b867c9d68de1
+description: "Sync Maja State with silke state"
+trigger:
+  - platform: state
+    entity_id:
+      - person.silke
+      - person.miguel
+condition:
+  - condition: template
+    value_template: |-
+      {% set personName = "person." ~ states("input_select.maja_person_sync") %}
+      {{ trigger.entity_id == personName }}
+action:
+  - if:
+      - condition: template
+        value_template: |-
+          {% set personName = "person." ~ states("input_select.maja_person_sync") %}
+          {{ states(personName) == "home" }}
+    then:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.maja_home
+    else:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.maja_home
+  - service: device_tracker.see
+    data:
+      location_name: |-
+        {% set personName = "person." ~ states("input_select.maja_person_sync") %}
+        {{ states(personName) }}
+      dev_id: maja_dummy_tracker
+      gps:
+        - "{{ state_attr('person.' ~ states('input_select.maja_person_sync'), 'latitude') }}"
+        - "{{ state_attr('person.' ~ states('input_select.maja_person_sync'), 'longitude') }}"
+      gps_accuracy: |-
+        {% set personName = "person." ~ states("input_select.maja_person_sync") %}
+        {{ state_attr(personName, "gps_accuracy") }}
+mode: queued
+max: 10

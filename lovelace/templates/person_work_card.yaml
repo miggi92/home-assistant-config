@@ -1,0 +1,21 @@
+---
+# Person work
+person_work_card:
+  card:
+    type: conditional
+    conditions:
+      - entity: "[[entity]]"
+        state: "[[work_zone]]"
+    card:
+      type: custom:mushroom-template-card
+      entity_id: "[[entity]]"
+      primary: "{{state_attr('[[entity]]', 'friendly_name')}}"
+      picture: "[[picture]]"
+      multiline_secondary: true
+      secondary: |-
+        {% set last_changed = states['[[entity]]'].last_changed %}
+        {% set now = as_timestamp(now()) %}
+        {% set duration = now - as_timestamp(last_changed) %}
+        {% set hours = duration // 3600 %}
+        {{ state_translated('[[entity]]') }}
+        {{ "Seit {} Stunden".format(hours) }}

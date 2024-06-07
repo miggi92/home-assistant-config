@@ -1,0 +1,15 @@
+---
+# Send photos
+alias: majaFotoCheck
+id: bf7beb70-eb04-4272-80b7-1e032acbea61
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.maja_check
+condition: []
+action:
+  - service: script.send_cam_snaps
+    data: {}
+mode: single

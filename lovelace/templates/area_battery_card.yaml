@@ -1,0 +1,27 @@
+---
+# Area battery card
+area_battery_card_template:
+  default:
+    - title: Batterien
+  card:
+    type: "custom:auto-entities"
+    show_empty: false
+    card:
+      show_header_toggle: false
+      title: "[[title]]"
+      type: entities
+    filter:
+      include:
+        - attributes:
+            device_class: battery
+          area: "[[area]]"
+      exclude:
+        - name: /[Ll]ow/
+        - name: /[Ss]tate/
+        - state: unavailable
+        - entity_id: "*plus"
+        - entity_id: "*plus_*"
+        - entity_id: "*battery_low"
+    sort:
+      method: state
+      numeric: true

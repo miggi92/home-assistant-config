@@ -1,0 +1,17 @@
+---
+id: 9f575814-8f98-411a-93a9-1b51bcd4cded
+alias: "Home-Assistant Neugestartet"
+initial_state: true
+trigger:
+  - platform: homeassistant
+    event: start
+action:
+  - service: script.dummy_tracker_states
+    data: {}
+  - service: script.notify_engine
+    data:
+      title: "Home Assistant"
+      value1: "Server wurde neugestartet"
+      who: "miguel"
+      tag_id: "information"
+      group: "System"

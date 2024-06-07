@@ -1,0 +1,9 @@
+---
+# https://www.home-assistant.io/integrations/mqtt_room/
+# https://espresense.com/home_assistant
+platform: mqtt_room
+name: BeaconPixel7Pro
+device_id: !secret pixel_7pro_device_id
+state_topic: !secret pixel_7pro_state_topic
+timeout: 10
+away_timeout: 120

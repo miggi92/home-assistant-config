@@ -1,0 +1,153 @@
+---
+title: Wohnzimmer
+path: living
+icon: mdi:sofa
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: action
+        icon: mdi:television-box
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: "TV Programm"
+              content: !include ../../cards/tv_prog.yaml
+
+      - type: conditional
+        conditions:
+          - entity: group.living_motion_sensors
+            state_not: "off"
+            condition: state
+        chip:
+          type: entity
+          entity: group.living_motion_sensors
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Temperatur
+        type: sensor
+        entity: sensor.wohnzimmertemperatur
+        detail: 1
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.wohnzimmer_heizung_humidity
+        detail: 1
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_wohnzimmer
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.tv_licht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-light-card
+        entity: light.esstischlicht
+        show_brightness_control: true
+        collapsible_controls: true
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: scene.tv_gemutlich_2
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-cover-card
+    entity: cover.wohnzimmerrolladen
+    name: Rollladen
+    fill_container: false
+    show_buttons_control: true
+    show_position_control: true
+    tap_action:
+      action: toggle
+
+  - type: custom:mushroom-title-card
+    subtitle: Geräte
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-climate-card
+        entity: climate.daikinap90134
+        name: Klimaanlage
+        show_temperature_control: true
+        hvac_modes:
+          - heat_cool
+          - heat
+          - cool
+          - fan_only
+          - dry
+      - type: custom:mushroom-climate-card
+        entity: climate.room_climate_wohnzimmer
+        name: Heizung
+        show_temperature_control: true
+        hvac_modes:
+          - auto
+          - heat
+          - "off"
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Klima 1h an
+        secondary: >-
+          {% if states("timer.climate_auto_off") == "active" %}
+            {{ state_attr('timer.climate_auto_off', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
+          {% endif %}
+        entity: climate.daikinap90134
+        icon: mdi:home-thermometer
+        icon_color: |-
+          {% if states("climate.daikinap90134") == "off" %}
+            green
+          {% else %}
+            red
+          {% endif %}
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-template-card
+    entity: sensor.sky_q_schedule
+    primary: "Sky Aufnahme"
+    icon: mdi:clock-outline
+    icon_color: |-
+      {% if is_state('sensor.sky_q_schedule', 'Scheduled') %}
+        orange
+      {% else %}
+        cyan
+      {% endif %}
+    multiline_secondary: true
+    secondary: |-
+      {{ state_attr('sensor.sky_q_schedule', 'skyq_scheduled_title') }}
+      {{ as_timestamp(state_attr('sensor.sky_q_schedule', 'skyq_scheduled_start')) | timestamp_custom('%-d.%m.%y %H:%M') }} - {{ as_timestamp(state_attr('sensor.sky_q_schedule', 'skyq_scheduled_end')) | timestamp_custom('%-d.%m.%y %H:%M') }}
+    tap_action:
+      action: more-info
+  - type: custom:mini-media-player
+    entity: media_player.sky_q
+    artwork: full-cover
+    hide:
+      source: true
+      volume: true
+      power_state: false
+  - type: custom:mini-media-player
+    entity: media_player.wztv
+    artwork: cover
+    hide:
+      source: true
+      controls: true
+      power_state: false
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Wohnzimmer

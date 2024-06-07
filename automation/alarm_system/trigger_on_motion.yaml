@@ -1,0 +1,32 @@
+---
+id: dba89db1-80db-43d6-a9e7-5b91b4f58997
+alias: alarmOnMotion
+description: "Bei Bewegung Alarm auslösen"
+trigger:
+  - platform: state
+    entity_id: group.motion_sensors
+    to: "on"
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_away
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_home
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_vacation
+action:
+  - service: alarm_control_panel.alarm_trigger
+    target:
+      entity_id: alarm_control_panel.home_alarm
+  - service: script.notify_engine
+    data:
+      title: "🏃 Bewegung 🏃"
+      value1: "{{ trigger.to_state.attributes.friendly_name }} hat eine Bewegung registriert."
+      who: "home"
+      tag_id: "alert"
+      group: "Alarm"
+mode: single

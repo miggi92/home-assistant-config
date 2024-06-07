@@ -1,0 +1,25 @@
+---
+# Abstzellkammer automatisierung
+alias: "AbstellkammerLicht"
+id: 90cf54e2-7646-4a0d-b810-75d8e2360b4e
+description: "Schaltet das Licht nach an und aus."
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.abstellkammertursensor_contact
+action:
+  - if:
+      - condition: state
+        entity_id: binary_sensor.abstellkammertursensor_contact
+        state: "on"
+    then:
+      - service: light.turn_on
+        data: {}
+        target:
+          entity_id: light.abstellkammerlicht
+    else:
+      - service: light.turn_off
+        data: {}
+        target:
+          entity_id: light.abstellkammerlicht

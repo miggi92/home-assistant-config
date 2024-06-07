@@ -1,0 +1,14 @@
+---
+# Recorder
+# https://www.home-assistant.io/integrations/recorder/
+recorder:
+  exclude:
+    domains:
+      - automation
+      - update
+    entity_globs:
+      - sensor.sun*
+      - weather.*
+      - sensor.flightradar24*
+    event_types:
+      - call_service # Don't record service calls

@@ -1,0 +1,51 @@
+# Example .gitignore file for your config dir.
+# An * ensures that everything will be ignored.
+*
+# Now, whitelist anything that's a directory
+!*/
+# You can whitelist files/folders with !, these will not be ignored.
+!*.yaml
+!*.yml
+!.gitignore
+!*.md
+!*.png
+!*.jpg
+!*.jpeg
+!*.mp3
+!*.json
+!*.py
+!*.repositories
+!*.js
+!*.sh
+
+# Whitlist files
+!.yamllint
+!.gitkeep
+
+# Ignore folders.
+.storage
+.cloud
+.google.token
+node_modules
+!/custom_components
+/www/community
+/www/images/screenshots
+/www/cam_captures
+/image
+/node-red
+/tts
+/themes
+/zigbee2mqtt/log
+/zha_ota
+
+# ignore files
+/www/logo/work_miguel_logo.svg
+
+# Ensure these YAML files are ignored, otherwise your secret data/credentials will leak.
+ip_bans.yaml
+secrets.yaml
+known_devices.yaml
+google_calendars.yaml
+.shopping_list.json
+skyqDefaultRoom.yaml
+zigbee2mqtt/state.json

@@ -1,0 +1,433 @@
+button.kinderzimmerlicht_identify:
+  excluded: true
+  hidden: false
+  disabled: true
+button.kinderzimmertemperatursensor_identify:
+  disabled: true
+number.kinderzimmerlicht_start_up_current_level:
+  disabled: true
+select.kinderzimmerlicht_start_up_behavior:
+  disabled: true
+binary_sensor.fire_tablet_device_admin:
+  disabled: true
+device_tracker.skyq:
+  disabled: true
+device_tracker.klimawohnzimmer:
+  disabled: true
+device_tracker.wztv:
+  disabled: true
+device_tracker.192_168_0_57:
+  disabled: true
+number.esstischlicht_start_up_current_level:
+  disabled: true
+number.tv_licht_start_up_current_level:
+  disabled: true
+number.fire_tablet_screensaver_brightness:
+  disabled: true
+number.fire_tablet_screensaver_timer:
+  disabled: true
+number.fire_tablet_screen_off_timer:
+  disabled: true
+select.tv_licht_start_up_behavior:
+  disabled: true
+select.esstischlicht_start_up_behavior:
+  disabled: true
+select.korbchen_record_mode:
+  disabled: true
+select.korbchen_night_vision:
+  disabled: true
+select.korbchen_motion_detection_sensitivity:
+  disabled: true
+select.wohnzimmerbewegungsmelder_hue_motion_sensitivity:
+  disabled: true
+light.korbchen_indicator_light:
+  disabled: true
+select.sofabewegungsmelder_hue_motion_sensitivity:
+  disabled: true
+sensor.fire_tablet_foreground_app:
+  disabled: true
+switch.korbchen_privacy_mode:
+  disabled: true
+switch.korbchen_motion_alarm:
+  disabled: true
+switch.skyq_internet_access:
+  disabled: true
+switch.korbchen_time_watermark:
+  disabled: true
+switch.korbchen_flip:
+  disabled: true
+switch.fire_tablet_maintenance_mode:
+  disabled: true
+switch.192_168_0_57_internet_access:
+  disabled: true
+switch.daikinap90134_streamer:
+  disabled: true
+switch.korbchen_video_recording:
+  disabled: true
+switch.klimawohnzimmer_internet_access:
+  disabled: true
+switch.wztv_internet_access:
+  disabled: true
+switch.wohnzimmerbewegungsmelder_led_trigger_indicator:
+  disabled: true
+switch.sofabewegungsmelder_led_trigger_indicator:
+  disabled: true
+switch.fire_tablet_screensaver:
+  disabled: true
+switch.fire_tablet_kiosk_lock:
+  disabled: true
+switch.fire_tablet_motion_detection:
+  disabled: true
+switch.fire_tablet_screen:
+  disabled: true
+sensor.daikinap90134_compressor_frequency:
+  disabled: true
+sensor.daikinap90134_estimated_power_consumption:
+  disabled: true
+sensor.daikinap90134_cool_energy_consumption:
+  disabled: true
+sensor.daikinap90134_heat_energy_consumption:
+  disabled: true
+number.fire_tablet_screen_brightness:
+  disabled: true
+button.fire_tablet_load_start_url:
+  disabled: true
+button.fire_tablet_send_to_background:
+  disabled: true
+button.tv_licht_identify:
+  disabled: true
+button.wohnzimmerbewegungsmelder_identify:
+  disabled: true
+button.esstischlicht_identify:
+  disabled: true
+button.sofabewegungsmelder_identify:
+  disabled: true
+binary_sensor.fire_tablet_kiosk_mode:
+  disabled: true
+binary_sensor.fire_tablet_plugged_in:
+  disabled: true
+button.fire_tablet_restart_browser:
+  disabled: true
+button.fire_tablet_reboot_device:
+  disabled: true
+button.fire_tablet_bring_to_foreground:
+  disabled: true
+binary_sensor.yggdrasil_connection:
+  disabled: true
+button.yggdrasil_cleanup:
+  disabled: true
+button.yggdrasil_reconnect:
+  disabled: true
+binary_sensor.yggdrasil_link:
+  disabled: true
+button.gassibutton_identify:
+  disabled: true
+button.yggdrasil_firmware_update:
+  disabled: true
+button.yggdrasil_reboot:
+  disabled: true
+light.flurcam_indicator_light:
+  disabled: true
+select.flurcam_motion_detection_sensitivity:
+  disabled: true
+select.flurcam_night_vision:
+  disabled: true
+select.flurcam_record_mode:
+  disabled: true
+button.range_extender_identify:
+  disabled: true
+device_tracker.heimdall_2:
+  disabled: true
+device_tracker.heimdall:
+  disabled: true
+device_tracker.irobot_94c9069f55564501a9164ed9a40b30a1:
+  disabled: true
+sensor.yggdrasil_external_ipv6:
+  disabled: true
+sensor.yggdrasil_connection_uptime:
+  disabled: true
+sensor.yggdrasil_max_connection_upload_throughput:
+  disabled: true
+sensor.yggdrasil_max_connection_download_throughput:
+  disabled: true
+sensor.yggdrasil_gb_sent:
+  disabled: true
+sensor.yggdrasil_gb_received:
+  disabled: true
+sensor.yggdrasil_link_upload_throughput:
+  disabled: true
+sensor.yggdrasil_link_download_throughput:
+  disabled: true
+sensor.yggdrasil_link_upload_noise_margin:
+  disabled: true
+sensor.yggdrasil_link_download_noise_margin:
+  disabled: true
+sensor.yggdrasil_download_throughput:
+  disabled: true
+sensor.yggdrasil_upload_throughput:
+  disabled: true
+sensor.yggdrasil_link_upload_power_attenuation:
+  disabled: true
+sensor.yggdrasil_link_download_power_attenuation:
+  disabled: true
+switch.flurcam_flip:
+  disabled: true
+switch.flurcam_motion_alarm:
+  disabled: true
+switch.flurcam_privacy_mode:
+  disabled: true
+switch.flurcam_time_watermark:
+  disabled: true
+switch.flurcam_video_recording:
+  disabled: true
+switch.yggdrasil_wi_fi_yggdrasil_5ghz:
+  disabled: true
+switch.yggdrasil_wi_fi_yggdrasil_2_4ghz:
+  disabled: true
+switch.heimdall_internet_access:
+  disabled: true
+switch.heimdall_internet_access_2:
+  disabled: true
+update.yggdrasil_fritz_os:
+  disabled: true
+switch.irobot_94c9069f55564501a9164ed9a40b30a1_internet_access:
+  disabled: true
+button.luftqualitaetssensor_identify:
+  disabled: true
+button.schrank_identify:
+  disabled: true
+button.schlafzimmerlicht_identify:
+  disabled: true
+button.miguel_nachttischlichtschalter_identify:
+  disabled: true
+button.silke_nachttischschalter_identify:
+  disabled: true
+button.schlafzimmertempsensor_identify:
+  disabled: true
+device_tracker.gtv:
+  disabled: true
+button.bett_identify:
+  disabled: true
+button.schlafzimmerbewegungsmelder_identify:
+  disabled: true
+light.schrank:
+  disabled: true
+light.luftfilter_display_backlight:
+  disabled: true
+light.luftfilter_light_brightness:
+  disabled: true
+number.bett_start_up_color_temperature:
+  disabled: true
+number.bett_start_up_current_level:
+  disabled: true
+number.schrank_on_level:
+  disabled: true
+number.schrank_on_off_transition_time:
+  disabled: true
+number.schrank_start_up_current_level:
+  disabled: true
+number.schlafzimmerlicht_start_up_current_level:
+  disabled: true
+select.bett_start_up_behavior:
+  disabled: true
+select.schrank_start_up_behavior:
+  disabled: true
+select.schlafzimmerbewegungsmelder_hue_motion_sensitivity:
+  disabled: true
+select.schlafzimmerlicht_start_up_behavior:
+  disabled: true
+switch.gtv_internet_access:
+  disabled: true
+switch.schlafzimmerbewegungsmelder_led_trigger_indicator:
+  disabled: true
+button.badtempsensor_identify:
+  disabled: true
+button.duschwasser_identify:
+  disabled: true
+button.thekenlicht_identify:
+  disabled: true
+button.kuchentemperatursensor_identify:
+  disabled: true
+select.thekenlicht_start_up_behavior:
+  disabled: true
+number.thekenlicht_start_up_current_level:
+  disabled: true
+button.schreibtischlicht_identify:
+  disabled: true
+button.streampisteckdose_identify:
+  disabled: true
+device_tracker.hp0a870d:
+  disabled: true
+number.schreibtischlicht_start_up_color_temperature:
+  disabled: true
+number.schreibtischlicht_start_up_current_level:
+  disabled: true
+number.streampisteckdose_on_off_transition_time:
+  disabled: true
+select.streampisteckdose_start_up_behavior:
+  disabled: true
+number.streampisteckdose_on_level:
+  disabled: true
+select.schreibtischlicht_start_up_behavior:
+  disabled: true
+number.streampisteckdose_start_up_current_level:
+  disabled: true
+switch.hp0a870d_internet_access:
+  disabled: true
+button.abstellkammer_bewegungssensor_identify:
+  disabled: true
+button.abstellkammerlicht_identify:
+  disabled: true
+button.trocknersteckdose_identify:
+  disabled: true
+switch.trocknersteckdose_power_outage_memory:
+  disabled: true
+switch.waschmaschinensteckdose_power_outage_memory:
+  disabled: true
+sensor.waschmaschinensteckdose_power_factor:
+  disabled: true
+sensor.waschmaschinensteckdose_rms_voltage:
+  disabled: true
+sensor.trocknersteckdose_rms_voltage:
+  disabled: true
+sensor.trocknersteckdose_summation_delivered:
+  disabled: true
+sensor.abstellkammertursensor_device_temperature:
+  disabled: true
+sensor.waschmaschinensteckdose_device_temperature:
+  disabled: true
+sensor.waschmaschinensteckdose_summation_delivered:
+  disabled: true
+sensor.trocknersteckdose_device_temperature:
+  disabled: true
+select.abstellkammerlicht_start_up_behavior:
+  disabled: true
+button.waschmaschinensteckdose_identify:
+  disabled: true
+button.abstellkammertursensor_identify:
+  disabled: true
+button.abstellkammertemperatursensor_identify:
+  disabled: true
+number.abstellkammerlicht_start_up_current_level:
+  disabled: true
+number.abstellkammerlicht_start_up_color_temperature:
+  disabled: true
+number.abstellkammerlicht_on_off_transition_time:
+  disabled: true
+number.abstellkammerlicht_on_level:
+  disabled: true
+sensor.trocknersteckdose_power_factor:
+  disabled: true
+button.lumi_lumi_vibration_aq1_identify:
+  disabled: true
+sensor.lumi_lumi_vibration_aq1_battery:
+  disabled: false
+  sort_order: 3
+sensor.lumi_lumi_vibration_aq1_device_temperature:
+  disabled: true
+binary_sensor.lumi_lumi_vibration_aq1_iaszone:
+  sort_order: 4
+camera.nsu_marktplatz:
+  sort_order: 1
+camera.hn_rathaus:
+  sort_order: 2
+button.scan_clients_miggusnas:
+  disabled: true
+device_tracker.homeassistant:
+  disabled: true
+light.silicon_labs_ezsp_schlafzimmer_button_group_zha_group_0x0002:
+  disabled: true
+device_tracker.boschsh:
+  disabled: true
+device_tracker.skidbladnir:
+  disabled: true
+switch.homeassistant_internet_access:
+  disabled: true
+switch.skidbladnir_internet_access:
+  disabled: true
+switch.boschsh_internet_access:
+  disabled: true
+switch.adguard_home_parental_control:
+  disabled: true
+switch.adguard_home_query_log:
+  disabled: true
+switch.adguard_home_filtering:
+  disabled: true
+switch.adguard_home_safe_browsing:
+  disabled: true
+switch.adguard_home_safe_search:
+  disabled: true
+sensor.badtemp_thermalcomfort_dew_point:
+  disabled: true
+sensor.badtemp_thermalcomfort_absolute_humidity:
+  disabled: true
+sensor.duschwasser_device_temperature:
+  disabled: true
+switch.tower_fan_display_auto_off:
+  disabled: true
+switch.tower_fan_panel_sound:
+  disabled: true
+sensor.home_accu_dew_point:
+  disabled: true
+switch.bcwmc002867:
+  disabled: true
+sensor.fire_tablet_internal_storage_total_space:
+  disabled: true
+sensor.fire_tablet_current_page:
+  disabled: true
+sensor.fire_tablet_screen_orientation:
+  disabled: true
+sensor.fire_tablet_internal_storage_free_space:
+  disabled: true
+sensor.sofabewegungsmelder_illuminance:
+  disabled: true
+sensor.fire_tablet_total_memory:
+  disabled: true
+sensor.fire_tablet_free_memory:
+  disabled: true
+button.espresense_flur_enroll:
+  disabled: true
+button.espresense_flur_update:
+  disabled: true
+button.espresense_flur_restart:
+  disabled: true
+binary_sensor.espresense_flur_connectivity:
+  disabled: true
+number.espresense_flur_max_distance:
+  disabled: true
+number.espresense_flur_absorption:
+  disabled: true
+switch.espresense_flur_arduino_ota:
+  disabled: true
+switch.espresense_flur_auto_update:
+  disabled: true
+switch.espresense_flur_prerelease:
+  disabled: true
+device_tracker.atom_bluetooth_proxy_a0b83c:
+  disabled: true
+binary_sensor.espresense_kinderzimmer_connectivity:
+  disabled: true
+button.espresense_kinderzimmer_update:
+  disabled: true
+button.espresense_kinderzimmer_restart:
+  disabled: true
+button.espresense_kinderzimmer_enroll:
+  disabled: true
+switch.espresense_kinderzimmer_arduino_ota:
+  disabled: true
+switch.espresense_kinderzimmer_auto_update:
+  disabled: true
+switch.rolladen_kinderzimmer_childlock:
+  disabled: true
+sensor.espresense_kinderzimmer_free_mem:
+  disabled: true
+sensor.espresense_kinderzimmer_uptime:
+  disabled: true
+switch.espresense_fc029f_internet_access:
+  disabled: true
+switch.espresense_kinderzimmer_prerelease:
+  disabled: true
+number.espresense_kinderzimmer_max_distance:
+  disabled: true
+number.espresense_kinderzimmer_absorption:
+  disabled: true

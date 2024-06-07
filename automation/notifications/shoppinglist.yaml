@@ -1,0 +1,59 @@
+---
+alias: "Einkaufsbenachrichtigung"
+id: 9c0cb04f-09bc-49f6-a9d8-e5ec3ff73f2b
+description: Einkaufsbenachrichtigung
+trigger:
+  - platform: state
+    entity_id:
+      - zone.rewe
+      - zone.kaufland
+    from: "0"
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+    id: einkaufsliste
+  - platform: state
+    entity_id:
+      - zone.getranke_markt
+    from: "0"
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+    id: getranke
+  - platform: state
+    entity_id:
+      - zone.dm
+    from: "0"
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+    id: dm_einkaufen
+
+condition: []
+
+action:
+  - variables:
+      list: "todo.{{ trigger.id }}"
+  - condition: template
+    value_template: "{{ states(list) | int > 0 }}"
+  - service: todo.get_items
+    target:
+      entity_id: todo.einkaufsliste
+    data:
+      status: needs_action
+    response_variable: incompleteItems
+  - service: script.notify_engine
+    data:
+      title: "Einkaufsliste - {{ states(list) }} Dinge"
+      value1: >-
+        {% for i in list %}
+
+          - {{ i.name }}
+        {% endfor %}
+      who: "home"
+      tag_id: "information"
+      group: "Einkauf"
+mode: single

@@ -1,0 +1,16 @@
+---
+# Alarm Clock
+silke_wecker:
+  name: Silke Wecker
+  has_date: true
+  has_time: true
+
+miguel_wecker:
+  name: Miguel Wecker
+  has_date: true
+  has_time: true
+
+wecker_family:
+  name: Familien Wecker
+  has_date: true
+  has_time: true

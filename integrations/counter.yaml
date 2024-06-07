@@ -1,0 +1,22 @@
+---
+# counter
+sensor:
+  - platform: template
+    sensors:
+      count_lights_on:
+        friendly_name: "# Lights on"
+        unit_of_measurement: "on"
+        value_template: >
+          {% set filter = ['light.flurcam_indicator_light',
+                          'light.korbchen_indicator_light',
+                          'light.kameralichter',
+                          'light.schrank',
+                          'light.luftfilter_display_backlight',
+                          'light.luftfilter_light_brightness'] %}
+          {{ states.light |
+              selectattr('state', 'eq', 'on') |
+              rejectattr('attributes.is_deconz_group', 'eq', true) |
+              rejectattr('attributes.entity_id', 'defined') |
+              rejectattr('attributes.type', 'eq', 'browser_mod') |
+              rejectattr('entity_id', 'in', filter) |
+                      list | count }}

@@ -1,0 +1,30 @@
+---
+# Night mode
+alias: NightMode
+id: 9baffe35-daa2-43fa-bdd6-985240281706
+description: "Nachtmodus Automation"
+trigger:
+  - platform: state
+    entity_id: input_boolean.night_mode
+
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: input_boolean.night_mode
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.night_mode
+        state: "off"
+action:
+  - if:
+      - condition: state
+        entity_id: input_boolean.night_mode
+        state: "on"
+    then:
+      - service: script.night_mode_on
+        data: {}
+    else:
+      - service: script.night_mode_off
+        data: {}
+mode: single

@@ -1,0 +1,59 @@
+---
+title: Flur
+path: hallway
+icon: mdi:coat-rack
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-vacuum-card
+    entity: vacuum.roomba
+    commands:
+      - start_pause
+      - stop
+      - locate
+      - return_home
+  - type: custom:mushroom-entity-card
+    entity: schedule.staubsaug_zeiten
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-lock-card
+    entity: lock.hausture
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-fan-card
+        entity: fan.tower_fan
+        icon: mdi:fan
+        icon_type: icon
+        icon_animation: true
+        show_percentage_control: true
+        collapsible_controls: true
+        show_oscillate_control: true
+        layout: vertical
+      - type: custom:mushroom-template-card
+        primary: Pi-Hole
+        secondary: >-
+          {% if states("timer.pihole_disabled") == "active" %}
+            {{ state_attr('timer.pihole_disabled', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
+          {% endif %}
+        entity: switch.pi_hole
+        icon: mdi:pi-hole
+        icon_color: |-
+          {% if states("switch.pi_hole") == "on" %}
+            green
+          {% else %}
+            red
+          {% endif %}
+        layout: vertical
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        entity: switch.yggdrasil_wi_fi_fritz_box_gastzugang
+        layout: vertical
+        name: Guest WiFi
+        tap_action:
+          action: toggle
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Flur

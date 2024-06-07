@@ -1,0 +1,5 @@
+---
+# Letzte anrufe
+callmon_lastcaller:
+  name: Letzter Anrufer
+  icon: mdi:phone-incoming

@@ -1,0 +1,7 @@
+---
+# When to get the chores notification
+chores_notif_time:
+  name: Hausarbeiten Erinnerungszeit
+  icon: mdi:home
+  has_date: false
+  has_time: true

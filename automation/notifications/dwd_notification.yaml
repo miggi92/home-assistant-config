@@ -1,0 +1,91 @@
+---
+alias: Wetterwarnung start/change
+id: 00c0aae8-8fa7-44bc-9611-676dbe4869b7
+description: "DWD Wetterwarnungen"
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.dwd_home_current_warning_level
+      - sensor.dwd_home_current_advanced_warning_level
+    attribute: warning_count
+condition:
+  - "{{ trigger.from_state.state != unavailable }}"
+  - |-
+    {{ trigger.to_state.attributes.warning_count !=
+    trigger.from_state.attributes.warning_count }}
+action:
+  - service: script.notify_engine
+    data:
+      title: >-
+        {% set current = 'sensor.dwd_home_current_warning_level' %}
+        {% set advance = 'sensor.dwd_home_current_advanced_warning_level' %}
+        {% set current_count = state_attr(current, 'warning_count') %}
+        {% set advance_count = state_attr(advance, 'warning_count') %}
+        {% if current_count in [0, none] and advance_count in [0, none] %}
+          Entwarnung für {{ trigger.to_state.attributes.friendly_name }}
+        {% else %}
+        {% set region_name = state_attr(current, 'region_name') if 'current' in trigger.entity_id else state_attr(advance, 'region_name') %}
+        {{ region_name }}: WETTERWARNUNG ({{ current_count + advance_count }})
+        {% endif %}
+      value1: |-
+        {% set current = 'sensor.dwd_home_current_warning_level' %}
+        {% set advance = 'sensor.dwd_home_current_advanced_warning_level' %}
+        {% set current_count = state_attr(current, 'warning_count') %}
+        {% set advance_count = state_attr(advance, 'warning_count') %}
+        {% if current_count in [0, none] and advance_count in [0, none] %}
+          Die Wetterlage hat sich wieder normalisiert.
+        {% else %}
+          {% for i in range(current_count) %}
+          {% set region_name = state_attr(current, 'region_name') %}
+          {% set headline = state_attr(current, 'warning_' ~ loop.index ~ '_headline') %}
+          {% set description = state_attr(current, 'warning_' ~ loop.index ~ '_description') %}
+          {% set instruction = state_attr(current, 'warning_' ~ loop.index ~ '_instruction') %}
+          {% set level = state_attr(current, 'warning_' ~ loop.index ~ '_level') %}
+          {% set color = state_attr(current, 'warning_' ~ loop.index ~ '_color') %}
+          {% set update = (state_attr(current, 'last_update')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set time_start = (state_attr(current, 'warning_' ~ loop.index ~ '_start')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set time_end = (state_attr(current, 'warning_' ~ loop.index ~ '_end')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set weekday_start = (state_attr(current, 'warning_' ~ loop.index ~ '_start')|as_timestamp(now().timestamp()) )|timestamp_custom('%w', true, now().weekday() )|int %}
+          {% set weekday_end = (state_attr(current, 'warning_' ~ loop.index ~ '_end')|as_timestamp(now().timestamp()) )|timestamp_custom('%w', true, now().weekday() )|int %}
+          *{{ headline }}*
+          ⏰ _{{ ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][weekday_start-1] ~ ', ' ~ time_start ~ ' - ' ~ ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][weekday_end-1] ~ ', ' ~ time_end }}_
+
+          {{ description|trim }}
+          {% if instruction != none %}
+          *Handlungsempfehlung:*
+          {% endif %}
+          {{ instruction|trim if instruction != none }}
+          Letzte Aktualisierung: {{ update }}
+          {% if not loop.last %}*** ***{% endif %}
+          {% endfor %}
+          {% if current_count not in [0, none] and advance_count not in [0, none] %}*** ***{% endif %}
+          {% for i in range(advance_count) %}
+          {% set region_name = state_attr(advance, 'region_name') %}
+          {% set headline = state_attr(advance, 'warning_' ~ loop.index ~ '_headline') %}
+          {% set description = state_attr(advance, 'warning_' ~ loop.index ~ '_description') %}
+          {% set instruction = state_attr(advance, 'warning_' ~ loop.index ~ '_instruction') %}
+          {% set level = state_attr(advance, 'warning_' ~ loop.index ~ '_level') %}
+          {% set color = state_attr(advance, 'warning_' ~ loop.index ~ '_color') %}
+          {% set update = (state_attr(advance, 'last_update')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set time_start = (state_attr(advance, 'warning_' ~ loop.index ~ '_start')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set time_end = (state_attr(advance, 'warning_' ~ loop.index ~ '_end')|as_timestamp(now()) )|timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
+          {% set weekday_start = (state_attr(advance, 'warning_' ~ loop.index ~ '_start')|as_timestamp(now().timestamp()) )|timestamp_custom('%w', true, now().weekday() )|int %}
+          {% set weekday_end = (state_attr(advance, 'warning_' ~ loop.index ~ '_end')|as_timestamp(now().timestamp()) )|timestamp_custom('%w', true, now().weekday() )|int %}
+          *{{ headline }}*
+          ⏰ _{{ ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][weekday_start-1] ~ ', '
+              ~ time_start ~ ' - ' ~ ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][weekday_end-1] ~ ', ' ~ time_end }}_
+
+          {{ description|trim }}
+          {% if instruction != none %}
+          *Handlungsempfehlung:*
+          {% endif %}
+          {{ instruction|trim if instruction != none }}
+          Letzte Aktualisierung: {{ update }}
+          {% if not loop.last %}*** ***{% endif %}
+          {% endfor %}
+        {% endif %}
+      who: "home"
+      tag_id: "information"
+      group: "Wetter"
+      photo: "https://www.dwd.de/DWD/warnungen/warnstatus/SchilderSU.jpg"
+mode: parallel

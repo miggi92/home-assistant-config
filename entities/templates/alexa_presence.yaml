@@ -1,0 +1,18 @@
+---
+# Alexa presence sensor
+- binary_sensor:
+    - name: "Alexa presence kitchen"
+      icon: "mdi:motion-sensor"
+      device_class: occupancy
+      state: >
+        {{ states('input_boolean.alexa_presence_kitchen') }}
+    - name: "Alexa presence living"
+      icon: "mdi:motion-sensor"
+      device_class: occupancy
+      state: >
+        {{ states('input_boolean.alexa_presence_living') }}
+    - name: "Alexa presence sleep"
+      icon: "mdi:motion-sensor"
+      device_class: occupancy
+      state: >
+        {{ states('input_boolean.alexa_presence_sleep') }}

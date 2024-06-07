@@ -1,0 +1,18 @@
+---
+# Sunrise script
+sunrise_script:
+  sequence:
+    - service: cover.set_cover_position
+      data:
+        position: 50
+      target:
+        entity_id: cover.wohnzimmerrolladen
+    - if:
+        - condition: state
+          entity_id: binary_sensor.workday_sensor
+          state: "on"
+      then:
+        - service: cover.open_cover
+          data: {}
+          target:
+            entity_id: cover.rolladen_kinderzimmer

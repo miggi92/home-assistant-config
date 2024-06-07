@@ -1,0 +1,37 @@
+---
+# Maja status change via telegram
+alias: majaTelegramStatus
+id: 9af053f5-0dfb-4adf-8b36-a2747f2caaae
+description: "Maja state from telegram"
+trigger:
+  - platform: event
+    id: home
+    event_type: telegram_callback
+    event_data:
+      data: "/maja_home"
+  - platform: event
+    id: gone
+    event_type: telegram_callback
+    event_data:
+      data: "/maja_gone"
+condition: []
+action:
+  - if:
+      - condition: trigger
+        id: "home"
+    then:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.maja_home
+    else:
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.maja_home
+  - service: telegram_bot.answer_callback_query
+    data_template:
+      callback_query_id: "{{ trigger.event.data.id }}"
+      message: "Alles klar danke!"
+  - service: telegram_bot.edit_replymarkup
+    data_template:
+      message_id: "{{ trigger.event.data.message.message_id }}"
+      chat_id: "{{ trigger.event.data.chat_id }}"
+      inline_keyboard: []
+mode: single

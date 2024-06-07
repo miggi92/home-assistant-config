@@ -1,0 +1,32 @@
+---
+id: dc32d4be-a49c-4a0e-81e1-2a85f6ed6758
+alias: alarmOnContact
+description: "Bei Änderung der Kontaktsensoren Alarm auslösen"
+trigger:
+  - platform: state
+    entity_id: group.contact_sensors
+    to: "on"
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_away
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_home
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_vacation
+action:
+  - service: alarm_control_panel.alarm_trigger
+    target:
+      entity_id: alarm_control_panel.home_alarm
+  - service: script.notify_engine
+    data:
+      title: "🏃 Bewegung 🏃"
+      value1: "{{ trigger.to_state.attributes.friendly_name }} wurde geöffnet."
+      who: "home"
+      tag_id: "alert"
+      group: "Alarm"
+mode: single

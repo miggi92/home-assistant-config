@@ -1,0 +1,30 @@
+---
+# Chores card
+chores_card_template:
+  default:
+    - title: Hausarbeiten
+    - user_id: 1
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:grocy-chores-card
+        title: "Meine [[title]]"
+        entity:
+          - sensor.grocy_chores
+        user_id: "[[user_id]]"
+        filter_user: "[[user_id]]"
+        use_icons: true
+        hide_text_with_no_data: true
+        use_24_hours: true
+        show_empty: false
+        browser_mod: true
+      - type: custom:grocy-chores-card
+        title: "Alle [[title]]"
+        entity:
+          - sensor.grocy_chores
+        user_id: "[[user_id]]"
+        use_icons: true
+        hide_text_with_no_data: true
+        use_24_hours: true
+        browser_mod: true
+        show_overflow: true

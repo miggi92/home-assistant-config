@@ -1,0 +1,7 @@
+---
+# Timer to check for maja when she's alone
+maja_check:
+  name: Maja Check Intervall
+  duration: "00:45:00"
+  icon: mdi:eye
+  restore: true

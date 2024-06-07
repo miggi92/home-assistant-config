@@ -1,0 +1,12 @@
+---
+# Zigbee integration
+zha:
+  enable_quirks: true
+  zigpy_config:
+    ota:
+      ikea_provider: true # Auto update Trådfri devices
+      ledvance_provider: true # Auto update LEDVANCE/OSRAM devices
+      salus_provider: true # Auto update SALUS/Computime devices
+      inovelli_provider: true # Auto update INOVELLI devices
+      thirdreality_provider: true # Auto update 3REALITY devices
+      otau_directory: /config/zha_ota

@@ -1,0 +1,5 @@
+---
+# Milo Homestate
+milo_home:
+  name: Milo Daheim
+  icon: mdi:home

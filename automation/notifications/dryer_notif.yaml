@@ -1,0 +1,31 @@
+---
+# Trockner Benachrichtigung
+alias: DryerNotif
+id: 45b44c95-9e9f-42d9-bc0e-369ab3a74bb9
+description: "Benachrichtigt wenn der Trockner fertig ist"
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.trockner_steckdose_leistung
+    below: "1.0"
+    for: "00:01:00"
+
+condition:
+  - condition: state
+    entity_id: input_boolean.dryer_active
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        ♨️ Trockner ♨️
+      value1: >-
+        {% set cycleConsumption = ( states("sensor.trockner_steckdose_zusammenfassung_geliefert") | float -  states("input_number.dryer_cycle_consumption") | float ) %}
+        {% set costs = cycleConsumption * states("input_number.strompreis") | float(2) %}
+        Trockner ist fertig. Verbrauch {{ cycleConsumption | float|round(2) }} kWh.
+        Das macht ca. {{ costs | float|round(2) }} €
+      who: "home"
+      tag_id: "information"
+      group: "Laundry"
+  - service: input_boolean.turn_off
+    entity_id: input_boolean.dryer_active
+mode: single

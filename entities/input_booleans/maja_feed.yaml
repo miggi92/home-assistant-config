@@ -1,0 +1,5 @@
+---
+# If maja is hungry or not
+maja_feed:
+  name: Maja satt
+  icon: mdi:food-steak

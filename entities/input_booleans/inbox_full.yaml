@@ -1,0 +1,5 @@
+---
+# If inbox is full or not
+inbox_full:
+  name: Post im Briefkasten
+  icon: mdi:inbox

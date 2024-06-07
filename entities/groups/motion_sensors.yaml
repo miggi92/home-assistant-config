@@ -1,0 +1,9 @@
+---
+# Motion sensor group
+motion_sensors:
+  name: Bewegungsmelder
+  icon: mdi:motion-sensor
+  entities:
+    - group.sleep_motion_sensors
+    - group.living_motion_sensors
+    - binary_sensor.kinderzimmerbewegungssensor_bewegung

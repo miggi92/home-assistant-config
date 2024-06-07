@@ -1,0 +1,18 @@
+---
+# Night mode off
+night_mode_off:
+  sequence:
+    # - service: light.turn_off
+    #   target:
+    #     entity_id: light.bett
+    - service: alarm_control_panel.alarm_disarm
+      data:
+        code: !secret alarm_code
+      target:
+        entity_id: alarm_control_panel.home_alarm
+    - service: switch.turn_off
+      data: {}
+      target:
+        entity_id:
+          - switch.adaptive_lighting_sleep_mode_automatische_lichter
+          - switch.adaptive_lighting_sleep_mode_wohnzimmer

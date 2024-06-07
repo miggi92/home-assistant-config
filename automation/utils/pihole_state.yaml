@@ -1,0 +1,24 @@
+---
+# Pihole state
+alias: piholeState
+id: 937b8048-a3a4-4557-9bf1-17e8d1c206bf
+description: "Pihole State"
+trigger:
+  - platform: state
+    entity_id:
+      - switch.pi_hole
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: switch.pi_hole
+        state: "off"
+    then:
+      - service: timer.start
+        target:
+          entity_id: timer.pihole_disabled
+    else:
+      - service: timer.cancel
+        target:
+          entity_id: timer.pihole_disabled
+mode: single

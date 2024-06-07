@@ -1,0 +1,88 @@
+---
+title: Einkaufen
+path: shopping
+icon: mdi:cart
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: entity
+        entity: sensor.grocy_stock
+      - type: entity
+        entity: sensor.rewe_offer_api
+        icon: mdi:store
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: "Rewe Angebote"
+              content:
+                type: vertical-stack
+                cards:
+                  - !include ../../cards/rewe_offers.yaml
+  - type: custom:tabbed-card
+    tabs:
+      - card:
+          type: todo-list
+          entity: todo.einkaufsliste
+        attributes:
+          label: Einkaufsliste
+          icon: mdi:cart
+      - card:
+          type: todo-list
+          entity: todo.dm_einkaufen
+        attributes:
+          label: DM Liste
+          icon: mdi:shopping
+      - card:
+          type: todo-list
+          entity: todo.getranke
+        attributes:
+          label: Getränke
+          icon: mdi:beer
+
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.grocy_expired_products
+        name: Abgelaufen
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.grocy_expiring_products
+        name: Bald abgelaufen
+        layout: vertical
+  - type: custom:mushroom-title-card
+    title: PicNic
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_status_der_letzten_bestellung
+        layout: vertical
+  - type: conditional
+    conditions:
+      - entity: sensor.picnic_status_der_letzten_bestellung
+        state: "CURRENT"
+    card:
+      type: horizontal-stack
+      cards:
+        - type: custom:mushroom-entity-card
+          entity: sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung
+          name: Beginn nächste Lieferung
+          layout: vertical
+        - type: custom:mushroom-entity-card
+          entity: sensor.picnic_voraussichtliches_ende_der_nachsten_lieferung
+          name: Ende nächste Lieferung
+          layout: vertical
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_gesamtpreis_der_letzten_bestellung
+        name: Kosten der letzten Bestellung
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_warenkorb_gesamtpreis
+        name: Preis Warenkorb
+        layout: vertical
+  - type: todo-list
+    entity: todo.picnic_einkaufswagen

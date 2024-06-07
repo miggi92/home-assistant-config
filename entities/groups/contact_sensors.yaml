@@ -1,0 +1,7 @@
+---
+# Contact sensor group
+contact_sensors:
+  name: Kontaktsensoren
+  icon: mdi:door
+  entities:
+    - binary_sensor.abstellkammertursensor_contact

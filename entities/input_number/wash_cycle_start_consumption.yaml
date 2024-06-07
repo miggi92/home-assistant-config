@@ -1,0 +1,6 @@
+---
+# Save consumption value at start of a wash cycle
+wash_cycle_consumption:
+  name: Start Verbrauch Waschmaschine
+  min: 0
+  max: 5000

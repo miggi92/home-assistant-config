@@ -1,0 +1,11 @@
+---
+###
+# Shopping list helps
+###
+sensor:
+  name: Shopping List
+  json_attributes:
+    - complete
+    - incomplete
+  command: "jq -r '{complete: [.[] | select(.complete==true)], incomplete: [.[] | select(.complete==false)]}' /config/.shopping_list.json"
+  value_template: "{{ value_json.incomplete | length }}"

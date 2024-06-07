@@ -1,0 +1,12 @@
+---
+# Energy consuption
+title: Verbrauch
+path: consumption
+icon: mdi:barrel
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: energy-distribution
+    link_dashboard: true
+  - type: energy-devices-graph

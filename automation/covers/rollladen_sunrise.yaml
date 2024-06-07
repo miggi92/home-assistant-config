@@ -1,0 +1,27 @@
+---
+# Rollladen vor Sonnenaufgang schließen, falls zum schlafen nicht unten
+alias: RolladenSunrise
+id: 24fa0d54-ffb8-43d3-9e55-ebdd262deaf0
+description: "Schließt Rolladen vor Sonnenaufgang"
+trigger:
+  - platform: sun
+    # Possible values: sunset, sunrise
+    event: sunrise
+    # Optional time offset. This example will trigger 1 hour before sunrise.
+    offset: "-01:00:00"
+condition:
+  - condition: numeric_state
+    entity_id: cover.rollladen_schlafzimmer
+    attribute: current_position
+    above: "40"
+  - condition: state
+    entity_id: input_boolean.sonnen_wegblenden_schlafen_aktiv
+    state: "on"
+
+action:
+  - service: cover.set_cover_position
+    data:
+      position: 6
+    target:
+      entity_id: cover.rollladen_schlafzimmer
+mode: single

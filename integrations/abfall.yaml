@@ -1,0 +1,4 @@
+---
+# Abfall integration -> Daten direkt vom Landkreis über https://www.abfallplus.de/
+
+sensor: !include_dir_list ../entities/abfallplus

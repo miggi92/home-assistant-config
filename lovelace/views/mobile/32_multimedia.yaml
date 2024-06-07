@@ -1,0 +1,81 @@
+---
+title: Multimedia
+path: multimedia
+icon: mdi:multimedia
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-title-card
+    subtitle: Musik
+  - type: custom:mini-media-player
+    entity: media_player.spotify_miguel
+    artwork: full-cover
+    hide:
+      power: true
+      volume: true
+      controls: true
+      source: true
+      progress: true
+  - type: horizontal-stack
+    cards:
+      - type: custom:mini-media-player
+        entity: media_player.echo_gross
+        artwork: cover
+        icon: fab:amazon
+        info: short
+        hide:
+          mute: true
+          icon: true
+          source: true
+          power_state: false
+      - type: custom:mini-media-player
+        entity: media_player.echo_kuche
+        artwork: cover
+        icon: fab:amazon
+        info: short
+        hide:
+          mute: true
+          icon: true
+          source: true
+          power_state: false
+  - type: horizontal-stack
+    cards:
+      - type: custom:mini-media-player
+        entity: media_player.echo_schlafzimmer
+        artwork: cover
+        icon: fab:amazon
+        info: short
+        hide:
+          mute: true
+          icon: true
+          source: true
+          power_state: false
+      - type: custom:mini-media-player
+        entity: media_player.echo_wohnzimmer
+        artwork: cover
+        icon: fab:amazon
+        info: short
+        hide:
+          mute: true
+          icon: true
+          source: true
+          power_state: false
+  - type: custom:mushroom-title-card
+    subtitle: TV
+  - type: vertical-stack
+    cards:
+      - type: custom:mini-media-player
+        entity: media_player.sky_q
+        artwork: full-cover
+        hide:
+          source: true
+          volume: true
+          power_state: false
+      - type: custom:mini-media-player
+        entity: media_player.gtv
+        artwork: full-cover
+        hide:
+          source: true
+          volume: true
+          power_state: false

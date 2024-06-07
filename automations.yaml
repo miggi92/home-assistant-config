@@ -1,0 +1,40 @@
+- id: "1690789658458"
+  alias: Android Auto Miguel
+  description: ""
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.pixel_7_pro_android_auto
+      to: "on"
+  condition: []
+  action:
+    - service: notify.mobile_app_pixel_7_pro
+      data:
+        title: Connected 2 car
+        message: This device is connected to android auto.
+        data:
+          car_ui: true
+          notification_icon: mdi:car
+          channel: Auto
+          importance: high
+  mode: single
+- id: "1691433091247"
+  alias: "Roomba Behälter "
+  description: "Roomba Behälter "
+  trigger:
+    - platform: state
+      entity_id:
+        - binary_sensor.roomba_bin_full
+      to: "on"
+  condition: []
+  action:
+    - service: notify.telegram_home_group
+      data:
+        title: "Roomba "
+        message: Behälter ist voll. Bitte leeren l.
+  mode: single
+- id: "1708473160035"
+  alias: "Battery replacement "
+  description: ""
+  use_blueprint:
+    path: andrew-codechimp/battery_notes_battery_replaced.yaml

@@ -1,0 +1,27 @@
+---
+# Work Cards
+title: Arbeit
+path: work
+icon: mdi:briefcase
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: iframe
+    url: !secret work_restaurant
+    aspect_ratio: 100%
+    title: Speiseplan Arbeit
+  - type: vertical-stack
+    cards:
+      - type: custom:decluttering-card
+        template: person_work_card
+        variables:
+          - entity: person.miguel
+          - work_zone: zone.work_miguel
+          - picture: "/local/images/persons/miguel.png"
+  - type: vertical-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: schedule.buro_tage
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.workday_sensor

@@ -1,0 +1,45 @@
+---
+# Automatisierung, wenn jemand im Bett erkannt wurde oder alle aufgestanden sind
+alias: BedAutomation
+id: 6bb1782f-56aa-4ebc-b5ab-64e9f185f93f
+description: "Automatisierung, wenn jemand im Bett erkannt wurde oder alle aufgestanden sind"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.bett_tracker
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.bett_tracker
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.bett_tracker
+        state: "off"
+action:
+  - if:
+      - condition: state
+        entity_id: binary_sensor.schlafenszeit
+        state: "on"
+        alias: "Prüfen ob gerade Schlafenszeit ist"
+
+    then:
+      - if:
+          - condition: state
+            entity_id: binary_sensor.bett_tracker
+            state: "on"
+        then:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.night_mode
+            data: {}
+        else:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.night_mode
+            data: {}
+mode: single

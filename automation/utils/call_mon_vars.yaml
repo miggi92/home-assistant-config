@@ -1,0 +1,26 @@
+---
+# Set Call monitor var
+alias: Call mon var befüllen
+id: 12afe90b-fefc-44f6-b46c-391fdde58f43
+description: "Set callmon var"
+trigger:
+  - platform: state
+    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch
+    to: ringing
+condition: []
+action:
+  - service: var.update
+    data:
+      entity_id:
+        - var.callmon_name
+        - var.callmon_number
+        - var.callmon_time
+        - var.callmon_date
+  - service: input_text.set_value
+    target:
+      entity_id: input_text.callmon_lastcaller
+    data:
+      value: >-
+        {{ state_attr("sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch", "from")}}
+        ({{ state_attr("sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch", "from_name") }})
+mode: single

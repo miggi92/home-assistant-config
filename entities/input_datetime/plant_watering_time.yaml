@@ -1,0 +1,7 @@
+---
+# When to water plants
+watering_time:
+  name: Gießzeit
+  icon: mdi:watering-can
+  has_date: false
+  has_time: true

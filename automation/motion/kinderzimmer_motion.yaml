@@ -1,0 +1,40 @@
+---
+# Motion automation
+alias: Kinderzimmer bewegung erkannt
+id: b3ad247c-d77b-437c-8cba-8c3fdb7b99d9
+description: ""
+trigger:
+  - platform: state
+    entity_id: binary_sensor.kinderzimmerbewegungssensor_bewegung
+    to: "on"
+condition:
+  - condition: time
+    after: "17:00:00"
+    before: "09:00:00"
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: cover.rolladen_kinderzimmer
+        state: "closed"
+      - condition: state
+        entity_id: sun.sun
+        state: "below_horizon"
+
+action:
+  - if:
+      - condition: state
+        entity_id: timer.children_light_on
+        state: "idle"
+    then:
+      - service: timer.start
+        target:
+          entity_id: timer.children_light_on
+    else:
+      - service: timer.change
+        data:
+          duration: "00:05:00"
+        target:
+          entity_id: timer.children_light_on
+        alias: Add 5min to timer
+
+mode: single

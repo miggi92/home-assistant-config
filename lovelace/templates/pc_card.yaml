@@ -1,0 +1,157 @@
+---
+# PC Template card
+pc_card_template:
+  default:
+    icon: mdi:desktop-tower-monitor
+    switch_on_state: "on"
+  card:
+    type: custom:layout-card
+    layout_type: custom:vertical-layout
+    cards:
+      - type: markdown
+        content: |
+          # <img height="40" src='[[picture]]' /> [[title]]
+        card_mod:
+          style:
+            ha-markdown $: |
+              h1 img {
+                vertical-align: bottom;
+              }
+            .: |
+              ha-card {
+                background-color: transparent !important;
+                box-shadow: none !important;
+                margin-bottom: -15px;
+                margin-top: -15px;
+                text-align: center;
+              }
+      - type: custom:stack-in-card
+        mode: vertical
+        cards:
+          - type: custom:stack-in-card
+            mode: horizontal
+            card_mod:
+              style: |
+                ha-card {
+                  background: none;
+                  --ha-card-box-shadow: 0px;
+                }
+            cards:
+              - type: custom:mushroom-template-card
+                entity: "[[switch]]"
+                primary: "[[title]]"
+                secondary: |-
+                  {% set st = states('[[switch]]') %}
+                  {% set up = 'Uptime: ' + states('[[uptime]]') %}
+                  {% if st == '[[switch_on_state]]' %}
+                    {{ up }}
+                  {% else %}
+                  {% endif %}
+                icon: "[[icon]]"
+                badge_icon: |-
+                  {% set cam = states('[[webcam]]') %}
+                  {% if cam == 'on' %}
+                    mdi:webcam
+                  {% else %}
+                    mdi:webcam-off
+                  {% endif %}
+                fill_container: false
+                multiline_secondary: false
+                badge_color: |-
+                  {% set cam = states('[[webcam]]') %}
+                  {% if cam == 'on' %}
+                    green
+                  {% else %}
+                    red
+                  {% endif %}
+                icon_color: |-
+                  {% set st = states(entity) %}
+                  {% if st == '[[switch_on_state]]' %}
+                    blue
+                  {% else %}
+                    grey
+                  {% endif %}
+              - type: custom:state-switch
+                entity: "[[switch]]"
+                states:
+                  "[[switch_on_state]]":
+                    type: custom:mushroom-chips-card
+                    alignment: end
+                    chips:
+                      - type: template
+                        entity: "[[cpu_temp]]"
+                        content: "{{states(entity) }} °C"
+                        icon_color: |-
+                          {% set temp = states(entity) %}
+                          {% if temp < '40' %}
+                            green
+                          {% elif temp < '50' %}
+                            light-green
+                          {% elif temp < '55' %}
+                            lime
+                          {% elif temp < '60' %}
+                            yellow
+                          {% elif temp < '65' %}
+                            amber
+                          {% elif temp < '68' %}
+                            orange
+                          {% elif temp < '70' %}
+                            deep-orange
+                          {% else %}
+                            red
+                          {% endif %}
+                        icon: mdi:thermometer
+                        card_mod:
+                          style: |
+                            ha-card {
+                              --chip-box-shadow: none;
+                              --chip-background: none;
+                              --chip-padding: 0 0.3em;
+                              margin-top: 0.4em;
+                              margin-right: 0.4em;
+                              --chip-font-size: 0.4em;
+                              --chip-icon-size: 0.6em;
+                            }
+                      - type: template
+                        entity: "[[battery]]"
+                        content: "{{states(entity) }} %"
+                        icon_color: |-
+                          {% set temp = states(entity) %}
+                          {% if temp < '60' %}
+                            green
+                          {% elif temp < '30' %}
+                            yellow
+                          {% elif temp < '25' %}
+                            orange
+                          {% elif temp < '15' %}
+                            deep-orange
+                          {% else %}
+                            red
+                          {% endif %}
+                        icon: |-
+                          {% set pluggedIn = states('[[powerline]]') %}
+                          {% if pluggedIn == 'Online' %}
+                          mdi:battery-charging
+                          {% else %}
+                          mdi:battery
+                          {% endif %}
+                        card_mod:
+                          style: |
+                            ha-card {
+                              --chip-box-shadow: none;
+                              --chip-background: none;
+                              --chip-padding: 0 0.3em;
+                              margin-top: 0.4em;
+                              margin-right: 0.4em;
+                              --chip-font-size: 0.4em;
+                              --chip-icon-size: 0.6em;
+                            }
+          # - type: custom:state-switch
+          #   entity: "[[switch]]"
+          #   states:
+          #     "[[switch_on_state]]":
+          #       type: picture-glance
+          #       camera_view: auto
+          #       entities: []
+          #       camera_image: "[[screenshots]]"
+          #       theme: Mushroom

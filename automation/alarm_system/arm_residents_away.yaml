@@ -1,0 +1,15 @@
+---
+id: 8b97520c-c437-4b1d-afd5-192fc2413e7f
+alias: armResidentsAway
+description: Alarm automatisch anschalten wenn keiner daheim ist
+trigger:
+  - platform: state
+    entity_id: group.residents
+    to: "not_home"
+condition: []
+action:
+  - service: alarm_control_panel.alarm_arm_away
+    data:
+      code: !secret alarm_code
+    target:
+      entity_id: alarm_control_panel.home_alarm

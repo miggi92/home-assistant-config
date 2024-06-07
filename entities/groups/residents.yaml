@@ -1,0 +1,10 @@
+---
+# Bewohner Gruppe
+residents:
+  name: Bewohner
+  icon: mdi:home-account
+  entities:
+    - person.miguel
+    - person.silke
+    - person.milo_carlos
+    - person.maja

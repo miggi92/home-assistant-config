@@ -1,0 +1,146 @@
+---
+title: Schlafzimmer
+path: sleep
+icon: mdi:bed-double
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: conditional
+        conditions:
+          - entity: group.sleep_motion_sensors
+            state_not: "off"
+            condition: state
+        chip:
+          type: entity
+          entity: group.sleep_motion_sensors
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.miguel_wecker
+        layout: vertical
+        tap_action:
+          action: none
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.silke_wecker
+        layout: vertical
+        tap_action:
+          action: none
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.withings_in_bed_miguel
+        tap_action:
+          action: none
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.withings_in_bed_silke
+        tap_action:
+          action: none
+  - type: horizontal-stack
+    cards:
+      - type: custom:mini-graph-card
+        name: Temperatur
+        hours_to_show: 24
+        points_per_hour: 1
+        hour24: true
+        entities:
+          - entity: sensor.schlafzimmertemperatur
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: "Schlafzimmertemperatur Details"
+              content:
+                type: vertical-stack
+                cards:
+                  - type: custom:mini-graph-card
+                    name: Temperaturen
+                    hours_to_show: 24
+                    hour24: true
+                    points_per_hour: 2
+                    entities:
+                      - entity: sensor.luftqualitatssensor_temperatur
+                        name: Luftqualitätssensor
+                      - entity: sensor.schlafzimmertempsensor_temperatur
+                        name: Temperatursensor
+                      - entity: sensor.schlafzimmerbewegungssensor_temperatur
+                        name: Bewegungssensor
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.schlafzimmerluftfeuchtigkeit
+        detail: 1
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Luftqualität
+        type: sensor
+        entity: sensor.luftqualitatssensor_vocs
+        detail: 1
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_schlafzimmer
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-fan-card
+        entity: fan.luftfilter
+        icon: mdi:fan
+        icon_type: icon
+        icon_animation: true
+        show_percentage_control: true
+        collapsible_controls: true
+        layout: vertical
+
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schlafzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-light-card
+        entity: light.bett
+        layout: vertical
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-cover-card
+    entity: cover.rollladen_schlafzimmer
+    name: Rollladen
+    fill_container: false
+    show_buttons_control: true
+    show_position_control: true
+    tap_action:
+      action: toggle
+  - type: custom:mushroom-title-card
+    subtitle: Geräte
+  - type: custom:mini-media-player
+    entity: media_player.gtv
+    artwork: full-cover
+    hide:
+      power_state: false
+  - type: custom:mushroom-title-card
+    subtitle: Sensoren
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.schlafzimmerbewegungssensor_beleuchtungsstarke
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.schlafzimmerbewegungssensor_bewegung
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.schlafzimmerbewegungssensor_belegung
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Schlafzimmer

@@ -1,0 +1,6 @@
+---
+platform: group
+name: Kameralichter
+entities:
+  - light.korbchen_indicator_light
+  - light.flurcam_indicator_light

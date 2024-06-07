@@ -1,0 +1,6 @@
+---
+# Save consumption value at start of a dry cycle
+dryer_cycle_consumption:
+  name: Start Verbrauch Trockner
+  min: 0
+  max: 5000

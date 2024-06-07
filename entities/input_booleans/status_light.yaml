@@ -1,0 +1,5 @@
+---
+# Status Light
+status_light:
+  icon: mdi:lightbulb-alert
+  name: "Status Licht"

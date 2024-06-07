@@ -1,0 +1,47 @@
+---
+title: Bad
+path: bath
+icon: mdi:shower
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: entity
+        entity: binary_sensor.dusche
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Temperatur
+        type: sensor
+        entity: sensor.badezimmertempsensor_temperatur
+        detail: 1
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.badezimmertempsensor_luftfeuchtigkeit
+        detail: 1
+  - type: custom:decluttering-card
+    template: amazon_echo_template
+    variables:
+      - echo_id: milos_dot
+      - title: Echo Bad
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_bad
+  - type: custom:mushroom-title-card
+    subtitle: Geräte
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.duschsensor_feuchtigkeit
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.shower_active
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Bad

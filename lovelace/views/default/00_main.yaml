@@ -1,0 +1,49 @@
+---
+title: Home
+path: home
+icon: mdi:home
+badges:
+  - type: entity-filter
+    state_filter:
+      - value: "0"
+        operator: "!="
+    entities:
+      - entity: sensor.pollenflug_graeser_112
+        name: Gräser
+      - entity: sensor.pollenflug_ambrosia_112
+        name: Ambrosia
+      - entity: sensor.pollenflug_beifuss_112
+        name: Beifuß
+      - entity: sensor.pollenflug_birke_112
+        name: Birke
+      - entity: sensor.pollenflug_erle_112
+        name: Erle
+      - entity: sensor.pollenflug_esche_112
+        name: Esche
+      - entity: sensor.pollenflug_hasel_112
+        name: Haselnuss
+      - entity: sensor.pollenflug_roggen_112
+        name: Roggen
+
+cards:
+  - !include ../../cards/residents.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-template-card
+        icon: mdi:cellphone
+        icon_color: green
+        layout: vertical
+        primary: Mobile Dashboard
+        fill_container: true
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace-mobile
+      - type: custom:mushroom-template-card
+        icon: mdi:tablet
+        icon_color: green
+        layout: vertical
+        primary: Tablet Dashboard
+        fill_container: true
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace-tablet

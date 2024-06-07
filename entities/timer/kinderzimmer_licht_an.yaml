@@ -1,0 +1,7 @@
+---
+# Timer for the motion enabled light
+children_light_on:
+  name: Kinderzimmerlicht An
+  duration: "00:10:00"
+  icon: mdi:lightbulb-auto
+  restore: true

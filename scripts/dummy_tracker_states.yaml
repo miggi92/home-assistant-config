@@ -1,0 +1,32 @@
+---
+# Dummy Tracker states
+dummy_tracker_states:
+  sequence:
+    - if:
+        - condition: state
+          entity_id: input_boolean.milo_home
+          state: "on"
+      then:
+        - service: device_tracker.see
+          data:
+            dev_id: milo_dummy_tracker
+            location_name: home
+      else:
+        - service: device_tracker.see
+          data:
+            dev_id: milo_dummy_tracker
+            location_name: not_home
+    - if:
+        - condition: state
+          entity_id: input_boolean.maja_home
+          state: "on"
+      then:
+        - service: device_tracker.see
+          data:
+            dev_id: maja_dummy_tracker
+            location_name: home
+      else:
+        - service: device_tracker.see
+          data:
+            dev_id: maja_dummy_tracker
+            location_name: not_home

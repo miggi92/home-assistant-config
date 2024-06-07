@@ -1,0 +1,44 @@
+---
+type: picture-elements
+image: /local/images/UV_gauge_wa.png
+elements:
+  - type: custom:canvas-gauge-card
+    entity: sensor.current_uv_index
+    style:
+      top: 50%
+      left: 50%
+    gauge:
+      type: "radial-gauge"
+      title: UV Index
+      width: 200
+      height: 200
+      minValue: 0
+      maxValue: 13
+      startAngle: 40
+      ticksAngle: 280
+      valueBox: true
+      majorTicks:
+        ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
+      minorTicks: 5
+      strokeTicks: true
+      highlights:
+        [
+          { "from": 2.5, "to": 5.5, "color": "rgba(247, 228, 1, .75)" },
+          { "from": 0, "to": 2.5, "color": "rgba(40, 149, 0, .75)" },
+          { "from": 5.5, "to": 7.5, "color": "rgba(248, 123, 1, .75)" },
+          { "from": 7.5, "to": 10.5, "color": "rgba(216, 23, 0, .75)" },
+          { "from": 10.5, "to": 13, "color": "rgba(75, 46, 154, .75)" },
+        ]
+      borders: false
+      needleType: "arrow"
+      needleWidth: 4
+      needleCircleSize: 7
+      needleCircleOuter: true
+      needleCircleInner: false
+      animationDuration: 1500
+      animationRule: "linear"
+      valueBoxBorderRadius: 10
+      colorValueBoxRect: "#222"
+      colorValueBoxRectEnd: "#333"
+      valueDec: 2
+      valueInt: 2

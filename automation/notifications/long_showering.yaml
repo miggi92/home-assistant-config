@@ -1,0 +1,30 @@
+---
+# Long showering notification
+alias: LongShowering
+id: decf9977-3103-406d-8a04-65334807751c
+description: "Notify if someone is showering too long"
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.dusche
+    from: "on"
+    for:
+      hours: 0
+      minutes: 13
+      seconds: 0
+condition: []
+action:
+  - service: notify.alexa_media_echo_gross
+    data:
+      message: Genug geduscht! Es sind jetzt immerhin schon 13 Minuten!!!
+      data:
+        type: tts
+  - service: script.notify_engine
+    data:
+      title: Dusche
+      value1: >-
+        Genug geduscht! Es sind jetzt immerhin schon 13 Minuten!!!
+      who: "home"
+      tag_id: "information"
+      group: "Cleaning"
+mode: single

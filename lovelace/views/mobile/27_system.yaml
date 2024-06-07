@@ -1,0 +1,28 @@
+---
+# System
+title: System
+path: system
+icon: mdi:cellphone-arrow-down
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-title-card
+    subtitle: Updates
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-update-card
+        entity: update.home_assistant_core_update
+        name: HA Core
+      - type: custom:mushroom-update-card
+        entity: update.home_assistant_operating_system_update
+        name: HA Operating System
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-update-card
+        entity: update.yggdrasil_fritz_os
+        name: Powerline wlan
+      - type: custom:mushroom-update-card
+        entity: update.yggdrasil_fritz_os
+        name: Fritzbox
+  - !include ../../cards/watchman.yaml

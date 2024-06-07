@@ -1,0 +1,5 @@
+---
+# Alexa Sleeping room presence helper
+alexa_presence_sleep:
+  name: Alexa Schlafzimmer Anwesenheitserkennung
+  icon: mdi:motion-sensor

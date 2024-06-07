@@ -1,0 +1,8 @@
+---
+# Cleaning script
+cleaning:
+  sequence:
+    - service: vacuum.start
+      data: {}
+      target:
+        entity_id: vacuum.roomba

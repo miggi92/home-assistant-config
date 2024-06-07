@@ -1,0 +1,91 @@
+---
+title: Abstellkammer
+path: storage
+icon: mdi:library-shelves
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: entity
+        entity: input_boolean.wash_active
+      - type: entity
+        entity: input_boolean.dryer_active
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Temperatur
+        type: sensor
+        entity: sensor.abstellkammertempsensor_temperatur
+        detail: 1
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.abstellkammertempsensor_luftfeuchtigkeit
+        detail: 1
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_abstellkammer
+  - type: custom:mushroom-title-card
+    subtitle: Waschen und Trocknen
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Waschmaschinen Energieverbrauch insg.
+        type: sensor
+        entity: sensor.waschmaschinen_steckdose_zusammenfassung_geliefert
+        detail: 1
+      - name: Waschmaschinen Verbrauch
+        type: sensor
+        entity: sensor.waschmaschinen_steckdose_leistung
+        graph: line
+        detail: 2
+        hours_to_show: 4
+        limits:
+          max: 300
+  - type: entities
+    entities:
+      - binary_sensor.waschmaschine_door
+      - sensor.waschmaschine_operation_state
+      - sensor.waschmaschine_remaining_program_time
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Trockner Energieverbrauch insg.
+        type: sensor
+        entity: sensor.trockner_steckdose_zusammenfassung_geliefert
+        detail: 1
+      - hours_to_show: 4
+        graph: line
+        name: Trockner Verbrauch
+        type: sensor
+        entity: sensor.trockner_steckdose_leistung
+        detail: 2
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.abstellkammerlicht
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        layout: vertical
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.abstellkammertursensor_contact
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: switch.waschmaschine_program_drumclean
+        layout: vertical
+        name: Trommelreinigung
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Abstellkammer

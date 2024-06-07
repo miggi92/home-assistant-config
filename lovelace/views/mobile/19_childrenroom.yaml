@@ -1,0 +1,47 @@
+---
+title: Kinderzimmer
+path: child
+icon: mdi:teddy-bear
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Temperatur
+        type: sensor
+        entity: sensor.kinderzimmertempsensor_temperatur
+        detail: 1
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.kinderzimmertempsensor_luftfeuchtigkeit
+        detail: 1
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
+      - type: custom:mushroom-light-card
+        entity: light.kinderzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-cover-card
+    entity: cover.rolladen_kinderzimmer
+    name: Rollladen
+    fill_container: false
+    show_buttons_control: true
+    show_position_control: true
+    tap_action:
+      action: toggle
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Kinderzimmer

@@ -1,0 +1,25 @@
+---
+# Temperature
+title: Temperaturen
+path: temp
+icon: mdi:thermometer
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:auto-entities
+    card:
+      type: entities
+      title: Temperature
+    filter:
+      include:
+        - entity_id: /^.*temperature*/
+          domain: sensor
+          attributes:
+            unit_of_measurement: "°C"
+      exclude:
+        - state: "unavailable"
+        - entity_id: "*device*"
+    sort:
+      method: state
+      count: 10

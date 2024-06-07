@@ -1,0 +1,6 @@
+---
+# Miguel Smartwatch
+miguel_has_swatch:
+  name: Miguel has Smartwatch?
+  initial: true
+  icon: mdi:watch

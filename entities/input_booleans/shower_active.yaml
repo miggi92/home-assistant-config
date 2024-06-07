@@ -1,0 +1,5 @@
+---
+# Helfer ob jemand duschen ist.
+shower_active:
+  name: Duschstatus
+  icon: mdi:shower-head

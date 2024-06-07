@@ -1,0 +1,4 @@
+---
+title: MGM12 Home
+background: var(--background-image)
+views: !include_dir_list ../views/default

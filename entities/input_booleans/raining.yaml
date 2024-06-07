@@ -1,0 +1,5 @@
+---
+# is it raining?
+raining:
+  name: Regnet es
+  icon: mdi:weather-rainy

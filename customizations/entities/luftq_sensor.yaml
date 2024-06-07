@@ -1,0 +1,4 @@
+---
+# Luft Q Sensor
+sensor.luftqualitatssensor_temperature:
+  unit_of_measurement: °C

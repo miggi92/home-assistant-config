@@ -1,0 +1,6 @@
+---
+# Silke Smartwatch
+silke_has_swatch:
+  name: Silke has Smartwatch?
+  icon: mdi:watch
+  initial: true

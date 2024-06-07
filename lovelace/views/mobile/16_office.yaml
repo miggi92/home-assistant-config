@@ -1,0 +1,47 @@
+---
+title: Arbeitszimmer
+path: office
+icon: mdi:chair-rolling
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schreibtischlicht
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        layout: vertical
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        entity: switch.streampisteckdose
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
+  - type: custom:decluttering-card
+    template: pc_card_template
+    variables:
+      - title: Laptop
+      - icon: mdi:laptop
+      - switch: sensor.bcwmc002867_sessionstate
+      - switch_on_state: "Unlocked"
+      - uptime: sensor.bcwmc002867_uptime
+      - cpu_temp: sensor.bcwmc002867_cputemp
+      - picture: /local/logo/work_miguel_logo.svg
+      - battery: sensor.bcwmc002867_battery_charge_remaining_percentage
+      - webcam: binary_sensor.bcwmc002867_webcamactive
+      - powerline: sensor.bcwmc002867_battery_powerline_status
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Büro

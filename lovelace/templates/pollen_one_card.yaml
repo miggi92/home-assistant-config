@@ -1,0 +1,23 @@
+---
+# One Pollen card
+pollen_one_card_template:
+  default:
+    name: "Pollen"
+  card:
+    type: conditional
+    conditions:
+      - entity: "[[entity_id]]"
+        state_not: "0"
+    card:
+      type: custom:mushroom-template-card
+      entity_id: "[[entity_id]]"
+      primary: "[[name]]"
+      icon: mdi:flower-pollen
+      secondary: "{{ state_attr('[[entity_id]]', 'state_today_desc') }}"
+      icon_color: >-
+        {% set state = int(states('[[entity_id]]')) %}
+        {% if state >= 2 %}
+        red
+        {% else %}
+        orange
+        {% endif %}

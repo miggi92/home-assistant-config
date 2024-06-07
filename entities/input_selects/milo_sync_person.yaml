@@ -1,0 +1,10 @@
+---
+# With who milo syncs
+milo_person_sync:
+  name: Mit wem ist Milo unterwegs?
+  options:
+    - silke
+    - miguel
+    - alleine
+  initial: silke
+  icon: mdi:human-male-female-child

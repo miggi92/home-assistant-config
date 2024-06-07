@@ -1,0 +1,33 @@
+---
+# Sync alarm
+alias: SyncAlarmFromMobile
+id: d51b6739-a9df-405d-9a8a-903c8082c0eb
+description: "Sync Wecker"
+trigger:
+  - platform: state
+    entity_id: sensor.pixel_7_pro_next_alarm
+    id: "miguel"
+  - platform: state
+    entity_id: sensor.silkehandy_next_alarm
+    id: "silke"
+
+condition: []
+action:
+  - if:
+      - condition: trigger
+        id: "miguel"
+    then:
+      - service: input_datetime.set_datetime
+        data:
+          timestamp: >-
+            {{ ( state_attr("sensor.pixel_7_pro_next_alarm", "Time in Milliseconds")  | int  / 1000 ) }}
+        target:
+          entity_id: input_datetime.miguel_wecker
+    else:
+      - service: input_datetime.set_datetime
+        data:
+          timestamp: >-
+            {{ ( state_attr("sensor.silkehandy_next_alarm", "Time in Milliseconds")  | int  / 1000 ) }}
+        target:
+          entity_id: input_datetime.silke_wecker
+mode: single

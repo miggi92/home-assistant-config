@@ -1,0 +1,17 @@
+---
+# Scheduled vacuum cleaner run
+description: "Scheduled vacuum cleaner run"
+id: f3bb2b2b-8cec-449f-858a-4324710c86a9
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - schedule.staubsaug_zeiten
+    to: "on"
+condition:
+  - condition: state
+    entity_id: input_boolean.automatic_cleaning
+    state: "on"
+action:
+  - service: script.cleaning
+    data: {}

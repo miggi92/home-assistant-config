@@ -1,0 +1,34 @@
+---
+# Grocy notifications
+alias: GrocyNotifExpiring
+id: eb62c777-22eb-4bd7-bffe-8f705cd7f4c8
+description: "Benachrichtigt, wenn Produkte bald ablaufen"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.grocy_expiring_products
+    attribute: count
+
+condition:
+  - condition: state
+    entity_id: binary_sensor.grocy_expiring_products
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🥫 Produkte laufen bald ab 🍲
+      value1: >-
+        {% set expiringProducts = state_attr("binary_sensor.grocy_expiring_products", "expiring_products")%}
+        {% set expiringCount = state_attr("binary_sensor.grocy_expiring_products", "count")%}
+
+        Es laufen folgende {{expiringCount}} Produkte bald ab:
+        {{- '\n' -}}
+        {% for i in expiringProducts %}
+        - {{ i.name }} {{ as_timestamp(i.best_before_date) | timestamp_custom('%d.%m.%Y') }}
+        {{- '\n' -}}
+        {% endfor %}
+
+      who: "home"
+      tag_id: "information"
+      group: "Food"
+mode: single

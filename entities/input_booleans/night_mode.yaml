@@ -1,0 +1,5 @@
+---
+# night mode
+night_mode:
+  name: Nachtmodus
+  icon: mdi:sleep

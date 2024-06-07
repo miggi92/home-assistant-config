@@ -1,0 +1,11 @@
+---
+# benzinpreise
+all_fuel_sensors:
+  name: Benzinpreise
+  all: true
+  icon: mdi:gas-station
+  entities:
+    - sensor.agip_super
+    - sensor.lenz_super
+    - sensor.jet_super
+    - sensor.shell_super

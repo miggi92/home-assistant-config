@@ -1,0 +1,17 @@
+---
+# Automatic cleaning automation
+alias: VaccumCleaner
+id: 4904b3cf-2099-4f13-8565-43719f3e74b6
+description: "Lässt den Staubsaugroboter laufen, wenn wir mit Maja draußen sind"
+trigger:
+  - platform: state
+    entity_id: input_boolean.maja_home
+condition:
+  - condition: state
+    entity_id: input_boolean.automatic_cleaning
+    state: "on"
+action:
+  - service: script.cleaning_without_dog
+    data: {}
+
+mode: single

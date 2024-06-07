@@ -1,0 +1,10 @@
+---
+# With who maja syncs
+maja_person_sync:
+  name: Mit wem ist Maja unterwegs?
+  options:
+    - silke
+    - miguel
+    - alleine
+  initial: miguel
+  icon: mdi:dog

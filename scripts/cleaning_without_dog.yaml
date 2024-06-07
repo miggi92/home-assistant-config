@@ -1,0 +1,32 @@
+---
+# Cleaning script when dog is away
+cleaning_without_dog:
+  sequence:
+    - if:
+        - condition: state
+          entity_id: input_boolean.maja_home
+          state: "off"
+      then:
+        - service: script.notify_engine
+          data:
+            title: |
+              Roomba
+            value1: |
+              Ja Meister, ich mache ja schon sauber!
+            who: "home"
+            tag_id: "information"
+            group: "Cleaning"
+        - service: script.cleaning
+          data: {}
+      else:
+        - service: script.notify_engine
+          data:
+            title: |
+              Roomba
+            value1: |
+              Genug geputzt! Gehe wieder heim!
+            who: "home"
+            tag_id: "information"
+            group: "Cleaning"
+        - service: script.cleaning_stop
+          data: {}

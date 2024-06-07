@@ -1,0 +1,4 @@
+---
+# Websocket
+# https://www.home-assistant.io/integrations/websocket_api
+websocket_api:

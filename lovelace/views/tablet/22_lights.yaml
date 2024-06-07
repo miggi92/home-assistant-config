@@ -1,0 +1,69 @@
+---
+title: Lichter
+path: lights
+icon: mdi:lightbulb
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schlafzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.bett
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.tv_licht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.esstischlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.thekenlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.abstellkammerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schreibtischlicht
+        layout: vertical
+        show_brightness_control: true
+        show_color_control: true
+        show_color_temp_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.kinderzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true

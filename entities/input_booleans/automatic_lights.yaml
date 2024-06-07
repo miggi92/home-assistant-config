@@ -1,0 +1,4 @@
+---
+automatic_lights:
+  name: "Automatische Lichtsteuerung"
+  icon: mdi:lightbulb-auto

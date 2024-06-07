@@ -1,0 +1,19 @@
+---
+# Light automation
+alias: Kinderzimmerlicht Auto an
+id: aa5b46dc-164e-4d52-9d53-4f078c7dd107
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.started
+    event_data:
+      entity_id: timer.children_light_on
+condition:
+  - condition: state
+    entity_id: input_boolean.automatic_lights
+    state: "on"
+action:
+  - service: light.turn_on
+    target:
+      entity_id: light.kinderzimmerlicht
+mode: single

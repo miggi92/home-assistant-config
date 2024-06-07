@@ -1,0 +1,31 @@
+---
+title: Kameras
+path: cams
+icon: mdi:cctv
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: picture-entity
+    show_state: true
+    show_name: true
+    camera_view: auto
+    entity: camera.flurcam
+  - type: picture-entity
+    show_state: true
+    show_name: true
+    camera_view: auto
+    entity: camera.korbchen
+  - type: picture-entity
+    show_state: true
+    show_name: true
+    camera_view: auto
+    entity: camera.serverschrank
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.flurcam_indicator_light
+        layout: vertical
+      - type: custom:mushroom-light-card
+        entity: light.korbchen_indicator_light
+        layout: vertical

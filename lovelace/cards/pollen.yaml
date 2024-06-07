@@ -1,0 +1,141 @@
+---
+type: custom:bar-card
+title: Pollen
+entities:
+  - entity: sensor.pollenflug_ambrosia_112
+    name: Ambrosia
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_beifuss_112
+    name: Beifuß
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_birke_112
+    name: Birke
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_erle_112
+    name: Erle
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_esche_112
+    name: Esche
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_graeser_112
+    name: Gräser
+    icon: mdi:grass
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_hasel_112
+    name: Haselnuss
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red
+  - entity: sensor.pollenflug_roggen_112
+    name: Roggen
+    max: 6
+    decimal: 0
+    severity:
+      - from: 0
+        to: 0
+        hide: true
+      - from: 1
+        to: 2
+        color: yellow
+      - from: 3
+        to: 4
+        color: orange
+      - from: 5
+        to: 6
+        color: red

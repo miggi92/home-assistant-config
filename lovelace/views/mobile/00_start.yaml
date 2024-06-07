@@ -1,0 +1,363 @@
+---
+title: Home
+path: start
+icon: mdi:home
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: alarm-control-panel
+        entity: alarm_control_panel.home_alarm
+      - type: weather
+        entity: weather.home
+        show_conditions: true
+        show_temperature: true
+      - type: entity
+        icon: mdi:lightbulb
+        icon_color: yellow
+        entity: sensor.count_lights_on
+        tap_action:
+          action: navigate
+          navigation_path: lights
+      - type: conditional
+        conditions:
+          - entity: group.motion_sensors
+            state_not: "off"
+            condition: state
+        chip:
+          type: entity
+          entity: group.motion_sensors
+      - type: conditional
+        conditions:
+          - entity: sensor.grocy_tasks
+            state_not: "0"
+            condition: state
+        chip:
+          type: entity
+          icon: mdi:format-list-checks
+          entity: sensor.grocy_tasks
+          tap_action:
+            action: fire-dom-event
+            browser_mod:
+              service: browser_mod.popup
+              data:
+                title: "ToDo Liste"
+                content:
+                  type: vertical-stack
+                  cards:
+                    - type: custom:state-switch
+                      entity: user
+                      states:
+                        Miguel:
+                          type: custom:decluttering-card
+                          template: tasks_card_template
+                          variables:
+                            - user_id: 2
+                        Silke:
+                          type: custom:decluttering-card
+                          template: tasks_card_template
+                          variables:
+                            - user_id: 3
+      - type: conditional
+        conditions:
+          - entity: media_player.spotify_miguel
+            state_not: "idle"
+        chip:
+          type: entity
+          entity: media_player.spotify_miguel
+          icon_color: green
+          tap_action:
+            action: fire-dom-event
+            browser_mod:
+              service: browser_mod.popup
+              data:
+                title: "Spotify"
+                content:
+                  type: vertical-stack
+                  cards:
+                    - type: custom:mushroom-title-card
+                      title: Aktuelle Wiedergabe
+                      subtitle: |-
+                        Aktuelles Gerät: {{ state_attr("media_player.spotify_miguel", "source")}}
+                    - type: custom:mini-media-player
+                      entity: media_player.spotify_miguel
+                      artwork: full-cover
+                      hide:
+                        power: true
+                        volume: true
+                        controls: true
+                        source: true
+                        progress: true
+  - type: conditional
+    conditions:
+      - entity: sensor.dwd_home_current_warning_level
+        state_not: "0"
+    card:
+      type: custom:mushroom-template-card
+      icon: mdi:cloud-alert
+      icon_color: red
+      primary: Es gibt aktuelle Wetterwarnungen
+      secondary: |-
+        Anzahl der Warnungen: {{ state_attr("sensor.dwd_home_current_warning_level", "warning_count") + state_attr("sensor.dwd_home_current_advanced_warning_level", "warning_count")}}
+      card_mod:
+        style:
+          mushroom-shape-icon$: |
+            ha-icon {
+              --icon-animation: surprise 3s ease infinite;
+            }
+            @keyframes surprise {
+              0%, 20%, 100% { transform: translateY(0); }
+              2.5% { transform: translateY(-6px) rotate(-14deg); }
+              5% { transform: translateY(-6px) rotate(11deg); }
+              7.5% { transform: translateY(-6px) rotate(-8deg); }
+              10% { transform: translateY(-6px) rotate(5deg); }
+              12.5% { transform: translateY(0); }
+              15% { transform: translateY(-3px) }
+            }
+      tap_action:
+        action: navigate
+        navigation_path: dwd
+  - type: custom:mushroom-template-card
+    primary: |-
+      {% set time = now().hour %}
+      {% if (time >= 18) %}
+        Guten Abend, {{user}}!
+      {% elif (time >= 12) %}
+        Guten Tag, {{user}}!
+      {% elif (time >= 5) %}
+        Guten Morgen, {{user}}!
+      {% else %}
+        Hello, {{user}}!
+      {% endif %}
+
+  - !include ../../cards/residents.yaml
+  - type: conditional
+    conditions:
+      - entity: calendar.geburtstage
+        state: "on"
+    card:
+      type: custom:mushroom-template-card
+      icon: mdi:gift
+      icon_color: deep-orange
+      primary: |-
+        {{ state_attr("calendar.geburtstage","message") }}
+      card_mod:
+        style:
+          mushroom-shape-icon$: |
+            ha-icon {
+              --icon-animation: surprise 3s ease infinite;
+            }
+            @keyframes surprise {
+              0%, 20%, 100% { transform: translateY(0); }
+              2.5% { transform: translateY(-6px) rotate(-14deg); }
+              5% { transform: translateY(-6px) rotate(11deg); }
+              7.5% { transform: translateY(-6px) rotate(-8deg); }
+              10% { transform: translateY(-6px) rotate(5deg); }
+              12.5% { transform: translateY(0); }
+              15% { transform: translateY(-3px) }
+            }
+
+  - type: custom:mushroom-title-card
+    title: Navigation
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Haus
+          - icon: mdi:home
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Lichter
+          - nav_path: lights
+          - icon: mdi:lightbulb
+          - icon_color: amber
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Kameras
+          - nav_path: cams
+          - icon: mdi:cctv
+          - icon_color: green
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Verbrauch
+          - nav_path: consumption
+          - icon: mdi:transmission-tower-export
+          - icon_color: yellow
+
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Einkaufen
+          - nav_path: shopping
+          - icon: mdi:cart
+          - icon_color: cyan
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Kalender
+          - nav_path: calendar
+          - icon: mdi:calendar
+          - icon_color: orange
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Einstellungen
+          - nav_path: settings
+          - icon: mdi:cog
+          - icon_color: purple
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Arbeit
+          - nav_path: work
+          - icon: mdi:briefcase
+          - icon_color: green
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Auto
+          - nav_path: car
+          - icon: mdi:car
+          - icon_color: orange
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Multimedia
+          - nav_path: multimedia
+          - icon: mdi:multimedia
+          - icon_color: purple
+
+  - type: custom:state-switch
+    entity: user
+    states:
+      Miguel:
+        type: horizontal-stack
+        cards:
+          - type: custom:decluttering-card
+            template: navigation_card_template
+            variables:
+              - title: Netzwerk
+              - nav_path: network
+              - icon: mdi:network
+              - icon_color: red
+          - type: custom:decluttering-card
+            template: navigation_card_template
+            variables:
+              - title: System
+              - nav_path: system
+              - icon: mdi:cellphone-arrow-down
+              - icon_color: teal
+
+  - type: custom:mushroom-title-card
+    title: Räume
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: template
+        content: "{{states(entity) }} °C"
+        icon: mdi:home-thermometer
+        entity: sensor.wohnungstemperatur
+        icon_color: |-
+          {% set temp = states(entity) %}
+          {% if temp >= '22' %}
+            red
+          {% elif temp < '17' %}
+            blue
+          {% else %}
+            green
+          {% endif %}
+        tap_action:
+          action: more-info
+      - type: entity
+        entity: sensor.wohnungsfeuchtigkeit
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Wohnzimmer
+          - icon: mdi:sofa
+          - nav_path: living
+          - light: light.wohnzimmer
+          - temperature: sensor.wohnzimmertemperatur
+          - motion: group.living_motion_sensors
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Schlafzimmer
+          - icon: mdi:bed-double
+          - nav_path: sleep
+          - light: light.schlafzimmerlicht
+          - temperature: sensor.schlafzimmertemperatur
+          - motion: group.sleep_motion_sensors
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Flur
+          - icon: mdi:coat-rack
+          - nav_path: hallway
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Küche
+          - icon: mdi:countertop
+          - nav_path: kitchen
+          - temperature: sensor.kuchentempsensor_temperature
+          - motion: binary_sensor.alexa_presence_kitchen
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Bad
+          - icon: mdi:shower
+          - nav_path: bath
+          - temperature: sensor.badezimmertempsensor_temperatur
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Abstellkammer
+          - icon: mdi:library-shelves
+          - nav_path: storage
+          - light: light.abstellkammerlicht
+          - temperature: sensor.abstellkammertempsensor_temperatur
+          - motion: binary_sensor.abstellkammertursensor_contact
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Arbeitszimmer
+          - icon: mdi:chair-rolling
+          - nav_path: office
+          - light: light.buro
+          - temperature: sensor.kinderzimmertempsensor_temperatur
+          - motion: binary_sensor.kinderzimmerbewegungssensor_bewegung
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Kinderzimmer
+          - icon: mdi:teddy-bear
+          - nav_path: child
+          - light: light.kinderzimmerlicht
+          - temperature: sensor.kinderzimmertempsensor_temperatur
+          - motion: binary_sensor.kinderzimmerbewegungssensor_bewegung
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: room_card_template
+        variables:
+          - title: Außen
+          - icon: mdi:tree
+          - nav_path: outdoor
+          - temperature: sensor.daikinap90134_outside_temperature

@@ -1,0 +1,5 @@
+---
+# Turn on/off audible notifications
+audible_notifications:
+  name: Sound Benachrichtigungen
+  icon: mdi:speaker-wireless

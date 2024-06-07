@@ -1,0 +1,13 @@
+---
+# Telegram integration
+#
+telegram_bot:
+  - platform: polling
+    api_key: !secret telegram_api_key
+    allowed_chat_ids:
+      # Miguel
+      - !secret telegram_miguel
+      # Silke
+      - !secret telegram_silke
+      # home Gruppe
+      - !secret telegram_home_group

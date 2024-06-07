@@ -1,0 +1,18 @@
+---
+# Shopping offers
+# https://mobile-api.rewe.de/api/v3/all-offers?marketCode=XXXX
+
+platform: rest
+resource_template: !secret rewe_offer_url
+name: "Rewe Offer API"
+json_attributes:
+  - untilDate
+  - handout
+  - hasOnlineOffers
+  - categories
+value_template: "OK"
+scan_interval: 43200
+verify_ssl: false
+headers:
+  User-Agent: Home Assistant
+  Content-Type: application/json

@@ -1,0 +1,6 @@
+---
+# Max time Pihole can be disabled
+climate_auto_off:
+  name: Klimaanlage 1h auto off
+  duration: "01:00:00"
+  icon: mdi:home-thermometer

@@ -1,0 +1,44 @@
+---
+# Check on maja when she's alone home
+alias: majaCheckHome
+id: abc1c369-36b2-4084-9fc4-ce72e133ce5e
+description: "Check on maja when she's alone"
+trigger:
+  - platform: state
+    entity_id:
+      - person.silke
+      - person.miguel
+condition:
+  - condition: state
+    entity_id: input_boolean.maja_home
+    state: "on"
+action:
+  - if:
+      - condition: state
+        entity_id: group.parents
+        state: "home"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: timer.maja_check
+            state: "idle"
+    then:
+      - service: timer.cancel
+        data: {}
+        target:
+          entity_id: timer.maja_check
+  - if:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: group.parents
+            state: "home"
+      - condition: state
+        entity_id: timer.maja_check
+        state: "idle"
+    then:
+      - service: timer.start
+        data: {}
+        target:
+          entity_id: timer.maja_check
+mode: single

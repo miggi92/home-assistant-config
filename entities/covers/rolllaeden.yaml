@@ -1,0 +1,8 @@
+---
+# Rollläden
+name: Rolllaeden
+platform: group
+entities:
+  - cover.rolladen_kinderzimmer
+  - cover.rollladen_schlafzimmer
+  - cover.wohnzimmerrolladen

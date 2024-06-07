@@ -1,0 +1,153 @@
+---
+# Person template card
+person_card_template:
+  default:
+    - title: Person Info
+    - id: miguel
+    - watch: default
+  card:
+    type: custom:mushroom-template-card
+    entity_id: "[[entity]]"
+    icon: mdi:account
+    layout: vertical
+    primary: |-
+      {{ state_attr("[[entity]]","friendly_name") }}
+    secondary: |-
+      {% set state =  states("[[entity]]")  | slugify %}
+      {% set roomState =  states("[[beacon]]") | slugify %}
+      {% if state == "home" %}
+        {% if roomState != "unknown" and roomState != "not_home" %}
+        {{ roomState }}
+        {% else %}
+        Zu Hause
+        {% endif %}
+      {% elif state == "work_silke" or state == "work_miguel" %}
+        Arbeiten
+      {% elif state == "tsb_handball" %}
+        Beim Handball
+      {% elif state == "not_home" %}
+        Abwesend
+      {% else %}
+        {{ states("[[entity]]") }}
+      {% endif %}
+    picture: |-
+      {% set driving = states("binary_sensor.[[phone]]_android_auto") %}
+      {% set state =  states("[[entity]]") %}
+      {% if driving == "on" %}
+        /local/images/persons/{{"[[id]]"}}/auto.png
+      {% elif state == "work_silke" or state == "work_miguel" %}
+        /local/images/persons/{{"[[id]]"}}/work.png
+      {% elif state == "tsb_handball" %}
+        /local/images/persons/{{"[[id]]"}}/sport.png
+      {% elif state == "rewe" or "dm" in state  or "getranke" in state %}
+        /local/images/persons/{{"[[id]]"}}/shopping.png
+      {% else %}
+        /local/images/persons/{{"[[id]]"}}.png
+      {% endif %}
+    badge_icon: |-
+      {% set state = states("[[entity]]") | slugify %}
+      {% set zoneIcon = state_attr("zone." + state, "icon") %}
+      {% if state == "home" %}
+        mdi:home
+      {% elif state == "not_home" %}
+        mdi:run
+      {% else %}
+        {{ zoneIcon }}
+      {% endif %}
+    badge_color: |-
+      {% set state = states("[[entity]]") | slugify %}
+      {% set zoneIcon = state_attr("zone." + state, "icon") %}
+      {% if state == "home" %}
+        green
+      {% elif state == "not_home" %}
+        red
+      {% else %}
+        grey
+      {% endif %}
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: "[[title]]"
+          content:
+            type: custom:vertical-stack-in-card
+            cards:
+              - type: entities
+                entities:
+                  - entity: "[[entity]]"
+                    secondary_info: last-updated
+                show_header_toggle: false
+                state_color: false
+              - type: history-graph
+                entities:
+                  - entity: "[[entity]]"
+                hours_to_show: 24
+                refresh_interval: 0
+              - type: conditional
+                conditions:
+                  - entity: "[[entity]]"
+                    state: home
+                  - entity: "input_boolean.[[id]]_has_swatch"
+                    state: "on"
+                card:
+                  type: glance
+                  entities:
+                    - entity: "[[eta_work]]"
+                      name: ETA Work
+                    - entity: "sensor.[[phone]]_geocoded_location"
+                      name: Location
+                    - entity: "sensor.[[phone]]_battery_level"
+                      name: Battery
+                    - entity: "sensor.[[phone]]_wifi_connection"
+                      name: WiFi
+                  show_name: true
+                  show_icon: true
+                  show_state: true
+              - type: conditional
+                conditions:
+                  - entity: "[[entity]]"
+                    state_not: home
+                  - entity: "input_boolean.[[id]]_has_swatch"
+                    state: "on"
+                card:
+                  type: glance
+                  entities:
+                    - entity: "[[eta_home]]"
+                      name: ETA Home
+                    - entity: "sensor.[[phone]]_geocoded_location"
+                      name: Location
+                    - entity: "sensor.[[phone]]_battery_level"
+                      name: Battery
+                    - entity: "sensor.[[phone]]_wifi_connection"
+                      name: WiFi
+                  show_name: true
+                  show_icon: true
+                  show_state: true
+              - type: conditional
+                conditions:
+                  - entity: "input_boolean.[[id]]_has_swatch"
+                    state: "on"
+                card:
+                  type: vertical-stack
+                  cards:
+                    - type: custom:mushroom-title-card
+                      subtitle: Smartwatch
+                    - type: glance
+                      entities:
+                        - entity: "sensor.[[watch]]_heart_rate"
+                          name: BPM
+                        - entity: "sensor.[[watch]]_daily_steps"
+                          name: Steps
+                        - entity: "sensor.[[watch]]_battery_level"
+                          name: Battery
+                      show_name: true
+                      show_icon: true
+                      show_state: true
+              - type: map
+                entities:
+                  - entity: "[[entity]]"
+                  - entity: zone.home
+                  - entity: "[[work_zone]]"
+                hours_to_show: 0
+                aspect_ratio: "16:12"

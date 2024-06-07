@@ -1,0 +1,58 @@
+---
+# Pollen card
+pollen_card_template:
+  default:
+    - title: Pollen
+    - user_id: 1
+  card:
+    type: conditional
+    conditions:
+      - entity: sensor.pollen
+        state_not: 0
+    card:
+      type: vertical-stack
+      cards:
+        - type: custom:mushroom-title-card
+          subtitle: Pollen
+        - type: vertical-stack
+          cards:
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_ambrosia_112
+                - name: Ambrosia
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_beifuss_112
+                - name: Beifuß
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_birke_112
+                - name: Birke
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_erle_112
+                - name: Erle
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_esche_112
+                - name: Esche
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_graeser_112
+                - name: Gräser
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_hasel_112
+                - name: Hasel
+            - type: custom:decluttering-card
+              template: pollen_one_card_template
+              variables:
+                - entity_id: sensor.pollenflug_roggen_112
+                - name: Roggen

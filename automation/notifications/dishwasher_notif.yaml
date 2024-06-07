@@ -1,0 +1,22 @@
+---
+# Spülmaschinenbenachrichtigung
+alias: DishwasherNotif
+id: 58eb700c-0b2b-4a8b-9cfe-80a1a224f32a
+description: "Benachrichtigt wenn die Spülmaschine fertig ist"
+trigger:
+  - platform: state
+    entity_id:
+      - input_boolean.dishwasher_ready
+    to: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🍴🫧 Spülmaschine 🍴🫧
+      value1: "Spülmaschine ist fertig und kann ausgeräumt werden."
+      who: "home"
+      tag_id: "information"
+      group: "Dishes"
+  - service: input_boolean.turn_off
+    entity_id: input_boolean.dishwasher_ready
+mode: single

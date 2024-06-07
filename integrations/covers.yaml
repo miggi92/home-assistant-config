@@ -1,0 +1,4 @@
+---
+# Covers integration
+# https://www.home-assistant.io/integrations/cover/
+cover: !include_dir_list ../entities/covers

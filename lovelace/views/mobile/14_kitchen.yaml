@@ -1,0 +1,66 @@
+---
+title: Küche
+path: kitchen
+icon: mdi:countertop
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: entity
+        entity: input_boolean.dishwasher_ready
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.alexa_presence_kitchen
+            state_not: "off"
+            condition: state
+        chip:
+          type: entity
+          entity: binary_sensor.alexa_presence_kitchen
+  - type: horizontal-stack
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Temperatur
+        type: sensor
+        entity: sensor.kuchentempsensor_temperatur
+        detail: 1
+      - hours_to_show: 24
+        graph: line
+        name: Luftfeuchtigkeit
+        type: sensor
+        entity: sensor.kuchentempsensor_luftfeuchtigkeit
+        detail: 1
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kuche
+  - type: custom:decluttering-card
+    template: amazon_echo_template
+    variables:
+      - echo_id: echo_kuche
+      - title: Echo Küche
+  - type: custom:mushroom-title-card
+    subtitle: Lichter
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.thekenlicht
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-title-card
+    subtitle: Geräte
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: device_tracker.thermomix_eeafb9
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: device_tracker.delonghi
+        layout: vertical
+  - type: custom:decluttering-card
+    template: area_battery_card_template
+    variables:
+      - area: Küche

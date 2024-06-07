@@ -1,0 +1,22 @@
+---
+# Parents Away
+alias: parentsAway
+id: 03a20f50-86fa-4a6f-915d-325ae9f3b36f
+description: "Telegram msg when parents are away"
+trigger:
+  - platform: state
+    entity_id: group.parents
+    to: "not_home"
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: "Eltern abwesend"
+      value1: "Ich habe erkannt, dass beide Elternteile nicht mehr Zuhause sind.\nIst Maja noch daheim?"
+      inline_keyboard:
+        - "Ja:/maja_home, Nein:/maja_gone"
+mode: single

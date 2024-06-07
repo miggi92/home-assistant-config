@@ -1,0 +1,5 @@
+---
+# Turn on/off text notifications
+text_notifications:
+  name: Text Benachrichtigungen
+  icon: mdi:message-badge

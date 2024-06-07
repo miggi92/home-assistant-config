@@ -1,0 +1,93 @@
+---
+# Kalender
+title: Kalender
+path: calendar
+icon: mdi:calendar
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-title-card
+    title: Aktuelle Termine
+  - type: custom:decluttering-card
+    template: calendar_event_template
+    variables:
+      - entity: calendar.miguel_gebhardt_googlemail_com
+      - title: Miguel's Termine
+  - type: custom:decluttering-card
+    template: calendar_event_template
+    variables:
+      - entity: calendar.jhfh_ma_2022_2023
+      - title: JHFH mJA
+  - type: custom:decluttering-card
+    template: calendar_event_template
+    variables:
+      - entity: calendar.handball_herren
+      - title: TSB 1b
+  - type: custom:decluttering-card
+    template: calendar_event_template
+    variables:
+      - entity: calendar.handball_damen
+      - title: Handball Damen
+  - type: "custom:atomic-calendar-revive"
+    name: Kalender nächste 7 Tage (Max. 10 Einträge)
+    maxEventCount: 10
+    maxDaysToShow: 7
+    disableEventLink: true
+    disableCalLocationLink: true
+    disableCalLink: true
+    showDescription: true
+    showDate: true
+    showLocation: true
+    hideFinishedEvents: true
+    showEventIcon: true
+    showWeekNumber: true
+    entities:
+      - entity: calendar.miguel_gebhardt_googlemail_com
+        icon: mdi:human-male
+      - entity: calendar.familie
+        color: yellow
+        icon: mdi:human-male-female-child
+      - entity: calendar.geburtstage
+        color: orange
+        icon: mdi:cake
+        maxDaysToShow: 5
+      - entity: calendar.jhfh_ma_2022_2023
+        color: lightgreen
+        icon: mdi:handball
+      - entity: calendar.handball_herren
+        color: lightblue
+        icon: mdi:handball
+  - type: "custom:atomic-calendar-revive"
+    name: Kalender
+    defaultMode: calendar
+    disableEventLink: true
+    disableCalLocationLink: true
+    disableCalEventLink: true
+    calShowDescription: true
+    showDate: true
+    showLocation: true
+    showEventIcon: true
+    calEventTime: true
+    showMultiDay: true
+    showMultiDayEventParts: true
+    showWeekDay: true
+    disableCalLink: true
+    entities:
+      - entity: calendar.miguel_gebhardt_googlemail_com
+        icon: mdi:human-male
+      - entity: calendar.familie
+        color: yellow
+        icon: mdi:human-male-female-child
+      - entity: calendar.geburtstage
+        color: orange
+        icon: mdi:cake
+      - entity: calendar.handball_damen
+        color: yellow
+        icon: mdi:handball
+      - entity: calendar.jhfh_ma_2022_2023
+        color: lightgreen
+        icon: mdi:handball
+      - entity: calendar.handball_herren
+        color: lightblue
+        icon: mdi:handball

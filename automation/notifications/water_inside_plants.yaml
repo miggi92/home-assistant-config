@@ -1,0 +1,29 @@
+---
+# Notiy if outside plants need watering
+alias: WateringNotifIndoor
+id: 794c14fa-fac7-4d5c-85a0-b6551ad75507
+description: "Benachrichtigt, ob die Pflanzen drinnen gegossen werden müssen."
+trigger:
+  - platform: time
+    at: input_datetime.watering_time
+condition:
+  - condition: state
+    entity_id: sensor.weekday
+    state: "Sunday"
+  # im Urlaub brauchen wir keine Info
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: alarm_control_panel.home_alarm
+        state: armed_vacation
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🌊🌿 Gießen 🌊🌿
+      value1: |
+        Pflanzen in der Wohnung müssen heute gegossen werden!
+      who: "home"
+      tag_id: "information"
+      group: "Pflanzen"
+mode: single

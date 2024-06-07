@@ -1,0 +1,25 @@
+{
+  "title": "Philips Luchtreiniger",
+  "config": {
+    "abort": {
+      "already_configured": "Apparaat al geconfigureerd",
+      "model_unsupported": "Model niet ondersteund",
+      "timeout": "Time-out, kan geen verbinding maken met het apparaat"
+    },
+    "step": {
+      "user": {
+        "title": "Nieuwe Philips luchtreiniger",
+        "data": {
+          "host": "Hostnaam of IP-adres van apparaat"
+        }
+      },
+      "confirm": {
+        "description": "Wil je {model} {name} instellen?"
+      }
+    },
+    "error": {
+      "host": "Apparaatadres is vereist",
+      "connect": "Kan geen verbinding maken met het apparaat"
+    }
+  }
+}

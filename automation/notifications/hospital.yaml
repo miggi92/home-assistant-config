@@ -1,0 +1,39 @@
+---
+# Notification when someone is in the hospital
+alias: HospitalNotif
+id: daecbf74-77b8-4a46-b70c-0b4e38ee73c6
+description: "Benachrichtigt wenn jemand im Krankenhaus ist."
+trigger:
+  - platform: state
+    entity_id: zone.slk_klinik
+    from: "0"
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+  - platform: state
+    entity_id: zone.grk_klinik_sinsheim
+    from: "0"
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🚑🏥 Krankenhaus 🏥🚑
+      value1: >-
+        {% set persons = state_attr(trigger.entity_id, 'persons') %}
+        Achtung!
+        {% for i in persons %}
+        - {{ state_attr(i,'friendly_name') }}
+        {% endfor %}
+        ist/sind seit 5min in folgendem Krankenhaus:
+        {{ trigger.to_state.attributes.friendly_name }}.
+      who: "home"
+      tag_id: "alert"
+      group: "Notfall"
+mode: single

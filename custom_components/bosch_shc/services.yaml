@@ -1,0 +1,55 @@
+smokedetector_check:
+  fields:
+    entity_id:
+      example: "binary_sensor.smokedetector_living_room"
+      required: true
+      selector:
+        text:
+
+trigger_scenario:
+  fields:
+    title:
+      example: "shc012345"
+      required: false
+      selector:
+        text:
+    name:
+      example: "Scenario Name"
+      required: true
+      selector:
+        text:
+
+trigger_rawscan:
+  fields:
+    title:
+      example: "shc012345"
+      required: false
+      selector:
+        text:
+    command:
+      example: "devices"
+      required: true
+      selector:
+        text:
+    device_id:
+      example: "hdm:ZigBee:000d6"
+      selector:
+        text:
+    service_id:
+      example: "BatteryLevel"
+      selector:
+        text:
+
+
+smokedetector_alarmstate:
+  fields:
+    entity_id:
+      example: "binary_sensor.smokedetector_living_room"
+      required: true
+      selector:
+        text:
+    command:
+      example: "CUSTOM_COMMAND"
+      required: true
+      selector:
+        text:

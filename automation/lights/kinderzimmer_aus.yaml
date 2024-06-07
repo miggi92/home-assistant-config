@@ -1,0 +1,17 @@
+---
+# Kinderzimmer aus wenn keine Bewegung
+alias: "Kinderzimmerlicht ohne Bewegung "
+id: ab25af73-cf63-4538-9b78-a7f01e100066
+description: "Kinderzimmer aus wenn keine Bewegung"
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.children_light_on
+condition: []
+action:
+  - service: light.turn_off
+    data: {}
+    target:
+      entity_id: light.kinderzimmerlicht
+mode: single

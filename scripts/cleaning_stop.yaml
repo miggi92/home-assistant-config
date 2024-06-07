@@ -1,0 +1,17 @@
+---
+# Cleaning script
+cleaning_stop:
+  sequence:
+    - service: vacuum.stop
+      data: {}
+      target:
+        entity_id: vacuum.roomba
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 30
+        milliseconds: 0
+    - service: vacuum.return_to_base
+      data: {}
+      target:
+        entity_id: vacuum.roomba

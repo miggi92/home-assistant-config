@@ -1,0 +1,38 @@
+---
+# Network card
+network_card_template:
+  defaults:
+    title: "Networkdevices"
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:mushroom-title-card
+        subtitle: "[[title]]"
+      - type: horizontal-stack
+        cards:
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_1]]"
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_2]]"
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_3]]"
+      - type: horizontal-stack
+        cards:
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_4]]"
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_5]]"
+          - type: custom:decluttering-card
+            template: network_card_single_entity_template
+            variables:
+              - entity: "[[entity_6]]"

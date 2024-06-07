@@ -1,0 +1,26 @@
+---
+# Send fuel prices
+# group.all_fuel_sensors
+alias: benzinCommand
+id: 1f17b5a2-16bd-4b6c-aab0-fce9174702d8
+description: "Antwortet auf den /benzin Befehl"
+trigger:
+  - platform: event
+    event_type: telegram_command
+    event_data:
+      command: "/benzin"
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        ⛽ Benzinpreise ⛽
+      value1: >-
+        {% for fuel_station in states.group.all_fuel_sensors.attributes.entity_id %}
+
+        {{ state_attr(fuel_station, 'friendly_name') }}: {{ states(fuel_station) }}{{ state_attr(fuel_station, 'unit_of_measurement') }}
+        {% endfor %}
+      who: "home"
+      tag_id: "information"
+      group: "Outdoor"
+mode: single

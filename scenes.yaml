@@ -1,0 +1,65 @@
+- id: "1675110557366"
+  name: "Schlafzimmer gemütlich "
+  entities:
+    light.bett:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6535
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+        - blink
+        - breathe
+        - okay
+        - channel_change
+        - finish_effect
+        - stop_effect
+      supported_color_modes:
+        - color_temp
+        - xy
+      color_temp_startup: 454
+      linkquality: 124
+      power_on_behavior: "on"
+      update:
+        installed_version: 16782336
+        latest_version: 16782336
+        state: idle
+      update_available:
+      friendly_name: Bett
+      supported_features: 44
+      color_mode: color_temp
+      brightness: 102
+      color_temp_kelvin: 2202
+      color_temp: 454
+      hs_color:
+        - 29.79
+        - 84.553
+      rgb_color:
+        - 255
+        - 146
+        - 39
+      xy_color:
+        - 0.579
+        - 0.388
+      state: "on"
+    light.schlafzimmerlicht:
+      effect_list:
+        - blink
+        - breathe
+        - okay
+        - channel_change
+        - finish_effect
+        - stop_effect
+      supported_color_modes:
+        - brightness
+      linkquality: 136
+      power_on_behavior: "on"
+      update:
+        installed_version: 16784918
+        latest_version: 16784918
+        state: idle
+      update_available:
+      friendly_name: Schlafzimmerlicht
+      supported_features: 44
+      state: "off"
+  icon: mdi:bed-king
+  metadata: {}

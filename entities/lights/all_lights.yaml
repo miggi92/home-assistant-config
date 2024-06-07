@@ -1,0 +1,12 @@
+---
+# Lichter
+platform: group
+name: Lichter
+entities:
+  - light.bett
+  - light.schreibtischlicht
+  - light.schlafzimmerlicht
+  - light.kinderzimmerlicht
+  - light.thekenlicht
+  - light.tv_licht
+  - light.esstischlicht

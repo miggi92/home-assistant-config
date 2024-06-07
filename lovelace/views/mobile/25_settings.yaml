@@ -1,0 +1,100 @@
+---
+title: Einstellungen
+path: settings
+icon: mdi:cog
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-title-card
+    subtitle: Benachrichtigungen
+  - type: horizontal-stack
+    cards:
+      - entity: input_boolean.audible_notifications
+        type: custom:mushroom-entity-card
+        name: Sound
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.text_notifications
+        type: custom:mushroom-entity-card
+        name: Text
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.presence_light
+        type: custom:mushroom-entity-card
+        name: Licht
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: custom:mushroom-title-card
+    subtitle: Automatisierungen
+  - type: horizontal-stack
+    cards:
+      - entity: input_boolean.lueften_aktiv
+        type: custom:mushroom-entity-card
+        name: Lüften
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.sonnen_wegblenden_schlafen_aktiv
+        type: custom:mushroom-entity-card
+        name: Sonnenaufgang
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.sonnen_schutz_aktiv
+        type: custom:mushroom-entity-card
+        name: Sonnenschutz
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: horizontal-stack
+    cards:
+      - entity: input_boolean.wecker_aktiv
+        type: custom:mushroom-entity-card
+        name: Aufstehen/Wecker
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.automatic_cleaning
+        type: custom:mushroom-entity-card
+        layout: vertical
+        name: Saugroboter
+        tap_action:
+          action: toggle
+      - entity: input_datetime.watering_time
+        type: custom:mushroom-entity-card
+        layout: vertical
+        tap_action:
+          action: more-info
+  - type: horizontal-stack
+    cards:
+      - entity: input_select.milo_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical
+      - entity: input_select.maja_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical
+  - type: custom:mushroom-title-card
+    subtitle: Home
+  - type: horizontal-stack
+    cards:
+      - entity: input_datetime.chores_notif_time
+        type: custom:mushroom-entity-card
+        layout: vertical
+        tap_action:
+          action: more-info
+      - entity: input_number.strompreis
+        type: custom:mushroom-entity-card
+        layout: vertical
+  - type: horizontal-stack
+    cards:
+      - type: button
+        icon: mdi:server
+        tap_action:
+          action: navigate
+          navigation_path: /browser-mod

@@ -1,0 +1,26 @@
+---
+# Disable night mode when covers go up
+# input_boolean.night_mode
+alias: RollladenOeffnet
+id: 1bd70167-a552-4a7e-93de-2cfd0a823bc6
+description: "Wenn morgens der Rollladen hochgeht"
+trigger:
+  - platform: device
+    device_id: 2fc7242cfe1baeaaef8e393c8890e2cf
+    domain: cover
+    entity_id: cb2c427bea07f6795aa22d8414ed7dd4
+    type: opening
+condition:
+  - condition: state
+    entity_id: input_boolean.night_mode
+    state: "on"
+  - condition: time
+    after: "06:00:00"
+    before: "12:00:00"
+
+action:
+  - service: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.night_mode
+    data: {}
+mode: single

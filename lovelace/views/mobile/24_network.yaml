@@ -1,0 +1,29 @@
+---
+title: Netzwerk
+path: network
+icon: mdi:network
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:decluttering-card
+    template: network_card_template
+    variables:
+      - title: Drucker & Festplatten
+      - entity_1: device_tracker.hp0a870d
+      - entity_2: device_tracker.nas
+  - type: custom:decluttering-card
+    template: network_card_template
+    variables:
+      - title: Smart Home
+      - entity_1: device_tracker.boschsh
+      - entity_2: device_tracker.huebridge
+  - type: custom:decluttering-card
+    template: network_card_template
+    variables:
+      - title: Alexas
+      - entity_1: device_tracker.echobad
+      - entity_2: device_tracker.echobuero
+      - entity_3: device_tracker.echokueche
+      - entity_4: device_tracker.echoschlafzimmer
+      - entity_5: device_tracker.echoshow

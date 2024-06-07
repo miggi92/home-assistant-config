@@ -1,0 +1,5 @@
+---
+# Milo Smartwatch
+milo_has_swatch:
+  name: Milo has Smartwatch?
+  icon: mdi:watch

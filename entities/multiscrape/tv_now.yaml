@@ -1,0 +1,29 @@
+---
+# Now in TV
+resource: https://www.tvspielfilm.de/tv-programm/sendungen/jetzt.html
+scan_interval: 3600
+sensor:
+  - unique_id: tv_prog_now
+    name: "TV Programm jetzt"
+    select: ".copyright p"
+    icon: mdi:television
+    attributes:
+      - name: "ARD"
+        select: ".info-table tr:nth-child(2) td.col-3 > span strong"
+      - name: "zdf"
+        select: ".info-table tr:nth-child(3) td.col-3 > span strong"
+      - name: "rtl"
+        select: ".info-table tr:nth-child(4) td.col-3 > span strong"
+      - name: "sat1"
+        select: ".info-table tr:nth-child(5) td.col-3 > span strong"
+      - name: "pro7"
+        select: ".info-table tr:nth-child(6) td.col-3 > span strong"
+      - name: "kabel1"
+        select: ".info-table tr:nth-child(7) td.col-3 > span strong"
+      - name: "rtl2"
+        select: ".info-table tr:nth-child(8) td.col-3 > span strong"
+      - name: "vox"
+        select: ".info-table tr:nth-child(9) td.col-3 > span strong"
+button:
+  - unique_id: tv_prog_now_refresh_button
+    name: "Refresh Live TV Prog"

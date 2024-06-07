@@ -1,0 +1,21 @@
+---
+#  Air quality humidity card
+air_quality_humidity_template:
+  card:
+    type: custom:mushroom-template-card
+    entity_id: "[[entity]]"
+    layout: vertical
+    primary: "{{ state_attr('[[entity]]', 'friendly_name')}}"
+    secondary: "{{states('[[entity]]')}}"
+    icon: "{{ state_attr('[[entity]]', 'icon')}}"
+    icon_color: |-
+      {% set state = states('[[entity]]') %}
+      {% if state == 'unavailable' %}
+        grey
+      {% elif state > '4' %}
+        red
+      {% elif state > '0' %}
+        green
+      {% else %}
+        blue
+      {% endif %}

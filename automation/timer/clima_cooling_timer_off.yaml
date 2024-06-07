@@ -1,0 +1,20 @@
+---
+# climate auto off timer
+alias: climateAutoOffTimer
+id: a0db69d9-ec22-4abb-ab82-01ff9a12f95b
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.climate_auto_off
+  - platform: event
+    event_type: timer.cancelled
+    event_data:
+      entity_id: timer.climate_auto_off
+condition: []
+action:
+  - service: climate.turn_off
+    target:
+      entity_id: climate.daikinap90134
+mode: single

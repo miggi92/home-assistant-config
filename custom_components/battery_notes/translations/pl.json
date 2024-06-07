@@ -1,0 +1,180 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Jeśli potrzebujesz pomocy w konfiguracji, zajrzyj tutaj: https://andrew-codechimp.github.io/HA-Battery-Notes/",
+                "data": {
+                    "association_type": "Association type"
+                },
+                "menu_options": {
+                    "device": "Device (recommended)",
+                    "entity": "Entity"
+                },
+                "title": "Choose your association type"
+            },
+            "device": {
+                "data": {
+                    "device_id": "Urządzenie",
+                    "name": "Nazwa"
+                },
+                "data_description": {
+                    "name": "Pozostawienie pustego pola spowoduje pobranie nazwy z urządzenia źródłowego"
+                }
+            },
+            "entity": {
+                "data": {
+                    "source_entity_id": "Entity",
+                    "name": "Nazwa"
+                },
+                "data_description": {
+                    "name": "Pozostawienie pustego pola spowoduje pobranie nazwy z encji źródłowej"
+                }
+            },
+            "battery": {
+                "data": {
+                    "battery_type": "Typ baterii",
+                    "battery_quantity": "Liczba baterii",
+                    "battery_low_threshold": "Próg niskiego poziomu baterii",
+                    "battery_low_template": "Szablon niskiego poziomu baterii"
+                },
+                "data_description": {
+                    "battery_low_threshold": "0 użyje globalnego progu domyślnego",
+                    "battery_low_template": "Szablon do określenia czy poziom naładowania baterii jest niski, powinien zwrócić wartość true, jeśli poziom jest niski.\nJest wymagany tylko dla niestandardowych raportów poziomu baterii"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "Urządzenie jest już skonfigurowane"
+        },
+        "error": {
+            "unknown": "Wystąpił nieznany błąd."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "description": "Jeśli potrzebujesz pomocy w konfiguracji, zajrzyj tutaj: https://andrew-codechimp.github.io/HA-Battery-Notes/",
+                "data": {
+                    "name": "Nazwa",
+                    "battery_type": "Typ baterii",
+                    "battery_quantity": "Liczba baterii",
+                    "battery_low_threshold": "Próg niskiego poziomu baterii",
+                    "battery_low_template": "Szablon niskiego poziomu baterii"
+                },
+                "data_description": {
+                    "name": "Pozostawienie pustego pola spowoduje pobranie nazwy z urządzenia źródłowego",
+                    "battery_low_threshold": "0 użyje globalnego progu domyślnego",
+                    "battery_low_template": "Szablon do określenia czy poziom naładowania baterii jest niski, powinien zwrócić wartość true, jeśli poziom jest niski.\nJest wymagany tylko dla niestandardowych raportów poziomu baterii"
+                }
+            }
+        },
+        "error": {
+            "unknown": "Wystąpił nieznany błąd."
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "battery_low": {
+                "name": "{device_name}Niski poziom baterii",
+                "state_attributes": {
+                    "battery_low_threshold": {
+                        "name": "Próg niskiego poziomu baterii"
+                    }
+                }
+            }
+        },
+        "button": {
+            "battery_replaced": {
+                "name": "{device_name}Wymiana baterii"
+            }
+        },
+        "sensor": {
+            "battery_plus": {
+                "name": "{device_name}Bateria+",
+                "state_attributes": {
+                    "battery_type": {
+                        "name": "Typ baterii"
+                    },
+                    "battery_quantity": {
+                        "name": "Liczba baterii"
+                    },
+                    "battery_type_and_quantity": {
+                        "name": "Typ i ilość baterii"
+                    },
+                    "battery_last_replaced": {
+                        "name": "Ostatnia wymiana baterii"
+                    },
+                    "battery_low": {
+                        "name": "Niski poziom baterii"
+                    },
+                    "battery_low_threshold": {
+                        "name": "Próg niskiego poziomu baterii"
+                    },
+                    "battery_last_reported": {
+                        "name": "Ostatni raport dotyczący baterii"
+                    },
+                    "battery_last_reported_level": {
+                        "name": "Ostatni zgłoszony poziom baterii"
+                    },
+                    "source_entity_id": {
+                        "name": "Source Entity Id"
+                    },
+                    "device_id": {
+                        "name": "ID Urządzenia"
+                    },
+                    "device_name": {
+                        "name": "Nazwa urządzenia"
+                    }
+                }
+            },
+            "battery_type": {
+                "name": "{device_name}Typ baterii",
+                "state_attributes": {
+                    "battery_type": {
+                        "name": "Typ baterii"
+                    },
+                    "battery_quantity": {
+                        "name": "Liczba baterii"
+                    }
+                }
+            },
+            "battery_last_replaced": {
+                "name": "{device_name}Ostatnia wymiana baterii"
+            }
+        }
+    },
+    "services": {
+        "set_battery_replaced": {
+            "description": "Ustawia ostatnią wymianę baterii.",
+            "fields": {
+                "device_id": {
+                    "description": "Urządzenie w którym wymieniono baterię/baterie.",
+                    "name": "Urządzenie"
+                },
+                "entity_id": {
+                    "description": "Entity that has had its battery replaced.",
+                    "name": "Entity"
+                },
+                "datetime_replaced": {
+                    "description": "Data wymiany.",
+                    "name": "Data"
+                }
+            },
+            "name": "Ustaw wymianę baterii"
+        },
+        "check_battery_last_reported": {
+            "description": "Zgłaszaj zdarzenia dla urządzeń, które nie zgłosiły poziomu naładowania baterii.",
+            "fields": {
+                "days_last_reported": {
+                    "description": "Liczba dni od ostatniego zgłoszenia poziomu baterii przez urządzenie.",
+                    "name": "Dni"
+                }
+            },
+            "name": "Ostatni raport dotyczący sprawdzenia baterii"
+        },
+        "check_battery_low": {
+            "description": "Raise events for devices that have a low battery.",
+            "name": "Check battery low"
+        }
+    }
+}

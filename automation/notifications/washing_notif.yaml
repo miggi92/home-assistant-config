@@ -1,0 +1,34 @@
+---
+# Waschmaschinen Benachrichtigung
+alias: WashingNotif
+id: 85d51d88-d162-4a4b-b1ee-d09e818afb98
+description: "Benachrichtigt wenn die Waschmaschine fertig ist"
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.waschmaschinen_steckdose_leistung
+    below: "1.0"
+    for: "00:01:00"
+  - platform: state
+    entity_id: sensor.waschmaschine_operation_state
+    to: "Finished"
+
+condition:
+  - condition: state
+    entity_id: input_boolean.wash_active
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🧼 Waschmaschine 🧼
+      value1: >-
+        {% set cycleConsumption = ( states("sensor.waschmaschinen_steckdose_zusammenfassung_geliefert") | float -  states("input_number.wash_cycle_consumption") | float ) %}
+        {% set costs = cycleConsumption * states("input_number.strompreis") | float(2) %}
+        Waschmaschine ist fertig. Verbrauch {{ cycleConsumption | float|round(2) }} kWh.
+        Das macht ca. {{ costs | float|round(2) }} €
+      who: "home"
+      tag_id: "information"
+      group: "Laundry"
+  - service: input_boolean.turn_off
+    entity_id: input_boolean.wash_active
+mode: single

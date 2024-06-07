@@ -1,0 +1,55 @@
+---
+# Rollladen schließen, wenn es zu warm ist.
+alias: Rollladen Sonnenschutz
+id: 35a45982-41c2-4a64-b724-aa559b81e9fd
+description: "Schließt Rollladen, wenn es zu warm ist"
+trigger:
+  - above: "23"
+    entity_id: sensor.daikinap90134_outside_temperature
+    platform: numeric_state
+  - above: "23"
+    entity_id: weather.home_accu
+    attribute: temperature
+    platform: numeric_state
+condition:
+  - condition: time
+    after: 09:00:00
+    before: "19:00:00"
+  - condition: state
+    entity_id: input_boolean.sonnen_schutz_aktiv
+    state: "on"
+action:
+  - if:
+      - condition: numeric_state
+        entity_id: cover.rollladen_schlafzimmer
+        attribute: current_position
+        above: "40"
+    then:
+      - service: cover.set_cover_position
+        data:
+          position: 23
+        target:
+          entity_id: cover.rollladen_schlafzimmer
+  - if:
+      - condition: numeric_state
+        entity_id: cover.wohnzimmerrolladen
+        attribute: current_position
+        above: "40"
+    then:
+      - service: cover.set_cover_position
+        data:
+          position: 23
+        target:
+          entity_id: cover.wohnzimmerrolladen
+  - if:
+      - condition: numeric_state
+        entity_id: cover.rolladen_kinderzimmer
+        attribute: current_position
+        above: "40"
+    then:
+      - service: cover.set_cover_position
+        data:
+          position: 23
+        target:
+          entity_id: cover.rolladen_kinderzimmer
+mode: single

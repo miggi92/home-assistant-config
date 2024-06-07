@@ -1,0 +1,25 @@
+---
+# Calendar Event Card
+calendar_event_template:
+  card:
+    type: conditional
+    conditions:
+      - entity: "[[entity]]"
+        state: "on"
+    card:
+      type: vertical-stack
+      cards:
+        - type: custom:mushroom-title-card
+          subtitle: "[[title]]"
+        - type: custom:mushroom-template-card
+          icon: mdi:calendar
+          multiline_secondary: true
+          tap_action: null
+          primary: |-
+            {{ state_attr("[[entity]]","message") }}
+          secondary: |-
+            🕐: {{ state_attr("[[entity]]","start_time") }} - {{ state_attr("[[entity]]","end_time") }}
+            {%if state_attr("[[entity]]","location")  %}
+            🗺️: {{ state_attr("[[entity]]","location") }}
+            {%endif%}
+            {{ state_attr("[[entity]]","description") }}

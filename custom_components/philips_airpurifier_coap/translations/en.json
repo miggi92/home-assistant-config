@@ -1,0 +1,25 @@
+{
+  "title": "Philips AirPurifier",
+  "config": {
+    "abort": {
+      "already_configured": "Device already configured",
+      "model_unsupported": "Model unsupported",
+      "timeout": "Timeout, cannot connect to device"
+    },
+    "step": {
+      "user": {
+        "title": "New Philips AirPurifier",
+        "data": {
+          "host": "Device hostname or IP address"
+        }
+      },
+      "confirm": {
+        "description": "Do you want to setup {model} {name}?"
+      }
+    },
+    "error": {
+      "host": "Device address is required",
+      "connect": "Cannot connect to device"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+---
+device_tracker:
+  - platform: google_maps
+    username: "miguel_gebhardt_googlemail_com"

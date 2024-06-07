@@ -1,0 +1,204 @@
+---
+###############################################################################
+#   @author         :   Jeffrey Stone
+#   @date           :   09/25/2020
+#   @package        :   Halloween
+#   @description    :   Config used to cause a haunting
+#
+#   This package requires that you have some way to determine thats its Halloween
+#   You can do this in any way you want, but two options are:
+#
+#   1. Enable the Google Calendar (https://www.home-assistant.io/integrations/calendar.google/) and setup a Holiday Calendar
+#   2. Use Wolfram Alpha to create a sensor that tells you how many days until Halloween. I have one at the bottom of this package.
+#      @CCOSTAN did a video on setting it up -> https://www.youtube.com/watch?_continue=0time&v=ulBeifhWBxY&feature=emb_logo
+#
+###############################################################################
+# Here is a lovelace card that can be used with this package:
+#  type: entities
+#  entities:
+#   - entity: sensor.halloween_countdown
+#     icon: 'mdi:ghost'
+#   - entity: automation.this_is_halloween
+#   - entity: input_boolean.this_is_halloween
+#   - entity: input_datetime.halloween_show
+#   - entity: input_boolean.haunted_sounds
+#   - entity: input_boolean.scary_sounds
+# title: Halloween
+# show_header_toggle: false
+# state_color: true
+###############################################################################
+
+############################
+# input_booleans (https://www.home-assistant.io/integrations/input_boolean/)
+#
+input_boolean:
+  # Main switch for the effects. This acts as both the on switch and the kill switch
+  this_is_halloween:
+    name: This is Halloween
+  # Enables Haunted Sounds. If on, basic haunted house effect happens
+  haunted_sounds:
+    name: Haunted Sounds
+
+############################
+# input_datetime (https://www.home-assistant.io/integrations/input_datetime/)
+#
+# This is simply so we can schedule the time the effect happens in the UI.
+input_datetime:
+  halloween_show:
+    name: Halloween Show
+    has_date: true
+    has_time: true
+
+################################
+# Media extractor is used for playing youtube audio. For more info ->https://www.home-assistant.io/integrations/media_extractor/
+#
+# If you have this enabled in another package or in your configuration.yaml comment out the line below
+# media_extractor:
+
+############################
+# Automations (https://www.home-assistant.io/integrations/automation/)
+#
+automation:
+  # This is Main Halloween Trigger. The purpose of this is to turn on the show at the time set in the input_datetime.halloween_show.
+  #
+  - id: this_is_halloween
+    alias: This is Halloween
+    initial_state: true
+    trigger:
+      # When the current time matches input_datetime.halloween_show, light this candle
+      - platform: time
+        at: input_datetime.halloween_show
+    action:
+      - service: input_boolean.turn_on
+        entity_id: input_boolean.this_is_halloween
+      - delay: "01:00:00"
+      - service: input_boolean.turn_off
+        entity_id: input_boolean.this_is_halloween
+
+  - id: operation haunted house
+    alias: Operation Haunted House
+    trigger:
+      # If this_is_halloween switch is turned on then we start the show.
+      - platform: state
+        entity_id: input_boolean.this_is_halloween
+        to: "on"
+        from: "off"
+        id: start
+      # If this_is_halloween switch is turned off then we stop the show.
+      - platform: state
+        entity_id: input_boolean.this_is_halloween
+        id: stop
+        from: "on"
+        to: "off"
+    action:
+      # Choose provides decision logic
+      - choose:
+          # Start the show
+          - conditions:
+              - condition: trigger
+                id: start
+            sequence:
+              - service: script.turn_on
+                target:
+                  entity_id: script.haunted_house
+          # Stop the show
+          - conditions:
+              - condition: trigger
+                id: stop
+            sequence:
+              # And finally we turn off the haunted house script so no more sounds play.
+              - service: script.turn_off
+                target:
+                  entity_id: script.haunted_house
+              - service: scene.turn_on
+                target:
+                  entity_id: scene.before_haunting
+        default: []
+    initial_state: true
+    mode: single
+
+script:
+  # This is where the magic happens. This is the script that handles all the haunted sounds.
+  #
+  haunted_house:
+    sequence:
+      - repeat:
+          while:
+            - condition: state
+              entity_id: input_boolean.this_is_halloween
+              state: "on"
+          sequence:
+            # Take a snap shot of current state
+            - service: scene.create
+              data:
+                scene_id: before_haunting
+                snapshot_entities:
+                  - light.bett
+                  - light.schreibtischlicht
+            # Change a random Random Light
+            - service: light.toggle
+              data:
+                entity_id: >
+                  {{['light.bett',
+                     'light.schreibtischlicht']
+                     | random}}
+                effect: random
+            # Start playing a random selection from our haunted sounds.
+            - service: script.haunted_sounds
+            # Then another delay. This one is a random delay between 2 and 5 minutes. A delay of at least 2 minutes ensures the previous effect is done before the next one.
+            - delay: "00:0{{ range(2,5) | random | int }}:00"
+            # After the delay, change the state of the lights back to what they were
+            - service: scene.turn_on
+              target:
+                entity_id: scene.before_haunting
+            # play more random haunted sounds. This time though, if we have scary sounds on we play one from there, if not, back to haunted sounds.
+            - service: script.haunted_sounds
+            # Then delay again, and when that is done start over.
+            - delay: "00:0{{ range(2,5) | random | int }}:00"
+
+  # Each time this script is called it will play a random sound
+  haunted_sounds:
+    sequence:
+      # Ensure that haunted sounds are allowed. Comment out if not needed.
+      - condition: state
+        entity_id: input_boolean.haunted_sounds
+        state: "on"
+      # This script is in the audio.yaml in the packages folder.
+      - service: script.spotify_audio
+        data:
+          source: >
+            {{ ['Bad',
+                'Schlafzimmer',
+                'Wohnzimmer'
+                ] | random }}
+          volume: .5
+          type: "music"
+          # I try to ensure each of the following links is 60 seconds or less.
+          media_id: >
+            {{- [
+              "spotify:track:710UkIfvRLNn9p4yfQlcAl",
+              "spotify:track:2Am9y36yLGZdX6eHToR3n4",
+              "spotify:track:32aJRmCqqQzZSpiOsiUqCv",
+              "spotify:track:24VoMjzX8OUoHcl8L6moB7",
+              "spotify:track:7syROFRBVQ6R98lPAG10wZ",
+              "spotify:track:0BUAMeWYWeeMKuawPxjoh0",
+              "spotify:track:5MtaLBLIo9XMECojrOYhlX",
+              "spotify:track:3b92XeHV3OPfRRXet5Fv1W",
+              "spotify:track:7eRojmKAlef1XnzUi1gNVc",
+              "spotify:track:53sqbIzB3p07VV1IWXxlLy",
+              "spotify:track:39AEzaSnF2JkiS2aH0ahcU",
+              "spotify:track:4ImKiqiRtdBUKjUXozTw0b",
+              "spotify:track:4S7NAZCHDKSS1VLJy3n6Au",
+              "spotify:track:1GQr7P6oqvJrRDDFbiuahR",
+              "spotify:track:4Dmas133ZJlg3eHSeR4K8l",
+              "spotify:track:2vGNQN0vzvnL68hH8Zwxdk"
+            ] | random -}}
+
+# sensor:
+#   # Halloween Countdown Sensor using Wolfram Alpha. See the note at the top for a link to how to set it up
+#   - platform: rest
+#     name: Halloween Countdown
+#     resource: !secret WA_HALLOWEEN
+#     value_template: "{{ (value|replace(' days', '')) | int }}"
+#     unit_of_measurement: Days
+#     scan_interval: 43200

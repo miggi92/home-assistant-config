@@ -1,0 +1,16 @@
+---
+# Network card single entity
+network_card_single_entity_template:
+  card:
+    type: conditional
+    conditions:
+      - condition: or
+        conditions:
+          - entity: "[[entity]]"
+            state: home
+          - entity: "[[entity]]"
+            state: not_home
+    card:
+      type: custom:mushroom-entity-card
+      layout: vertical
+      entity: "[[entity]]"

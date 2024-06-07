@@ -1,0 +1,14 @@
+---
+# Dummy device trackers home state
+alias: DummyHomeStates
+id: ed8f19ea-d76e-4212-b760-0893e929d23a
+description: "Dummy Home state trackers"
+trigger:
+  - platform: state
+    entity_id:
+      - input_boolean.maja_home
+      - input_boolean.milo_home
+action:
+  - service: script.dummy_tracker_states
+    data: {}
+mode: single

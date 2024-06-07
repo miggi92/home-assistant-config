@@ -1,0 +1,15 @@
+---
+# Send pictures of the cameras
+alias: camCommand
+id: 797ec8b1-3e74-4128-b62f-68070ec64749
+description: "Antwortet auf den /cam Befehl"
+trigger:
+  - platform: event
+    event_type: telegram_command
+    event_data:
+      command: "/cam"
+condition: []
+action:
+  - service: script.send_cam_snaps
+    data: {}
+mode: single

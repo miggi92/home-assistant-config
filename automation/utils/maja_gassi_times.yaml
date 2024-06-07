@@ -1,0 +1,38 @@
+---
+# Maja automatic status while walking
+alias: majaGassiTimes
+id: 8767ef86-9e59-4813-bd4d-9a293a9738a3
+description: "Maja Gassi times"
+trigger:
+  - platform: state
+    entity_id: schedule.maja_gassi_zeiten
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: schedule.maja_gassi_zeiten
+        state: "on"
+    then:
+      - if:
+          - condition: state
+            entity_id: person.miguel
+            state: "home"
+        then:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.maja_person_sync
+            data:
+              option: miguel
+        else:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.maja_person_sync
+            data:
+              option: silke
+    else:
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.maja_person_sync
+        data:
+          option: alleine
+mode: single

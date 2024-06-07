@@ -1,0 +1,17 @@
+---
+# climate auto on timer
+alias: climateAutoOnTimer
+id: dac8ab87-b5ab-4795-9be4-b93df9aee932
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.started
+    event_data:
+      entity_id: timer.climate_auto_off
+condition: []
+action:
+  - service: climate.turn_on
+    target:
+      entity_id:
+        - climate.daikinap90134
+mode: single

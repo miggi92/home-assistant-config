@@ -1,0 +1,25 @@
+---
+# Waschmaschine läuft info
+alias: WashingActive
+id: 129efe4c-3890-4012-867f-6317c8e5021d
+description: "Setzt den Helfer, wenn die Waschmaschine läuft."
+trigger:
+  - platform: state
+    entity_id: sensor.waschmaschine_operation_state
+    to: "Run"
+  - platform: numeric_state
+    entity_id: sensor.waschmaschinen_steckdose_leistung
+    above: "15"
+    for: "00:01:00"
+condition:
+  - condition: state
+    entity_id: input_boolean.wash_active
+    state: "off"
+action:
+  - service: input_boolean.turn_on
+    entity_id: input_boolean.wash_active
+  - service: input_number.set_value
+    data_template:
+      value: "{{ states('sensor.waschmaschinen_steckdose_zusammenfassung_geliefert') }}"
+      entity_id: input_number.wash_cycle_consumption
+mode: single

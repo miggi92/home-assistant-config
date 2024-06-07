@@ -1,0 +1,16 @@
+---
+# Pihole timer finishes
+alias: piholeTimerFinish
+id: 484d8c6d-7be3-4069-ba2f-1a6a24f7c8fb
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.pihole_disabled
+condition: []
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.pi_hole
+mode: single

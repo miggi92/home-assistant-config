@@ -1,0 +1,16 @@
+---
+spotify_audio:
+  sequence:
+    - condition: state
+      entity_id: group.residents
+      state: home
+    - service: script.spotify_echo
+      data:
+        source: >
+          {{ source }}
+        volume: >
+          {{ volume }}
+        type: >
+          {{ type }}
+        media_id: >
+          {{ media_id }}

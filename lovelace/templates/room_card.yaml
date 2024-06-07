@@ -1,0 +1,30 @@
+---
+# Room card
+room_card_template:
+  variables:
+    - on_color: orange
+  card:
+    type: custom:mushroom-template-card
+    entity: "[[light]]"
+    primary: "[[title]]"
+    icon_color: |
+      {% if is_state('[[light]]','on') %}
+      orange
+      {% endif %}
+    secondary: |
+      {% if not states('[[temperature]]') or states('[[temperature]]') == "unknown" %}
+      {% elif state_attr('[[temperature]]', 'temperature') != none  %}
+      {{ state_attr('[[temperature]]', 'temperature') }} °C
+      {% else %}
+      {{ states('[[temperature]]') }} °C
+      {% endif %}
+    icon: "[[icon]]"
+    badge_icon: |
+      {% if states('[[motion]]') == "on" %}
+      mdi:motion-sensor
+      {% endif %}
+    tap_action:
+      action: navigate
+      navigation_path: "[[nav_path]]"
+    hold_action:
+      action: toggle

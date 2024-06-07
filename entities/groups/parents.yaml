@@ -1,0 +1,8 @@
+---
+# Eltern Gruppe
+parents:
+  name: Eltern
+  icon: mdi:home-account
+  entities:
+    - person.miguel
+    - person.silke

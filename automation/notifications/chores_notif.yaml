@@ -1,0 +1,30 @@
+---
+# Notiy if chores due
+alias: ChoresNotif
+id: 770ba890-cb06-4463-9447-161abd6e6195
+description: "Benachrichtigt, wenn Hausarbeiten anstehen."
+trigger:
+  - platform: time
+    at: input_datetime.chores_notif_time
+condition:
+  - condition: state
+    entity_id: binary_sensor.grocy_overdue_chores
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🏠 Hausarbeiten fällig 🏠
+      value1: >-
+        {% set chores = state_attr("binary_sensor.grocy_overdue_chores", "overdue_chores") %}
+        Folgende Hausarbeiten stehen heute an oder sind überfällig:
+        {{- '\n' -}}
+        {% for i in chores %}
+        - {{ i.name }}
+          👤 {{ i.next_execution_assigned_user.display_name }}
+          🗓️ {{ as_timestamp(i.next_estimated_execution_time) | timestamp_custom('%d.%m.%Y %H:%M') }}
+        {% endfor %}
+      who: "home"
+      tag_id: "information"
+      group: "Hausarbeiten"
+mode: single

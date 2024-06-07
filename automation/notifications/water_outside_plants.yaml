@@ -1,0 +1,55 @@
+---
+# Notiy if outside plants need watering
+alias: WateringNotifOutdoor
+id: 1458fb06-3f77-4669-8e72-0a7ec224be45
+description: "Benachrichtigt, ob die Pflanzen draußen gegossen werden müssen."
+trigger:
+  - platform: time
+    at: input_datetime.watering_time
+
+condition:
+  - condition: not
+    conditions:
+      # currently raining
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: weather.home
+            state: "rainy"
+          - condition: state
+            entity_id: weather.home_accu
+            state: "rainy"
+      # will it rain soon?
+      - condition: template
+        value_template: >
+          {% set days = 1 %}
+          {{ 'rainy' in state_attr('weather.home', 'forecast')[:days]  | map(attribute='condition') }}
+  # mehr als 1h geregnet?
+  - condition: numeric_state
+    entity_id: sensor.rained_last_day
+    below: 1
+  # im Urlaub brauchen wir keine Info
+  - condition: state
+    entity_id: alarm_control_panel.home_alarm
+    state_not: "armed_vacation"
+  # Nur in bestimmten Jahreszeiten
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: sensor.season
+        state: "spring"
+      - condition: state
+        entity_id: sensor.season
+        state: "summer"
+
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🌊🌿 Gießen 🌊🌿
+      value1: |
+        Pflanzen müssen heute gegossen werden!
+      who: "home"
+      tag_id: "information"
+      group: "Pflanzen"
+mode: single

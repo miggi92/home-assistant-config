@@ -1,0 +1,14 @@
+---
+# deactivate automatically sleeping mode
+alias: SleepModeDeactivate
+id: 0fc692c0-c6e5-4bef-8370-fabb12dcdf5d
+description: "Schaltet den Schlafmodus automatisch aus, wenn keine Schlafenszeit ist"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.schlafenszeit
+    to: "off"
+action:
+  - service: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.night_mode
+mode: single

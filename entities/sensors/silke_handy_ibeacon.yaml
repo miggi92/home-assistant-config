@@ -1,0 +1,9 @@
+---
+# https://www.home-assistant.io/integrations/mqtt_room/
+# https://espresense.com/home_assistant
+platform: mqtt_room
+name: BeaconGalaxyS23
+device_id: !secret silke_handy_device_id
+state_topic: !secret silke_handy_state_topic
+timeout: 10
+away_timeout: 120

@@ -1,0 +1,6 @@
+---
+# HTML5 notifications
+platform: html5
+vapid_pub_key: !secret html5_pub
+vapid_prv_key: !secret html5_priv
+vapid_email: !secret private_mail

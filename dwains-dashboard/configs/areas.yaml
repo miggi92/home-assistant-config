@@ -1,0 +1,44 @@
+serverschrank:
+  icon: mdi:server
+  floor: ""
+  disabled: false
+wohnzimmer:
+  icon: mdi:sofa
+  floor: "1"
+  disabled: false
+flur:
+  icon: mdi:coat-rack
+  floor: "1"
+  disabled: false
+schlafzimmer:
+  icon: mdi:sleep
+  floor: "1"
+  disabled: false
+bad:
+  icon: mdi:bathtub
+  floor: "1"
+  disabled: false
+garten:
+  icon: mdi:tree
+  floor: EG
+  disabled: false
+kuche:
+  icon: mdi:fridge
+  floor: "1"
+  disabled: false
+buro:
+  icon: mdi:chair-rolling
+  floor: "1"
+  disabled: false
+abstellkammer:
+  icon: mdi:bookshelf
+  floor: "1"
+  disabled: false
+aussen:
+  icon: mdi:sun-thermometer
+  floor: EG
+  disabled: false
+kinderzimmer:
+  icon: mdi:baby
+  floor: "1"
+  disabled: false

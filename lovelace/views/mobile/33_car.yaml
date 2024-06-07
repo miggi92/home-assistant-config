@@ -1,0 +1,59 @@
+---
+title: Auto
+path: car
+icon: mdi:car
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+  - type: custom:mushroom-title-card
+    subtitle: Tankstellenpreise
+  - type: custom:mini-graph-card
+    entities:
+      - entity: sensor.jet_grossgartacher_str_218_super
+        aggregate_func: avg
+        name: Jet
+        color: blue
+      - entity: sensor.agip_eni_leibnizstr_24_super
+        aggregate_func: avg
+        name: Agip
+        color: orange
+      - entity: sensor.shell_brackenheimer_str_45_super
+        aggregate_func: avg
+        name: Shell
+        color: yellow
+      - entity: sensor.eppinger_str_28_super
+        aggregate_func: avg
+        name: Lenz
+        color: green
+    name: Benzinpreise 14 Tage (Durchschnitt)
+    hours_to_show: 336
+    group_by: date
+  - type: horizontal-stack
+    cards:
+      - type: custom:mini-graph-card
+        entities:
+          - sensor.eppinger_str_28_super
+        name: Lenz
+        hours_to_show: 30
+        line_color: green
+      - type: custom:mini-graph-card
+        entities:
+          - sensor.agip_eni_leibnizstr_24_super
+        name: AGIP
+        hours_to_show: 30
+        line_color: orange
+  - type: horizontal-stack
+    cards:
+      - type: custom:mini-graph-card
+        entities:
+          - sensor.jet_grossgartacher_str_218_super
+        name: Jet
+        hours_to_show: 30
+        line_color: blue
+      - type: custom:mini-graph-card
+        entities:
+          - sensor.shell_brackenheimer_str_45_super
+        name: Shell Nordheim
+        hours_to_show: 30
+        line_color: yellow

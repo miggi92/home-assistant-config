@@ -1,0 +1,14 @@
+---
+# Pollen group
+platform: group
+type: max
+name: Pollen
+entities:
+  - sensor.pollenflug_ambrosia_112
+  - sensor.pollenflug_beifuss_112
+  - sensor.pollenflug_birke_112
+  - sensor.pollenflug_erle_112
+  - sensor.pollenflug_esche_112
+  - sensor.pollenflug_graeser_112
+  - sensor.pollenflug_hasel_112
+  - sensor.pollenflug_roggen_112

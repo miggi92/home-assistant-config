@@ -1,0 +1,18 @@
+---
+# Navigation Card
+navigation_card_template:
+  default:
+    - icon: mdi:navigation
+    - icon_color: blue
+    - layout: vertical
+    - title: Home
+    - nav_path: home
+  card:
+    type: custom:mushroom-template-card
+    icon: "[[icon]]"
+    icon_color: "[[icon_color]]"
+    primary: "[[title]]"
+    layout: "[[layout]]"
+    tap_action:
+      action: navigate
+      navigation_path: "[[nav_path]]"

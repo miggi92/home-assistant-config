@@ -1,0 +1,11 @@
+---
+id: ce310aa9-d22b-4c10-98c4-e8a86921202d
+name: TV Gemütlich
+entities:
+  light.tv_licht:
+    state: "on"
+    brightness: 50
+  light.esstischlicht:
+    state: "on"
+    brightness: 180
+icon: mdi:television

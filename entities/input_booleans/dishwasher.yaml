@@ -1,0 +1,5 @@
+---
+# Dishwasher
+dishwasher_ready:
+  name: "Spülmaschine ist fertig."
+  icon: mdi:dishwasher
