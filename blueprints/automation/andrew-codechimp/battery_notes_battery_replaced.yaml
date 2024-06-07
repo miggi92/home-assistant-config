@@ -1,3 +1,5 @@
+---
+# replacing battery blueprint
 blueprint:
   name: Battery Notes - Battery Replaced
   description: Set the battery replaced automatically when the battery increased
@@ -13,14 +15,14 @@ blueprint:
       selector:
         action: {}
 trigger:
-- platform: event
-  event_type: battery_notes_battery_increased
+  - platform: event
+    event_type: battery_notes_battery_increased
 condition: []
 action:
-- service: battery_notes.set_battery_replaced
-  data:
-    device_id: '{{ trigger.event.data.device_id }}'
-- alias: Run user on replaced actions
-  choose: []
-  default: !input on_replaced_actions
+  - service: battery_notes.set_battery_replaced
+    data:
+      device_id: "{{ trigger.event.data.device_id }}"
+  - alias: Run user on replaced actions
+    choose: []
+    default: !input on_replaced_actions
 mode: queued
