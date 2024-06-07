@@ -1,3 +1,5 @@
+---
+# BT Proxy
 substitutions:
   name: atom-bluetooth-proxy-a05be4
   friendly_name: Büro Proxy

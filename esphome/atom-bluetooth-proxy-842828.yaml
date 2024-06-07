@@ -1,3 +1,5 @@
+---
+# BT Proxy
 substitutions:
   name: kueche-proxy
   friendly_name: Küche Proxy

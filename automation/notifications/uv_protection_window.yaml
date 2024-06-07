@@ -15,9 +15,9 @@ action:
       title: |
         🌞 UV Warnung ☀️
       value1: |-
-        Aktuell sollte man draußen je nach Hauttyp nur zwischen 
-        {{ states('sensor.skin_type_1_safe_exposure_time') }} {{ state_attr('sensor.skin_type_1_safe_exposure_time', 'unit_of_measurement') }} und 
-        {{ states('sensor.skin_type_4_safe_exposure_time') }} {{ state_attr('sensor.skin_type_4_safe_exposure_time', 'unit_of_measurement') }} ungeschützt verbringen. 
+        Aktuell sollte man draußen je nach Hauttyp nur zwischen
+        {{ states('sensor.skin_type_1_safe_exposure_time') }} {{ state_attr('sensor.skin_type_1_safe_exposure_time', 'unit_of_measurement') }} und
+        {{ states('sensor.skin_type_4_safe_exposure_time') }} {{ state_attr('sensor.skin_type_4_safe_exposure_time', 'unit_of_measurement') }} ungeschützt verbringen.
         Bei längeren Aufenthalten bitte schützen.
         Voraussichtliches Ende des Schutzfensters: {{ (state_attr('binary_sensor.protection_window', 'end_time')|as_timestamp(now()) )| timestamp_custom('%H:%M') }}Uhr
       who: "home"
