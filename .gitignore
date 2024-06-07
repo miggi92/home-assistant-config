@@ -38,6 +38,8 @@ node_modules
 /themes
 /zigbee2mqtt/log
 /zha_ota
+docs/.vitepress/dist
+docs/.vitepress/cache
 
 # ignore files
 /www/logo/work_miguel_logo.svg
