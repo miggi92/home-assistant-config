@@ -11,5 +11,5 @@ Miguel Gebhardt - [miggi92]
 Click for the detailed [License](./LICENSE.md)
 
 [miggi92]: https://github.com/miggi92
-[actions]: https://github.com/miggi92/hassio-config/actions
-[actions-shield]: https://github.com/miggi92/hassio-config/workflows/Home%20Assistant%20CI/badge.svg
+[actions]: https://github.com/miggi92/home-assistant-config/actions
+[actions-shield]: https://github.com/miggi92/home-assistant-config/workflows/Home%20Assistant%20CI/badge.svg
