@@ -8,11 +8,11 @@ hero:
   tagline: ""
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Examples
+      link: /examples
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: Configuration
+      link: /config
 
 features:
   - title: Examples
