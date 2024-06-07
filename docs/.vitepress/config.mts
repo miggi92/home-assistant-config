@@ -4,7 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "Home assistant config",
   description: "A home assistant config of my home.",
-  base: "home-assistant-config",
+  base: "/home-assistant-config",
   lang: "en-US",
   lastUpdated: true,
   head: [
