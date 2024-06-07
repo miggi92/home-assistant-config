@@ -10,19 +10,19 @@ cards:
     subtitle: Tankstellenpreise
   - type: custom:mini-graph-card
     entities:
-      - entity: sensor.jet_grossgartacher_str_218_super
+      - entity: sensor.jet_super
         aggregate_func: avg
         name: Jet
         color: blue
-      - entity: sensor.agip_eni_leibnizstr_24_super
+      - entity: sensor.agip_super
         aggregate_func: avg
         name: Agip
         color: orange
-      - entity: sensor.shell_brackenheimer_str_45_super
+      - entity: sensor.shell_super
         aggregate_func: avg
         name: Shell
         color: yellow
-      - entity: sensor.eppinger_str_28_super
+      - entity: sensor.lenz_super
         aggregate_func: avg
         name: Lenz
         color: green
@@ -33,13 +33,13 @@ cards:
     cards:
       - type: custom:mini-graph-card
         entities:
-          - sensor.eppinger_str_28_super
+          - sensor.lenz_super
         name: Lenz
         hours_to_show: 30
         line_color: green
       - type: custom:mini-graph-card
         entities:
-          - sensor.agip_eni_leibnizstr_24_super
+          - sensor.agip_super
         name: AGIP
         hours_to_show: 30
         line_color: orange
@@ -47,13 +47,13 @@ cards:
     cards:
       - type: custom:mini-graph-card
         entities:
-          - sensor.jet_grossgartacher_str_218_super
+          - sensor.jet_super
         name: Jet
         hours_to_show: 30
         line_color: blue
       - type: custom:mini-graph-card
         entities:
-          - sensor.shell_brackenheimer_str_45_super
-        name: Shell Nordheim
+          - sensor.shell_super
+        name: Shell
         hours_to_show: 30
         line_color: yellow
