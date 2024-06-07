@@ -21,6 +21,7 @@
 # Whitlist files
 !.yamllint
 !.gitkeep
+!.HA_VERSION
 
 # Ignore folders.
 .storage
