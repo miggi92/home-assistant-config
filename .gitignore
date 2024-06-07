@@ -17,6 +17,7 @@
 !*.repositories
 !*.js
 !*.sh
+!*.mts
 
 # Whitlist files
 !.yamllint

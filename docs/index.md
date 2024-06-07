@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "Home assistant config"
-  text: "A home assistant config with some explainations."
-  tagline: My great project tagline
+  text: "My home assistant configuration and some examples"
+  tagline: ""
   actions:
     - theme: brand
       text: Markdown Examples
@@ -15,11 +15,9 @@ hero:
       link: /api-examples
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Examples
+    details: Some examples that can be reused in your configuration
+  - title: Inspiration
+    details: Take a look at my config to get some inspiration for your own
 ---
 
