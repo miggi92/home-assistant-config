@@ -128,7 +128,30 @@ cards:
       {% else %}
         Hello, {{user}}!
       {% endif %}
-
+  - type: custom:auto-entities
+    filter:
+      include:
+        - entity_id: sensor.anniversary_urlaub*
+      exclude: []
+    sort:
+      method: state
+      reverse: false
+      numeric: true
+      count: 3
+    show_empty: false
+    card:
+      type: entities
+      show_header_toggle: false
+      title: Urlaubscountdown
+      state_color: false
+      header:
+        type: picture
+        image: >-
+          https://cdn.pixabay.com/photo/2018/01/31/16/12/beach-3121393_1280.png
+        tap_action:
+          action: none
+        hold_action:
+          action: none
   - !include ../../cards/residents.yaml
   - type: conditional
     conditions:
@@ -155,6 +178,37 @@ cards:
               12.5% { transform: translateY(0); }
               15% { transform: translateY(-3px) }
             }
+  - type: custom:auto-entities
+    filter:
+      include:
+        - entity_id: sensor.anniversary_birthday*
+          options:
+            type: "custom:multiple-entity-row"
+            entity: this.entity_id
+            entities:
+              - attribute: years_at_anniversary
+                name: Wird
+                unit: Jahre
+      exclude: []
+    sort:
+      method: state
+      reverse: false
+      numeric: true
+      count: 3
+    show_empty: false
+    card:
+      type: entities
+      show_header_toggle: false
+      title: Geburtstage
+      state_color: false
+      header:
+        type: picture
+        image: >-
+          https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
+        tap_action:
+          action: none
+        hold_action:
+          action: none
 
   - type: custom:mushroom-title-card
     title: Navigation
