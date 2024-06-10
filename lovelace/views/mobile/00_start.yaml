@@ -132,6 +132,12 @@ cards:
     filter:
       include:
         - entity_id: sensor.anniversary_urlaub*
+          options:
+            type: "custom:multiple-entity-row"
+            entity: this.entity_id
+            entities:
+              - attribute: weeks_remaining
+                unit: Wochen /
       exclude: []
     sort:
       method: state
