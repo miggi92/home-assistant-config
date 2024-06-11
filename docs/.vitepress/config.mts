@@ -32,9 +32,9 @@ export default defineConfig({
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
 			{ text: "Home", link: "/" },
-			{ text: "Config", link: "/config" },
-			{ text: "Examples", link: "/examples" },
-			{ text: "Featured", link: "/featured" },
+			{ text: "Config", link: "/config", activeMatch: "/config/" },
+			{ text: "Examples", link: "/examples", activeMatch: "/examples/" },
+			{ text: "Featured", link: "/featured", activeMatch: "/featured/" },
 		],
 		outline: [2, 6],
 		lastUpdated: {
@@ -50,10 +50,10 @@ export default defineConfig({
 			},
 			{
 				text: "Examples",
-				// items: [
-				//   { text: 'Markdown Examples', link: '/markdown-examples' },
-				//   { text: 'Runtime API Examples', link: '/api-examples' }
-				// ]
+				items: [
+					{ text: "Lovelace Examples", link: "/examples/lovelace" },
+					//   { text: 'Runtime API Examples', link: '/api-examples' }
+				],
 			},
 			{
 				text: "Featured",
