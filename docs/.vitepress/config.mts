@@ -47,6 +47,9 @@ export default defineConfig({
 		sidebar: [
 			{
 				text: "Config", link: "/config",
+				items: [
+					{ text: "Automations", link: "/config/automations" },
+				],
 			},
 			{
 				text: "Examples", link: "/examples",

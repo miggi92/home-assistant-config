@@ -54,6 +54,8 @@ The detailled automations can be found in the [automations](/config/automations/
 
 ## HACS components
 
+**H**ome **A**ssistant **C**ommunity **S**tore is a repository of community developed plugins for Home Assistant. For more information visit the [HACS](https://hacs.xyz/) website.
+
 ### Integrations
 
 1. [Anniversaries](https://github.com/pinkywafer/Anniversaries)
