@@ -5,6 +5,14 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/miggi92/home-assistant-config?style=for-the-badge)
 
+## About
+
+This Repository contains my Home Assistant Configuration. It is a collection of my configuration files, automations, scripts, and more.
+
+Description of the different components and how they are used can be found in the [Docs](https://miggi92.github.io/home-assistant-config/).
+
+For more information about Home Assistant, visit the [Home Assistant Website](https://www.home-assistant.io/).
+
 ## Author
 
 Miguel Gebhardt - [miggi92]
@@ -14,3 +22,4 @@ Miguel Gebhardt - [miggi92]
 Click for the detailed [License](./LICENSE.md)
 
 [miggi92]: https://github.com/miggi92
+
