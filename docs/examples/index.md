@@ -5,4 +5,4 @@
 
 ## UI / Lovelace
 
-[Lovelace](/examples/lovelace)
+[Lovelace](/examples/lovelace/)
