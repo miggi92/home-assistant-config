@@ -229,7 +229,7 @@ cards:
               {{ state_attr(entity, 'friendly_name') }} ({{state_attr(entity, 'years_at_anniversary') }})
             icon_color: green
             secondary: |
-              {%- set event_date = state_attr(entity, 'date') %}
+              {%- set event_date = state_attr(entity, 'next_date') %}
               {%- set now = now() %}
               {%- set delta = event_date - now %}
               {%- set weeks = (delta.days // 7) %}
