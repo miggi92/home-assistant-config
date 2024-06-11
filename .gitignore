@@ -23,6 +23,7 @@
 !.yamllint
 !.gitkeep
 !.HA_VERSION
+!bun.lockb
 
 # Ignore folders.
 .storage
