@@ -46,10 +46,10 @@ export default defineConfig({
 		},
 		sidebar: [
 			{
-				text: "Config",
+				text: "Config", link: "/config",
 			},
 			{
-				text: "Examples",
+				text: "Examples", link: "/examples",
 				items: [
 					{
 						text: "Lovelace Examples",
@@ -61,7 +61,7 @@ export default defineConfig({
 				],
 			},
 			{
-				text: "Featured",
+				text: "Featured", link: "/featured",
 			},
 		],
 
