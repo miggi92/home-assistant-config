@@ -10,6 +10,8 @@ on:
     branches: [master]
     paths:
       - "docs/**"
+      - "package.json"
+      - "bun.lockb"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
