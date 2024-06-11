@@ -54,7 +54,8 @@ export default defineConfig({
 					{
 						text: "Lovelace Examples",
 						link: "/examples/lovelace",
-						items: [{ text: "Birthdays", link: "/examples/lovelace/birthdays" }],
+						items: [{ text: "Birthdays", link: "/examples/lovelace/birthdays" },
+						{ text: "Vacations", link: "/examples/lovelace/vacations" }],
 					},
 					//   { text: 'Runtime API Examples', link: '/api-examples' }
 				],
