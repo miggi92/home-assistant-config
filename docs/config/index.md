@@ -13,7 +13,7 @@ The detailled automations can be found in the [automations](/config/automations/
 | Integration | Count |
 |---|:---:|
 | Covers | 4 |
-| Updaters | 43 |
+| Updates | 43 |
 | Alarm | 2 |
 | Selects | 20 |
 | Automations | 109 |
