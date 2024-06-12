@@ -44,30 +44,32 @@ export default defineConfig({
 				timeStyle: "medium",
 			},
 		},
-		sidebar: [
-			{
-				text: "Config", link: "/config",
+		sidebar: {
+			'/config/': [
+				{
+					text: "Config", link: "/config/",
 				items: [
 					{ text: "Automations", link: "/config/automations" },
 				],
-			},
-			{
-				text: "Examples", link: "/examples",
+				}
+			],
+			'/examples/': [{
+				text: "Examples", link: "/examples/",
 				items: [
 					{
 						text: "Lovelace Examples",
-						link: "/examples/lovelace",
+						link: "/examples/lovelace/",
 						items: [{ text: "Birthdays", link: "/examples/lovelace/birthdays" },
 						{ text: "Vacations", link: "/examples/lovelace/vacations" }],
 					},
 					//   { text: 'Runtime API Examples', link: '/api-examples' }
 				],
-			},
-			{
-				text: "Featured", link: "/featured",
-			},
-		],
-
+			}
+			],
+			'/featured/': [{
+				text: "Featured", link: "/featured/",
+			}],
+		},
 		socialLinks: [
 			{ icon: "github", link: "https://github.com/miggi92/home-assistant-config" },
 		],
