@@ -8,11 +8,11 @@ hero:
   tagline: ""
   actions:
     - theme: brand
-      text: Examples
-      link: /examples
-    - theme: alt
       text: Configuration
       link: /config
+    - theme: alt
+      text: Featured channels
+      link: /featured
 
 features:
   - title: Examples
