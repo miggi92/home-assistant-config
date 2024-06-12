@@ -8,7 +8,7 @@ export default defineConfig({
 	lang: "en-US",
 	lastUpdated: true,
 	head: [
-		["link", { rel: "icon", href: "/favicon.ico" }],
+		["link", { rel: "icon", href: "/home-assistant-config/favicon.ico" }],
 		["meta", { property: "og:type", content: "website" }],
 		["meta", { property: "og:locale", content: "en" }],
 		["meta", { property: "og:site_name", content: "Miggi92 Home assistant config" }],
