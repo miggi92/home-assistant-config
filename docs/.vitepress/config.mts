@@ -33,7 +33,6 @@ export default defineConfig({
 		nav: [
 			{ text: "Home", link: "/" },
 			{ text: "Config", link: "/config", activeMatch: "/config/" },
-			{ text: "Examples", link: "/examples", activeMatch: "/examples/" },
 			{ text: "Featured", link: "/featured", activeMatch: "/featured/" },
 		],
 		search: {
@@ -53,22 +52,19 @@ export default defineConfig({
 				{
 					text: "Config", link: "/config/",
 				items: [
-					{ text: "Automations", link: "/config/automations" },
+					{ text: "Automations", link: "/config/automations", items: [
+					]  },
+					{ text: "Integrations", link: "/config/integrations", items: [
+						{ text: "Waste", link: "/config/integrations/waste" }
+					] },
+					{
+						text: "Lovelace",
+						link: "/config/lovelace/",
+						items: [{ text: "Birthdays", link: "/config/lovelace/birthdays" },
+						{ text: "Vacations", link: "/config/lovelace/vacations" }],
+					},
 				],
 				}
-			],
-			'/examples/': [{
-				text: "Examples", link: "/examples/",
-				items: [
-					{
-						text: "Lovelace Examples",
-						link: "/examples/lovelace/",
-						items: [{ text: "Birthdays", link: "/examples/lovelace/birthdays" },
-						{ text: "Vacations", link: "/examples/lovelace/vacations" }],
-					},
-					//   { text: 'Runtime API Examples', link: '/api-examples' }
-				],
-			}
 			],
 			'/featured/': [{
 				text: "Featured", link: "/featured/",
