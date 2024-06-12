@@ -54,6 +54,10 @@ export default defineConfig({
 					text: "Config", link: "/config/",
 				items: [
 					{ text: "Automations", link: "/config/automations", items: [
+						{ text: "Notifications", link: "/config/automations/notifications/", collapsed: true,
+						items: [
+							{ text: "Calls", link: "/config/automations/notifications/call"}
+					]}
 					]  },
 					{ text: "Integrations", link: "/config/integrations", items: [
 						{ text: "Waste", link: "/config/integrations/waste" }
