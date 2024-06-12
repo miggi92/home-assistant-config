@@ -9,9 +9,15 @@ export default defineConfig({
 	lastUpdated: true,
 	head: [
 		["link", { rel: "icon", href: "/home-assistant-config/favicon.ico" }],
+		["meta", { property: "og:url", content: "https://miggi92.github.io/home-assistant-config/" }],
+		["meta", { property: "twitter:url", content: "https://miggi92.github.io/home-assistant-config/" }],
 		["meta", { property: "og:type", content: "website" }],
+		["meta", { property: "og:image", content: "/home-assistant-config/logo_transparent.png" }],
+		["meta", { property: "twitter:image", content: "/home-assistant-config/logo_transparent.png" }],
 		["meta", { property: "og:locale", content: "en" }],
 		["meta", { property: "og:site_name", content: "Miggi92 Home assistant config" }],
+		["meta", { property: "twitter:card", content: "summary_large_image" }],
+		["meta", { property: "twitter:domain", content: "miggi92.github.io" }],
 		[
 			"meta",
 			{
