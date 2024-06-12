@@ -23,3 +23,18 @@ Click for the detailed [License](./LICENSE.md)
 
 [miggi92]: https://github.com/miggi92
 
+## Development
+
+### New release
+
+#### Minor
+
+```bash
+npx changelogen@latest --release --minor --output
+```
+
+#### Major
+
+```bash
+npx changelogen@latest --release --major --output
+```
