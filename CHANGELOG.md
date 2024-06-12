@@ -20,7 +20,7 @@
 
 ### ❤️ Contributors
 
-- Miguel <miguel.gebhardt@bechtle.com>
+- Miguel
 
 ## v1.1.0
 
