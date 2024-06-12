@@ -12,7 +12,7 @@
 
 ### ❤️ Contributors
 
-- Miguel <miguel.gebhardt@bechtle.com>
+- Miguel 
 
 ## v1.0.0...v1.0.0
 
