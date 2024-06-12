@@ -18,6 +18,7 @@
 !*.js
 !*.sh
 !*.mts
+!*.ico
 
 # Whitlist files
 !.yamllint

@@ -39,6 +39,7 @@ export default defineConfig({
 			provider: 'local'
 		},
 		externalLinkIcon: true,
+		logo: "/logo_transparent.png",
 		outline: [2, 6],
 		lastUpdated: {
 			text: "Updated at",

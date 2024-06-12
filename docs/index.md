@@ -6,6 +6,9 @@ hero:
   name: "Home assistant config"
   text: "My home assistant configuration and some examples"
   tagline: ""
+  image: 
+    src: "/logo_transparent.png"
+    alt: "Logo"
   actions:
     - theme: brand
       text: Configuration
