@@ -36,6 +36,10 @@ export default defineConfig({
 			{ text: "Examples", link: "/examples", activeMatch: "/examples/" },
 			{ text: "Featured", link: "/featured", activeMatch: "/featured/" },
 		],
+		search: {
+			provider: 'local'
+		},
+		externalLinkIcon: true,
 		outline: [2, 6],
 		lastUpdated: {
 			text: "Updated at",
