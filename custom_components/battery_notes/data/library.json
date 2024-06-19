@@ -3632,6 +3632,12 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Seegel Systeme",
+            "model": "WiFi ACM-ESP",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "Sengled",
             "model": "E1D-G73",
             "battery_type": "CR1632"
