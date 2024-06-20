@@ -3,7 +3,7 @@
 
 # Waste
 
-> For managing the waste collection I use the "[AbfallPlus](https://github.com/bouni/abfallplus)" integration. This integration is available in the HACS. 
+> For managing the waste collection I use the "[AbfallPlus](https://github.com/bouni/abfallplus)" integration. This integration is available in the HACS.
 
 ## Configuration
 
@@ -23,13 +23,14 @@ trash_ids: "31"
 ![Waste](./attachments/waste_cards_dashboard.png)
 
 ::: code-group
-```yaml	[Dashboard integration]
+
+```yaml [Dashboard integration]
 type: custom:decluttering-card
 template: waste_card_template
 variables:
-    - entity: sensor.restmull
-    - title: Restmüll
-    - max_days: 15
+  - entity: sensor.restmull
+  - title: Restmüll
+  - max_days: 15
 ```
 
 ```yaml [Decluttering card template]
@@ -74,17 +75,16 @@ waste_card_template:
           }
     tap_action:
       action: more-info
-
 ```
-:::
 
+:::
 
 ## Automation
 
 In the following automation, a notification is sent when the waste collection is due. One notification on the day of the collection and one notification the day before.
 The mode `parallel` is used to send both notifications at the same time. Cause some times the different waste collections are on the same day.
 
-```yaml	
+```yaml
 ---
 alias: Abfallbenachrichtigung
 id: <uid>

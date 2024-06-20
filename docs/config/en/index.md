@@ -14,47 +14,47 @@ The detailled integrations can be found in the [integrations](/config/integratio
 
 ## Devices & entities
 
-| Integration | Count |
-|---|:---:|
-| Covers | 4 |
-| Updates | 43 |
-| Alarm | 2 |
-| Selects | 20 |
-| Automations | 109 |
-| Areas | 11 |
-| Images | 2 |
-| Binary sensors | 134 |
-| Custom integrations | 30 |
-| Input selects | 2 |
-| Input booleans | 33 |
-| Input datetime | 6 |
-| Input numbers | 3 |
-| Input text | 1 |
-| Entities | 1869 |
-| Remotes | 2 |
-| Devices | 297 | 
-| Device trackers | 103 |
-| Integrations | 144 |
-| Calendars | 14 |
-| Cameras | 7 |
-| Climate | 2 |
-| Media players | 42 |
-| Numbers | 28 |
-| Persons | 4 |
-| Switches | 182 |
-| Locks | 1 |
-| Sensors | 954 |
-| Scripts | 24 |
-| Sun | 1 |
-| Speech to text | 2 |
-| Vaccuum | 2 |
-| Scenes | 3 |
-| Buttons | 65 |
-| Text to speech | 2 |
-| Texts | 2 |
-| Fans | 2 |
-| Weather | 2 | 
-| Zones | 16 |
+| Integration         | Count |
+| ------------------- | :---: |
+| Covers              |   4   |
+| Updates             |  43   |
+| Alarm               |   2   |
+| Selects             |  20   |
+| Automations         |  109  |
+| Areas               |  11   |
+| Images              |   2   |
+| Binary sensors      |  134  |
+| Custom integrations |  30   |
+| Input selects       |   2   |
+| Input booleans      |  33   |
+| Input datetime      |   6   |
+| Input numbers       |   3   |
+| Input text          |   1   |
+| Entities            | 1869  |
+| Remotes             |   2   |
+| Devices             |  297  |
+| Device trackers     |  103  |
+| Integrations        |  144  |
+| Calendars           |  14   |
+| Cameras             |   7   |
+| Climate             |   2   |
+| Media players       |  42   |
+| Numbers             |  28   |
+| Persons             |   4   |
+| Switches            |  182  |
+| Locks               |   1   |
+| Sensors             |  954  |
+| Scripts             |  24   |
+| Sun                 |   1   |
+| Speech to text      |   2   |
+| Vaccuum             |   2   |
+| Scenes              |   3   |
+| Buttons             |  65   |
+| Text to speech      |   2   |
+| Texts               |   2   |
+| Fans                |   2   |
+| Weather             |   2   |
+| Zones               |  16   |
 
 ## HACS components
 
@@ -98,7 +98,7 @@ The detailled integrations can be found in the [integrations](/config/integratio
 1. [Text divider row](https://github.com/iantrich/text-divider-row)
 1. state-switch
 1. Bar card
-1. Mushroom 
+1. Mushroom
 1. Mini media player
 1. Shutter card
 1. Kiosk mode

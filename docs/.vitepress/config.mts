@@ -140,5 +140,9 @@ export default defineConfig({
 			label: "English",
 			lang: "en",
 		},
+		de: {
+			label: "German",
+			lang: "de",
+		},
 	},
 });
