@@ -8,22 +8,36 @@ export const de = defineConfig({
 	themeConfig: {
 		nav: nav(),
 		sidebar: {
-			"/config/": { base: "/config/", items: sidebarConfig() },
-			"/featured/": { base: "/featured/", items: sidebarFeatured() },
+			"/de/config/": { base: "/de/config/", items: sidebarConfig() },
+			"/de/featured/": { base: "/de/featured/", items: sidebarFeatured() },
 		},
 	},
 });
 
 function nav(): DefaultTheme.NavItem[] {
 	return [
-		{ text: "Startseite", link: "/" },
-		{ text: "Konfiguration", link: "/config", activeMatch: "/config/" },
-		{ text: "Featured", link: "/featured", activeMatch: "/featured/" },
+		{ text: "Startseite", link: "/de/" },
+		{ text: "Konfiguration", link: "/de/config", activeMatch: "/de/config/" },
+		{ text: "Featured", link: "/de/featured", activeMatch: "/de/featured/" },
 	];
 }
 
 function sidebarConfig(): DefaultTheme.SidebarItem[] {
-	return [];
+	return [{
+		text: "Konfiguration",
+		link: "/",
+		items: [
+			{
+				text: "Automationen",
+				link: "/",
+				base: "/de/config/automations/"
+			}
+		]
+	}, {
+		text: "Integrations",
+		link: "/",
+		base: "/de/config/integrations/",
+	}];
 }
 
 function sidebarFeatured(): DefaultTheme.SidebarItem[] {

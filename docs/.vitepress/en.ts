@@ -24,6 +24,7 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 	return [
 		{
 			text: "Config",
+			link: "/",
 			items: [
 				{
 					text: "Automations",
