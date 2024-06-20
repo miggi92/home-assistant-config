@@ -8,8 +8,8 @@ export const en = defineConfig({
 	themeConfig: {
 		nav: nav(),
 		sidebar: {
-			"/config/": sidebarConfig(),
-			"/featured/": sidebarFeatured(),
+			"/config/": { base: "/config/", items: sidebarConfig() },
+			"/featured/": { base: "/config/", items: sidebarFeatured() },
 		},
 	},
 });
@@ -27,31 +27,33 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 			items: [
 				{
 					text: "Automations",
-					link: "automations",
+					link: "/",
 					base: "/config/automations/",
 					items: [
 						{
 							text: "Notifications",
-							link: "notifications/",
+							link: "/",
 							base: "/config/automations/notifications/",
 							collapsed: true,
-							items: [{ text: "Calls", link: "/config/automations/notifications/call" }],
+							items: [{ text: "Calls", link: "call" }],
 						},
 					],
 				},
 				{
 					text: "Integrations",
-					link: "integrations",
+					link: "/",
+					base: "/config/integrations/",
 					items: [
-						{ text: "Waste", link: "/config/integrations/waste" },
-						{ text: "Food warnings", link: "/config/integrations/food_warnings" },
+						{ text: "Waste", link: "waste" },
+						{ text: "Food warnings", link: "food_warnings" },
 						{
 							text: "MQTT",
-							link: "/config/integrations/mqtt",
+							link: "/",
+							base: "/config/integrations/mqtt/",
 							items: [
 								{
 									text: "HASS Agent",
-									link: "/config/integrations/mqtt/hassagent",
+									link: "hassagent",
 								},
 							],
 						},
@@ -59,10 +61,11 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 				},
 				{
 					text: "Lovelace",
-					link: "lovelace/",
+					link: "/",
+					base: "/config/lovelace/",
 					items: [
-						{ text: "Birthdays", link: "lovelace/birthdays" },
-						{ text: "Vacations", link: "lovelace/vacations" },
+						{ text: "Birthdays", link: "birthdays" },
+						{ text: "Vacations", link: "vacations" },
 					],
 				},
 			],
