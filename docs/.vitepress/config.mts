@@ -101,6 +101,16 @@ export default defineConfig({
 							items: [
 								{ text: "Waste", link: "/config/integrations/waste" },
 								{ text: "Food warnings", link: "/config/integrations/food_warnings" },
+								{
+									text: "MQTT",
+									link: "/config/integrations/mqtt",
+									items: [
+										{
+											text: "HASS Agent",
+											link: "/config/integrations/mqtt/hassagent",
+										},
+									],
+								},
 							],
 						},
 						{
