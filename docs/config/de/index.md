@@ -6,11 +6,11 @@
 
 ## Automationen
 
-Detailierte Informationen über die Automationen findet man im Bereich [Automationen](/config/automations/).
+Detailierte Informationen über die Automationen findet man im Bereich [Automationen](/config/de/automations/).
 
 ## Integrationen
 
-Detailierte Informationen über die Integationen findet man im Bereich [Integrationen](/config/integrations/).
+Detailierte Informationen über die Integationen findet man im Bereich [Integrationen](/config/de/integrations/).
 
 ## Geräte & Entitäten
 

@@ -6,11 +6,11 @@
 
 ## Automations
 
-The detailled automations can be found in the [automations](/config/automations/) section.
+The detailled automations can be found in the [automations](/config/en/automations/) section.
 
 ## Integrations
 
-The detailled integrations can be found in the [integrations](/config/integrations/) section.
+The detailled integrations can be found in the [integrations](/config/en/integrations/) section.
 
 ## Devices & entities
 
