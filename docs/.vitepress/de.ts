@@ -30,13 +30,15 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 			{
 				text: "Automationen",
 				link: "/",
+				collapsed: true,
 				base: "/de/config/automations/"
+			}, {
+				text: "Integrations",
+				link: "/",
+				collapsed: true,
+				base: "/de/config/integrations/",
 			}
 		]
-	}, {
-		text: "Integrations",
-		link: "/",
-		base: "/de/config/integrations/",
 	}];
 }
 

@@ -30,6 +30,7 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 					text: "Automations",
 					link: "/",
 					base: "/config/automations/",
+					collapsed: true,
 					items: [
 						{
 							text: "Notifications",
@@ -44,6 +45,7 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 					text: "Integrations",
 					link: "/",
 					base: "/config/integrations/",
+					collapsed: true,
 					items: [
 						{ text: "Waste", link: "waste" },
 						{ text: "Food warnings", link: "food_warnings" },
@@ -64,6 +66,7 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 					text: "Lovelace",
 					link: "/",
 					base: "/config/lovelace/",
+					collapsed: true,
 					items: [
 						{ text: "Birthdays", link: "birthdays" },
 						{ text: "Vacations", link: "vacations" },
