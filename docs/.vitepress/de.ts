@@ -4,12 +4,13 @@ export const de = defineConfig({
 	title: "Home assistant Konfiguration",
 	description: "Meine Home Assistant Konfiguration",
 	lang: "de",
+	base: "/home-assistant-config/de/",
 	head: [["meta", { property: "og:locale", content: "de" }]],
 	themeConfig: {
 		nav: nav(),
 		sidebar: {
-			"/de/config/": { base: "/de/config/", items: sidebarConfig() },
-			"/de/featured/": { base: "/de/featured/", items: sidebarFeatured() },
+			"/config/": { base: "/config/", items: sidebarConfig() },
+			"/featured/": { base: "/featured/", items: sidebarFeatured() },
 		},
 	},
 });
