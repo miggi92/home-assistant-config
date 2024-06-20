@@ -19,6 +19,8 @@
 !*.sh
 !*.mts
 !*.ico
+!*.ts
+!*.vue
 
 # Whitlist files
 !.yamllint
@@ -43,7 +45,6 @@ node_modules
 /zha_ota
 /docs/.vitepress/dist
 /docs/.vitepress/cache
-.vitepress
 
 # ignore files
 /www/logo/work_miguel_logo.svg
