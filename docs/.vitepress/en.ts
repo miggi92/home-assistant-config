@@ -8,7 +8,7 @@ export const en = defineConfig({
 	themeConfig: {
 		nav: nav(),
 		sidebar: {
-			"/config/": { base: "/home-assistant-config/config/", items: sidebarConfig() },
+			"/config/": { base: "/config/", items: sidebarConfig() },
 			"/featured/": {
 				base: "/home-assistant-config/featured/",
 				items: sidebarFeatured(),

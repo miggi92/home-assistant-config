@@ -7,13 +7,7 @@ import { de } from "./de";
 export default defineConfig({
 	...shared,
 	locales: {
-		root: {
-			label: "English",
-			...en,
-		},
-		de: {
-			label: "Deutsch",
-			...de,
-		},
+		root: { label: 'English', ...en },
+		de: { label: "Deutsch", ...de, },
 	},
 });

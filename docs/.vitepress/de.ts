@@ -4,7 +4,6 @@ export const de = defineConfig({
 	title: "Home assistant Konfiguration",
 	description: "Meine Home Assistant Konfiguration",
 	lang: "de",
-	base: "/home-assistant-config/de/",
 	head: [["meta", { property: "og:locale", content: "de" }]],
 	themeConfig: {
 		nav: nav(),

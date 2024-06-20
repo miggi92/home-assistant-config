@@ -3,7 +3,7 @@ import { defineConfig } from "vitepress";
 export const shared = defineConfig({
 	base: "/home-assistant-config",
 	lastUpdated: true,
-	// cleanUrls: true,
+	cleanUrls: true,
 	metaChunk: true,
 	head: [
 		["link", { rel: "icon", href: "/home-assistant-config/favicon.ico" }],
