@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export const shared = defineConfig({
-	base: "/home-assistant-config",
+	base: "/home-assistant-config/",
 	lastUpdated: true,
 	cleanUrls: true,
 	metaChunk: true,

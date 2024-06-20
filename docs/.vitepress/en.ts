@@ -8,11 +8,8 @@ export const en = defineConfig({
 	themeConfig: {
 		nav: nav(),
 		sidebar: {
-			"/config/": { base: "/config/", items: sidebarConfig() },
-			"/featured/": {
-				base: "/home-assistant-config/featured/",
-				items: sidebarFeatured(),
-			},
+			"/config/": sidebarConfig(),
+			"/featured/": sidebarFeatured(),
 		},
 	},
 });
@@ -31,14 +28,14 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 				{
 					text: "Automations",
 					link: "automations",
-					base: "/home-assistant-config/config/automations/",
+					base: "/config/automations/",
 					items: [
 						{
 							text: "Notifications",
 							link: "notifications/",
-							base: "/notifications/",
+							base: "/config/automations/notifications/",
 							collapsed: true,
-							items: [{ text: "Calls", link: "call" }],
+							items: [{ text: "Calls", link: "/config/automations/notifications/call" }],
 						},
 					],
 				},
@@ -46,15 +43,15 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 					text: "Integrations",
 					link: "integrations",
 					items: [
-						{ text: "Waste", link: "integrations/waste" },
-						{ text: "Food warnings", link: "integrations/food_warnings" },
+						{ text: "Waste", link: "/config/integrations/waste" },
+						{ text: "Food warnings", link: "/config/integrations/food_warnings" },
 						{
 							text: "MQTT",
-							link: "integrations/mqtt",
+							link: "/config/integrations/mqtt",
 							items: [
 								{
 									text: "HASS Agent",
-									link: "integrations/mqtt/hassagent",
+									link: "/config/integrations/mqtt/hassagent",
 								},
 							],
 						},
