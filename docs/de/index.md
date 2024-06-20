@@ -12,10 +12,10 @@ hero:
   actions:
     - theme: brand
       text: Konfiguration
-      link: /config
+      link: /de/config
     - theme: alt
       text: Empfohlene Kanäle
-      link: /featured
+      link: /de/featured
 
 features:
   - title: Beispiele
