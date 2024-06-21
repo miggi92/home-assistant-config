@@ -11,6 +11,22 @@ cards:
         entity: weather.home
         show_conditions: true
         show_temperature: true
+      - type: action
+        icon_color: red
+        icon: mdi:medication
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: "Medizin & Tabletten"
+              content:
+                type: vertical-stack
+                cards:
+                  - type: custom:mushroom-entity-card
+                    entity: input_boolean.miguel_heuschnupfen_tablette_genommen
+                    fill_container: false
+                    secondary_info: last-changed
       - type: entity
         icon: mdi:lightbulb
         icon_color: yellow
