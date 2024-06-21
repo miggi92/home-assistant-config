@@ -1,3 +1,4 @@
+---
 - id: "1690789658458"
   alias: Android Auto Miguel
   description: ""
@@ -38,3 +39,21 @@
   description: ""
   use_blueprint:
     path: andrew-codechimp/battery_notes_battery_replaced.yaml
+- id: "1718953674625"
+  alias: Miguel Heuschnupfen
+  description: ""
+  use_blueprint:
+    path: Aohzan/medication_reminder_android.yaml
+    input:
+      reminder_time: "10:30:00"
+      notify_device: a56330b859925d5ea5863e1c7404cb69
+      input_boolean: input_boolean.miguel_heuschnupfen_tablette_genommen
+      notification_title: Tabletten Erinnerung!
+      notification_message: Es ist Zeit deine Tabletten zu nehmen.
+      notification_action_taken: Genommen
+      notification_action_later: Später
+      notification_action_skip: Aussetzen
+      logbook_message_remind: Erinnerung verschickt
+      logbook_message_taken: Tabletten genommen
+      logbook_message_skip: Erinnerung ausgesetzt
+      logbook_message_no_answer: Keine Antwort
