@@ -88,8 +88,8 @@ person_card_template:
                 conditions:
                   - entity: "[[entity]]"
                     state: home
-                  - entity: "input_boolean.[[id]]_has_swatch"
-                    state: "on"
+                  - entity: "device_tracker.[[phone]]_gps"
+                    state: home
                 card:
                   type: glance
                   entities:
@@ -108,8 +108,8 @@ person_card_template:
                 conditions:
                   - entity: "[[entity]]"
                     state_not: home
-                  - entity: "input_boolean.[[id]]_has_swatch"
-                    state: "on"
+                  - entity: "device_tracker.[[phone]]_gps"
+                    state: not_home
                 card:
                   type: glance
                   entities:
