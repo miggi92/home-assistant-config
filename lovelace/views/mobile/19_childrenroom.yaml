@@ -6,6 +6,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: back
+      - type: spacer
   - type: horizontal-stack
     cards:
       - hours_to_show: 24

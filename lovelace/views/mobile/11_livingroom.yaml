@@ -6,6 +6,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: back
+      - type: spacer
       - type: action
         icon: mdi:television-box
         tap_action:

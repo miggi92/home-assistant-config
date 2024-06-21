@@ -6,6 +6,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: back
+      - type: spacer
       - type: entity
         entity: binary_sensor.dusche
   - type: horizontal-stack

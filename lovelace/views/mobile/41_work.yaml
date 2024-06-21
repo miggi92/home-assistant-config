@@ -7,6 +7,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: back
+      - type: spacer
   - type: iframe
     url: !secret work_restaurant
     aspect_ratio: 100%

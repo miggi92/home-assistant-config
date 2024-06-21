@@ -6,6 +6,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: back
+      - type: spacer
       - type: entity
         entity: input_boolean.wash_active
       - type: entity
