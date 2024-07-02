@@ -6,4 +6,4 @@ motion_sensors:
   entities:
     - group.sleep_motion_sensors
     - group.living_motion_sensors
-    - binary_sensor.kinderzimmerbewegungssensor_bewegung
+    - binary_sensor.kinderzimmerbewegungssensor_occupancy

@@ -13,13 +13,13 @@ cards:
         graph: line
         name: Temperatur
         type: sensor
-        entity: sensor.kinderzimmertempsensor_temperatur
+        entity: sensor.kinderzimmertempsensor_temperature
         detail: 1
       - hours_to_show: 24
         graph: line
         name: Luftfeuchtigkeit
         type: sensor
-        entity: sensor.kinderzimmertempsensor_luftfeuchtigkeit
+        entity: sensor.kinderzimmertempsensor_humidity
         detail: 1
   - type: horizontal-stack
     cards:

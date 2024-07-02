@@ -17,13 +17,13 @@ cards:
         graph: line
         name: Temperatur
         type: sensor
-        entity: sensor.abstellkammertempsensor_temperatur
+        entity: sensor.abstellkammertempsensor_temperature
         detail: 1
       - hours_to_show: 24
         graph: line
         name: Luftfeuchtigkeit
         type: sensor
-        entity: sensor.abstellkammertempsensor_luftfeuchtigkeit
+        entity: sensor.abstellkammertempsensor_humidity
         detail: 1
   - type: horizontal-stack
     cards:
@@ -39,11 +39,11 @@ cards:
         graph: line
         name: Waschmaschinen Energieverbrauch insg.
         type: sensor
-        entity: sensor.waschmaschinen_steckdose_zusammenfassung_geliefert
+        entity: sensor.waschmaschinen_steckdose_energy
         detail: 1
       - name: Waschmaschinen Verbrauch
         type: sensor
-        entity: sensor.waschmaschinen_steckdose_leistung
+        entity: sensor.waschmaschinen_steckdose_power
         graph: line
         detail: 2
         hours_to_show: 4
@@ -60,13 +60,13 @@ cards:
         graph: line
         name: Trockner Energieverbrauch insg.
         type: sensor
-        entity: sensor.trockner_steckdose_zusammenfassung_geliefert
+        entity: sensor.trockner_steckdose_energy
         detail: 1
       - hours_to_show: 4
         graph: line
         name: Trockner Verbrauch
         type: sensor
-        entity: sensor.trockner_steckdose_leistung
+        entity: sensor.trockner_steckdose_power
         detail: 2
   - type: horizontal-stack
     cards:

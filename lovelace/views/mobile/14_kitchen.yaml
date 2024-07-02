@@ -29,7 +29,7 @@ cards:
         graph: line
         name: Luftfeuchtigkeit
         type: sensor
-        entity: sensor.kuchentempsensor_luftfeuchtigkeit
+        entity: sensor.kuchentempsensor_humidity
         detail: 1
   - type: horizontal-stack
     cards:

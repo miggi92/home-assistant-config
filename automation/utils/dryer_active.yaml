@@ -5,7 +5,7 @@ id: ee292445-9310-491a-bfde-075737bd1b8e
 description: "Setzt den Helfer, wenn der Trockner läuft."
 trigger:
   - platform: numeric_state
-    entity_id: sensor.trockner_steckdose_leistung
+    entity_id: sensor.trockner_steckdose_power
     above: "15"
     for: "00:01:00"
 condition:
@@ -17,6 +17,6 @@ action:
     entity_id: input_boolean.dryer_active
   - service: input_number.set_value
     data_template:
-      value: "{{ states('sensor.trockner_steckdose_zusammenfassung_geliefert') }}"
+      value: "{{ states('sensor.trockner_steckdose_energy') }}"
       entity_id: input_number.dryer_cycle_consumption
 mode: single

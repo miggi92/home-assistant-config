@@ -1951,6 +1951,11 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Flic",
+            "model": "V2_white",
+            "battery_type": "CR2032"
+        },
+        {
             "manufacturer": "Flo by Moen",
             "model": "puck_v1",
             "battery_type": "CR123A"

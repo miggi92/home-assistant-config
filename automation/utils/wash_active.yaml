@@ -8,7 +8,7 @@ trigger:
     entity_id: sensor.waschmaschine_operation_state
     to: "Run"
   - platform: numeric_state
-    entity_id: sensor.waschmaschinen_steckdose_leistung
+    entity_id: sensor.waschmaschinen_steckdose_power
     above: "15"
     for: "00:01:00"
 condition:
@@ -20,6 +20,6 @@ action:
     entity_id: input_boolean.wash_active
   - service: input_number.set_value
     data_template:
-      value: "{{ states('sensor.waschmaschinen_steckdose_zusammenfassung_geliefert') }}"
+      value: "{{ states('sensor.waschmaschinen_steckdose_energy') }}"
       entity_id: input_number.wash_cycle_consumption
 mode: single

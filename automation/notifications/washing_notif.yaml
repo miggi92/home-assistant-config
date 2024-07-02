@@ -5,7 +5,7 @@ id: 85d51d88-d162-4a4b-b1ee-d09e818afb98
 description: "Benachrichtigt wenn die Waschmaschine fertig ist"
 trigger:
   - platform: numeric_state
-    entity_id: sensor.waschmaschinen_steckdose_leistung
+    entity_id: sensor.waschmaschinen_steckdose_power
     below: "1.0"
     for: "00:01:00"
   - platform: state
@@ -22,7 +22,7 @@ action:
       title: |
         🧼 Waschmaschine 🧼
       value1: >-
-        {% set cycleConsumption = ( states("sensor.waschmaschinen_steckdose_zusammenfassung_geliefert") | float -  states("input_number.wash_cycle_consumption") | float ) %}
+        {% set cycleConsumption = ( states("sensor.waschmaschinen_steckdose_energy") | float -  states("input_number.wash_cycle_consumption") | float ) %}
         {% set costs = cycleConsumption * states("input_number.strompreis") | float(2) %}
         Waschmaschine ist fertig. Verbrauch {{ cycleConsumption | float|round(2) }} kWh.
         Das macht ca. {{ costs | float|round(2) }} €

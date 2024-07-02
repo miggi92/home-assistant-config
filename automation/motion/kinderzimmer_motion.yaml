@@ -5,7 +5,7 @@ id: b3ad247c-d77b-437c-8cba-8c3fdb7b99d9
 description: ""
 trigger:
   - platform: state
-    entity_id: binary_sensor.kinderzimmerbewegungssensor_bewegung
+    entity_id: binary_sensor.kinderzimmerbewegungssensor_occupancy
     to: "on"
 condition:
   - condition: time
