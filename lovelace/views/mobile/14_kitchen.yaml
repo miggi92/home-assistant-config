@@ -23,7 +23,7 @@ cards:
         graph: line
         name: Temperatur
         type: sensor
-        entity: sensor.kuchentempsensor_temperatur
+        entity: sensor.kuchentempsensor_temperature
         detail: 1
       - hours_to_show: 24
         graph: line
