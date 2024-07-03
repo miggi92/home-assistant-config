@@ -75,12 +75,12 @@ cards:
         detail: 1
   - type: horizontal-stack
     cards:
-      - hours_to_show: 24
-        graph: line
-        name: Luftqualität
-        type: sensor
-        entity: sensor.luftqualitatssensor_vocs
-        detail: 1
+      # - hours_to_show: 24
+      #   graph: line
+      #   name: Luftqualität
+      #   type: sensor
+      #   entity: sensor.luftqualitatssensor_vocs
+      #   detail: 1
       - type: custom:decluttering-card
         template: air_quality_humidity_template
         variables:
