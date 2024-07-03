@@ -484,7 +484,7 @@ cards:
           - icon: mdi:chair-rolling
           - nav_path: office
           - light: light.buro
-          - temperature: sensor.kinderzimmertempsensor_temperature
+          - temperature: sensor.luftqualitat_buro_temperature
           - motion: binary_sensor.kinderzimmerbewegungssensor_occupancy
       - type: custom:decluttering-card
         template: room_card_template
