@@ -3,7 +3,7 @@
 #
 # This will help ensure everything I commit is kinda clean and neat.
 #
-exclude: ^(custom_components|www/community|themes)/
+exclude: ^(custom_components|www/community|themes|zigbee2mqtt)/
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0

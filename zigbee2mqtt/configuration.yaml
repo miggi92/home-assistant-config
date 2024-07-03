@@ -1,4 +1,3 @@
----
 homeassistant: true
 advanced:
   network_key:
@@ -33,6 +32,7 @@ advanced:
   legacy_availability_payload: false
   channel: 11
   log_level: warning
+  last_seen: ISO_8601_local
 mqtt:
   server: mqtt://192.168.0.83:1883
   user: zigbee2mqtt
@@ -45,11 +45,7 @@ serial:
   adapter: ezsp
 device_options:
   legacy: false
-availability:
-  active:
-    timeout: 10
-  passive:
-    timeout: 1500
+availability: true
 devices:
   "0x0017880102551d27":
     friendly_name: Schreibtischlicht
@@ -93,3 +89,7 @@ devices:
     friendly_name: Sofabewegungssensor
   "0x001788010b0a03ed":
     friendly_name: Wohnzimmerbewegungssensor
+  "0x00158d00091c5647":
+    friendly_name: Küchentempsensor
+  "0x00158d0007b89a5f":
+    friendly_name: Schlafzimmertempsensor
