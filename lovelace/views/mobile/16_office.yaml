@@ -32,11 +32,6 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-      - type: custom:mushroom-entity-card
-        entity: switch.streampisteckdose
-        layout: vertical
-        tap_action:
-          action: toggle
   - type: horizontal-stack
     cards:
       - type: custom:decluttering-card
