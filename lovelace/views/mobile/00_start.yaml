@@ -105,7 +105,7 @@ cards:
                         progress: true
   - type: conditional
     conditions:
-      - entity: sensor.dwd_home_current_warning_level
+      - entity: sensor.home_aktuelle_warnstufe
         state_not: "0"
     card:
       type: custom:mushroom-template-card
@@ -113,7 +113,7 @@ cards:
       icon_color: red
       primary: Es gibt aktuelle Wetterwarnungen
       secondary: |-
-        Anzahl der Warnungen: {{ state_attr("sensor.dwd_home_current_warning_level", "warning_count") + state_attr("sensor.dwd_home_current_advanced_warning_level", "warning_count")}}
+        Anzahl der Warnungen: {{ state_attr("sensor.home_aktuelle_warnstufe", "warning_count") + state_attr("sensor.home_vorwarnstufe", "warning_count")}}
       card_mod:
         style:
           mushroom-shape-icon$: |

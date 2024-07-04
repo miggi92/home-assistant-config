@@ -1,9 +1,9 @@
 ---
 type: conditional
 conditions:
-  - entity: sensor.dwd_home_current_warning_level
+  - entity: sensor.home_aktuelle_warnstufe
     state_not: "0"
-  - entity: sensor.dwd_home_current_warning_level
+  - entity: sensor.home_aktuelle_warnstufe
     state_not: "unavailable"
 card:
   type: vertical-stack
@@ -13,8 +13,8 @@ card:
       camera_image: camera.wetterwarnungen
     - type: markdown
       content: >-
-        {% set current = 'sensor.dwd_home_current_warning_level' %}
-        {% set advance = 'sensor.dwd_home_current_advanced_warning_level' %}
+        {% set current = 'sensor.home_aktuelle_warnstufe' %}
+        {% set advance = 'sensor.home_vorwarnstufe' %}
         {% set current_count = state_attr(current, 'warning_count') %}
         {% set advance_count = state_attr(advance, 'warning_count') %}
         {% if current_count in [0, none] and advance_count in [0, none] %}

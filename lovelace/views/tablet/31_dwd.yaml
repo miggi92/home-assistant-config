@@ -13,8 +13,8 @@ cards:
         hide_when_no_warning: true
         override_headline: false
         entities:
-          - entity: sensor.dwd_home_current_warning_level
-          - entity: sensor.dwd_home_current_advanced_warning_level
+          - entity: sensor.home_aktuelle_warnstufe
+          - entity: sensor.home_vorwarnstufe
       - type: custom:meteoalarm-card
         integration: nina
         hide_when_no_warning: true

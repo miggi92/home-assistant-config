@@ -5,8 +5,8 @@ description: "DWD Wetterwarnungen"
 trigger:
   - platform: state
     entity_id:
-      - sensor.dwd_home_current_warning_level
-      - sensor.dwd_home_current_advanced_warning_level
+      - sensor.home_aktuelle_warnstufe
+      - sensor.home_vorwarnstufe
     attribute: warning_count
 condition:
   - "{{ trigger.from_state.state != unavailable }}"
@@ -17,8 +17,8 @@ action:
   - service: script.notify_engine
     data:
       title: >-
-        {% set current = 'sensor.dwd_home_current_warning_level' %}
-        {% set advance = 'sensor.dwd_home_current_advanced_warning_level' %}
+        {% set current = 'sensor.home_aktuelle_warnstufe' %}
+        {% set advance = 'sensor.home_vorwarnstufe' %}
         {% set current_count = state_attr(current, 'warning_count') %}
         {% set advance_count = state_attr(advance, 'warning_count') %}
         {% if current_count in [0, none] and advance_count in [0, none] %}
@@ -28,8 +28,8 @@ action:
         {{ region_name }}: WETTERWARNUNG ({{ current_count + advance_count }})
         {% endif %}
       value1: |-
-        {% set current = 'sensor.dwd_home_current_warning_level' %}
-        {% set advance = 'sensor.dwd_home_current_advanced_warning_level' %}
+        {% set current = 'sensor.home_aktuelle_warnstufe' %}
+        {% set advance = 'sensor.home_vorwarnstufe' %}
         {% set current_count = state_attr(current, 'warning_count') %}
         {% set advance_count = state_attr(advance, 'warning_count') %}
         {% if current_count in [0, none] and advance_count in [0, none] %}
