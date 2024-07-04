@@ -49,8 +49,7 @@ action:
     data:
       title: "Einkaufsliste - {{ states(list) }} Dinge"
       value1: >-
-        {% for i in list %}
-
+        {% for i in incompleteItems[list].items %}
           - {{ i.name }}
         {% endfor %}
       who: "home"
