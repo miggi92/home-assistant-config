@@ -21,17 +21,21 @@ filter:
             {{ state_attr(entity, 'friendly_name') }} ({{state_attr(entity, 'years_at_anniversary') }})
         icon_color: green
         secondary: |
-            {%- set event_date = state_attr(entity, 'date') %}
+            {%- set event_date = state_attr(entity, 'next_date') %}
             {%- set now = now() %}
-            {%- set delta = event_date - now %}
-            {%- set weeks = (delta.days // 7) %}
-            {%- set days = delta.days % 7 %}
-            {%- set hours = delta.seconds // 3600 %}
-            {%- set minutes = (delta.seconds % 3600) // 60 %}
-            {{- "{} Wochen ".format(weeks) if weeks > 0 else "" -}}
-            {{- "{} Tage ".format(days) if days > 0 else "" -}}
-            {{- "{} Stunden ".format(hours) if hours > 0 else "" -}}
-            {{- "{} Minuten ".format(minutes) if minutes > 0 else "" -}}
+            {%- if event_date.date() == now.date() -%}
+                Heute
+            {%- else -%}
+                {%- set delta = event_date - now %}
+                {%- set weeks = (delta.days // 7) %}
+                {%- set days = delta.days % 7 %}
+                {%- set hours = delta.seconds // 3600 %}
+                {%- set minutes = (delta.seconds % 3600) // 60 %}
+                {{- "{} Wochen ".format(weeks) if weeks > 0 else "" -}}
+                {{- "{} Tage ".format(days) if days > 0 else "" -}}
+                {{- "{} Stunden ".format(hours) if hours > 0 else "" -}}
+                {{- "{} Minuten ".format(minutes) if minutes > 0 else "" -}}
+            {%- endif -%}
         badge_icon: |-
             {%- set event = int(states(entity)) %}
             {% if (event) <= 10 %}
