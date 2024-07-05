@@ -21,12 +21,22 @@ cards:
             data:
               title: "Medizin & Tabletten"
               content:
-                type: vertical-stack
-                cards:
-                  - type: custom:mushroom-entity-card
-                    entity: input_boolean.miguel_heuschnupfen_tablette_genommen
-                    fill_container: false
-                    secondary_info: last-changed
+                type: custom:auto-entities
+                filter:
+                  include:
+                    - entity_id: input_boolean.medis_*
+                      options:
+                        type: custom:mushroom-entity-card
+                        secondary_info: last-changed
+                        icon: mdi:pill
+                        icon_color: red
+                        tap_action:
+                          action: more-info
+
+                show_empty: false
+                card:
+                  type: entities
+
       - type: entity
         icon: mdi:lightbulb
         icon_color: yellow
