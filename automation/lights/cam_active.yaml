@@ -1,0 +1,49 @@
+---
+# light indecator if webcam is on
+alias: camActiveLight
+description: "Light sync to webcam"
+id: 74cbcca6-c48d-4def-b2fe-7b5664a94701
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.bcwmc5cg4100cy0_kameraaktiv
+condition:
+  - condition: state
+    entity_id: binary_sensor.workday_sensor
+    state: "on"
+  - condition: state
+    entity_id: schedule.buro_tage
+    state: "off"
+action:
+  - if:
+      - condition: state
+        entity_id: binary_sensor.bcwmc5cg4100cy0_kameraaktiv
+        state: "on"
+    then:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          rgb_color:
+            - 255
+            - 0
+            - 0
+          brightness_pct: 100
+        target:
+          entity_id: light.schreibtischlicht
+    else:
+      - service: light.turn_on
+        metadata: {}
+        data:
+          rgb_color:
+            - 30
+            - 255
+            - 0
+          flash: long
+        target:
+          entity_id: light.schreibtischlicht
+      - service: light.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: light.schreibtischlicht
