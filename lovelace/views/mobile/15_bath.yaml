@@ -39,7 +39,7 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-entity-card
-        entity: binary_sensor.duschsensor_feuchtigkeit
+        entity: binary_sensor.duschsensor_water_leak
       - type: custom:mushroom-entity-card
         entity: input_boolean.shower_active
   - type: custom:decluttering-card
