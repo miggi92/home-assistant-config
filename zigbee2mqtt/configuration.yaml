@@ -93,3 +93,7 @@ devices:
     friendly_name: Schlafzimmertempsensor
   '0x0017880102551d27':
     friendly_name: Schreibtischlicht
+  '0x00158d0008d09824':
+    friendly_name: Duschsensor
+  '0x84ba20fffead3854':
+    friendly_name: '0x84ba20fffead3854'
