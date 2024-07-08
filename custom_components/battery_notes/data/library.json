@@ -289,6 +289,11 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "_TZE200_68nvbio9",
+            "model": "TS0601",
+            "battery_type": "Rechargeable"
+        },
+        {
             "manufacturer": "_TZE200_a8sdabtg",
             "model": "TS0601",
             "battery_type": "AAA",
@@ -5173,6 +5178,11 @@
             "model": "YD.LO1",
             "battery_type": "AA",
             "battery_quantity": 4
+        },
+        {
+            "manufacturer": "X-Sense",
+            "model": "XS01-M",
+            "battery_type": "CR123A"
         },
         {
             "manufacturer": "Xiaomi",
