@@ -1,0 +1,21 @@
+---
+# Heizung automatisch ausschalten, falls sie ausverstehn angeschaltet wird.
+alias: autoHeaterOff
+id: 46d1add5-ee1d-4dbe-888a-a3054a247eaa
+description: "Heizung automatisch ausschalten, falls sie ausverstehn angeschaltet wird."
+trigger:
+  - platform: state
+    entity_id: climate.room_climate_wohnzimmer
+    state: "on"
+
+condition:
+  - condition: numeric_state
+    entity_id: sensor.daikinap90134_outside_temperature
+    above: 18
+action:
+  - service: climate.turn_off
+    target:
+      entity_id: climate.room_climate_wohnzimmer
+    data: {}
+
+mode: single
