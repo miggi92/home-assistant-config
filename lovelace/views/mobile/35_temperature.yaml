@@ -9,6 +9,7 @@ cards:
       - type: back
       - type: spacer
   - type: custom:auto-entities
+    unique: entity
     card:
       type: entities
       title: Temperature
@@ -18,9 +19,14 @@ cards:
           domain: sensor
           attributes:
             unit_of_measurement: "°C"
+        - entity_id: /^.*temperatur*/
+          domain: sensor
+          attributes:
+            unit_of_measurement: "°C"
       exclude:
         - state: "unavailable"
         - entity_id: "*device*"
+        - entity_id: "*realfeel*"
     sort:
       method: state
-      count: 10
+      count: 20
