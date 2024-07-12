@@ -7,7 +7,7 @@ trigger:
   - platform: state
     entity_id:
       - climate.room_climate_wohnzimmer
-    to: "on"
+    from: "off"
 
 condition:
   - condition: numeric_state
