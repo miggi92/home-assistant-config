@@ -23,6 +23,30 @@ cards:
         detail: 1
   - type: horizontal-stack
     cards:
+      - type: gauge
+        entity: sensor.luftqualitat_buro_pm25
+        name: Feinstaub
+        severity:
+          green: 0
+          yellow: 12
+          red: 50
+        max: 50
+      - type: gauge
+        entity: sensor.luftqualitat_buro_voc_index
+        name: Luftqualität
+        severity:
+          green: 0
+          yellow: 200
+          red: 400
+        max: 500
+  - type: horizontal-stack
+    cards:
+      - type: custom:decluttering-card
+        template: air_quality_humidity_template
+        variables:
+          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
+  - type: horizontal-stack
+    cards:
       - type: custom:mushroom-light-card
         entity: light.schreibtischlicht
         show_brightness_control: true
@@ -32,12 +56,6 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: horizontal-stack
-    cards:
-      - type: custom:decluttering-card
-        template: air_quality_humidity_template
-        variables:
-          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
   - type: custom:decluttering-card
     template: pc_card_template
     variables:
