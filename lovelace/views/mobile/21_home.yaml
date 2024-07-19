@@ -69,6 +69,7 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
+  - type: energy-sources-table
   - type: custom:mushroom-title-card
     title: Hausarbeiten
   - type: custom:state-switch
