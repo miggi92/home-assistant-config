@@ -41,6 +41,7 @@ cards:
             hide_date: false
             hourly_forecast: false
             use_browser_time: true
+            aqi_sensor: sensor.u_s_air_quality_index
           - type: custom:mushroom-template-card
             primary: |-
               {% set time = now().hour %}
