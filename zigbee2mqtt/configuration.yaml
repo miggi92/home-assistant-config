@@ -99,3 +99,5 @@ devices:
     friendly_name: Maja Gassi
   '0xcc86ecfffe924d9c':
     friendly_name: Tabletsteckdose
+  '0x54ef441000442eea':
+    friendly_name: Luftqualitätssensor
