@@ -70,6 +70,24 @@ cards:
         tap_action:
           action: toggle
   - type: energy-sources-table
+  - type: "custom:auto-entities"
+    show_empty: false
+    card:
+      show_header_toggle: false
+      title: "Pflanzen"
+      type: entities
+    filter:
+      include:
+        - attributes:
+            device_class: plant
+          options:
+            type: custom:flower-card
+            show_bars:
+              - illuminance
+              - humidity
+              - moisture
+              - conductivity
+              - temperature
   - type: custom:mushroom-title-card
     title: Hausarbeiten
   - type: custom:state-switch
