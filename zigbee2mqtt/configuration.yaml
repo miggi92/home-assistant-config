@@ -101,3 +101,5 @@ devices:
     friendly_name: Tabletsteckdose
   '0x54ef441000442eea':
     friendly_name: Luftqualitätssensor
+  '0x00178801001f2e28':
+    friendly_name: Discolicht
