@@ -30,7 +30,7 @@ from homeassistant import config_entries
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.const import CONF_EMAIL, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_URL
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import UnknownFlow
+from homeassistant.data_entry_flow import FlowResult, UnknownFlow
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.network import NoURLAvailableError, get_url
@@ -59,9 +59,10 @@ from .const import (
     DATA_ALEXAMEDIA,
     DEFAULT_DEBUG,
     DEFAULT_EXTENDED_ENTITY_DISCOVERY,
+    DEFAULT_HASS_URL,
     DEFAULT_PUBLIC_URL,
     DEFAULT_QUEUE_DELAY,
-    DEFAULT_SCAN_DELAY,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     ISSUE_URL,
     STARTUP,
@@ -69,6 +70,8 @@ from .const import (
 from .helpers import calculate_uuid
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_VERSION = 1
 
 
 @callback
@@ -87,7 +90,8 @@ def in_progess_instances(hass):
 class AlexaMediaFlowHandler(config_entries.ConfigFlow):
     """Handle a Alexa Media config flow."""
 
-    VERSION = 1
+    VERSION = CONFIG_VERSION
+
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
     proxy: AlexaProxy = None
     proxy_view: "AlexaMediaAuthorizationProxyView" = None
@@ -121,6 +125,7 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
                 (vol.Required(CONF_PASSWORD), str),
                 (vol.Optional(CONF_OTPSECRET), str),
                 (vol.Optional(CONF_SECURITYCODE), str),
+                (vol.Optional(CONF_PUBLIC_URL), str),
                 (vol.Optional(CONF_INCLUDE_DEVICES, default=""), str),
                 (vol.Optional(CONF_EXCLUDE_DEVICES, default=""), str),
                 (vol.Optional(CONF_SCAN_INTERVAL, default=60), int),
@@ -142,12 +147,21 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
 
     async def async_step_user(self, user_input=None):
         # pylint: disable=too-many-branches
+
         """Provide a proxy for login."""
         self._save_user_input_to_config(user_input=user_input)
+        """ Internal URL for proxy authentication """
         try:
-            hass_url: str = get_url(self.hass, prefer_external=True)
+            hass_url: str = get_url(self.hass, allow_external=False)
         except NoURLAvailableError:
-            hass_url = ""
+            hass_url = DEFAULT_HASS_URL
+
+        """ External URL for cloud connected services """
+        try:
+            DEFAULT_PUBLIC_URL: str = get_url(self.hass, allow_internal=False)
+        except NoURLAvailableError:
+            DEFAULT_PUBLIC_URL = ""
+
         self.proxy_schema = OrderedDict(
             [
                 (
@@ -181,6 +195,13 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
                 ),
                 (
                     vol.Optional(
+                        CONF_PUBLIC_URL,
+                        default=self.config.get(CONF_PUBLIC_URL, DEFAULT_PUBLIC_URL),
+                    ),
+                    str,
+                ),
+                (
+                    vol.Optional(
                         CONF_INCLUDE_DEVICES,
                         default=self.config.get(CONF_INCLUDE_DEVICES, ""),
                     ),
@@ -196,7 +217,9 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
                 (
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
-                        default=self.config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_DELAY),
+                        default=self.config.get(
+                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                        ),
                     ),
                     int,
                 ),
@@ -715,8 +738,8 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
         """
         if user_input is None:
             return
-        if CONF_URL in user_input:
-            self.config[CONF_URL] = user_input[CONF_URL]
+        if CONF_HASS_URL in user_input:
+            self.config[CONF_HASS_URL] = user_input[CONF_HASS_URL]
         self.securitycode = user_input.get(CONF_SECURITYCODE)
         if self.securitycode is not None:
             self.config[CONF_SECURITYCODE] = self.securitycode
@@ -733,8 +756,10 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
             self.config[CONF_EMAIL] = user_input[CONF_EMAIL]
         if CONF_PASSWORD in user_input:
             self.config[CONF_PASSWORD] = user_input[CONF_PASSWORD]
-        if CONF_HASS_URL in user_input:
-            self.config[CONF_HASS_URL] = user_input[CONF_HASS_URL]
+        if CONF_URL in user_input:
+            self.config[CONF_URL] = user_input[CONF_URL]
+        if CONF_PUBLIC_URL in user_input:
+            self.config[CONF_PUBLIC_URL] = user_input[CONF_PUBLIC_URL]
         if CONF_SCAN_INTERVAL in user_input:
             self.config[CONF_SCAN_INTERVAL] = (
                 user_input[CONF_SCAN_INTERVAL]
@@ -784,8 +809,11 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
                     default=self.securitycode if self.securitycode else "",
                 ): str,
                 vol.Required(
-                    CONF_OTPSECRET,
-                    default=self.config.get(CONF_OTPSECRET, ""),
+                    CONF_OTPSECRET, default=self.config.get(CONF_OTPSECRET, "")
+                ): str,
+                vol.Optional(
+                    CONF_PUBLIC_URL,
+                    default=self.config.get(CONF_PUBLIC_URL, DEFAULT_PUBLIC_URL),
                 ): str,
                 vol.Optional(
                     CONF_INCLUDE_DEVICES,
@@ -799,18 +827,17 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
                     CONF_SCAN_INTERVAL, default=self.config.get(CONF_SCAN_INTERVAL, 60)
                 ): int,
                 vol.Optional(
-                    CONF_QUEUE_DELAY,
-                    default=self.config_entry.options.get(CONF_QUEUE_DELAY, 1.5),
+                    CONF_QUEUE_DELAY, default=self.config.get(CONF_QUEUE_DELAY, 1.5)
                 ): float,
                 vol.Optional(
                     CONF_EXTENDED_ENTITY_DISCOVERY,
-                    default=self.config_entry.options.get(
+                    default=self.config.get(
                         CONF_EXTENDED_ENTITY_DISCOVERY,
                         DEFAULT_EXTENDED_ENTITY_DISCOVERY,
                     ),
                 ): bool,
                 vol.Optional(
-                    CONF_DEBUG, default=bool(self.config.get(CONF_DEBUG, False))
+                    CONF_DEBUG, default=self.config.get(CONF_DEBUG, False)
                 ): bool,
             },
         )
@@ -818,7 +845,9 @@ class AlexaMediaFlowHandler(config_entries.ConfigFlow):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
@@ -828,10 +857,75 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
+        self.config = OrderedDict()
         self.config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
-        """Handle options flow."""
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options"""
+
+        self.options_schema = OrderedDict(
+            [
+                (
+                    vol.Optional(
+                        CONF_PUBLIC_URL,
+                        default=self.config_entry.data.get(
+                            CONF_PUBLIC_URL, DEFAULT_PUBLIC_URL
+                        ),
+                    ),
+                    str,
+                ),
+                (
+                    vol.Optional(
+                        CONF_INCLUDE_DEVICES,
+                        default=self.config_entry.data.get(CONF_INCLUDE_DEVICES, ""),
+                    ),
+                    str,
+                ),
+                (
+                    vol.Optional(
+                        CONF_EXCLUDE_DEVICES,
+                        default=self.config_entry.data.get(CONF_EXCLUDE_DEVICES, ""),
+                    ),
+                    str,
+                ),
+                (
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL,
+                        default=self.config_entry.data.get(CONF_SCAN_INTERVAL, 120),
+                    ),
+                    int,
+                ),
+                (
+                    vol.Optional(
+                        CONF_QUEUE_DELAY,
+                        default=self.config_entry.data.get(
+                            CONF_QUEUE_DELAY, DEFAULT_QUEUE_DELAY
+                        ),
+                    ),
+                    float,
+                ),
+                (
+                    vol.Optional(
+                        CONF_EXTENDED_ENTITY_DISCOVERY,
+                        default=self.config_entry.data.get(
+                            CONF_EXTENDED_ENTITY_DISCOVERY,
+                            DEFAULT_EXTENDED_ENTITY_DISCOVERY,
+                        ),
+                    ),
+                    bool,
+                ),
+                (
+                    vol.Optional(
+                        CONF_DEBUG,
+                        default=self.config_entry.data.get(CONF_DEBUG, DEFAULT_DEBUG),
+                    ),
+                    bool,
+                ),
+            ]
+        )
+
         if user_input is not None:
             """Preserve these parameters"""
             if CONF_URL in self.config_entry.data:
@@ -846,6 +940,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 ]
             if CONF_OTPSECRET in self.config_entry.data:
                 user_input[CONF_OTPSECRET] = self.config_entry.data[CONF_OTPSECRET]
+            if CONF_OAUTH in self.config_entry.data:
+                user_input[CONF_OAUTH] = self.config_entry.data[CONF_OAUTH]
 
             self.hass.config_entries.async_update_entry(
                 self.config_entry, data=user_input, options=self.config_entry.options
@@ -854,38 +950,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    #                    vol.Optional(
-                    #                        CONF_HASS_URL,
-                    #                        default=self.config_entry.data[CONF_HASS_URL],
-                    #                    ): cv.string,
-                    vol.Optional(
-                        CONF_INCLUDE_DEVICES,
-                        default=self.config_entry.data[CONF_INCLUDE_DEVICES],
-                    ): cv.string,
-                    vol.Optional(
-                        CONF_EXCLUDE_DEVICES,
-                        default=self.config_entry.data[CONF_EXCLUDE_DEVICES],
-                    ): cv.string,
-                    vol.Optional(
-                        CONF_SCAN_INTERVAL,
-                        default=self.config_entry.data[CONF_SCAN_INTERVAL],
-                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=1800)),
-                    vol.Optional(
-                        CONF_QUEUE_DELAY,
-                        default=self.config_entry.data[CONF_QUEUE_DELAY],
-                    ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=5.0)),
-                    vol.Optional(
-                        CONF_EXTENDED_ENTITY_DISCOVERY,
-                        default=self.config_entry.data[CONF_EXTENDED_ENTITY_DISCOVERY],
-                    ): cv.boolean,
-                    vol.Optional(
-                        CONF_DEBUG,
-                        default=self.config_entry.data[CONF_DEBUG],
-                    ): cv.boolean,
-                }
-            ),
+            data_schema=vol.Schema(self.options_schema),
+            description_placeholders={"message": ""},
         )
 
 
