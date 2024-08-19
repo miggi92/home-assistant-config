@@ -172,6 +172,7 @@ class PresetMode:
         GENTLE: ICON.SLEEP_MODE,
         NIGHT: ICON.SLEEP_MODE,
         SLEEP: ICON.SLEEP_MODE,
+        TURBO: ICON.SPEED_3,
         # unfortunately, the allergy sleep mode has the same icon as the auto mode on the device
         SLEEP_ALLERGY: ICON.AUTO_MODE,
         # some devices have a gas and a pollution mode, but there doesn't seem to be a Philips icon for that
@@ -368,6 +369,7 @@ class PhilipsApi:
     NEW2_PM25 = "D03221"
     NEW2_GAS = "D03122"
     NEW2_HUMIDITY = "D03125"
+    NEW2_ERROR_CODE = "D03240"
     NEW2_HUMIDITY_TARGET = "D03128"
     NEW2_FILTER_NANOPROTECT_PREFILTER = "D0520D"
     NEW2_FILTER_NANOPROTECT = "D0540E"
@@ -597,6 +599,10 @@ SENSOR_TYPES: dict[str, SensorDescription] = {
     #     CONF_ENTITY_CATEGORY: EntityCategory.DIAGNOSTIC,
     # },
 }
+
+
+
+EXTRA_SENSOR_TYPES: dict[str, SensorDescription] = {}
 
 BINARY_SENSOR_TYPES: dict[str, SensorDescription] = {
     # binary device sensors
