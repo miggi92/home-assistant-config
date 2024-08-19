@@ -31,18 +31,21 @@ local_audio:
       entity_id: group.residents
       state: home
     # Update the media player with the one you want to use
-    - service: media_player.turn_on
-      entity_id: "{{ entity }}"
-    # This sets the voume via a parameter when the script is called, and should be a value between .1 and 1.0
-    - service: media_player.volume_set
-      data:
+    - action: media_player.turn_on
+      target:
         entity_id: "{{ entity }}"
+    # This sets the voume via a parameter when the script is called, and should be a value between .1 and 1.0
+    - action: media_player.volume_set
+      data:
         volume_level: >
           {{ volume }}
+      target:
+        entity_id: "{{ entity }}"
     - delay: 00:00:05
     # This tells it to play the media and is set when the script is called.
-    - service: media_player.play_media
-      entity_id: "{{ entity }}"
+    - action: media_player.play_media
+      target:
+        entity_id: "{{ entity }}"
       data:
         media_content_type: "music"
         media_content_id: >
