@@ -1,41 +1,57 @@
 ---
 # Residents
-type: horizontal-stack
+type: vertical-stack
 cards:
-  - type: custom:decluttering-card
-    template: person_card_template
-    variables:
-      - title: Miguel Info
-      - entity: person.miguel
-      - work_zone: zone.work_miguel
-      - eta_work: sensor.miguel_eta_work
-      - eta_home: sensor.miguel_eta_home
-      - phone: pixel_7_pro
-      - id: miguel
-      - beacon: sensor.beaconpixel7pro
-  - type: custom:decluttering-card
-    template: person_card_template
-    variables:
-      - title: Silke Info
-      - entity: person.silke
-      - work_zone: zone.work_silke
-      - eta_work: sensor.silke_eta_work
-      - eta_home: sensor.silke_eta_home
-      - phone: silkehandy
-      - watch: silke_uhr
-      - id: silke
-      - beacon: sensor.beacongalaxys23
-  - type: custom:decluttering-card
-    template: person_card_template
-    variables:
-      - title: Milo Info
-      - entity: person.milo_carlos
-      - id: milo_carlos
-      - work_zone: zone.kita
-  - type: custom:decluttering-card
-    template: person_card_template
-    variables:
-      - title: Maja Info
-      - entity: person.maja
-      - id: maja
-      - work_zone: zone.home
+  - type: horizontal-stack
+    title: Haushalt
+    cards:
+      - type: custom:decluttering-card
+        template: person_card_template
+        variables:
+          - title: Miguel Info
+          - entity: person.miguel
+          - work_zone: zone.work_miguel
+          - eta_work: sensor.miguel_eta_work
+          - eta_home: sensor.miguel_eta_home
+          - phone: pixel_7_pro
+          - id: miguel
+          - beacon: sensor.beaconpixel7pro
+      - type: custom:decluttering-card
+        template: person_card_template
+        variables:
+          - title: Silke Info
+          - entity: person.silke
+          - work_zone: zone.work_silke
+          - eta_work: sensor.silke_eta_work
+          - eta_home: sensor.silke_eta_home
+          - phone: silkehandy
+          - watch: silke_uhr
+          - id: silke
+          - beacon: sensor.beacongalaxys23
+      - type: custom:decluttering-card
+        template: person_card_template
+        variables:
+          - title: Milo Info
+          - entity: person.milo_carlos
+          - id: milo_carlos
+          - work_zone: zone.kita
+      - type: custom:decluttering-card
+        template: person_card_template
+        variables:
+          - title: Maja Info
+          - entity: person.maja
+          - id: maja
+          - work_zone: zone.home
+  - type: conditional
+    conditions:
+      - entity: person.dorte
+        state: "home"
+    card:
+      type: horizontal-stack
+      title: Gäste
+      cards:
+        - type: custom:mushroom-person-card
+          layout: vertical
+          entity: person.dorte
+          icon: mdi:face-woman
+          secondary_info: last-changed
