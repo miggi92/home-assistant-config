@@ -9,6 +9,9 @@ trigger:
       - person.silke
       - person.miguel
 condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
   - condition: template
     value_template: |-
       {% set personName = "person." ~ states("input_select.maja_person_sync") %}
