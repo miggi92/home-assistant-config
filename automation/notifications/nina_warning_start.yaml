@@ -19,6 +19,10 @@ trigger:
   - platform: state
     entity_id: binary_sensor.warning_home_5
     to: "on"
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
 action:
   - service: script.notify_engine
     data:

@@ -8,6 +8,9 @@ trigger:
     at: input_datetime.chores_notif_time
 condition:
   - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
+  - condition: state
     entity_id: binary_sensor.grocy_overdue_chores
     state: "on"
 action:

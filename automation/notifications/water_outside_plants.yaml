@@ -29,11 +29,9 @@ condition:
     entity_id: sensor.rained_last_day
     below: 1
   # im Urlaub brauchen wir keine Info
-  - condition: not
-    conditions:
-      - condition: state
-        entity_id: alarm_control_panel.home_alarm
-        state: armed_vacation
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
   # Nur in bestimmten Jahreszeiten
   - condition: or
     conditions:

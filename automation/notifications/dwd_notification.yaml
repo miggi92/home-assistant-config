@@ -9,6 +9,9 @@ trigger:
       - sensor.home_vorwarnstufe
     attribute: warning_count
 condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
   - "{{ trigger.from_state.state != unavailable }}"
   - |-
     {{ trigger.to_state.attributes.warning_count !=

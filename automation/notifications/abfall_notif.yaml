@@ -20,7 +20,10 @@ trigger:
     to: 1
     id: morgen
 
-condition: []
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
 action:
   - service: script.notify_engine
     data:

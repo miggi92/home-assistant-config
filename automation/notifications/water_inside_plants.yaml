@@ -11,11 +11,9 @@ condition:
     entity_id: sensor.weekday
     state: "Sunday"
   # im Urlaub brauchen wir keine Info
-  - condition: not
-    conditions:
-      - condition: state
-        entity_id: alarm_control_panel.home_alarm
-        state: armed_vacation
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
 action:
   - service: script.notify_engine
     data:

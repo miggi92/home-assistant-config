@@ -12,7 +12,10 @@ trigger:
       hours: 0
       minutes: 13
       seconds: 0
-condition: []
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
 action:
   - service: notify.alexa_media_echo_gross
     data:

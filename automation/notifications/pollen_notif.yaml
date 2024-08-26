@@ -9,6 +9,9 @@ trigger:
     entity_id:
       - sensor.pollenflug_graeser_112
 condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
   - condition: numeric_state
     entity_id: sensor.pollenflug_graeser_112
     above: 0
