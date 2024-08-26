@@ -1,0 +1,12 @@
+---
+# Reset medi booleans, that the notification can be send
+alias: MedisResetDailyBool
+id: b67001f4-cf8f-414d-a1bb-84fe46b2b37b
+description: "Medis reset"
+trigger:
+  - platform: time
+    at: "00:01:00"
+action:
+  - action: input_boolean.turn_off
+    target:
+      label_id: medisdaily

@@ -1,0 +1,17 @@
+---
+# Medis notification
+alias: MedisNotification
+id: 98553e4d-5625-488b-8a7d-01c315807b24
+description: "Medi Notif"
+trigger:
+  - platform: time
+    at: input_datetime.miguel_medis_reminder_time
+action:
+  - action: notify.mobile_app_pixel_7_pro
+    data:
+      title: Medis
+      message: Medikament muss genommen werden
+      data:
+        channel: Gesundheit
+        car_ui: true
+        notification_icon: "mdi:pill"
