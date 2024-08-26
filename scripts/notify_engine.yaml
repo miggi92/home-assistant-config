@@ -58,6 +58,7 @@ notify_engine:
             - silke
             - work
             - tv
+            - family
       default: home
       name: Who
       description: An wen soll die Benachrichtigung gehen?
@@ -109,6 +110,8 @@ notify_engine:
             notify.html5_workmiguellaptop
           {% elif who == 'tv' %}
             notify.gtv
+          {% elif who == 'family' %}
+            notify.signalfamily
           {% else %}
             notify.miguel_telegram
           {% endif %}

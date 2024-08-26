@@ -1,0 +1,25 @@
+---
+#
+alias: "Scheduled flight takes off"
+trigger:
+  platform: event
+  event_type: flightradar24_tracked_took_off
+action:
+  - service: script.notify_engine
+    data:
+      title: Flight
+      value1: >-
+        Flight takes off {{ trigger.event.data.callsign }} to {{ trigger.event.data.airport_destination_city }}
+        [Open FlightRadar](https://www.flightradar24.com/{{ trigger.event.data.callsign }})
+      who: "home"
+      tag_id: "information"
+      group: "Flights"
+  - service: script.notify_engine
+    data:
+      title: Flight
+      value1: >-
+        Flight takes off {{ trigger.event.data.callsign }} to {{ trigger.event.data.airport_destination_city }}
+        [Open FlightRadar](https://www.flightradar24.com/{{ trigger.event.data.callsign }})
+      who: "family"
+      tag_id: "information"
+      group: "Flights"
