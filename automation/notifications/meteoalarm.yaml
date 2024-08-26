@@ -1,0 +1,24 @@
+---
+# MeteoAlarm Warnungen
+alias: MeteoAlarm
+id: 40db0999-dd04-4b40-b5d3-58684fc9895f
+description: "Meteo Alarm"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.meteoalarm
+    to: "on"
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: "🌩️ {{state_attr('binary_sensor.meteoalarm', 'headline')}} 🌩️"
+      value1: >-
+        {{state_attr('binary_sensor.meteoalarm', 'description')}}
+
+        {{state_attr('binary_sensor.meteoalarm', 'effective')}}
+
+        *Handlungsempfehlung:*
+        {{state_attr('binary_sensor.meteoalarm', 'instruction')}}
+      who: "family"
+      tag_id: "information"
+      group: "Wetter"
