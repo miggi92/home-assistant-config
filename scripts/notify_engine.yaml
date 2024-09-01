@@ -163,15 +163,25 @@ notify_engine:
                   image:
                     url: "{{ photo | default }}"
           else:
-            - service: "{{ notifier }}"
-              alias: "Default notification"
-              data:
-                title: "{{ title | default }}"
-                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-                data:
-                  group: "{{ group | default }}"
-                  tag: "{{ tag_id | default }}"
-                  image: "{{ photo | default }}"
+            - if:
+                - condition: template
+                  value_template: "{{ 'signal' in notifier }}"
+              then:
+                - action: "{{ notifier }}"
+                  alias: "Signal notification "
+                  data:
+                    title: "{{ title | default }}"
+                    message: "{{ value1 | default }} {{ value2 | default }}"
+              else:
+                - service: "{{ notifier }}"
+                  alias: "Default notification"
+                  data:
+                    title: "{{ title | default }}"
+                    message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
+                    data:
+                      group: "{{ group | default }}"
+                      tag: "{{ tag_id | default }}"
+                      image: "{{ photo | default }}"
     - parallel:
         - if:
             - condition: state
