@@ -2185,6 +2185,16 @@
         },
         {
             "manufacturer": "Google",
+            "model": "Pixel 2",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Google",
+            "model": "Pixel 6a",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Google",
             "model": "Topaz-2.7",
             "battery_type": "MANUAL"
         },
@@ -2232,6 +2242,12 @@
             "model": "H5104",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Govee",
+            "model": "H5177",
+            "battery_type": "AAA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "Govee",
@@ -2455,6 +2471,12 @@
             "manufacturer": "ID-RF",
             "model": "Soft Remote",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "IKEA",
+            "model": "BADRING water leakage sensor",
+            "model_id": "E2202",
+            "battery_type": "AAA"
         },
         {
             "manufacturer": "IKEA",
@@ -3370,6 +3392,11 @@
             "battery_type": "CR2032"
         },
         {
+            "manufacturer": "Oculus",
+            "model": "Quest",
+            "battery_type": "Rechargeable"
+        },
+        {
             "manufacturer": "Onvis",
             "model": "CT3",
             "battery_type": "CR2450"
@@ -3903,6 +3930,11 @@
         },
         {
             "manufacturer": "samsung",
+            "model": "SM-S901U1",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "samsung",
             "model": "SM-S918U",
             "battery_type": "Rechargeable"
         },
@@ -3953,6 +3985,12 @@
             "manufacturer": "Schneider Electric",
             "model": "Wiser radiator thermostat (WV704R0A0902)",
             "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Secure Meters (UK) Ltd.",
+            "model": "HRT4-ZW / SRT321",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {

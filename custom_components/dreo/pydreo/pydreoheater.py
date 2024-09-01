@@ -173,6 +173,7 @@ class PyDreoHeater(PyDreoBaseDevice):
             _LOGGER.error("Preset mode %s is not in the acceptable list: %s",
                             level,
                             self._device_definition.preset_modes)
+            raise ValueError(f"preset_mode must be one of: {self.preset_modes}")
 
     @mode.setter
     def mode(self, mode: str) -> None:
@@ -224,12 +225,13 @@ class PyDreoHeater(PyDreoBaseDevice):
             self._send_command(OSCON_KEY, value)
         else:
             _LOGGER.error("Attempting to set oscillation on on a device that doesn't support it.")
-            return
+            raise ValueError(f"Attempting to set oscillation on on a device that doesn't support it.")
+        return
 
     @property
     def oscangle(self) -> HeaterOscillationAngles:
         return self._oscangle
-        
+
     @oscangle.setter
     def oscangle(self, value: int) -> None:
         "Set the oscillation angle. I assume 0 means it oscillates"
