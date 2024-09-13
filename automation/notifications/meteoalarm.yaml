@@ -9,7 +9,7 @@ trigger:
     to: "on"
 condition: []
 action:
-  - service: script.notify_engine
+  - action: script.notify_engine
     data:
       title: "🌩️ {{state_attr('binary_sensor.meteoalarm', 'headline')}} 🌩️"
       value1: >-
@@ -21,4 +21,4 @@ action:
         {{state_attr('binary_sensor.meteoalarm', 'instruction')}}
       who: "family"
       tag_id: "information"
-      group: "Wetter"
+      # group: "Wetter"
