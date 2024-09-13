@@ -6,8 +6,7 @@
 # This is pretty ugly all things considered, but seems less ugly than 
 # ignoring specific lines all over the place
 
-# pyright: reportMissingImports =false
-# pylint: disable=all
+# pylint: disable=unused-import, wildcard-import, unused-wildcard-import
 
 import voluptuous as vol
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, CONF_REGION, Platform
@@ -38,7 +37,8 @@ from homeassistant.helpers.selector import (
 
 from homeassistant.helpers.entity import (
     DeviceInfo,
-    Entity 
+    Entity,
+    EntityDescription
 )
 
 from homeassistant.core import callback #type:ignore

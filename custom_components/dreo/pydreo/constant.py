@@ -16,8 +16,6 @@ STATE_KEY = "state"
 POWERON_KEY = "poweron"
 WINDTYPE_KEY = "windtype"
 WINDLEVEL_KEY = "windlevel"
-SHAKEHORIZON_KEY = "shakehorizon"
-SHAKEHORIZONANGLE_KEY = "shakehorizonangle"
 MODE_KEY = "mode"
 HTALEVEL_KEY = "htalevel"
 OSCON_KEY = "oscon"
@@ -45,32 +43,60 @@ TEMPOFFSET_KEY = "tempoffset"
 HUMIDITY_KEY = "rh"
 TARGET_HUMIDITY_KEY = "rhlevel"
 
+# Preferences Names
+# It's possible we should switch to IDs instead of names
+PREFERENCE_TYPE_TEMPERATURE_CALIBRATION = "Temperature Calibration"  # ID: 250
+
+# Tower Fans
+SHAKEHORIZON_KEY = "shakehorizon"
+SHAKEHORIZONANGLE_KEY = "shakehorizonangle"
+
+# Ceiling Fan
+FANON_KEY = "fanon"
+
 
 DREO_API_URL_FORMAT = (
     "https://app-api-{0}.dreo-cloud.com"  # {0} is the 2 letter region code
 )
 
-DREO_API_LIST_PATH = "path"
-DREO_API_LIST_METHOD = "method"
+DREO_API_PATH = "path"
+DREO_API_METHOD = "method"
 
 DREO_API_LOGIN = "login"
 DREO_API_DEVICELIST = "devicelist"
 DREO_API_DEVICESTATE = "devicestate"
+DREO_API_SETTING_GET = "setting_get"
+DREO_API_SETTING_PUT = "setting_put"
+
+DREO_API_SETTING_DATA_KEY = "dataKey"
+DREO_API_SETTING_DATA_VALUE = "dataValue"
 
 DREO_APIS = {
     DREO_API_LOGIN: {
-        DREO_API_LIST_PATH: "/api/oauth/login",
-        DREO_API_LIST_METHOD: "post",
+        DREO_API_PATH: "/api/oauth/login",
+        DREO_API_METHOD: "post",
     },
     DREO_API_DEVICELIST: {
-        DREO_API_LIST_PATH: "/api/v2/user-device/device/list",
-        DREO_API_LIST_METHOD: "get",
+        DREO_API_PATH: "/api/v2/user-device/device/list",
+        DREO_API_METHOD: "get",
     },
     DREO_API_DEVICESTATE: {
-        DREO_API_LIST_PATH: "/api/user-device/device/state",
-        DREO_API_LIST_METHOD: "get",
+        DREO_API_PATH: "/api/user-device/device/state",
+        DREO_API_METHOD: "get",
     },
+    DREO_API_SETTING_GET: {
+        DREO_API_PATH: "/api/user-device/setting",
+        DREO_API_METHOD: "get",
+    },
+    DREO_API_SETTING_PUT: {
+        DREO_API_PATH: "/api/user-device/setting",
+        DREO_API_METHOD: "put",
+    }
 }
+
+class DREO_DEVICE_SETTING(StrEnum):
+    """Dreo device settings"""
+    FanTempOffset = "kHafFanTempOffsetKey"
 
 DREO_AUTH_REGION_NA = "NA"
 DREO_AUTH_REGION_EU = "EU"
@@ -78,11 +104,6 @@ DREO_AUTH_REGION_EU = "EU"
 DREO_API_REGION_US = "us"
 DREO_API_REGION_EU = "eu"
 
-FAN_MODE_NORMAL = "normal"
-FAN_MODE_NATURAL = "natural"
-FAN_MODE_AUTO = "auto"
-FAN_MODE_SLEEP = "sleep"
-FAN_MODE_TURBO = "turbo"
 HEATER_MODE_COOLAIR = "coolair"
 HEATER_MODE_HOTAIR = "hotair"
 HEATER_MODE_ECO = "eco"
@@ -169,3 +190,74 @@ class HeaterOscillationAngles(StrEnum):
     SIXTY = "60°",
     NINETY = "90°",
     ONE_TWENTY = "120°"
+
+#
+# The following is copied from homeassistant.components.climate
+
+# Possible swing state
+SWING_ON = "on"
+SWING_OFF = "off"
+# Possible fan state
+FAN_ON = "on"
+FAN_OFF = "off"
+FAN_AUTO = "auto"
+FAN_LOW = "low"
+FAN_MEDIUM = "medium"
+FAN_HIGH = "high"
+FAN_TOP = "top"
+FAN_MIDDLE = "middle"
+FAN_FOCUS = "focus"
+FAN_DIFFUSE = "diffuse"
+# No preset is active
+PRESET_NONE = "none"
+
+# Device is running an energy-saving mode
+PRESET_ECO = "eco"
+
+class HVACMode(StrEnum):
+    """HVAC mode for climate devices."""
+
+    # All activity disabled / Device is off/standby
+    OFF = "off"
+
+    # Heating
+    HEAT = "heat"
+
+    # Cooling
+    COOL = "cool"
+
+    # The device supports heating/cooling to a range
+    HEAT_COOL = "heat_cool"
+
+    # The temperature is set based on a schedule, learned behavior, AI or some
+    # other related mechanism. User is not able to adjust the temperature
+    AUTO = "auto"
+
+    # Device is in Dry/Humidity mode
+    DRY = "dry"
+
+    # Only the fan is on, not fan and another mode like cool
+    FAN_ONLY = "fan_only"
+
+FAN_MODE_STRINGS = {
+    "device_fans_mode_straight": "normal",
+    "device_fans_mode_natural": "natural",
+    "device_control_mode_sleep": "sleep",
+    "device_fans_mode_sleep": "sleep",
+    "device_fans_mode_auto": "auto",
+    "device_control_mode_auto": "auto",
+    "device_control_mode_turbo": "turbo",
+    "base_reverse": "reverse",
+    "device_control_custom": "custom",
+    "fan_2in1_breeze": "2-in-1 Breeze Mode" 
+}
+
+class DreoDeviceType(StrEnum):
+    """Product names for Dreo devices"""
+    TOWER_FAN = "Tower Fan"
+    AIR_CIRCULATOR = "Air Circulator"
+    AIR_PURIFIER = "Air Purifier"
+    CEILING_FAN = "Ceiling Fan"
+    HEATER = "Heater"
+    AIR_CONDITIONER = "Air Conditioner"
+    CHEF_MAKER = "Chef Maker"
