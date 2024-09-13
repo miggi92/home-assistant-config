@@ -29,9 +29,6 @@ wifi:
   ap:
     password: !secret wifi_fallback_password
 
-dashboard_import:
-  package_import_url: github://esphome/firmware/bluetooth-proxy/m5stack-atom-lite.yaml@manual_ip
-
 button:
   - platform: safe_mode
     name: Safe Mode Boot
