@@ -118,25 +118,10 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: custom:mushroom-template-card
-    entity: sensor.sky_q_schedule
-    primary: "Sky Aufnahme"
-    icon: mdi:clock-outline
-    icon_color: |-
-      {% if is_state('sensor.sky_q_schedule', 'Scheduled') %}
-        orange
-      {% else %}
-        cyan
-      {% endif %}
-    multiline_secondary: true
-    secondary: |-
-      {{ state_attr('sensor.sky_q_schedule', 'skyq_scheduled_title') }}
-      {{ as_timestamp(state_attr('sensor.sky_q_schedule', 'skyq_scheduled_start')) | timestamp_custom('%-d.%m.%y %H:%M') }} - {{ as_timestamp(state_attr('sensor.sky_q_schedule', 'skyq_scheduled_end')) | timestamp_custom('%-d.%m.%y %H:%M') }}
-    tap_action:
-      action: more-info
   - type: custom:mini-media-player
-    entity: media_player.sky_q
+    entity: media_player.fernseher_im_wohnzimmer
     artwork: full-cover
+    info: scroll
     hide:
       source: true
       volume: true
