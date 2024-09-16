@@ -721,6 +721,12 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "aqara.lock.bzacn4 ZNMS16LM",
+            "battery_type": "AA",
+            "battery_quantity": 6
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "AS006",
             "battery_type": "CR1632"
         },
@@ -1233,6 +1239,11 @@
             "manufacturer": "CPS",
             "model": "CP1500PFCLCDa",
             "battery_type": "RB1290X2"
+        },
+        {
+            "manufacturer": "Custom devices (DiY)",
+            "model": "Plant watering sensor zFlora_S (zFlora_S)",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "Custom devices (DiY)",
@@ -3200,6 +3211,12 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "modkam.ru",
+            "model": "ptvo_counter_2ch",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "Moes",
             "model": "Door/window magnetic sensor (ZSS-X-GWM-C)",
             "battery_type": "CR2032"
@@ -3376,6 +3393,11 @@
             "manufacturer": "Nortek Security & Control LLC",
             "model": "WADWAZ-1",
             "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Nortek Security & Control LLC",
+            "model": "WAPIRZ-1",
+            "battery_type": "CR123a"
         },
         {
             "manufacturer": "Nortek Security and Control",
@@ -5519,6 +5541,12 @@
             "manufacturer": "TuYa",
             "model": "Zigbee water leak sensor (TS0207_water_leak_detector_2)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "ZP01",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Tuya",
