@@ -15,7 +15,7 @@ from homeassistant.const import (
     PERCENTAGE,
 )
 
-__version__ = "4.13.0"
+__version__ = "4.13.2"
 PROJECT_URL = "https://github.com/alandtse/alexa_media_player/"
 ISSUE_URL = f"{PROJECT_URL}issues"
 NOTIFY_URL = f"{PROJECT_URL}wiki/Configuration%3A-Notification-Component#use-the-notifyalexa_media-service"
@@ -142,7 +142,7 @@ UPLOAD_PATH = "www/alexa_tts"
 
 # Note: Some of these are likely wrong
 MODEL_IDS = {
-    "A10A33FOX2NUBK": "Echo Spot",
+    "A10A33FOX2NUBK": "Echo Spot (Gen1)",
     "A10L5JEZTKKCZ8": "Vobot Bunny",
     "A11QM4H9HGV71H": "Echo Show 5 (Gen3)",
     "A12GXV8XMS007S": "Fire TV (Gen1)",
@@ -226,6 +226,7 @@ MODEL_IDS = {
     "A2V9UEGZ82H4KZ": "Fire Tablet HD 10",
     "A2VAXZ7UNGY4ZH": "Wyze Headphones",
     "A2WFDCBDEXOXR8": "Bose Soundbar 700",
+    "A2WJ2CM9ARLMRH": "Rivian Electric Vehicle",
     "A2WN1FJ2HG09UN": "Ultimate Alexa App",
     "A2X8WT9JELC577": "Ecobee5",
     "A2XPGY5LRKB9BE": "Fitbit Versa 2",
@@ -252,6 +253,7 @@ MODEL_IDS = {
     "A3C9PE6TNYLTCH": "Speaker Group",
     "A3CY98NH016S5F": "Facebook Portal Mini",
     "A3D4YURNTARP5K": "Facebook Portal TV",
+    "A3EH2E0YZ30OD6": "Echo Spot (Gen2)",
     "A3EVMLQTU6WL1W": "Fire TV (GenX)",
     "A3F1S88NTZZXS9": "Dash Wand",
     "A3FX4UWTP28V1P": "Echo (Gen3)",
@@ -295,6 +297,7 @@ MODEL_IDS = {
     "AKNO1N0KSFN8L": "Echo Dot (Gen1)",
     "AKO51L5QAQKL2": "Alexa Jams",
     "AKPGW064GI9HE": "Fire TV Stick 4K (Gen3)",
+    "ALCIV0P5M8TZ0": "Samsung Soundbar S800B",
     "ALT9P69K6LORD": "Echo Auto",
     "AMCZ48H33RCDF": "Samsung HW-Q910B 9.1.2 ch Soundbar",
     "AN630UQPG2CA4": "Fire TV (Toshiba)",

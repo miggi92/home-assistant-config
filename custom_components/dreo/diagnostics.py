@@ -27,7 +27,7 @@ KEYS_TO_REDACT = {
     "username",
     "_username",
     "token",
-    "_token"
+    "_token",
     "productId"
 }
 
@@ -40,6 +40,9 @@ async def async_get_config_entry_diagnostics(
     """Return diagnostics for a config entry."""
     pydreo_manager: PyDreo = hass.data[DOMAIN][PYDREO_MANAGER]
 
+    return _get_diagnostics(pydreo_manager)
+
+def _get_diagnostics(pydreo_manager: PyDreo) -> dict[str, Any]:
     data = {
         DOMAIN: {
             "device_count": len(pydreo_manager.devices),
@@ -50,7 +53,6 @@ async def async_get_config_entry_diagnostics(
 
     return data
 
-
 def _redact_values(data: dict) -> dict:
     """Rebuild and redact values of a dictionary, recursively"""
 
@@ -60,6 +62,10 @@ def _redact_values(data: dict) -> dict:
         if key not in KEYS_TO_REDACT:
             if isinstance(item, dict):
                 new_data[key] = _redact_values(item)
+            elif isinstance(item, list):
+                for listitem in item:
+                    if isinstance(listitem, dict):
+                        new_data[key] = [_redact_values(listitem)]
             else:
                 new_data[key] = item
         else:
