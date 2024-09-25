@@ -67,7 +67,7 @@ cards:
   - type: vertical-stack
     cards:
       - type: custom:mini-media-player
-        entity: media_player.sky_q
+        entity: media_player.fernseher_im_wohnzimmer
         artwork: full-cover
         hide:
           source: true
