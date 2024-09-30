@@ -484,6 +484,13 @@
         },
         {
             "manufacturer": "Aeotec Ltd.",
+            "model": "MultiSensor 7",
+            "model_id": "ZWA024",
+            "battery_type": "CR123A",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Aeotec Ltd.",
             "model": "ZW187",
             "battery_type": "CR2"
         },
@@ -833,6 +840,12 @@
             "manufacturer": "Aqara",
             "model": "Temperature and humidity sensor (WSDCGQ11LM)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "TVOC air quality monitor (VOCKQJK11LM)",
+            "battery_type": "CR2450",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Aqara",
@@ -1656,6 +1669,12 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HmIP-ASIR-2",
+            "battery_type": "AA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HmIP-DLD",
             "battery_type": "AA",
             "battery_quantity": 4
@@ -2346,6 +2365,21 @@
         },
         {
             "manufacturer": "Govee",
+            "model": "H5121",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Govee",
+            "model": "H5122",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Govee",
+            "model": "H5123",
+            "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Govee",
             "model": "H5177",
             "battery_type": "AAA",
             "battery_quantity": 3
@@ -2512,6 +2546,11 @@
             "model": "HWE-WTR",
             "battery_type": "CR123A",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Honeywell",
+            "model": "RF6000",
+            "battery_type": "CR123"
         },
         {
             "manufacturer": "Honeywell",
@@ -3224,6 +3263,22 @@
         {
             "manufacturer": "Lutron",
             "model": "Z3-1BRL",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Lutron Electronics Co., Inc",
+            "model": "CSX-YJ-XX (SerenaHoneycombShade)",
+            "battery_type": "D",
+            "battery_quantity": 6
+        },
+        {
+            "manufacturer": "Lutron Electronics Co., Inc",
+            "model": "PJ2-3BRL-GXX-F01 (Pico3ButtonRaiseLower)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Lutron Electronics Co., Inc",
+            "model": "PJ2-3BRL-GXX-X01 (Pico3ButtonRaiseLower)",
             "battery_type": "CR2032"
         },
         {
@@ -5177,6 +5232,12 @@
             "battery_type": "CR2032"
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Door sensor (TS0203)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Door sensor (ZD08)",
             "battery_type": "CR2032"
@@ -5237,6 +5298,12 @@
             "manufacturer": "TuYa",
             "model": "Motion sensor (ZMS-102)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Motion sensor (ZP01)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "TuYa",
@@ -5434,7 +5501,7 @@
         {
             "manufacturer": "Tuya",
             "model": "Temperature and humidity sensor (ZG-227Z)",
-            "battery_type": "AA",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {
@@ -5452,6 +5519,12 @@
             "manufacturer": "TuYa",
             "model": "Temperature and humidity sensor (ZTH05)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature and humidity sensor (ZTH08-E)",
+            "battery_type": "AAA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "Tuya",
