@@ -60,6 +60,8 @@ cards:
       - type: custom:mushroom-entity-card
         entity: sensor.picnic_status_der_letzten_bestellung
         layout: vertical
+      - type: entity
+        entity: sensor.picnic_monatskosten
   - type: conditional
     conditions:
       - entity: sensor.picnic_status_der_letzten_bestellung

@@ -1,0 +1,23 @@
+---
+alias: PicnicBenachrichtigung
+id: 5f93e5ba-c185-48f1-8653-dd8e2271a145
+description: "Benachrichtigt wenn Picnic bald da ist."
+trigger:
+  - platform: template
+    value_template: >
+      {{ now().timestamp() >= as_timestamp( states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung'), now().timestamp() + 301 ) - 900 }}
+
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🛒 Picnic 🛒
+      value1: |
+        Picnic kommt in den nächsten 5min.
+      tag_id: "information"
+      group: "Shopping"
+mode: single
