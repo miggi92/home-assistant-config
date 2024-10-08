@@ -1,5 +1,5 @@
 from __future__ import annotations
-import logging
+from logging import getLogger
 import voluptuous as vol
 from typing import Any
 from homeassistant.config_entries import (
@@ -13,7 +13,9 @@ from .const import (
     CONF_MIN_ALTITUDE,
     CONF_MAX_ALTITUDE,
     CONF_MOST_TRACKED,
+    CONF_ENABLE_TRACKER,
     CONF_MOST_TRACKED_DEFAULT,
+    CONF_ENABLE_TRACKER_DEFAULT,
     MIN_ALTITUDE,
     MAX_ALTITUDE,
 )
@@ -30,7 +32,7 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 class FlightRadarConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -97,6 +99,10 @@ class OptionsFlow(OptionsFlowWithConfigEntry):
             vol.Optional(CONF_MOST_TRACKED,
                          description={
                              "suggested_value": data.get(CONF_MOST_TRACKED, CONF_MOST_TRACKED_DEFAULT)}): cv.boolean,
+            vol.Optional(CONF_ENABLE_TRACKER,
+                         description={
+                             "suggested_value": data.get(CONF_ENABLE_TRACKER,
+                                                         CONF_ENABLE_TRACKER_DEFAULT)}): cv.boolean,
             vol.Optional(CONF_USERNAME, description={"suggested_value": data.get(CONF_USERNAME, '')}): cv.string,
             vol.Optional(CONF_PASSWORD, description={"suggested_value": data.get(CONF_PASSWORD, '')}): cv.string,
         })

@@ -1,5 +1,5 @@
 from __future__ import annotations
-import logging
+from logging import getLogger
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -18,6 +18,8 @@ from .const import (
     CONF_MAX_ALTITUDE,
     CONF_MOST_TRACKED,
     CONF_MOST_TRACKED_DEFAULT,
+    CONF_ENABLE_TRACKER,
+    CONF_ENABLE_TRACKER_DEFAULT,
     MIN_ALTITUDE,
     MAX_ALTITUDE,
 )
@@ -25,11 +27,12 @@ from FlightRadar24 import FlightRadar24API, Entity
 from .sensor import SENSOR_TYPES
 
 PLATFORMS: list[Platform] = [
+    Platform.DEVICE_TRACKER,
     Platform.SENSOR,
     Platform.TEXT,
 ]
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -58,6 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     coordinator.most_tracked = {} if entry.data.get(CONF_MOST_TRACKED, CONF_MOST_TRACKED_DEFAULT) else None
+    coordinator.enable_tracker = entry.data.get(CONF_ENABLE_TRACKER, CONF_ENABLE_TRACKER_DEFAULT)
 
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator

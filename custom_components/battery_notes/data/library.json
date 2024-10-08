@@ -2257,7 +2257,7 @@
         {
             "manufacturer": "frient A/S",
             "model": "SMSZB-120",
-            "battery_type": "CR123"
+            "battery_type": "CR123A"
         },
         {
             "manufacturer": "Fyta",
@@ -3401,6 +3401,11 @@
             "battery_type": "CR2450"
         },
         {
+            "manufacturer": "Namron AS",
+            "model": "4512762",
+            "battery_type": "CR2350"
+        },
+        {
             "manufacturer": "Neo",
             "model": "Alarm (NAS-AB02B2)",
             "battery_type": "CR123A Lithium"
@@ -4296,6 +4301,14 @@
         },
         {
             "manufacturer": "Shelly",
+            "model": "Shelly H&T Gen3",
+            "model_id": "S3SN-0U12A",
+            "hw_version": "gen3",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Shelly",
             "model": "Shelly Motion",
             "battery_type": "Rechargeable"
         },
@@ -4933,6 +4946,13 @@
         },
         {
             "manufacturer": "Tado",
+            "model": "Smart Radiator Thermostat",
+            "model_id": "SRT01",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tado",
             "model": "SU02",
             "battery_type": "AAA",
             "battery_quantity": 3
@@ -5009,6 +5029,13 @@
         {
             "manufacturer": "Third Reality",
             "model": "Temperature and humidity sensor (3RTHS24BZ)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Third Reality",
+            "model": "Temperature and Humidity Sensor Lite",
+            "model_id": "3RTHS0224Z",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
@@ -5484,6 +5511,13 @@
         {
             "manufacturer": "TuYa",
             "model": "Temperature & humidity sensor with display (TS0201)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature and humidity sensor",
+            "model_id": "ZG-227Z",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
@@ -6431,6 +6465,18 @@
         {
             "manufacturer": "Yale",
             "model": "YRL256",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Yale Home Inc.",
+            "model": "AK-R1",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Yale Home Inc.",
+            "model": "ASL6_05/101110/MB",
             "battery_type": "AA",
             "battery_quantity": 4
         },
