@@ -8,6 +8,7 @@ trigger:
     domain: mqtt
     device_id: ee1b9de2827cfce71d276bf85218e92f
     type: action
+    subtype: "on"
 condition: []
 action:
   - action: input_boolean.turn_off
