@@ -1,6 +1,7 @@
 {
 	"recommendations": [
 		"keesschollaart.vscode-home-assistant",
-		"PKief.material-icon-theme"
+		"PKief.material-icon-theme",
+		"vivaxy.vscode-conventional-commits"
 	]
 }
