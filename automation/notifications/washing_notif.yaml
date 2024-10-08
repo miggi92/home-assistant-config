@@ -17,7 +17,7 @@ condition:
     entity_id: input_boolean.wash_active
     state: "on"
 action:
-  - service: script.notify_engine
+  - action: script.notify_engine
     data:
       title: |
         🧼 Waschmaschine 🧼
@@ -29,6 +29,11 @@ action:
       who: "home"
       tag_id: "information"
       group: "Laundry"
-  - service: input_boolean.turn_off
-    entity_id: input_boolean.wash_active
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.wash_active
+  - action: grocy.execute_chore
+    data:
+      chore_id: "1"
+      done_by: "1"
 mode: single

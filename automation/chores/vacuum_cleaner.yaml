@@ -1,7 +1,8 @@
 ---
 # Scheduled vacuum cleaner run
 description: "Scheduled vacuum cleaner run"
-id: f3bb2b2b-8cec-449f-858a-4324710c86a9
+alias: "Scheduled vacuum cleaner run"
+id: 146acdcd-843c-41d5-b727-b171a446a4d0
 mode: single
 trigger:
   - platform: state

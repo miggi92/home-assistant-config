@@ -1,0 +1,15 @@
+---
+# Automation when robot finish cleaning
+alias: "Robot finishes cleaning"
+id: b2bad212-5d9a-40d5-b64b-94aacdaabb6d
+trigger:
+  - platform: state
+    entity_id:
+      - vacuum.roomba
+    from: cleaning
+    to: docked
+action:
+  - action: grocy.execute_chore
+    data:
+      chore_id: "2"
+      done_by: "1"
