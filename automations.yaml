@@ -1,4 +1,3 @@
----
 - id: "1690789658458"
   alias: Android Auto Miguel
   description: ""
@@ -57,3 +56,29 @@
       logbook_message_taken: Tabletten genommen
       logbook_message_skip: Erinnerung ausgesetzt
       logbook_message_no_answer: Keine Antwort
+- id: "1728850959105"
+  alias: Reset Internet
+  description: Steckdose an und ausschalten damit die Verbindung neu aufgebaut wird.
+  triggers:
+    - trigger: state
+      entity_id:
+        - sensor.fritz_repeater_1200_ax_letzter_neustart
+      to: unavailable
+  conditions: []
+  actions:
+    - action: switch.turn_off
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.tabletsteckdose
+    - delay:
+        hours: 0
+        minutes: 0
+        seconds: 15
+        milliseconds: 0
+    - action: switch.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: switch.tabletsteckdose
+  mode: single
