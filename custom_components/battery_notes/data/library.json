@@ -816,6 +816,12 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Roller shade driver E1",
+            "model_id": "ZNJLBL01LM",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "RTCGQ11LM",
             "battery_type": "CR2450"
         },
@@ -2251,6 +2257,12 @@
         },
         {
             "manufacturer": "frient A/S",
+            "model": "MOSZB-140",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "frient A/S",
             "model": "SBTZB-110",
             "battery_type": "CR2450"
         },
@@ -2279,6 +2291,11 @@
             "manufacturer": "GE/Enbrighten",
             "model": "32563 / ZW6301",
             "battery_type": "CR2"
+        },
+        {
+            "manufacturer": "Gerda",
+            "model": "Tedee Pro",
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "GiEX",
@@ -2545,6 +2562,12 @@
             "manufacturer": "HomeWizard",
             "model": "HWE-WTR",
             "battery_type": "CR123A",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Honeywell",
+            "model": "RCHTSENSOR",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {
@@ -5478,6 +5501,12 @@
             "manufacturer": "TuYa",
             "model": "Soil sensor (TS0601_soil)",
             "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Soil sensor (TS0601_soil_3)",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {
