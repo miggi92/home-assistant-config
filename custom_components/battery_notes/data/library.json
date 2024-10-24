@@ -1051,6 +1051,12 @@
         },
         {
             "manufacturer": "August Home Inc.",
+            "model": "AUG-SL05-M01-G01",
+            "battery_type": "CR123",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "August Home Inc.",
             "model": "AUG-SL05-M01-S01",
             "battery_type": "CR123A",
             "battery_quantity": 2
@@ -1231,6 +1237,12 @@
             "manufacturer": "Centralite",
             "model": "3328-G",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "CentraLite",
+            "model": "3400",
+            "battery_type": "CR123A",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "CentraLite",
@@ -2009,6 +2021,14 @@
         },
         {
             "manufacturer": "Eve Systems",
+            "model": "Eve Thermo 20EBP1701",
+            "model_id": "79",
+            "hw_version": "1.1",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Eve Systems",
             "model": "Thermo 20EBP1701",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -2329,6 +2349,13 @@
             "manufacturer": "Google",
             "model": "Pixel 6a",
             "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Google",
+            "model": "Topaz-2.33",
+            "hw_version": "Battery",
+            "battery_type": "AA",
+            "battery_quantity": 6
         },
         {
             "manufacturer": "Google",
@@ -2660,12 +2687,12 @@
         {
             "manufacturer": "Ikea",
             "model": "FYRTUR roller blind, block-out (E1757)",
-            "battery_type": "BRAUNIT Battery pack (rechargeable)"
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "Ikea",
             "model": "KADRILJ roller blind (E1926)",
-            "battery_type": "BRAUNIT Battery pack (rechargeable)"
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "IKEA",
@@ -2773,12 +2800,12 @@
         {
             "manufacturer": "IKEA of Sweden",
             "model": "FYRTUR block-out roller blind",
-            "battery_type": "BRAUNIT Battery pack"
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "IKEA of Sweden",
             "model": "KADRILJ roller blind",
-            "battery_type": "BRAUNIT Battery pack"
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "IKEA of Sweden",
@@ -3384,7 +3411,7 @@
         {
             "manufacturer": "Mopeka IOT",
             "model": "M1015",
-            "battery_type": "AAA-Lithium"
+            "battery_type": "AAA Lithium"
         },
         {
             "manufacturer": "Mopeka IOT",
@@ -4006,7 +4033,7 @@
         {
             "manufacturer": "Ring",
             "model": "Intercom",
-            "battery_type": "\"Rechargeable\""
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "Ring",
@@ -4017,7 +4044,7 @@
         {
             "manufacturer": "Ring",
             "model": "Peephole Cam",
-            "battery_type": "\"Rechargeable\""
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "Ring",
@@ -4359,7 +4386,7 @@
         {
             "manufacturer": "Shelly",
             "model": "SNSN-0013A",
-            "battery_type": "AA (LR6)",
+            "battery_type": "AA",
             "battery_quantity": 4
         },
         {
@@ -4579,7 +4606,7 @@
         {
             "manufacturer": "SmartLabs, Inc",
             "model": "2844-222 (0x10, 0x16)",
-            "battery_type": "9-volt"
+            "battery_type": "9V"
         },
         {
             "manufacturer": "SmartLabs, Inc",
@@ -4684,6 +4711,11 @@
             "manufacturer": "SmartThings",
             "model": "Water sensor (3315-S)",
             "battery_type": "CR2"
+        },
+        {
+            "manufacturer": "SmartWave",
+            "model": "SmartWave Window Covering (10001)",
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "Smartwings",
@@ -5076,6 +5108,12 @@
         },
         {
             "manufacturer": "Third Reality, Inc",
+            "model": "3RDTS01056Z",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Third Reality, Inc",
             "model": "3RMS16BZ",
             "battery_type": "AAA",
             "battery_quantity": 2
@@ -5119,7 +5157,7 @@
         {
             "manufacturer": "Tile",
             "model": "T1101",
-            "battery_type": "Cr2032"
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Tile",
@@ -5330,6 +5368,13 @@
             "battery_type": "CR2450"
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Motion Sensor",
+            "model_id": "rjzon9kyxpoeksj3",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Motion sensor (809WZT)",
             "battery_type": "CR2450"
@@ -5338,6 +5383,12 @@
             "manufacturer": "TuYa",
             "model": "Motion sensor (IH012-RT01)",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Motion Sensor (rjzon9kyxpoeksj3)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "TuYa",
@@ -5506,6 +5557,14 @@
         {
             "manufacturer": "Tuya",
             "model": "Soil sensor (TS0601_soil_3)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "T & H Sensor",
+            "model_id": "lf36y5nwb8jkxwgg",
+            "hw_version": "TH01CB3S",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
@@ -5791,6 +5850,16 @@
             "model": "ZTH08-E",
             "battery_type": "AAA",
             "battery_quantity": 3
+        },
+        {
+            "manufacturer": "TUYATEC-1wzznw9a",
+            "model": "RH3052",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "TUYATEC-r9hgssol",
+            "model": "RH3001",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "TUYATEC-riuj5xzs",
@@ -6457,6 +6526,12 @@
         },
         {
             "manufacturer": "Yale",
+            "model": "SD-L1000-CH",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Yale",
             "model": "YRD210",
             "battery_type": "AA",
             "battery_quantity": 4
@@ -6647,6 +6722,12 @@
             "manufacturer": "Zooz",
             "model": "ZSE44",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Zooz",
+            "model": "ZSE70",
+            "battery_type": "CR123A",
+            "battery_quantity": 2
         }
     ]
 }
