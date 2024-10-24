@@ -1,0 +1,17 @@
+---
+# Work Restaurant
+resource: !secret work_restaurant
+scan_interval: 28800
+verify_ssl: false
+sensor:
+  - unique_id: work_meals
+    name: "Kantinenessen"
+    select: ".push h1"
+    icon: mdi:silverware-fork-knife
+    attributes:
+      - name: "One"
+        select: "app-category:nth-child(1) .name-column > span"
+
+button:
+  - unique_id: work_meals_refresh_button
+    name: "Refresh work meals"

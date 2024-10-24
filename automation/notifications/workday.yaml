@@ -1,0 +1,22 @@
+---
+# Workday notification
+alias: WorkDayNotif
+id: bded32be-1a94-4b14-8347-d7d3b453b33d
+description: "Benachrichtigt wenn Miguel arbeiten muss"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.workday_sensor
+    to: "on"
+
+condition: []
+action:
+  - action: script.notify_engine
+    data:
+      title: |
+        Arbeitstag
+      value1: >-
+        Test
+      who: "miguel"
+      tag_id: "information"
+      group: "Work"
+mode: single
