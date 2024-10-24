@@ -5,7 +5,7 @@ description: "Benachrichtigt wenn Picnic bald da ist."
 trigger:
   - platform: template
     value_template: >
-      {{ now().timestamp() >= as_timestamp( states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung'), now().timestamp() + 301 ) - 900 }}
+      "{{ as_timestamp(states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung')) - as_timestamp(now()) <= 600 }}"
 
 condition:
   - condition: state
