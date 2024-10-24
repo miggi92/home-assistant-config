@@ -103,3 +103,5 @@ devices:
     friendly_name: Luftqualitätssensor
   '0x00178801001f2e28':
     friendly_name: Discolicht
+  '0x44e2f8fffebbf742':
+    friendly_name: Kamera Steckdose WZ
