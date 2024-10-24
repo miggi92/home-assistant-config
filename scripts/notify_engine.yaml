@@ -119,18 +119,22 @@ notify_engine:
         - condition: template
           value_template: "{{ 'telegram' in notifier }}"
       then:
-        - service: "{{ notifier }}"
-          alias: "Send text via telegram"
-          data:
-            title: "{{ title | default }}"
-            message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-            # data:
-            #   inline_keyboard: "{{ inline_keyboard | default }}"
+        - if:
+            - condition: template
+              value_template: "{{ photo == undefined }}"
+            - condition: template
+              value_template: "{{ photos == undefined }}"
+          then:
+            - action: "{{ notifier }}"
+              alias: "Send text via telegram"
+              data:
+                title: "{{ title | default }}"
+                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
         - if:
             - condition: template
               value_template: "{{ photo != undefined }}"
           then:
-            - service: "{{ notifier }}"
+            - action: "{{ notifier }}"
               alias: "Send photo via telegram. Doesn't work with text"
               data:
                 title: "{{ title | default }}"
@@ -138,11 +142,12 @@ notify_engine:
                 data:
                   photo:
                     - url: "{{ photo }}"
+                      caption: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
         - if:
             - condition: template
               value_template: "{{ photos != undefined }}"
           then:
-            - service: "{{ notifier }}"
+            - action: "{{ notifier }}"
               alias: "Send photos via telegram."
               data:
                 title: "{{ title | default }}"
@@ -154,7 +159,7 @@ notify_engine:
             - condition: template
               value_template: "{{ who == 'tv' }}"
           then:
-            - service: "{{ notifier }}"
+            - action: "{{ notifier }}"
               alias: "Send Notification to TV"
               data:
                 title: "{{ title | default }}"
@@ -173,7 +178,7 @@ notify_engine:
                     title: "{{ title | default }}"
                     message: "{{ value1 | default }} {{ value2 | default }}"
               else:
-                - service: "{{ notifier }}"
+                - action: "{{ notifier }}"
                   alias: "Default notification"
                   data:
                     title: "{{ title | default }}"
@@ -195,7 +200,7 @@ notify_engine:
             - condition: template
               value_template: "{{ who != 'tv' }}"
           then:
-            - service: script.notify_engine
+            - action: script.notify_engine
               data:
                 title: "{{ title | default }}"
                 value1: "{{ value1 | default }}"
@@ -212,7 +217,7 @@ notify_engine:
             - condition: template
               value_template: "{{ who != 'work' }}"
           then:
-            - service: script.notify_engine
+            - action: script.notify_engine
               data:
                 title: "{{ title | default }}"
                 value1: "{{ value1 | default }}"
