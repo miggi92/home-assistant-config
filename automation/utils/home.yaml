@@ -1,0 +1,24 @@
+---
+# Parents
+alias: parentsHome
+id: 9fad1c85-4e6d-4864-91ee-54b0fc12c725
+description: "Telegram msg when parents are away"
+trigger:
+  - platform: state
+    entity_id: group.parents
+    to: "home"
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+condition: []
+action:
+  - action: alarm_control_panel.alarm_disarm
+    data:
+      code: !secret alarm_code
+    target:
+      entity_id: alarm_control_panel.home_alarm
+  - action: switch.turn_off
+    target:
+      entity_id: switch.kamera_steckdose_wz
+mode: single
