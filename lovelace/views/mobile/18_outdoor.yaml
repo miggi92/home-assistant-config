@@ -36,6 +36,8 @@ cards:
         secondary_info_attribute: humidity
         show_current: true
         show_forecast: true
+      - type: picture
+        image_entity: image.ai_generated_weather_image
 
   - type: custom:flower-card
     entity: plant.sonnenblumen
@@ -68,12 +70,8 @@ cards:
         card:
           type: markdown
           content: >-
-            {% set dataInArea = state_attr('sensor.flightradar24_current_in_area',
-            'flights') %}
-            {% set dataAdditional = state_attr('sensor.flightradar24_additional_tracked',
-            'flights') %}
-            {% set data = dataInArea + dataAdditional %}
-              {% for flight in data %}
+            {% set data = state_attr('sensor.flightradar24_current_in_area',
+            'flights') %} {% for flight in data %}
               <ha-icon icon="mdi:airplane"></ha-icon>{{ flight.flight_number }}({{ flight.aircraft_registration }}) - {{ flight.airline_short }} - {{ flight.aircraft_model }}
               {{ flight.airport_origin_city }}{%if flight.airport_origin_city %}<img src="https://flagsapi.com/{{ flight.airport_origin_country_code }}/shiny/16.png" title='{{ flight.airport_origin_country_name }}'/>{% endif %} -> {{ flight.airport_destination_city }}{%
               if flight.airport_destination_country_code %}<img src="https://flagsapi.com/{{ flight.airport_destination_country_code }}/shiny/16.png" title='{{ flight.airport_destination_country_name }}'/>{% endif %}

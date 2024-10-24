@@ -1,0 +1,20 @@
+---
+# Wetter
+alias: weatherData
+id: 5678264c-c308-4c30-865f-a9e6e64d4965
+description: "Antwortet auf den /wetter Befehl"
+trigger:
+  - platform: event
+    event_type: telegram_command
+    event_data:
+      command: "/wetter"
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      value1: "Wetter Bild"
+      photo: "https://asgard.kohgeb.family{{ state_attr('image.ai_generated_weather_image', 'entity_picture') }}"
+      who: "home"
+      tag_id: "information"
+      group: "Outdoor"
+mode: single

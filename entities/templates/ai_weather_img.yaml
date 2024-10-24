@@ -1,0 +1,9 @@
+---
+#
+- trigger:
+    - alias: "Update image when a new weather image is generated"
+      trigger: event
+      event_type: new_weather_image
+  image:
+    - name: "AI generated weather image"
+      url: "{{ trigger.event.data.url }}"

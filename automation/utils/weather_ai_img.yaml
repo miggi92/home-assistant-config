@@ -1,0 +1,27 @@
+---
+# weather ai img
+alias: Weather image
+description: ""
+id: 665e5eb0-932c-4a69-8dc6-99875649df6c
+triggers:
+  - trigger: state
+    entity_id: weather.home
+conditions: []
+actions:
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: vivid
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Leingarten wenn das Wetter so ist {{ states("weather.home") }} zur der
+        Uhrzeit {{ states('sensor.date_time_iso') }}. Bitte auch den Mond {{
+        states('sensor.moon') }} die Sonne {{ states('sun.sun') }} und die
+        Jahreszeit {{ states('sensor.season') }} beachten.
+    response_variable: generated_image
+  - alias: Send out a manual event to update the image entity
+    event: new_weather_image
+    event_data:
+      url: "{{ generated_image.url }}"
+mode: single
