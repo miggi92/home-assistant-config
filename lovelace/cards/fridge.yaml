@@ -1,0 +1,18 @@
+---
+type: conditional
+conditions:
+  - entity: sensor.grocy_stock
+    state_not: "0"
+  - entity: sensor.grocy_stock
+    state_not: "unavailable"
+card:
+  type: markdown
+  content: >-
+    # Mein Grocy Bestand
+
+    | Produkt | Menge | MHD |
+    |---|---|---|
+    {% for product in states.sensor.grocy_stock.attributes.products %}| {{
+    product.name }} | {{ product.available_amount }} | {{ product.best_before_date
+    }} |
+    {% endfor %}
