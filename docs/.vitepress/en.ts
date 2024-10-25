@@ -49,6 +49,7 @@ function sidebarConfig(): DefaultTheme.SidebarItem[] {
 					items: [
 						{ text: "Waste", link: "waste" },
 						{ text: "Food warnings", link: "food_warnings" },
+						{ text: "Work meals", link: "work_meals" },
 						{ text: "Plants", link: "plants" },
 						{
 							text: "MQTT",
