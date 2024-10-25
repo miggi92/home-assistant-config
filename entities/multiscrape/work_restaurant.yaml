@@ -1,16 +1,27 @@
 ---
 # Work Restaurant
-resource: !secret work_restaurant
-scan_interval: 28800
-verify_ssl: false
+resource: "https://asgard.kohgeb.family/local/browserless/work_restaurant.html"
+scan_interval: 0
+timeout: 30
+log_response: true
+method: GET
+name: Work Meals
 sensor:
   - unique_id: work_meals
     name: "Kantinenessen"
-    select: ".push h1"
+    select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c144-7.ng-star-inserted > div > h1"
     icon: mdi:silverware-fork-knife
     attributes:
       - name: "One"
         select: "app-category:nth-child(1) .name-column > span"
+      - name: "One Two"
+        select: "app-category:nth-child(2) .name-column > span"
+      - name: "Three"
+        select: "app-category:nth-child(4) .name-column > span"
+      - name: "Four"
+        select: "app-category:nth-child(5) .name-column > span"
+      - name: "Five"
+        select: "app-category:nth-child(6) .name-column > span"
 
 button:
   - unique_id: work_meals_refresh_button

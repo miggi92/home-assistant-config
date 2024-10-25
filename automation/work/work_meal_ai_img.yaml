@@ -1,0 +1,69 @@
+---
+# work meal ai img
+alias: WorkMealImg
+description: ""
+id: ffe67e29-366b-4661-a0b0-bfea95d4468e
+triggers:
+  - trigger: state
+    entity_id: sensor.work_meals
+conditions: []
+actions:
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Ein Bild von folgendem Essen:
+        {{ state_attr('sensor.work_meals', 'one') }}
+    response_variable: meal_one
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Ein Bild von folgendem Essen:
+        {{ state_attr('sensor.work_meals', 'one_two') }}
+    response_variable: meal_one_two
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Ein Bild von folgendem Essen:
+        {{ state_attr('sensor.work_meals', 'three') }}
+    response_variable: meal_three
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Ein Bild von folgendem Essen:
+        {{ state_attr('sensor.work_meals', 'four') }}
+    response_variable: meal_four
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Ein Bild von folgendem Essen:
+        {{ state_attr('sensor.work_meals', 'five') }}
+    response_variable: meal_five
+  - alias: Send out a manual event to update the image entity
+    event: work_meal
+    event_data:
+      one: "{{ meal_one.url }}"
+      one_two: "{{ meal_one_two.url }}"
+      three: "{{ meal_three.url }}"
+      four: "{{ meal_four.url }}"
+      five: "{{ meal_five.url }}"
+mode: single
