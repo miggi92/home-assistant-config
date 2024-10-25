@@ -1,0 +1,5 @@
+---
+# Work meal plan
+work_meal_plan_url:
+  name: Speiseplan URL
+  initial: !secret work_restaurant
