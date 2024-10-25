@@ -20,4 +20,55 @@ action:
       output: "work_restaurant.html"
   - delay: "0:00:45"
   - service: multiscrape.trigger_work_meals
+  - delay: "0:05:00"
+  - service: script.notify_engine
+    data:
+      title: |
+        🍴 Heutiges Essen im Geschäft 🍽️
+      value1: |
+        Heute im Geschäft gibt es folgende Gerichte:
+      who: "home"
+      tag_id: "information"
+      group: "Work"
+  - parallel:
+      - service: script.notify_engine
+        data:
+          title: ONE
+          value1: "{{ state_attr('sensor.work_meals', 'one') }}"
+          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_one', 'entity_picture') }}"
+          who: "home"
+          tag_id: "information"
+          group: "Work"
+      - service: script.notify_engine
+        data:
+          title: One Two
+          value1: "{{ state_attr('sensor.work_meals', 'one_two') }}"
+          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_one_two', 'entity_picture') }}"
+          who: "home"
+          tag_id: "information"
+          group: "Work"
+      - service: script.notify_engine
+        data:
+          title: Three
+          value1: "{{ state_attr('sensor.work_meals', 'three') }}"
+          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_three', 'entity_picture') }}"
+          who: "home"
+          tag_id: "information"
+          group: "Work"
+      - service: script.notify_engine
+        data:
+          title: Four
+          value1: "{{ state_attr('sensor.work_meals', 'four') }}"
+          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_four', 'entity_picture') }}"
+          who: "home"
+          tag_id: "information"
+          group: "Work"
+      - service: script.notify_engine
+        data:
+          title: Five
+          value1: "{{ state_attr('sensor.work_meals', 'five') }}"
+          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_five', 'entity_picture') }}"
+          who: "home"
+          tag_id: "information"
+          group: "Work"
 mode: single
