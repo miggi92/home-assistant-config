@@ -154,75 +154,19 @@ cards:
       {% else %}
         Hello, {{user}}!
       {% endif %}
-  - type: custom:auto-entities
-    filter:
-      include:
-        - entity_id: sensor.anniversary_urlaub*
-          options:
-            type: custom:mushroom-template-card
-            icon: mdi:beach
-            primary: |
-              {{ state_attr(entity, 'friendly_name') }}
-            icon_color: blue
-            secondary: |
-              {%- set event_date = state_attr(entity, 'next_date') %}
-              {%- set now = now() %}
-              {%- if event_date.date() == now.date() -%}
-                Heute
-              {%- else -%}
-                {%- set delta = event_date - now %}
-                {%- set weeks = (delta.days // 7) %}
-                {%- set days = delta.days % 7 %}
-                {%- set hours = delta.seconds // 3600 %}
-                {%- set minutes = (delta.seconds % 3600) // 60 %}
-                {{- "{} Wochen ".format(weeks) if weeks > 0 else "" -}}
-                {{- "{} Tage ".format(days) if days > 0 else "" -}}
-                {{- "{} Stunden ".format(hours) if hours > 0 else "" -}}
-                {{- "{} Minuten ".format(minutes) if minutes > 0 else "" -}}
-              {%- endif -%}
-            badge_icon: |-
-              {%- set event = int(states(entity)) %}
-              {% if (event) <= 10 %}
-              mdi:exclamation-thick
-              {% endif%}
-            badge_color: red
-            tap_action:
-              action: more-info
-            card_mod:
-              style:
-                mushroom-shape-icon$: |
-                  .shape {
-                    background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-red)) {{ (150-int(states(config.entity)))/150*100 }}% 0%, var(--card-background-color) 0% 100%);
-                  }
-                  .shape:after {
-                    content: "";
-                    height: 100%;
-                    width: 100%;
-                    position: absolute;
-                    border-radius: 50%;
-                    background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
-                  }
-      exclude:
-        - state: "< 0"
-    sort:
-      method: state
-      reverse: false
-      numeric: true
-      count: 3
-    show_empty: false
-    card:
-      type: entities
-      show_header_toggle: false
-      title: Urlaubscountdown
-      state_color: false
-      header:
-        type: picture
-        image: >-
-          https://cdn.pixabay.com/photo/2018/01/31/16/12/beach-3121393_640.png
-        tap_action:
-          action: none
-        hold_action:
-          action: none
+  - type: custom:decluttering-card
+    template: anniversary_template
+    variables:
+      - title: Urlaubscountdown
+      - picture_url: https://cdn.pixabay.com/photo/2018/01/31/16/12/beach-3121393_640.png
+      - path: urlaub
+      - icon: mdi:beach
+  - type: custom:decluttering-card
+    template: anniversary_template
+    variables:
+      - title: Jahrestage
+      - picture_url: /local/images/anniversaries.png
+      - path: special
   - !include ../../cards/residents.yaml
   - type: conditional
     conditions:
@@ -249,74 +193,13 @@ cards:
               12.5% { transform: translateY(0); }
               15% { transform: translateY(-3px) }
             }
-  - type: custom:auto-entities
-    filter:
-      include:
-        - entity_id: sensor.anniversary_birthday*
-          options:
-            type: custom:mushroom-template-card
-            icon: mdi:gift
-            primary: |
-              {{ state_attr(entity, 'friendly_name') }} ({{state_attr(entity, 'years_at_anniversary') }})
-            icon_color: green
-            secondary: |
-              {%- set event_date = state_attr(entity, 'next_date') %}
-              {%- set now = now() %}
-              {%- if event_date.date() == now.date() -%}
-                Heute
-              {%- else -%}
-                {%- set delta = event_date - now %}
-                {%- set weeks = (delta.days // 7) %}
-                {%- set days = delta.days % 7 %}
-                {%- set hours = delta.seconds // 3600 %}
-                {%- set minutes = (delta.seconds % 3600) // 60 %}
-                {{- "{} Wochen ".format(weeks) if weeks > 0 else "" -}}
-                {{- "{} Tage ".format(days) if days > 0 else "" -}}
-                {{- "{} Stunden ".format(hours) if hours > 0 else "" -}}
-                {{- "{} Minuten ".format(minutes) if minutes > 0 else "" -}}
-              {%- endif -%}
-            badge_icon: |-
-              {%- set event = int(states(entity)) %}
-              {% if (event) <= 10 %}
-              mdi:exclamation-thick
-              {% endif%}
-            badge_color: red
-            tap_action:
-              action: more-info
-            card_mod:
-              style:
-                mushroom-shape-icon$: |
-                  .shape {
-                    background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-red)) {{ (365-int(states(config.entity)))/365*100 }}% 0%, var(--card-background-color) 0% 100%);
-                  }
-                  .shape:after {
-                    content: "";
-                    height: 100%;
-                    width: 100%;
-                    position: absolute;
-                    border-radius: 50%;
-                    background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
-                  }
-      exclude: []
-    sort:
-      method: state
-      reverse: false
-      numeric: true
-      count: 3
-    show_empty: false
-    card:
-      type: entities
-      show_header_toggle: false
-      title: Geburtstage
-      state_color: false
-      header:
-        type: picture
-        image: >-
-          https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
-        tap_action:
-          action: none
-        hold_action:
-          action: none
+  - type: custom:decluttering-card
+    template: anniversary_template
+    variables:
+      - title: Geburtstage
+      - picture_url: https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
+      - path: birthday
+      - icon: mdi:gift
 
   - type: custom:mushroom-title-card
     title: Navigation
