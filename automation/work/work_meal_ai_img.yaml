@@ -8,62 +8,95 @@ triggers:
     entity_id: sensor.work_meals
 conditions: []
 actions:
-  - action: openai_conversation.generate_image
-    data:
-      size: 1024x1024
-      quality: standard
-      style: natural
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Ein Bild von folgendem Essen:
-        {{ state_attr('sensor.work_meals', 'one') }}
-    response_variable: meal_one
-  - action: openai_conversation.generate_image
-    data:
-      size: 1024x1024
-      quality: standard
-      style: natural
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Ein Bild von folgendem Essen:
-        {{ state_attr('sensor.work_meals', 'one_two') }}
-    response_variable: meal_one_two
-  - action: openai_conversation.generate_image
-    data:
-      size: 1024x1024
-      quality: standard
-      style: natural
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Ein Bild von folgendem Essen:
-        {{ state_attr('sensor.work_meals', 'three') }}
-    response_variable: meal_three
-  - action: openai_conversation.generate_image
-    data:
-      size: 1024x1024
-      quality: standard
-      style: natural
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Ein Bild von folgendem Essen:
-        {{ state_attr('sensor.work_meals', 'four') }}
-    response_variable: meal_four
-  - action: openai_conversation.generate_image
-    data:
-      size: 1024x1024
-      quality: standard
-      style: natural
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Ein Bild von folgendem Essen:
-        {{ state_attr('sensor.work_meals', 'five') }}
-    response_variable: meal_five
-  - alias: Send out a manual event to update the image entity
-    event: work_meal
-    event_data:
-      one: "{{ meal_one.url }}"
-      one_two: "{{ meal_one_two.url }}"
-      three: "{{ meal_three.url }}"
-      four: "{{ meal_four.url }}"
-      five: "{{ meal_five.url }}"
+  - parallel:
+      - sequence:
+          - action: openai_conversation.generate_image
+            data:
+              size: 1024x1024
+              quality: standard
+              style: natural
+              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+              prompt: >-
+                Ein Bild von folgendem Essen:
+                {{ state_attr('sensor.work_meals', 'one') }}
+            response_variable: meal_one
+          - action: downloader.download_file
+            data:
+              overwrite: true
+              url: "{{ meal_one.url }}"
+              filename: one.png
+              subdir: work_meals
+        alias: Theke ONE
+      - sequence:
+          - action: openai_conversation.generate_image
+            data:
+              size: 1024x1024
+              quality: standard
+              style: natural
+              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+              prompt: >-
+                Ein Bild von folgendem Essen:
+                {{ state_attr('sensor.work_meals', 'one_two') }}
+            response_variable: meal_one_two
+          - action: downloader.download_file
+            data:
+              overwrite: true
+              url: "{{ meal_one_two.url }}"
+              filename: one_two.png
+              subdir: work_meals
+        alias: Theke ONE_TWO
+      - sequence:
+          - action: openai_conversation.generate_image
+            data:
+              size: 1024x1024
+              quality: standard
+              style: natural
+              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+              prompt: >-
+                Ein Bild von folgendem Essen:
+                {{ state_attr('sensor.work_meals', 'three') }}
+            response_variable: meal_three
+          - action: downloader.download_file
+            data:
+              overwrite: true
+              url: "{{ meal_three.url }}"
+              filename: three.png
+              subdir: work_meals
+        alias: Theke Three
+      - sequence:
+          - action: openai_conversation.generate_image
+            data:
+              size: 1024x1024
+              quality: standard
+              style: natural
+              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+              prompt: >-
+                Ein Bild von folgendem Essen:
+                {{ state_attr('sensor.work_meals', 'four') }}
+            response_variable: meal_four
+          - action: downloader.download_file
+            data:
+              overwrite: true
+              url: "{{ meal_four.url }}"
+              filename: four.png
+              subdir: work_meals
+        alias: Theke Four
+      - sequence:
+          - action: openai_conversation.generate_image
+            data:
+              size: 1024x1024
+              quality: standard
+              style: natural
+              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+              prompt: >-
+                Ein Bild von folgendem Essen:
+                {{ state_attr('sensor.work_meals', 'five') }}
+            response_variable: meal_five
+          - action: downloader.download_file
+            data:
+              overwrite: true
+              url: "{{ meal_five.url }}"
+              filename: five.png
+              subdir: work_meals
+        alias: Theke Five
 mode: single

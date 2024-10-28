@@ -8,9 +8,8 @@ work_meal_card_template:
     type: vertical-stack
     cards:
       - type: picture
-        image_entity: image.meal_[[id]]
+        image: /local/downloaded/work_meals/[[id]].png
       - type: custom:mushroom-template-card
-        entity: image.meal_[[id]]
         primary: "[[title]]"
         secondary: >-
           {{ state_attr('sensor.work_meals', "[[id]]" ) }}

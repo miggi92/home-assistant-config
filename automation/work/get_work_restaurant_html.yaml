@@ -30,45 +30,15 @@ action:
       who: "home"
       tag_id: "information"
       group: "Work"
-  - parallel:
-      - service: script.notify_engine
-        data:
-          title: ONE
-          value1: "{{ state_attr('sensor.work_meals', 'one') }}"
-          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_one', 'entity_picture') }}"
-          who: "home"
-          tag_id: "information"
-          group: "Work"
-      - service: script.notify_engine
-        data:
-          title: One Two
-          value1: "{{ state_attr('sensor.work_meals', 'one_two') }}"
-          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_one_two', 'entity_picture') }}"
-          who: "home"
-          tag_id: "information"
-          group: "Work"
-      - service: script.notify_engine
-        data:
-          title: Three
-          value1: "{{ state_attr('sensor.work_meals', 'three') }}"
-          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_three', 'entity_picture') }}"
-          who: "home"
-          tag_id: "information"
-          group: "Work"
-      - service: script.notify_engine
-        data:
-          title: Four
-          value1: "{{ state_attr('sensor.work_meals', 'four') }}"
-          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_four', 'entity_picture') }}"
-          who: "home"
-          tag_id: "information"
-          group: "Work"
-      - service: script.notify_engine
-        data:
-          title: Five
-          value1: "{{ state_attr('sensor.work_meals', 'five') }}"
-          photo: "https://asgard.kohgeb.family{{ state_attr('image.meal_five', 'entity_picture') }}"
-          who: "home"
-          tag_id: "information"
-          group: "Work"
+      photos:
+        - file: "/config/www/downloaded/work_meals/one.png"
+          caputre: "{{ state_attr('sensor.work_meals', 'one') }}"
+        - file: "/config/www/downloaded/work_meals/one_two.png"
+          caputre: "{{ state_attr('sensor.work_meals', 'one_two') }}"
+        - file: "/config/www/downloaded/work_meals/three.png"
+          caputre: "{{ state_attr('sensor.work_meals', 'three') }}"
+        - file: "/config/www/downloaded/work_meals/four.png"
+          caputre: "{{ state_attr('sensor.work_meals', 'four') }}"
+        - file: "/config/www/downloaded/work_meals/five.png"
+          caputre: "{{ state_attr('sensor.work_meals', 'five') }}"
 mode: single
