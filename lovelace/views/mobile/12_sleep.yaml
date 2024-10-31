@@ -61,11 +61,11 @@ cards:
                     hour24: true
                     points_per_hour: 2
                     entities:
-                      - entity: sensor.luftqualitatssensor_temperatur
+                      - entity: sensor.luftqualitatssensor_temperature
                         name: Luftqualitätssensor
-                      - entity: sensor.schlafzimmertempsensor_temperatur
+                      - entity: sensor.schlafzimmertempsensor_temperature
                         name: Temperatursensor
-                      - entity: sensor.schlafzimmerbewegungssensor_temperatur
+                      - entity: sensor.schlafzimmerbewegungssensor_temperature
                         name: Bewegungssensor
       - hours_to_show: 24
         graph: line
