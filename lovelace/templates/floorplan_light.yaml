@@ -1,0 +1,16 @@
+---
+floorplan_light_template:
+  card:
+    type: image
+    entity: light.[[id]]
+    title: TV Licht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/[[id]].png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
