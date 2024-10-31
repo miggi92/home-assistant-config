@@ -1,0 +1,4 @@
+---
+title: Floorplan Dashboard
+decluttering_templates: !include_dir_merge_named ../templates
+views: !include_dir_list ../views/floorplan

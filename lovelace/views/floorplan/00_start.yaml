@@ -1,0 +1,7 @@
+---
+title: Floorplan
+path: start
+icon: mdi:home
+type: panel
+cards:
+  - !include ../../cards/floorplan.yaml

@@ -1,0 +1,77 @@
+---
+type: picture-elements
+image: /local/floorplan/hintergrund.png
+elements:
+  - type: image
+    image: /local/floorplan/night.png
+    style:
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.tv_licht
+    title: TV Licht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/tv_licht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.esstischlicht
+    title: Esstischlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/esstischlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.thekenlicht
+    title: Thekenlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/thekenlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.abstellkammerlicht
+    title: Esstischlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/abstellkammerlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.schlafzimmerlicht
+    title: Esstischlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/schlafzimmerlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
