@@ -27,6 +27,7 @@ badges:
 
 cards:
   - !include ../../cards/residents.yaml
+  - !include ../../cards/floorplan.yaml
   - type: grid
     cards:
       - type: custom:mushroom-template-card

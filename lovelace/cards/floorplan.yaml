@@ -10,10 +10,19 @@ elements:
       top: 50%
       width: 100%
       opacity: 1
-  - type: custom:decluttering-card
-    template: floorplan_light_template
-    variables:
-      - id: tv_licht
+  - type: image
+    entity: light.tv_licht
+    title: TV Licht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/tv_licht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
   - type: image
     entity: light.esstischlicht
     title: Esstischlicht
@@ -59,6 +68,45 @@ elements:
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/schlafzimmerlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.schreibtischlicht
+    title: Schreibtischlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/schreibtischlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.kinderzimmerlicht
+    title: Schreibtischlicht
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/kinderzimmerlicht.png
+    style:
+      mix-blend-mode: lighten
+      pointer-events: none
+      left: 50%
+      top: 50%
+      width: 100%
+      opacity: 1
+  - type: image
+    entity: light.bett
+    title: Bett
+    image: /local/floorplan/1x1_transparent.png
+    state_image:
+      "on": /local/floorplan/bett.png
     style:
       mix-blend-mode: lighten
       pointer-events: none
