@@ -10,9 +10,31 @@ elements:
       top: 50%
       width: 100%
       opacity: 1
+  - type: custom:config-template-card
+    variables:
+      TRANSPARENZ: states['sensor.sonnenlicht_transparenz'].state
+    entities:
+      - sun.sun
+      - sensor.sonnenlicht_transparenz
+    element:
+      type: image
+      entity: sun.sun
+      image: /local/floorplan/1x1_transparent.png
+      state_image:
+        above_horizon: /local/floorplan/day.png
+    tap_action:
+      action: none
+    hold_action:
+      action: none
+    style:
+      opacity: ${TRANSPARENZ}
+      mix-blend-mode: lighten
+      pointer-events: none
+      top: 50%
+      left: 50%
+      width: 100%
   - type: image
     entity: light.tv_licht
-    title: TV Licht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/tv_licht.png
@@ -25,7 +47,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.esstischlicht
-    title: Esstischlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/esstischlicht.png
@@ -38,7 +59,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.thekenlicht
-    title: Thekenlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/thekenlicht.png
@@ -51,7 +71,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.abstellkammerlicht
-    title: Esstischlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/abstellkammerlicht.png
@@ -64,7 +83,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.schlafzimmerlicht
-    title: Esstischlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/schlafzimmerlicht.png
@@ -77,7 +95,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.schreibtischlicht
-    title: Schreibtischlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/schreibtischlicht.png
@@ -90,7 +107,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.kinderzimmerlicht
-    title: Schreibtischlicht
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/kinderzimmerlicht.png
@@ -103,7 +119,6 @@ elements:
       opacity: 1
   - type: image
     entity: light.bett
-    title: Bett
     image: /local/floorplan/1x1_transparent.png
     state_image:
       "on": /local/floorplan/bett.png
