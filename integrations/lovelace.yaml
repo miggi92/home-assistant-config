@@ -78,6 +78,8 @@ lovelace:
       type: module
     - url: /hacsfiles/lovelace-template-entity-row/template-entity-row.js
       type: module
+    - url: /hacsfiles/config-template-card/config-template-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
