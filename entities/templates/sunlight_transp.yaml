@@ -1,0 +1,9 @@
+---
+# sunlight transparency
+name: Sonnenlicht Transparenz
+unique_id: sonnenlicht_transparenz
+icon: mdi:sun-clock-outline
+state: >
+  {%- set sunpct = states('sensor.sonnenlicht_berechnet') | float %}
+  {%- set opacity = sunpct / 100 | float %}
+  {{ opacity }}
