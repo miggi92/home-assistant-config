@@ -49,6 +49,7 @@ class ICON(StrEnum):
     FAN_SPEED_BUTTON = "pap:fan_speed_button"
     HUMIDITY_BUTTON = "pap:humidity_button"
     LIGHT_DIMMING_BUTTON = "pap:light_dimming_button"
+    LIGHT_FUNCTION = "pap:light_function"
     TWO_IN_ONE_MODE_BUTTON = "pap:two_in_one_mode_button"
     SLEEP_MODE = "pap:sleep_mode"
     AUTO_MODE = "pap:auto_mode"
@@ -59,6 +60,7 @@ class ICON(StrEnum):
     PURIFICATION_ONLY_MODE = "pap:purification_only_mode"
     TWO_IN_ONE_MODE = "pap:two_in_one_mode"
     BACTERIA_VIRUS_MODE = "pap:bacteria_virus_mode"
+    POLLUTION_MODE = "pap:pollution_mode"
     NANOPROTECT_FILTER = "pap:nanoprotect_filter"
     FILTER_REPLACEMENT = "pap:filter_replacement"
     WATER_REFILL = "pap:water_refill"
@@ -93,6 +95,7 @@ SWITCH_ON = "on"
 TEST_ON = "on"
 SWITCH_OFF = "off"
 SWITCH_MEDIUM = "medium"
+SWITCH_AUTO = "auto"
 OPTIONS = "options"
 DIMMABLE = "dimmable"
 
@@ -129,11 +132,15 @@ class FanModel(StrEnum):
     AC3854_51 = "AC3854/51"
     AC3858_50 = "AC3858/50"
     AC3858_51 = "AC3858/51"
+    AC3858_83 = "AC3858/83"
     AC3858_86 = "AC3858/86"
+    AC4220 = "AC4220"
+    AC4221 = "AC4221"
     AC4236 = "AC4236"
     AC4550 = "AC4550"
     AC4558 = "AC4558"
     AC5659 = "AC5659"
+    AC5660 = "AC5660"
     AMF765 = "AMF765"
     AMF870 = "AMF870"
     CX3550 = "CX3550"
@@ -177,19 +184,19 @@ class PresetMode:
         AUTO: ICON.AUTO_MODE,
         AUTO_GENERAL: ICON.AUTO_MODE,
         BACTERIA: ICON.BACTERIA_VIRUS_MODE,
+        POLLUTION: ICON.POLLUTION_MODE,
         SPEED_GENTLE_1: ICON.SPEED_1,
         SPEED_1: ICON.SPEED_1,
         SPEED_2: ICON.SPEED_2,
         SPEED_3: ICON.SPEED_3,
+        TURBO: ICON.SPEED_3,
         # we use the sleep mode icon for all related modes
         GENTLE: ICON.SLEEP_MODE,
         NIGHT: ICON.SLEEP_MODE,
         SLEEP: ICON.SLEEP_MODE,
-        TURBO: ICON.SPEED_3,
         # unfortunately, the allergy sleep mode has the same icon as the auto mode on the device
         SLEEP_ALLERGY: ICON.AUTO_MODE,
-        # some devices have a gas and a pollution mode, but there doesn't seem to be a Philips icon for that
-        POLLUTION: ICON.AUTO_MODE,
+        # some devices have a gas mode, but there doesn't seem to be a Philips icon for that
         GAS: ICON.AUTO_MODE,
     }
 
@@ -223,6 +230,7 @@ class FanAttributes(StrEnum):
     DEVICE_ID = "device_id"
     DEVICE_VERSION = "device_version"
     DISPLAY_BACKLIGHT = "display_backlight"
+    AUTO_DISPLAY_BACKLIGHT = "auto_display_backlight"
     ERROR_CODE = "error_code"
     ERROR = "error"
     RAW = "raw"
@@ -241,6 +249,7 @@ class FanAttributes(StrEnum):
     HUMIDITY_TARGET = "humidity_target"
     INDOOR_ALLERGEN_INDEX = "indoor_allergen_index"
     LABEL = "label"
+    LAMP_MODE = "lamp_mode"
     LEVEL = "level"
     UNIT = "unit"
     VALUE = "value"
@@ -379,6 +388,7 @@ class PhilipsApi:
     NEW2_DISPLAY_BACKLIGHT = "D0312D"
     NEW2_DISPLAY_BACKLIGHT2 = "D03105"
     NEW2_DISPLAY_BACKLIGHT3 = "D03105#1"  # dimmable in 3 steps
+    NEW2_LAMP_MODE = "D03135"
     NEW2_TEMPERATURE = "D03224"
     NEW2_SOFTWARE_VERSION = "D01S12"
     NEW2_CHILD_LOCK = "D03103"
@@ -409,14 +419,19 @@ class PhilipsApi:
     NEW2_PREFERRED_INDEX = "D0312A#1"
     NEW2_GAS_PREFERRED_INDEX = "D0312A#2"
 
+    LAMP_MODE_MAP = {
+        0: ("Off", ICON.LIGHT_FUNCTION),
+        1: ("Air Quality", ICON.LIGHT_FUNCTION),
+        2: ("Ambient", ICON.LIGHT_FUNCTION),
+    }
     PREFERRED_INDEX_MAP = {
-        0: ("Indoor Allergen Index", ICON.IAI),
-        1: ("PM2.5", ICON.PM25),
+        "0": ("Indoor Allergen Index", ICON.IAI),
+        "1": ("PM2.5", ICON.PM25),
     }
     GAS_PREFERRED_INDEX_MAP = {
-        0: ("Indoor Allergen Index", ICON.IAI),
-        1: ("PM2.5", ICON.PM25),
-        2: ("Gas", ICON.GAS),
+        "0": ("Indoor Allergen Index", ICON.IAI),
+        "1": ("PM2.5", ICON.PM25),
+        "2": ("Gas", ICON.GAS),
     }
     NEW_PREFERRED_INDEX_MAP = {
         "IAI": ("Indoor Allergen Index", ICON.IAI),
@@ -529,6 +544,7 @@ SENSOR_TYPES: dict[str, SensorDescription] = {
         ATTR_DEVICE_CLASS: SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS,
         FanAttributes.ICON_MAP: {0: "mdi:blur"},
         FanAttributes.LABEL: FanAttributes.TOTAL_VOLATILE_ORGANIC_COMPOUNDS,
+        FanAttributes.UNIT: CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         ATTR_STATE_CLASS: SensorStateClass.MEASUREMENT,
     },
     PhilipsApi.HUMIDITY: {
@@ -809,6 +825,7 @@ LIGHT_TYPES: dict[str, LightDescription] = {
         SWITCH_ON: 123,
         SWITCH_OFF: 0,
         SWITCH_MEDIUM: 115,
+        SWITCH_AUTO: 101,
         DIMMABLE: True,
     },
 }
@@ -828,6 +845,11 @@ SELECT_TYPES: dict[str, SelectDescription] = {
         FanAttributes.LABEL: FanAttributes.HUMIDITY_TARGET,
         CONF_ENTITY_CATEGORY: EntityCategory.CONFIG,
         OPTIONS: PhilipsApi.HUMIDITY_TARGET_MAP,
+    },
+    PhilipsApi.NEW2_LAMP_MODE: {
+        FanAttributes.LABEL: FanAttributes.LAMP_MODE,
+        CONF_ENTITY_CATEGORY: EntityCategory.CONFIG,
+        OPTIONS: PhilipsApi.LAMP_MODE_MAP,
     },
     PhilipsApi.PREFERRED_INDEX: {
         FanAttributes.LABEL: FanAttributes.PREFERRED_INDEX,

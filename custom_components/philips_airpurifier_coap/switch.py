@@ -40,7 +40,6 @@ async def async_setup_entry(
     async_add_entities: Callable[[list[Entity], bool], None],
 ) -> None:
     """Set up platform for switch."""
-    _LOGGER.debug("async_setup_entry called for platform switch")
 
     host = entry.data[CONF_HOST]
     model = entry.data[CONF_MODEL]
@@ -108,10 +107,8 @@ class PhilipsSwitch(PhilipsEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Switch the switch on."""
-        _LOGGER.debug("async_turn_on, kind: %s - value: %s", self.kind, self._on)
         await self.coordinator.client.set_control_value(self.kind, self._on)
 
     async def async_turn_off(self, **kwargs) -> None:
         """Switch the switch off."""
-        _LOGGER.debug("async_turn_off, kind: %s - value: %s", self.kind, self._off)
         await self.coordinator.client.set_control_value(self.kind, self._off)

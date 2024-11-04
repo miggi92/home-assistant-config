@@ -1290,6 +1290,8 @@ class PhilipsAC3259(PhilipsGenericCoAPFan):
 class PhilipsAC3421(PhilipsAC0950):
     """AC3421."""
 
+    AVAILABLE_SELECTS = [PhilipsApi.NEW2_LAMP_MODE]
+
 
 class PhilipsAC3737(PhilipsNew2GenericCoAPFan):
     """AC3737."""
@@ -1567,8 +1569,70 @@ class PhilipsAC385851(PhilipsAC385x51):
     """AC3858/51."""
 
 
+class PhilipsAC385883(PhilipsAC385x51):
+    """AC3858/83."""
+
+
 class PhilipsAC385886(PhilipsAC385x51):
     """AC3858/86."""
+
+
+# this device seems similar to the AMF family
+class PhilipsAC4220(PhilipsNew2GenericCoAPFan):
+    """AC4220 family."""
+
+    AVAILABLE_PRESET_MODES = {
+        PresetMode.AUTO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 0,
+        },
+        PresetMode.MEDIUM: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 19,
+        },
+        PresetMode.TURBO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 18,
+        },
+        PresetMode.SLEEP: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 17,
+        },
+    }
+    AVAILABLE_SPEEDS = {
+        PresetMode.SPEED_1: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 1,
+        },
+        PresetMode.SPEED_2: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 2,
+        },
+        PresetMode.SPEED_3: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 3,
+        },
+        PresetMode.SPEED_4: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 4,
+        },
+        PresetMode.SPEED_5: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 5,
+        },
+    }
+
+    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT3]
+    AVAILABLE_SWITCHES = [
+        PhilipsApi.NEW2_CHILD_LOCK,
+        PhilipsApi.NEW2_BEEP,
+        PhilipsApi.NEW2_AUTO_PLUS_AI,
+    ]
+    AVAILABLE_SELECTS = [PhilipsApi.NEW2_TIMER2, PhilipsApi.NEW2_LAMP_MODE]
+
+
+class PhilipsAC4221(PhilipsAC4220):
+    """AC4221."""
 
 
 class PhilipsAC4236(PhilipsGenericCoAPFan):
@@ -1674,7 +1738,7 @@ class PhilipsAC5659(PhilipsGenericCoAPFan):
     """AC5659."""
 
     AVAILABLE_PRESET_MODES = {
-        PresetMode.AUTO: {PhilipsApi.POWER: "1", PhilipsApi.MODE: "P"},
+        PresetMode.POLLUTION: {PhilipsApi.POWER: "1", PhilipsApi.MODE: "P"},
         PresetMode.ALLERGEN: {PhilipsApi.POWER: "1", PhilipsApi.MODE: "A"},
         PresetMode.BACTERIA: {PhilipsApi.POWER: "1", PhilipsApi.MODE: "B"},
         # make speeds available as preset
@@ -1732,6 +1796,10 @@ class PhilipsAC5659(PhilipsGenericCoAPFan):
         },
     }
     AVAILABLE_SELECTS = [PhilipsApi.PREFERRED_INDEX]
+
+
+class PhilipsAC5660(PhilipsAC5659):
+    """AC5660."""
 
 
 class PhilipsAMFxxx(PhilipsNew2GenericCoAPFan):
@@ -1989,11 +2057,15 @@ model_to_class = {
     FanModel.AC3854_51: PhilipsAC385451,
     FanModel.AC3858_50: PhilipsAC385850,
     FanModel.AC3858_51: PhilipsAC385851,
+    FanModel.AC3858_83: PhilipsAC385883,
     FanModel.AC3858_86: PhilipsAC385886,
+    FanModel.AC4220: PhilipsAC4220,
+    FanModel.AC4221: PhilipsAC4221,
     FanModel.AC4236: PhilipsAC4236,
     FanModel.AC4550: PhilipsAC4550,
     FanModel.AC4558: PhilipsAC4558,
     FanModel.AC5659: PhilipsAC5659,
+    FanModel.AC5660: PhilipsAC5660,
     FanModel.AMF765: PhilipsAMF765,
     FanModel.AMF870: PhilipsAMF870,
     FanModel.CX5120: PhilipsCX5120,
