@@ -755,6 +755,18 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Aqara Smart Lock U300",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Aqara Smart Lock U50",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "aqara.lock.bzacn4 ZNMS16LM",
             "battery_type": "AA",
             "battery_quantity": 6
@@ -887,8 +899,7 @@
         },
         {
             "manufacturer": "Aqara",
-            "model": "Water leak sensor T1",
-            "model_id": "SJCGQ12LM",
+            "model": "Water leak sensor T1 (SJCGQ12LM)",
             "battery_type": "CR2032"
         },
         {
@@ -1640,6 +1651,17 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-RC-4-2",
+            "battery_type": "AAA"
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-RC-8",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-RC-Key4-3",
             "battery_type": "AAA"
         },
@@ -1670,6 +1692,12 @@
             "manufacturer": "eQ-3",
             "model": "HM-Sec-SD-2",
             "battery_type": "Irreplaceable"
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-Sen-MDIR-O-2",
+            "battery_type": "AA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "eQ-3",
@@ -2576,6 +2604,13 @@
         },
         {
             "manufacturer": "Homematic",
+            "model": "HM-CC-RT-DN",
+            "model_id": "MEQ0789539",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Homematic",
             "model": "HM-RC-4-3",
             "battery_type": "AAA"
         },
@@ -2930,6 +2965,12 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Inkbird",
+            "model": "IBS-TH1/TH2/P01B/ITH-12S",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "INKBIRD",
             "model": "IBS-TH2/P01B",
             "battery_type": "AAA",
@@ -2979,6 +3020,16 @@
             "manufacturer": "Iris",
             "model": "Motion Sensor (iL07_1)",
             "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Iris",
+            "model": "Smart button (3460-L)",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Iris",
+            "model": "Water sensor (3315-L)",
+            "battery_type": "CR2"
         },
         {
             "manufacturer": "iRobot",
@@ -3045,6 +3096,12 @@
         {
             "manufacturer": "Kwikset",
             "model": "HC620",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Kwikset",
+            "model": "Home connect smart lock conversion kit (99140-139)",
             "battery_type": "AA",
             "battery_quantity": 4
         },
@@ -3666,6 +3723,12 @@
             "manufacturer": "Oculus",
             "model": "Quest",
             "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Onesti Products AS",
+            "model": "Zigbee module for Nimly Doorlock series (Nimly)",
+            "battery_type": "AA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "Onvis",
@@ -5034,6 +5097,17 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "switchbot",
+            "model": "WoTHP",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Sylvania",
+            "model": "Contact Sensor-A",
+            "battery_type": "CR2"
+        },
+        {
             "manufacturer": "Tado",
             "model": "RU01",
             "battery_type": "AAA",
@@ -5112,6 +5186,18 @@
         {
             "manufacturer": "Third Reality",
             "model": "Door sensor (3RDS17BZ)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Third Reality",
+            "model": "Garage door tilt sensor (3RDTS01056Z)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Third Reality",
+            "model": "Garage door tilt sensor (3RDTS01056Z)",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
@@ -5269,6 +5355,14 @@
         },
         {
             "manufacturer": "TT Lock",
+            "model": "Electronic lock",
+            "model_id": "w301_901ca5",
+            "hw_version": "V1.1",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "TT Lock",
             "model": "SN511-180MS_PV53",
             "battery_type": "AA",
             "battery_quantity": 4
@@ -5278,6 +5372,11 @@
             "model": "SN9206-01-FS_PV53",
             "battery_type": "AA",
             "battery_quantity": 4
+        },
+        {
+            "manufacturer": "TUO Accessories LLC",
+            "model": "TUO Contact Sensor Door & Window",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "TUO Accessories LLC",
@@ -5779,6 +5878,12 @@
             "battery_type": "CR123A"
         },
         {
+            "manufacturer": "Tuya",
+            "model": "TS0205",
+            "model_id": "_TYZB01_dsjszp0x",
+            "battery_type": "CR123A"
+        },
+        {
             "manufacturer": "tuya",
             "model": "TS0210",
             "battery_type": "AAA",
@@ -5793,6 +5898,18 @@
             "manufacturer": "TuYa",
             "model": "TS0601_smoke_1",
             "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "TS0601_smoke_6",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "TS0601_temperature_humidity_sensor_1",
+            "battery_type": "AA",
             "battery_quantity": 2
         },
         {
@@ -6392,6 +6509,11 @@
         },
         {
             "manufacturer": "Xiaomi",
+            "model": "MHO-C401",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Xiaomi",
             "model": "Mi door and window sensor (MCCGQ01LM)",
             "battery_type": "CR1632"
         },
@@ -6609,6 +6731,12 @@
         {
             "manufacturer": "Yale",
             "model": "YRD420-ZW3",
+            "battery_type": "AA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Yale",
+            "model": "YRD450-F-ZW3",
             "battery_type": "AA",
             "battery_quantity": 4
         },

@@ -321,6 +321,16 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
         self._available_attributes = []
         self._collect_available_attributes()
 
+        # set the supported features of the fan
+        self._attr_supported_features |= (
+            FanEntityFeature.PRESET_MODE
+            | FanEntityFeature.TURN_OFF
+            | FanEntityFeature.TURN_ON
+        )
+
+        if self.KEY_OSCILLATION is not None:
+            self._attr_supported_features |= FanEntityFeature.OSCILLATE
+
         try:
             device_id = self._device_status[PhilipsApi.DEVICE_ID]
             self._unique_id = f"{self._model}-{device_id}"
@@ -347,6 +357,9 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
 
         self._available_speeds = speeds
         self._speeds = list(self._available_speeds.keys())
+
+        if len(self._speeds) > 0:
+            self._attr_supported_features |= FanEntityFeature.SET_SPEED
 
     def _collect_available_attributes(self):
         attributes = []
@@ -389,24 +402,6 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
         await self.coordinator.client.set_control_value(
             self.KEY_PHILIPS_POWER, self.STATE_POWER_OFF
         )
-
-    @property
-    def supported_features(self) -> int:
-        """Return the supported features."""
-
-        features = (
-            FanEntityFeature.PRESET_MODE
-            | FanEntityFeature.TURN_OFF
-            | FanEntityFeature.TURN_ON
-        )
-
-        if self._speeds:
-            features |= FanEntityFeature.SET_SPEED
-
-        if self.KEY_OSCILLATION is not None:
-            features |= FanEntityFeature.OSCILLATE
-
-        return features
 
     @property
     def preset_modes(self) -> list[str] | None:
@@ -1223,6 +1218,78 @@ class PhilipsAC3059(PhilipsAC305x):
     """AC3059."""
 
 
+# this device seems similar to the AMF family
+class PhilipsAC32xx(PhilipsNew2GenericCoAPFan):
+    """AC32xx family."""
+
+    AVAILABLE_PRESET_MODES = {
+        PresetMode.AUTO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 0,
+        },
+        PresetMode.MEDIUM: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 19,
+        },
+        PresetMode.TURBO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 18,
+        },
+        PresetMode.SLEEP: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 17,
+        },
+    }
+    AVAILABLE_SPEEDS = {
+        PresetMode.SPEED_1: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 1,
+        },
+        PresetMode.SPEED_2: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 2,
+        },
+        PresetMode.SPEED_3: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 3,
+        },
+        PresetMode.SPEED_4: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 4,
+        },
+        PresetMode.SPEED_5: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 5,
+        },
+    }
+
+    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT3]
+    AVAILABLE_SWITCHES = [
+        PhilipsApi.NEW2_CHILD_LOCK,
+        PhilipsApi.NEW2_BEEP,
+        PhilipsApi.NEW2_AUTO_PLUS_AI,
+    ]
+    AVAILABLE_SELECTS = [
+        PhilipsApi.NEW2_TIMER2,
+        PhilipsApi.NEW2_LAMP_MODE,
+        PhilipsApi.NEW2_PREFERRED_INDEX,
+    ]
+
+
+class PhilipsAC3210(PhilipsAC32xx):
+    """AC3210."""
+
+    AVAILABLE_SELECTS = [PhilipsApi.NEW_PREFERRED_INDEX]
+
+
+class PhilipsAC3220(PhilipsAC3210):
+    """AC3220."""
+
+
+class PhilipsAC3221(PhilipsAC3210):
+    """AC3221."""
+
+
 class PhilipsAC3259(PhilipsGenericCoAPFan):
     """AC3259."""
 
@@ -1577,58 +1644,10 @@ class PhilipsAC385886(PhilipsAC385x51):
     """AC3858/86."""
 
 
-# this device seems similar to the AMF family
-class PhilipsAC4220(PhilipsNew2GenericCoAPFan):
-    """AC4220 family."""
+class PhilipsAC4220(PhilipsAC32xx):
+    """AC4220."""
 
-    AVAILABLE_PRESET_MODES = {
-        PresetMode.AUTO: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 0,
-        },
-        PresetMode.MEDIUM: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 19,
-        },
-        PresetMode.TURBO: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 18,
-        },
-        PresetMode.SLEEP: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 17,
-        },
-    }
-    AVAILABLE_SPEEDS = {
-        PresetMode.SPEED_1: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 1,
-        },
-        PresetMode.SPEED_2: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 2,
-        },
-        PresetMode.SPEED_3: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 3,
-        },
-        PresetMode.SPEED_4: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 4,
-        },
-        PresetMode.SPEED_5: {
-            PhilipsApi.NEW2_POWER: 1,
-            PhilipsApi.NEW2_MODE_B: 5,
-        },
-    }
-
-    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT3]
-    AVAILABLE_SWITCHES = [
-        PhilipsApi.NEW2_CHILD_LOCK,
-        PhilipsApi.NEW2_BEEP,
-        PhilipsApi.NEW2_AUTO_PLUS_AI,
-    ]
-    AVAILABLE_SELECTS = [PhilipsApi.NEW2_TIMER2, PhilipsApi.NEW2_LAMP_MODE]
+    AVAILABLE_SELECTS = [PhilipsApi.NEW2_GAS_PREFERRED_INDEX]
 
 
 class PhilipsAC4221(PhilipsAC4220):
@@ -2048,6 +2067,9 @@ model_to_class = {
     FanModel.AC3039: PhilipsAC3039,
     FanModel.AC3055: PhilipsAC3055,
     FanModel.AC3059: PhilipsAC3059,
+    FanModel.AC3210: PhilipsAC3210,
+    FanModel.AC3220: PhilipsAC3220,
+    FanModel.AC3221: PhilipsAC3221,
     FanModel.AC3259: PhilipsAC3259,
     FanModel.AC3421: PhilipsAC3421,
     FanModel.AC3737: PhilipsAC3737,
