@@ -1,0 +1,27 @@
+---
+# Silke Work
+alias: SilkeWork
+id: 4b8a1925-f831-4168-bdc2-697f63d79f3c
+description: "Wenn Silke arbeiten muss"
+trigger:
+  - platform: state
+    entity_id: schedule.silke_arbeit
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: schedule.silke_arbeit
+        state: "on"
+    then:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.milo_person_sync
+        data:
+          option: miguel
+    else:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.milo_person_sync
+        data:
+          option: silke
+mode: single
