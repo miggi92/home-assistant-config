@@ -15,7 +15,7 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util.timeout import TimeoutManager
 
-from .const import CONF_DEVICE_ID, CONF_MODEL, DOMAIN, PhilipsApi
+from .const import CONF_DEVICE_ID, CONF_MODEL, CONF_STATUS, DOMAIN, PhilipsApi
 from .philips import model_to_class
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._name: Any = None
         self._device_id: str = None
         self._wifi_version: Any = None
+        self._status: Any = None
 
     def _get_schema(self, user_input):
         """Provide schema for user input."""
@@ -130,6 +131,7 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._model,
             self._name,
         )
+        self._status = status
 
         # check if model is supported
         model_long = self._model + " " + self._wifi_version.split("@")[0]
@@ -187,10 +189,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input[CONF_NAME] = self._name
             user_input[CONF_DEVICE_ID] = self._device_id
             user_input[CONF_HOST] = self._host
+            user_input[CONF_STATUS] = self._status
 
-            return self.async_create_entry(
-                title=self._model + " " + self._name, data=user_input
-            )
+            config_entry_name = f"{self._model} {self._name}"
+
+            return self.async_create_entry(config_entry_name, data=user_input)
 
         _LOGGER.debug("showing confirmation form")
         # show the form to the user
@@ -206,14 +209,15 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle initial step of user config flow."""
 
         errors = {}
+        config_entry_data = user_input
 
         # user input was provided, so check and save it
-        if user_input is not None:
+        if config_entry_data is not None:
             try:
                 # first some sanitycheck on the host input
-                if not host_valid(user_input[CONF_HOST]):
+                if not host_valid(config_entry_data[CONF_HOST]):
                     raise InvalidHost  # noqa: TRY301
-                self._host = user_input[CONF_HOST]
+                self._host = config_entry_data[CONF_HOST]
                 _LOGGER.debug("trying to configure host: %s", self._host)
 
                 # let's try and connect to an AirPurifier
@@ -282,9 +286,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 )[0]
                 self._device_id = status[PhilipsApi.DEVICE_ID]
-                user_input[CONF_MODEL] = self._model
-                user_input[CONF_NAME] = self._name
-                user_input[CONF_DEVICE_ID] = self._device_id
+                config_entry_data[CONF_MODEL] = self._model
+                config_entry_data[CONF_NAME] = self._name
+                config_entry_data[CONF_DEVICE_ID] = self._device_id
+                config_entry_data[CONF_HOST] = self._host
+                config_entry_data[CONF_STATUS] = status
 
                 _LOGGER.debug(
                     "Detected host %s as model %s with name: %s",
@@ -300,27 +306,27 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 if model in model_to_class:
                     _LOGGER.info("Model %s supported", model)
-                    user_input[CONF_MODEL] = model
+                    config_entry_data[CONF_MODEL] = model
                 elif model_long in model_to_class:
                     _LOGGER.info("Model %s supported", model_long)
-                    user_input[CONF_MODEL] = model_long
+                    config_entry_data[CONF_MODEL] = model_long
                 elif model_family in model_to_class:
                     _LOGGER.info("Model family %s supported", model_family)
-                    user_input[CONF_MODEL] = model_family
+                    config_entry_data[CONF_MODEL] = model_family
                 else:
                     return self.async_abort(reason="model_unsupported")
 
                 # use the device ID as unique_id
-                unique_id = self._device_id
-                _LOGGER.debug("async_step_user: unique_id=%s", unique_id)
+                config_entry_unique_id = self._device_id
+                config_entry_name = f"{self._model} {self._name}"
 
                 # set the unique id for the entry, abort if it already exists
-                await self.async_set_unique_id(unique_id)
+                await self.async_set_unique_id(config_entry_unique_id)
                 self._abort_if_unique_id_configured(updates={CONF_HOST: self._host})
 
                 # compile a name and return the config entry
                 return self.async_create_entry(
-                    title=self._model + " " + self._name, data=user_input
+                    title=config_entry_name, data=config_entry_data
                 )
 
             except InvalidHost:
@@ -328,12 +334,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except exceptions.ConfigEntryNotReady:
                 errors[CONF_HOST] = "connect"
 
-        if user_input is None:
-            user_input = {}
+        if config_entry_data is None:
+            config_entry_data = {}
 
         # no user_input so far
-        # what to ask the user
-        schema = self._get_schema(user_input)
+        schema = self._get_schema(config_entry_data)
 
         # show the form to the user
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)

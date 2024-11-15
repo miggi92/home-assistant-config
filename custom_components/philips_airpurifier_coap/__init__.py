@@ -17,14 +17,16 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.device_registry import format_mac
 
+from .config_entry_data import ConfigEntryData
 from .const import (
-    DATA_KEY_CLIENT,
-    DATA_KEY_COORDINATOR,
+    CONF_DEVICE_ID,
+    CONF_MODEL,
+    CONF_STATUS,
     DOMAIN,
     ICONLIST_URL,
     ICONS_PATH,
@@ -33,7 +35,8 @@ from .const import (
     LOADER_URL,
     PAP,
 )
-from .philips import Coordinator
+from .coordinator import Coordinator
+from .model import DeviceInformation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -120,30 +123,51 @@ async def async_get_mac_address_from_host(hass: HomeAssistant, host: str) -> str
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the Philips AirPurifier integration."""
+
     host = entry.data[CONF_HOST]
+    model = entry.data[CONF_MODEL]
+    name = entry.data[CONF_NAME]
+    device_id = entry.data[CONF_DEVICE_ID]
     mac = await async_get_mac_address_from_host(hass, host)
 
     _LOGGER.debug("async_setup_entry called for host %s", host)
 
     try:
-        future_client = CoAPClient.create(host)
-        client = await asyncio.wait_for(future_client, timeout=25)
+        client = await asyncio.wait_for(CoAPClient.create(host), timeout=25)
         _LOGGER.debug("got a valid client for host %s", host)
+
     except Exception as ex:
         _LOGGER.warning(r"Failed to connect to host %s: %s", host, ex)
         raise ConfigEntryNotReady from ex
 
-    coordinator = Coordinator(client, host, mac)
-    _LOGGER.debug("got a valid coordinator for host %s", host)
+    device_information = DeviceInformation(
+        host=host, mac=mac, model=model, name=name, device_id=device_id
+    )
 
-    data = hass.data.get(DOMAIN)
-    if data is None:
-        hass.data[DOMAIN] = {}
+    # check if we have status data, it will be missing in old entries
+    if CONF_STATUS not in entry.data:
+        _LOGGER.warning("No status data found for model %s, trying to fetch it", model)
+        coordinator = Coordinator(hass, client, host, None)
+        await coordinator.async_first_refresh()
+        status = coordinator.status
 
-    hass.data[DOMAIN][host] = {
-        DATA_KEY_CLIENT: client,
-        DATA_KEY_COORDINATOR: coordinator,
-    }
+        # update the entry with the status data
+        new_data = {**entry.data}
+        new_data[CONF_STATUS] = status
+        hass.config_entries.async_update_entry(entry, data=new_data)
+
+    else:
+        status = entry.data[CONF_STATUS]
+        coordinator = Coordinator(hass, client, host, status)
+
+    # store the data in the hass.data
+    config_entry_data = ConfigEntryData(
+        device_information=device_information,
+        coordinator=coordinator,
+        latest_status=status,
+        client=client,
+    )
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = config_entry_data
 
     await coordinator.async_first_refresh()
     _LOGGER.debug("coordinator did first refresh for host %s", host)
@@ -161,9 +185,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     for p in PLATFORMS:
         await hass.config_entries.async_forward_entry_unload(entry, p)
 
-    coord: Coordinator = hass.data[DOMAIN][entry.data[CONF_HOST]][DATA_KEY_COORDINATOR]
-    await coord.shutdown()
+    config_entry_data: ConfigEntryData = hass.data[DOMAIN][entry.entry_id]
+    await config_entry_data.coordinator.shutdown()
 
-    hass.data[DOMAIN].pop(entry.data[CONF_HOST])
+    hass.data[DOMAIN].pop(entry.entry_id)
 
     return True

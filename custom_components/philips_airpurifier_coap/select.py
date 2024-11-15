@@ -8,26 +8,13 @@ from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_DEVICE_CLASS,
-    CONF_ENTITY_CATEGORY,
-    CONF_HOST,
-    CONF_NAME,
-)
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ENTITY_CATEGORY
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity
 
-from .const import (
-    CONF_MODEL,
-    DATA_KEY_COORDINATOR,
-    DOMAIN,
-    OPTIONS,
-    SELECT_TYPES,
-    FanAttributes,
-    PhilipsApi,
-)
-from .philips import Coordinator, PhilipsEntity, model_to_class
+from .config_entry_data import ConfigEntryData
+from .const import DOMAIN, OPTIONS, SELECT_TYPES, FanAttributes
+from .philips import PhilipsEntity, model_to_class
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,15 +25,10 @@ async def async_setup_entry(
     async_add_entities: Callable[[list[Entity], bool], None],
 ) -> None:
     """Set up the select platform."""
-    _LOGGER.debug("async_setup_entry called for platform select")
 
-    host = entry.data[CONF_HOST]
-    model = entry.data[CONF_MODEL]
-    name = entry.data[CONF_NAME]
+    config_entry_data: ConfigEntryData = hass.data[DOMAIN][entry.entry_id]
 
-    data = hass.data[DOMAIN][host]
-
-    coordinator = data[DATA_KEY_COORDINATOR]
+    model = config_entry_data.device_information.model
 
     model_class = model_to_class.get(model)
     if model_class:
@@ -57,7 +39,7 @@ async def async_setup_entry(
             available_selects.extend(cls_available_selects)
 
         selects = [
-            PhilipsSelect(coordinator, name, model, select)
+            PhilipsSelect(hass, entry, config_entry_data, select)
             for select in SELECT_TYPES
             if select in available_selects
         ]
@@ -74,11 +56,20 @@ class PhilipsSelect(PhilipsEntity, SelectEntity):
 
     _attr_is_on: bool | None = False
 
-    def __init__(  # noqa: D107
-        self, coordinator: Coordinator, name: str, model: str, select: str
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+        select: str,
     ) -> None:
-        super().__init__(coordinator)
-        self._model = model
+        """Initialize the select."""
+
+        super().__init__(hass, config, config_entry_data)
+
+        self._model = config_entry_data.device_information.model
+        name = config_entry_data.device_information.name
+
         self._description = SELECT_TYPES[select]
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
         label = FanAttributes.LABEL
@@ -96,15 +87,9 @@ class PhilipsSelect(PhilipsEntity, SelectEntity):
             self._icons[option_name] = icon
             self._options[key] = option_name
 
-        try:
-            device_id = self._device_status[PhilipsApi.DEVICE_ID]
-            self._attr_unique_id = f"{self._model}-{device_id}-{select.lower()}"
-        except KeyError as e:
-            _LOGGER.error("Failed retrieving unique_id due to missing key: %s", e)
-            raise PlatformNotReady from e
-        except TypeError as e:
-            _LOGGER.error("Failed retrieving unique_id due to type error: %s", e)
-            raise PlatformNotReady from e
+        model = config_entry_data.device_information.model
+        device_id = config_entry_data.device_information.device_id
+        self._attr_unique_id = f"{model}-{device_id}-{select.lower()}"
 
         self._attrs: dict[str, Any] = {}
         self.kind = select.partition("#")[0]
@@ -134,6 +119,9 @@ class PhilipsSelect(PhilipsEntity, SelectEntity):
                 option_key,
             )
             await self.coordinator.client.set_control_value(self.kind, option_key)
+            self._device_status[self.kind] = option_key
+            self._handle_coordinator_update()
+
         except KeyError as e:
             _LOGGER.error("Invalid option key: '%s' with error: %s", option, e)
         except ValueError as e:

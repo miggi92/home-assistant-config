@@ -8,44 +8,28 @@ from typing import Any, cast
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_DEVICE_CLASS,
-    CONF_ENTITY_CATEGORY,
-    CONF_HOST,
-    CONF_NAME,
-)
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ENTITY_CATEGORY
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity
 
-from .const import (
-    BINARY_SENSOR_TYPES,
-    CONF_MODEL,
-    DATA_KEY_COORDINATOR,
-    DOMAIN,
-    FanAttributes,
-    PhilipsApi,
-)
-from .philips import Coordinator, PhilipsEntity, model_to_class
+from .config_entry_data import ConfigEntryData
+from .const import BINARY_SENSOR_TYPES, DOMAIN, FanAttributes
+from .philips import PhilipsEntity, model_to_class
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(  # noqa: D103
+async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: Callable[[list[Entity], bool], None],
 ) -> None:
-    _LOGGER.debug("async_setup_entry called for platform binary_sensor")
+    """Set up platform for binary_sensor."""
 
-    host = entry.data[CONF_HOST]
-    model = entry.data[CONF_MODEL]
-    name = entry.data[CONF_NAME]
+    config_entry_data: ConfigEntryData = hass.data[DOMAIN][entry.entry_id]
 
-    data = hass.data[DOMAIN][host]
-
-    coordinator = data[DATA_KEY_COORDINATOR]
-    status = coordinator.status
+    model = config_entry_data.device_information.model
+    status = config_entry_data.latest_status
 
     model_class = model_to_class.get(model)
     available_binary_sensors = []
@@ -56,7 +40,7 @@ async def async_setup_entry(  # noqa: D103
             available_binary_sensors.extend(cls_available_binary_sensors)
 
     binary_sensors = [
-        PhilipsBinarySensor(coordinator, name, model, binary_sensor)
+        PhilipsBinarySensor(hass, entry, config_entry_data, binary_sensor)
         for binary_sensor in BINARY_SENSOR_TYPES
         if binary_sensor in status and binary_sensor in available_binary_sensors
     ]
@@ -67,11 +51,20 @@ async def async_setup_entry(  # noqa: D103
 class PhilipsBinarySensor(PhilipsEntity, BinarySensorEntity):
     """Define a Philips AirPurifier binary_sensor."""
 
-    def __init__(  # noqa: D107
-        self, coordinator: Coordinator, name: str, model: str, kind: str
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+        kind: str,
     ) -> None:
-        super().__init__(coordinator)
-        self._model = model
+        """Initialize the binary sensor."""
+
+        super().__init__(hass, config, config_entry_data)
+
+        self._model = config_entry_data.device_information.model
+        name = config_entry_data.device_information.name
+
         self._description = BINARY_SENSOR_TYPES[kind]
         self._icon_map = self._description.get(FanAttributes.ICON_MAP)
         self._norm_icon = (
@@ -85,12 +78,9 @@ class PhilipsBinarySensor(PhilipsEntity, BinarySensorEntity):
             f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
         )
 
-        try:
-            device_id = self._device_status[PhilipsApi.DEVICE_ID]
-            self._attr_unique_id = f"{self._model}-{device_id}-{kind.lower()}"
-        except KeyError as e:
-            _LOGGER.error("Failed retrieving unique_id: %s", e)
-            raise PlatformNotReady from e
+        model = config_entry_data.device_information.model
+        device_id = config_entry_data.device_information.device_id
+        self._attr_unique_id = f"{model}-{device_id}-{kind.lower()}"
 
         self._attrs: dict[str, Any] = {}
         self.kind = kind

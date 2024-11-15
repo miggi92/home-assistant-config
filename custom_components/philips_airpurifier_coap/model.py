@@ -3,12 +3,24 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, TypedDict
 from xmlrpc.client import boolean
 
 from homeassistant.helpers.typing import StateType
 
 DeviceStatus = dict[str, Any]
+
+
+@dataclass
+class DeviceInformation:
+    """Device information class."""
+
+    model: str
+    name: str
+    device_id: str
+    host: str
+    mac: str | None = None
 
 
 class _SensorDescription(TypedDict):

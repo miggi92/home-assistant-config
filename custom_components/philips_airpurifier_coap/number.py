@@ -8,26 +8,13 @@ from typing import Any
 
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_DEVICE_CLASS,
-    ATTR_ICON,
-    CONF_ENTITY_CATEGORY,
-    CONF_HOST,
-    CONF_NAME,
-)
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, CONF_ENTITY_CATEGORY
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity
 
-from .const import (
-    CONF_MODEL,
-    DATA_KEY_COORDINATOR,
-    DOMAIN,
-    NUMBER_TYPES,
-    FanAttributes,
-    PhilipsApi,
-)
-from .philips import Coordinator, PhilipsEntity, model_to_class
+from .config_entry_data import ConfigEntryData
+from .const import DOMAIN, NUMBER_TYPES, FanAttributes
+from .philips import PhilipsEntity, model_to_class
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,15 +25,10 @@ async def async_setup_entry(
     async_add_entities: Callable[[list[Entity], bool], None],
 ) -> None:
     """Set up the number platform."""
-    _LOGGER.debug("async_setup_entry called for platform number")
 
-    host = entry.data[CONF_HOST]
-    model = entry.data[CONF_MODEL]
-    name = entry.data[CONF_NAME]
+    config_entry_data: ConfigEntryData = hass.data[DOMAIN][entry.entry_id]
 
-    data = hass.data[DOMAIN][host]
-
-    coordinator = data[DATA_KEY_COORDINATOR]
+    model = config_entry_data.device_information.model
 
     model_class = model_to_class.get(model)
     if model_class:
@@ -57,7 +39,7 @@ async def async_setup_entry(
             available_numbers.extend(cls_available_numbers)
 
         numbers = [
-            PhilipsNumber(coordinator, name, model, number)
+            PhilipsNumber(hass, entry, config_entry_data, number)
             for number in NUMBER_TYPES
             if number in available_numbers
         ]
@@ -72,11 +54,20 @@ async def async_setup_entry(
 class PhilipsNumber(PhilipsEntity, NumberEntity):
     """Define a Philips AirPurifier number."""
 
-    def __init__(  # noqa: D107
-        self, coordinator: Coordinator, name: str, model: str, number: str
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+        number: str,
     ) -> None:
-        super().__init__(coordinator)
-        self._model = model
+        """Initialize the number."""
+
+        super().__init__(hass, config, config_entry_data)
+
+        self._model = config_entry_data.device_information.model
+        name = config_entry_data.device_information.name
+
         self._description = NUMBER_TYPES[number]
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
         label = FanAttributes.LABEL
@@ -94,15 +85,9 @@ class PhilipsNumber(PhilipsEntity, NumberEntity):
         self._attr_native_max_value = self._description.get(FanAttributes.MAX)
         self._attr_native_step = self._description.get(FanAttributes.STEP)
 
-        try:
-            device_id = self._device_status[PhilipsApi.DEVICE_ID]
-            self._attr_unique_id = f"{self._model}-{device_id}-{number.lower()}"
-        except KeyError as e:
-            _LOGGER.error("Failed retrieving unique_id due to missing key: %s", e)
-            raise PlatformNotReady from e
-        except TypeError as e:
-            _LOGGER.error("Failed retrieving unique_id due to type error: %s", e)
-            raise PlatformNotReady from e
+        model = config_entry_data.device_information.model
+        device_id = config_entry_data.device_information.device_id
+        self._attr_unique_id = f"{model}-{device_id}-{number.lower()}"
 
         self._attrs: dict[str, Any] = {}
         self.kind = number
@@ -128,3 +113,5 @@ class PhilipsNumber(PhilipsEntity, NumberEntity):
         _LOGGER.debug("setting number with: %s", value)
 
         await self.coordinator.client.set_control_value(self.kind, int(value))
+        self._device_status[self.kind] = int(value)
+        self._handle_coordinator_update()

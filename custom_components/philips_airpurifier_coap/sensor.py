@@ -12,8 +12,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     CONF_ENTITY_CATEGORY,
-    CONF_HOST,
-    CONF_NAME,
     PERCENTAGE,
     UnitOfTime,
 )
@@ -22,9 +20,8 @@ from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import Entity, EntityCategory
 from homeassistant.helpers.typing import StateType
 
+from .config_entry_data import ConfigEntryData
 from .const import (
-    CONF_MODEL,
-    DATA_KEY_COORDINATOR,
     DOMAIN,
     EXTRA_SENSOR_TYPES,
     FILTER_TYPES,
@@ -32,26 +29,22 @@ from .const import (
     FanAttributes,
     PhilipsApi,
 )
-from .philips import Coordinator, PhilipsEntity, model_to_class
+from .philips import PhilipsEntity, model_to_class
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(  # noqa: D103
+async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: Callable[[list[Entity], bool], None],
 ) -> None:
-    _LOGGER.debug("async_setup_entry called for platform sensor")
+    """Set up platform for sensor."""
 
-    host = entry.data[CONF_HOST]
-    model = entry.data[CONF_MODEL]
-    name = entry.data[CONF_NAME]
+    config_entry_data: ConfigEntryData = hass.data[DOMAIN][entry.entry_id]
 
-    data = hass.data[DOMAIN][host]
-
-    coordinator = data[DATA_KEY_COORDINATOR]
-    status = coordinator.status
+    model = config_entry_data.device_information.model
+    status = config_entry_data.latest_status
 
     model_class = model_to_class.get(model)
     unavailable_filters = []
@@ -69,17 +62,17 @@ async def async_setup_entry(  # noqa: D103
 
     sensors = (
         [
-            PhilipsSensor(coordinator, name, model, sensor)
+            PhilipsSensor(hass, entry, config_entry_data, sensor)
             for sensor in SENSOR_TYPES
             if sensor in status and sensor not in unavailable_sensors
         ]
         + [
-            PhilipsSensor(coordinator, name, model, sensor)
+            PhilipsSensor(hass, entry, config_entry_data, sensor)
             for sensor in EXTRA_SENSOR_TYPES
             if sensor in status and sensor in extra_sensors
         ]
         + [
-            PhilipsFilterSensor(coordinator, name, model, _filter)
+            PhilipsFilterSensor(hass, entry, config_entry_data, _filter)
             for _filter in FILTER_TYPES
             if _filter in status and _filter not in unavailable_filters
         ]
@@ -91,11 +84,19 @@ async def async_setup_entry(  # noqa: D103
 class PhilipsSensor(PhilipsEntity, SensorEntity):
     """Define a Philips AirPurifier sensor."""
 
-    def __init__(  # noqa: D107
-        self, coordinator: Coordinator, name: str, model: str, kind: str
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+        kind: str,
     ) -> None:
-        super().__init__(coordinator)
-        self._model = model
+        """Initialize the sensor."""
+
+        super().__init__(hass, config, config_entry_data)
+
+        self._model = config_entry_data.device_information.model
+        name = config_entry_data.device_information.name
 
         # the sensor could be a normal sensor or an extra sensor
         if kind in SENSOR_TYPES:
@@ -119,12 +120,9 @@ class PhilipsSensor(PhilipsEntity, SensorEntity):
             FanAttributes.UNIT
         )
 
-        try:
-            device_id = self._device_status[PhilipsApi.DEVICE_ID]
-            self._attr_unique_id = f"{self._model}-{device_id}-{kind.lower()}"
-        except KeyError as e:
-            _LOGGER.error("Failed retrieving unique_id due to missing key: %s", e)
-            raise PlatformNotReady from e
+        model = config_entry_data.device_information.model
+        device_id = config_entry_data.device_information.device_id
+        self._attr_unique_id = f"{model}-{device_id}-{kind.lower()}"
 
         self._attrs: dict[str, Any] = {}
         self.kind = kind
@@ -155,11 +153,20 @@ class PhilipsSensor(PhilipsEntity, SensorEntity):
 class PhilipsFilterSensor(PhilipsEntity, SensorEntity):
     """Define a Philips AirPurifier filter sensor."""
 
-    def __init__(  # noqa: D107
-        self, coordinator: Coordinator, name: str, model: str, kind: str
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+        kind: str,
     ) -> None:
-        super().__init__(coordinator)
-        self._model = model
+        """Initialize the filter sensor."""
+
+        super().__init__(hass, config, config_entry_data)
+
+        self._model = config_entry_data.device_information.model
+        name = config_entry_data.device_information.name
+
         self._description = FILTER_TYPES[kind]
         self._icon_map = self._description[FanAttributes.ICON_MAP]
         self._norm_icon = (

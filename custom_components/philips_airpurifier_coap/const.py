@@ -32,6 +32,7 @@ from .model import (
 )
 
 DOMAIN = "philips_airpurifier_coap"
+MANUFACTURER = "Philips"
 
 DATA_KEY_CLIENT = "client"
 DATA_KEY_COORDINATOR = "coordinator"
@@ -90,6 +91,7 @@ ICONS = "icons"
 
 CONF_MODEL = "model"
 CONF_DEVICE_ID = "device_id"
+CONF_STATUS = "status"
 
 SWITCH_ON = "on"
 TEST_ON = "on"
