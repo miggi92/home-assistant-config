@@ -80,6 +80,8 @@ lovelace:
       type: module
     - url: /hacsfiles/config-template-card/config-template-card.js
       type: module
+    - url: /hacsfiles/android-tv-card/universal-remote-card.min.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
