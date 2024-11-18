@@ -193,7 +193,7 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             config_entry_name = f"{self._model} {self._name}"
 
-            return self.async_create_entry(config_entry_name, data=user_input)
+            return self.async_create_entry(title=config_entry_name, data=user_input)
 
         _LOGGER.debug("showing confirmation form")
         # show the form to the user

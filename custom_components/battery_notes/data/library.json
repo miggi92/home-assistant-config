@@ -243,6 +243,11 @@
             "battery_type": "CR2032"
         },
         {
+            "manufacturer": "_TZ3000_pzui3skt",
+            "model": "TS0041",
+            "battery_type": "CR2430"
+        },
+        {
             "manufacturer": "_TZ3000_rcuyhwe3",
             "model": "TS0203",
             "battery_type": "AAA",
@@ -851,6 +856,13 @@
             "manufacturer": "Aqara",
             "model": "MCCGQ14LM",
             "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Motion and Light Sensor P2",
+            "hw_version": "1.0.0.0",
+            "battery_type": "CR2450",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Aqara",
@@ -1692,6 +1704,11 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-PBI-4-FM",
+            "battery_type": "CR20321"
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-RC-4-2",
             "battery_type": "AAA"
         },
@@ -1705,6 +1722,11 @@
             "manufacturer": "eQ-3",
             "model": "HM-RC-Key4-3",
             "battery_type": "AAA"
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-SCI-3-FM",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "eQ-3",
@@ -1731,8 +1753,20 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-Sec-SD",
+            "battery_type": "AA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-Sec-SD-2",
             "battery_type": "Irreplaceable"
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-Sec-Sir-WM",
+            "battery_type": "LR14",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "eQ-3",
@@ -4922,6 +4956,11 @@
             "battery_type": "Rechargeable"
         },
         {
+            "manufacturer": "Smartwings",
+            "model": "WM25/L-Z",
+            "battery_type": "Rechargeable"
+        },
+        {
             "manufacturer": "Smoke detector",
             "model": "SSHM-I1",
             "battery_type": "CR123A"
@@ -6202,6 +6241,11 @@
             "battery_quantity": 4
         },
         {
+            "manufacturer": "verspringE",
+            "model": "HSP02 / SP103",
+            "battery_type": "CR2"
+        },
+        {
             "manufacturer": "VictorPest.com",
             "model": "Rat Trap",
             "battery_type": "C",
@@ -6668,6 +6712,11 @@
             "manufacturer": "Xiaomi",
             "model": "Mi/Aqara smart home cube (MFKZQ01LM)",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "MiFlora Plant Sensor (HHCCJCY01)",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Xiaomi",
