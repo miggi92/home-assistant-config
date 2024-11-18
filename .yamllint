@@ -13,6 +13,7 @@ ignore: |
   themes/*
   zigbee2mqtt/*
   dwains-dashboard/*
+  esphome/esp32-s3box-3.yaml
 rules:
   braces:
     level: error
