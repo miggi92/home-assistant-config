@@ -9,21 +9,19 @@ cards:
       - type: back
       - type: spacer
   - type: custom:mushroom-title-card
-    subtitle: Updates
-  - type: horizontal-stack
-    cards:
-      - type: custom:mushroom-update-card
-        entity: update.home_assistant_core_update
-        name: HA Core
-      - type: custom:mushroom-update-card
-        entity: update.home_assistant_operating_system_update
-        name: HA Operating System
-  - type: horizontal-stack
-    cards:
-      - type: custom:mushroom-update-card
-        entity: update.yggdrasil_fritz_os
-        name: Powerline wlan
-      - type: custom:mushroom-update-card
-        entity: update.yggdrasil_fritz_os
-        name: Fritzbox
+    subtitle:
+  - type: "custom:auto-entities"
+    show_empty: false
+    card:
+      show_header_toggle: false
+      title: "Verfügbare Updates"
+      type: entities
+    filter:
+      include:
+        - entity_id: update.*
+          options:
+            type: custom:mushroom-update-card
+          state: "on"
+      method: state
+      numeric: true
   - !include ../../cards/watchman.yaml
