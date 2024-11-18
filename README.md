@@ -1,7 +1,7 @@
 # Home Assistant Config
 
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2024.11.2%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2024.11.2)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
-![Home Assistant Version](https://github.com/home-assistant/core/releases/tag/2024.11.2)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/miggi92/home-assistant-config?style=for-the-badge)
