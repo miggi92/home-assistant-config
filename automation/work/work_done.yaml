@@ -5,7 +5,7 @@ id: db7c5885-b42d-4db0-a1ff-3fce6572cac7
 description: "Sync GPS Coords with work laptop"
 trigger:
   - platform: state
-    entity_id: device_tracker.bcwmc002867
+    entity_id: device_tracker.bcwmc5cg4100cy0
     to: "not_home"
 condition: []
 action:

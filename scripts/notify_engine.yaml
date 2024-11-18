@@ -212,7 +212,7 @@ notify_engine:
                 tag_id: "{{ tag_id | default }}"
         - if:
             - condition: state
-              entity_id: device_tracker.bcwmc002867
+              entity_id: device_tracker.bcwmc5cg4100cy0
               state: "home"
             - condition: template
               value_template: "{{ who != 'work' }}"

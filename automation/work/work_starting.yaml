@@ -5,7 +5,7 @@ id: bece8ed6-e1d0-44d9-a167-85413735c362
 description: Geschäftslaptop befindet sich im Netz
 trigger:
   - platform: state
-    entity_id: device_tracker.bcwmc002867
+    entity_id: device_tracker.bcwmc5cg4100cy0
     to: home
 condition:
   - condition: state
