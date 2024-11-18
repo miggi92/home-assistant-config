@@ -1,0 +1,28 @@
+---
+# generate an AI image via telegram
+id: 5d292a16-db4a-4897-88ce-1cf106efa12b
+alias: "Generate picture"
+description: Antwortet auf den /wetter Befehl
+triggers:
+  - event_type: telegram_command
+    event_data:
+      command: /bild
+    trigger: event
+conditions: []
+actions:
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: natural
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: "{{trigger.event.data['args']}}"
+    response_variable: generated
+  - data:
+      value1: "{{ generated.revised_prompt }}"
+      photo: "{{ generated.url }}"
+      who: home
+      tag_id: information
+      group: Family
+    action: script.notify_engine
+mode: single
