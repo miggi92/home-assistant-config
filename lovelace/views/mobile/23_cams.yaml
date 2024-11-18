@@ -22,11 +22,6 @@ cards:
       show_name: true
       camera_view: auto
       entity: camera.korbchen
-  - type: picture-entity
-    show_state: true
-    show_name: true
-    camera_view: auto
-    entity: camera.serverschrank
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-entity-card

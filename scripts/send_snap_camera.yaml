@@ -4,22 +4,17 @@ send_cam_snaps:
   icon: mdi:camera
   alias: "Snapshots von Kameras senden"
   sequence:
-    - service: camera.snapshot
+    - action: camera.snapshot
       target:
         entity_id: camera.flurcam
       data:
         filename: /config/www/cam_captures/flur_snap.jpg
-    - service: camera.snapshot
+    - action: camera.snapshot
       target:
         entity_id: camera.korbchen
       data:
         filename: /config/www/cam_captures/korbchen_snap.jpg
-    - service: camera.snapshot
-      target:
-        entity_id: camera.serverschrank
-      data:
-        filename: /config/www/cam_captures/serverschrank_snap.jpg
-    - service: script.notify_engine
+    - action: script.notify_engine
       data:
         title: "📷 Kamera 📹"
         value1: "Aktueller Kamerabilder"
@@ -29,5 +24,3 @@ send_cam_snaps:
             caputre: "Flur_Snapshot"
           - file: "/config/www/cam_captures/korbchen_snap.jpg"
             caputre: "Koerbchen_Snapshot"
-          - file: "/config/www/cam_captures/serverschrank_snap.jpg"
-            caputre: "ServerSchrank_Snapshot"
