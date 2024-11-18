@@ -15,21 +15,6 @@ cards:
     variables:
       - entity: calendar.miguel_gebhardt_googlemail_com
       - title: Miguel's Termine
-  - type: custom:decluttering-card
-    template: calendar_event_template
-    variables:
-      - entity: calendar.jhfh_ma_2022_2023
-      - title: JHFH mJA
-  - type: custom:decluttering-card
-    template: calendar_event_template
-    variables:
-      - entity: calendar.handball_herren
-      - title: TSB 1b
-  - type: custom:decluttering-card
-    template: calendar_event_template
-    variables:
-      - entity: calendar.handball_damen
-      - title: Handball Damen
   - type: "custom:atomic-calendar-revive"
     name: Kalender nächste 7 Tage (Max. 10 Einträge)
     maxEventCount: 10
@@ -53,12 +38,6 @@ cards:
         color: orange
         icon: mdi:cake
         maxDaysToShow: 5
-      - entity: calendar.jhfh_ma_2022_2023
-        color: lightgreen
-        icon: mdi:handball
-      - entity: calendar.handball_herren
-        color: lightblue
-        icon: mdi:handball
   - type: "custom:atomic-calendar-revive"
     name: Kalender
     defaultMode: calendar
@@ -83,12 +62,3 @@ cards:
       - entity: calendar.geburtstage
         color: orange
         icon: mdi:cake
-      - entity: calendar.handball_damen
-        color: yellow
-        icon: mdi:handball
-      - entity: calendar.jhfh_ma_2022_2023
-        color: lightgreen
-        icon: mdi:handball
-      - entity: calendar.handball_herren
-        color: lightblue
-        icon: mdi:handball
