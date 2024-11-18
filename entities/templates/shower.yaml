@@ -1,7 +1,7 @@
 ---
 # Shower occupancy sensor
 #    state: >
-#      {{ states('sensor.badtempsensor_humidity') | int(0) >
+#      {{ states('sensor.badezimmertempsensor_humidity') | int(0) >
 #        states('sensor.bad_luftfeuchtigkeits_statistiken') | int(0) + 5 and
 #        states('sensor.bad_luftfeuchtigkeits_statistiken') != "unknown" }}
 

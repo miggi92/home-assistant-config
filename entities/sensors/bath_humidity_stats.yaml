@@ -3,7 +3,7 @@
 # Records Last 3 Mins of Bathroom Humidity
 platform: statistics
 name: Bad Luftfeuchtigkeits Statistiken
-entity_id: sensor.badtempsensor_humidity
+entity_id: sensor.badezimmertempsensor_humidity
 state_characteristic: change
 sampling_size: 30
 max_age:
