@@ -8,6 +8,7 @@ on:
       - "docs/**"
       - "package.json"
       - "bun.lockb"
+      - "**.md" # don't run on doc update
   pull_request:
   schedule:
     - cron: 0 12 * * *
