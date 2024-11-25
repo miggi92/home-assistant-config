@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import timedelta
 import logging
 from typing import Any
@@ -110,8 +110,12 @@ class PhilipsEntity(Entity):
         self.async_write_ha_state()
 
 
-class PhilipsGenericFan(PhilipsEntity, FanEntity):
-    """Class to manage a generic Philips fan."""
+class PhilipsGenericControlBase(PhilipsEntity):
+    """Class as basis for control entities of a Philips device."""
+
+    AVAILABLE_ATTRIBUTES = []
+    AVAILABLE_PRESET_MODES = {}
+    REPLACE_PRESET = None
 
     def __init__(
         self,
@@ -119,7 +123,91 @@ class PhilipsGenericFan(PhilipsEntity, FanEntity):
         entry: ConfigEntry,
         config_entry_data: ConfigEntryData,
     ) -> None:
-        """Initialize the PhilipsGenericFan."""
+        """Initialize the PhilipsGenericControlBase."""
+
+        super().__init__(hass, entry, config_entry_data)
+
+        self._available_attributes = []
+        self._collect_available_attributes()
+
+        self._preset_modes = []
+        self._available_preset_modes = {}
+        self._collect_available_preset_modes()
+
+    def _collect_available_attributes(self):
+        attributes = []
+
+        for cls in reversed(self.__class__.__mro__):
+            cls_attributes = getattr(cls, "AVAILABLE_ATTRIBUTES", [])
+            attributes.extend(cls_attributes)
+
+        self._available_attributes = attributes
+
+    def _collect_available_preset_modes(self):
+        preset_modes = {}
+
+        for cls in reversed(self.__class__.__mro__):
+            cls_preset_modes = getattr(cls, "AVAILABLE_PRESET_MODES", {})
+            preset_modes.update(cls_preset_modes)
+
+        self._available_preset_modes = preset_modes
+        self._preset_modes = list(self._available_preset_modes.keys())
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return the extra state attributes."""
+
+        def append(
+            attributes: dict,
+            key: str,
+            philips_key: str,
+            value_map: dict | Callable[[Any, Any], Any] | None = None,
+        ):
+            # some philips keys are not unique, so # serves as a marker and needs to be filtered out
+            philips_clean_key = philips_key.partition("#")[0]
+
+            if philips_clean_key in self._device_status:
+                value = self._device_status[philips_clean_key]
+                if isinstance(value_map, dict) and value in value_map:
+                    value = value_map.get(value, "unknown")
+                    if isinstance(value, tuple):
+                        value = value[0]
+                elif callable(value_map):
+                    value = value_map(value, self._device_status)
+                attributes.update({key: value})
+
+        device_attributes = {}
+
+        for key, philips_key, *rest in self._available_attributes:
+            value_map = rest[0] if len(rest) else None
+            append(device_attributes, key, philips_key, value_map)
+
+        return device_attributes
+
+
+class PhilipsGenericFanBase(PhilipsGenericControlBase, FanEntity):
+    """Class as basis to manage a generic Philips fan."""
+
+    AVAILABLE_SPEEDS = {}
+    REPLACE_SPEED = None
+    AVAILABLE_SWITCHES = []
+    AVAILABLE_LIGHTS = []
+    AVAILABLE_NUMBERS = []
+    AVAILABLE_BINARY_SENSORS = []
+
+    KEY_PHILIPS_POWER = PhilipsApi.POWER
+    STATE_POWER_ON = "1"
+    STATE_POWER_OFF = "0"
+
+    KEY_OSCILLATION = None
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        config_entry_data: ConfigEntryData,
+    ) -> None:
+        """Initialize the PhilipsGenericFanBase."""
 
         super().__init__(hass, entry, config_entry_data)
 
@@ -140,46 +228,9 @@ class PhilipsGenericFan(PhilipsEntity, FanEntity):
         device_id = config_entry_data.device_information.device_id
         self._attr_unique_id = f"{model}-{device_id}"
 
-
-class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
-    """Class as basis to manage a generic Philips CoAP fan."""
-
-    AVAILABLE_PRESET_MODES = {}
-    REPLACE_PRESET = None
-    AVAILABLE_SPEEDS = {}
-    REPLACE_SPEED = None
-    AVAILABLE_ATTRIBUTES = []
-    AVAILABLE_SWITCHES = []
-    AVAILABLE_LIGHTS = []
-    AVAILABLE_NUMBERS = []
-    AVAILABLE_BINARY_SENSORS = []
-
-    KEY_PHILIPS_POWER = PhilipsApi.POWER
-    STATE_POWER_ON = "1"
-    STATE_POWER_OFF = "0"
-
-    KEY_OSCILLATION = None
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: ConfigEntry,
-        config_entry_data: ConfigEntryData,
-    ) -> None:
-        """Initialize the PhilipsGenericCoAPFanBase."""
-
-        super().__init__(hass, entry, config_entry_data)
-
-        self._preset_modes = []
-        self._available_preset_modes = {}
-        self._collect_available_preset_modes()
-
         self._speeds = []
         self._available_speeds = {}
         self._collect_available_speeds()
-
-        self._available_attributes = []
-        self._collect_available_attributes()
 
         # set the supported features of the fan
         self._attr_supported_features |= (
@@ -190,16 +241,6 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
 
         if self.KEY_OSCILLATION is not None:
             self._attr_supported_features |= FanEntityFeature.OSCILLATE
-
-    def _collect_available_preset_modes(self):
-        preset_modes = {}
-
-        for cls in reversed(self.__class__.__mro__):
-            cls_preset_modes = getattr(cls, "AVAILABLE_PRESET_MODES", {})
-            preset_modes.update(cls_preset_modes)
-
-        self._available_preset_modes = preset_modes
-        self._preset_modes = list(self._available_preset_modes.keys())
 
     def _collect_available_speeds(self):
         speeds = {}
@@ -213,15 +254,6 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
 
         if len(self._speeds) > 0:
             self._attr_supported_features |= FanEntityFeature.SET_SPEED
-
-    def _collect_available_attributes(self):
-        attributes = []
-
-        for cls in reversed(self.__class__.__mro__):
-            cls_attributes = getattr(cls, "AVAILABLE_ATTRIBUTES", [])
-            attributes.extend(cls_attributes)
-
-        self._available_attributes = attributes
 
     @property
     def is_on(self) -> bool:
@@ -264,11 +296,13 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
     @property
     def preset_modes(self) -> list[str] | None:
         """Return the supported preset modes."""
+        # the fan uses the preset modes as collected from the classes
         return self._preset_modes
 
     @property
     def preset_mode(self) -> str | None:
         """Return the selected preset mode."""
+        # the fan uses the preset modes as collected from the classes
 
         for preset_mode, status_pattern in self._available_preset_modes.items():
             for k, v in status_pattern.items():
@@ -285,6 +319,8 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set the preset mode of the fan."""
+        # the fan uses the preset modes as collected from the classes
+
         status_pattern = self._available_preset_modes.get(preset_mode)
         if status_pattern:
             await self.coordinator.client.set_control_values(data=status_pattern)
@@ -370,37 +406,6 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
             self._handle_coordinator_update()
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the extra state attributes."""
-
-        def append(
-            attributes: dict,
-            key: str,
-            philips_key: str,
-            value_map: dict | Callable[[Any, Any], Any] | None = None,
-        ):
-            # some philips keys are not unique, so # serves as a marker and needs to be filtered out
-            philips_clean_key = philips_key.partition("#")[0]
-
-            if philips_clean_key in self._device_status:
-                value = self._device_status[philips_clean_key]
-                if isinstance(value_map, dict) and value in value_map:
-                    value = value_map.get(value, "unknown")
-                    if isinstance(value, tuple):
-                        value = value[0]
-                elif callable(value_map):
-                    value = value_map(value, self._device_status)
-                attributes.update({key: value})
-
-        device_attributes = {}
-
-        for key, philips_key, *rest in self._available_attributes:
-            value_map = rest[0] if len(rest) else None
-            append(device_attributes, key, philips_key, value_map)
-
-        return device_attributes
-
-    @property
     def icon(self) -> str:
         """Return the icon of the fan."""
 
@@ -417,11 +422,8 @@ class PhilipsGenericCoAPFanBase(PhilipsGenericFan):
         return ICON.FAN_SPEED_BUTTON
 
 
-class PhilipsGenericCoAPFan(PhilipsGenericCoAPFanBase):
-    """Class to manage a generic Philips CoAP fan."""
-
-    AVAILABLE_PRESET_MODES = {}
-    AVAILABLE_SPEEDS = {}
+class PhilipsGenericFan(PhilipsGenericFanBase):
+    """Class to manage a generic Philips fan."""
 
     AVAILABLE_ATTRIBUTES = [
         # device information
@@ -455,11 +457,8 @@ class PhilipsGenericCoAPFan(PhilipsGenericCoAPFanBase):
     AVAILABLE_SELECTS = []
 
 
-class PhilipsNewGenericCoAPFan(PhilipsGenericCoAPFanBase):
-    """Class to manage a new generic CoAP fan."""
-
-    AVAILABLE_PRESET_MODES = {}
-    AVAILABLE_SPEEDS = {}
+class PhilipsNewGenericFan(PhilipsGenericFanBase):
+    """Class to manage a new generic fan."""
 
     AVAILABLE_ATTRIBUTES = [
         # device information
@@ -493,11 +492,8 @@ class PhilipsNewGenericCoAPFan(PhilipsGenericCoAPFanBase):
     STATE_POWER_OFF = "OFF"
 
 
-class PhilipsNew2GenericCoAPFan(PhilipsGenericCoAPFanBase):
-    """Class to manage another new generic CoAP fan."""
-
-    AVAILABLE_PRESET_MODES = {}
-    AVAILABLE_SPEEDS = {}
+class PhilipsNew2GenericFan(PhilipsGenericFanBase):
+    """Class to manage another new generic fan."""
 
     AVAILABLE_ATTRIBUTES = [
         # device information
@@ -531,13 +527,6 @@ class PhilipsNew2GenericCoAPFan(PhilipsGenericCoAPFanBase):
     STATE_POWER_OFF = 0
 
 
-class PhilipsHumidifierMixin(PhilipsGenericCoAPFanBase):
-    """Mixin for humidifiers."""
-
-    AVAILABLE_SELECTS = [PhilipsApi.FUNCTION, PhilipsApi.HUMIDITY_TARGET]
-    AVAILABLE_BINARY_SENSORS = [PhilipsApi.ERROR_CODE]
-
-
 # similar to the AC1715, the AC0850 seems to be a new class of devices that
 # follows some patterns of its own
 
@@ -545,7 +534,7 @@ class PhilipsHumidifierMixin(PhilipsGenericCoAPFanBase):
 # the AC0850/11 comes in two versions.
 # the first version has a Wifi string starting with "AWS_Philips_AIR"
 # the second version has a Wifi string starting with "AWS_Philips_AIR_Combo"
-class PhilipsAC085011(PhilipsNewGenericCoAPFan):
+class PhilipsAC085011(PhilipsNewGenericFan):
     """AC0850/11 with firmware AWS_Philips_AIR."""
 
     AVAILABLE_PRESET_MODES = {
@@ -564,7 +553,7 @@ class PhilipsAC085011(PhilipsNewGenericCoAPFan):
     UNAVAILABLE_FILTERS = [PhilipsApi.FILTER_NANOPROTECT_PREFILTER]
 
 
-class PhilipsAC085011C(PhilipsNew2GenericCoAPFan):
+class PhilipsAC085011C(PhilipsNew2GenericFan):
     """AC0850/11 with firmware AWS_Philips_AIR_Combo."""
 
     AVAILABLE_PRESET_MODES = {
@@ -591,7 +580,7 @@ class PhilipsAC085020C(PhilipsAC085011C):
     """AC0850/20 with firmware AWS_Philips_AIR_Combo."""
 
 
-class PhilipsAC085031(PhilipsAC085011C):
+class PhilipsAC085031(PhilipsAC085011):
     """AC0850/31."""
 
 
@@ -599,7 +588,11 @@ class PhilipsAC085081(PhilipsAC085011C):
     """AC0850/81."""
 
 
-class PhilipsAC0950(PhilipsNew2GenericCoAPFan):
+class PhilipsAC085085(PhilipsAC085011):
+    """AC0850/85."""
+
+
+class PhilipsAC0950(PhilipsNew2GenericFan):
     """AC0950."""
 
     AVAILABLE_PRESET_MODES = {
@@ -629,7 +622,7 @@ class PhilipsAC0951(PhilipsAC0950):
 
 
 # the AC1715 seems to be a new class of devices that follows some patterns of its own
-class PhilipsAC1715(PhilipsNewGenericCoAPFan):
+class PhilipsAC1715(PhilipsNewGenericFan):
     """AC1715."""
 
     AVAILABLE_PRESET_MODES = {
@@ -663,7 +656,7 @@ class PhilipsAC1715(PhilipsNewGenericCoAPFan):
     AVAILABLE_LIGHTS = [PhilipsApi.NEW_DISPLAY_BACKLIGHT]
 
 
-class PhilipsAC1214(PhilipsGenericCoAPFan):
+class PhilipsAC1214(PhilipsGenericFan):
     """AC1214."""
 
     # the AC1214 doesn't seem to like a power on call when the mode or speed is set,
@@ -790,10 +783,7 @@ class PhilipsAC1214(PhilipsGenericCoAPFan):
             return
 
 
-class PhilipsAC2729(
-    PhilipsHumidifierMixin,
-    PhilipsGenericCoAPFan,
-):
+class PhilipsAC2729(PhilipsGenericFan):
     """AC2729."""
 
     AVAILABLE_PRESET_MODES = {
@@ -855,9 +845,11 @@ class PhilipsAC2729(
     }
     AVAILABLE_SWITCHES = [PhilipsApi.CHILD_LOCK]
     AVAILABLE_SELECTS = [PhilipsApi.PREFERRED_INDEX]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.HUMIDITY_TARGET]
+    AVAILABLE_BINARY_SENSORS = [PhilipsApi.ERROR_CODE]
 
 
-class PhilipsAC2889(PhilipsGenericCoAPFan):
+class PhilipsAC2889(PhilipsGenericFan):
     """AC2889."""
 
     AVAILABLE_PRESET_MODES = {
@@ -921,7 +913,7 @@ class PhilipsAC2889(PhilipsGenericCoAPFan):
     AVAILABLE_SELECTS = [PhilipsApi.PREFERRED_INDEX]
 
 
-class PhilipsAC29xx(PhilipsGenericCoAPFan):
+class PhilipsAC29xx(PhilipsGenericFan):
     """AC29xx family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -955,7 +947,7 @@ class PhilipsAC2959(PhilipsAC29xx):
     """AC2959."""
 
 
-class PhilipsAC303x(PhilipsGenericCoAPFan):
+class PhilipsAC303x(PhilipsGenericFan):
     """AC30xx family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1024,7 +1016,7 @@ class PhilipsAC3039(PhilipsAC303x):
     """AC3039."""
 
 
-class PhilipsAC305x(PhilipsGenericCoAPFan):
+class PhilipsAC305x(PhilipsGenericFan):
     """AC305x family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1085,7 +1077,7 @@ class PhilipsAC3059(PhilipsAC305x):
 
 
 # this device seems similar to the AMF family
-class PhilipsAC32xx(PhilipsNew2GenericCoAPFan):
+class PhilipsAC32xx(PhilipsNew2GenericFan):
     """AC32xx family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1156,7 +1148,7 @@ class PhilipsAC3221(PhilipsAC3210):
     """AC3221."""
 
 
-class PhilipsAC3259(PhilipsGenericCoAPFan):
+class PhilipsAC3259(PhilipsGenericFan):
     """AC3259."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1220,13 +1212,18 @@ class PhilipsAC3259(PhilipsGenericCoAPFan):
     AVAILABLE_SELECTS = [PhilipsApi.GAS_PREFERRED_INDEX]
 
 
-class PhilipsAC3421(PhilipsAC0950):
-    """AC3421."""
+class PhilipsAC3420(PhilipsAC0950):
+    """AC3420."""
 
     AVAILABLE_SELECTS = [PhilipsApi.NEW2_LAMP_MODE]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
 
 
-class PhilipsAC3737(PhilipsNew2GenericCoAPFan):
+class PhilipsAC3421(PhilipsAC3420):
+    """AC3421."""
+
+
+class PhilipsAC3737(PhilipsNew2GenericFan):
     """AC3737."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1269,14 +1266,15 @@ class PhilipsAC3737(PhilipsNew2GenericCoAPFan):
         },
     }
 
-    AVAILABLE_SELECTS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
+    # AVAILABLE_SELECTS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
     AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT2]
     AVAILABLE_SWITCHES = [PhilipsApi.NEW2_CHILD_LOCK]
     UNAVAILABLE_SENSORS = [PhilipsApi.NEW2_FAN_SPEED]
     AVAILABLE_BINARY_SENSORS = [PhilipsApi.NEW2_ERROR_CODE, PhilipsApi.NEW2_MODE_A]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
 
 
-class PhilipsAC3829(PhilipsHumidifierMixin, PhilipsGenericCoAPFan):
+class PhilipsAC3829(PhilipsGenericFan):
     """AC3829."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1338,9 +1336,11 @@ class PhilipsAC3829(PhilipsHumidifierMixin, PhilipsGenericCoAPFan):
     }
     AVAILABLE_SWITCHES = [PhilipsApi.CHILD_LOCK]
     AVAILABLE_SELECTS = [PhilipsApi.GAS_PREFERRED_INDEX]
+    AVAILABLE_BINARY_SENSORS = [PhilipsApi.ERROR_CODE]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.HUMIDITY_TARGET]
 
 
-class PhilipsAC3836(PhilipsGenericCoAPFan):
+class PhilipsAC3836(PhilipsGenericFan):
     """AC3836."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1376,7 +1376,7 @@ class PhilipsAC3836(PhilipsGenericCoAPFan):
     AVAILABLE_SELECTS = [PhilipsApi.GAS_PREFERRED_INDEX]
 
 
-class PhilipsAC385x50(PhilipsGenericCoAPFan):
+class PhilipsAC385x50(PhilipsGenericFan):
     """AC385x/50 family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1436,7 +1436,7 @@ class PhilipsAC385850(PhilipsAC385x50):
     """AC3858/50."""
 
 
-class PhilipsAC385x51(PhilipsGenericCoAPFan):
+class PhilipsAC385x51(PhilipsGenericFan):
     """AC385x/51 family."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1520,7 +1520,7 @@ class PhilipsAC4221(PhilipsAC4220):
     """AC4221."""
 
 
-class PhilipsAC4236(PhilipsGenericCoAPFan):
+class PhilipsAC4236(PhilipsGenericFan):
     """AC4236."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1578,7 +1578,7 @@ class PhilipsAC4236(PhilipsGenericCoAPFan):
     AVAILABLE_SELECTS = [PhilipsApi.PREFERRED_INDEX]
 
 
-class PhilipsAC4558(PhilipsGenericCoAPFan):
+class PhilipsAC4558(PhilipsGenericFan):
     """AC4558."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1619,7 +1619,7 @@ class PhilipsAC4550(PhilipsAC4558):
     """AC4550."""
 
 
-class PhilipsAC5659(PhilipsGenericCoAPFan):
+class PhilipsAC5659(PhilipsGenericFan):
     """AC5659."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1687,7 +1687,7 @@ class PhilipsAC5660(PhilipsAC5659):
     """AC5660."""
 
 
-class PhilipsAMFxxx(PhilipsNew2GenericCoAPFan):
+class PhilipsAMFxxx(PhilipsNew2GenericFan):
     """AMF family."""
 
     # REPLACE_PRESET = [PhilipsApi.NEW2_MODE_B, PhilipsApi.NEW2_FAN_SPEED]
@@ -1801,7 +1801,7 @@ class PhilipsAMF870(PhilipsAMFxxx):
     AVAILABLE_NUMBERS = [PhilipsApi.NEW2_TARGET_TEMP]
 
 
-class PhilipsCX5120(PhilipsNew2GenericCoAPFan):
+class PhilipsCX5120(PhilipsNew2GenericFan):
     """CX5120."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1849,7 +1849,7 @@ class PhilipsCX5120(PhilipsNew2GenericCoAPFan):
     AVAILABLE_NUMBERS = [PhilipsApi.NEW2_TARGET_TEMP]
 
 
-class PhilipsCX3550(PhilipsNew2GenericCoAPFan):
+class PhilipsCX3550(PhilipsNew2GenericFan):
     """CX3550."""
 
     AVAILABLE_PRESET_MODES = {
@@ -1912,6 +1912,78 @@ class PhilipsCX3550(PhilipsNew2GenericCoAPFan):
     AVAILABLE_SELECTS = [PhilipsApi.NEW2_TIMER2]
 
 
+class PhilipsHU1509(PhilipsNew2GenericFan):
+    """HU1509."""
+
+    AVAILABLE_PRESET_MODES = {
+        PresetMode.AUTO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 0,
+        },
+        PresetMode.HIGH: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 65},
+        PresetMode.MEDIUM: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 19},
+        PresetMode.SLEEP: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 17},
+    }
+    AVAILABLE_SPEEDS = {
+        PresetMode.SLEEP: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 17},
+        PresetMode.MEDIUM: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 19},
+        PresetMode.HIGH: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 65},
+    }
+
+    AVAILABLE_SWITCHES = [
+        PhilipsApi.NEW2_BEEP,
+        PhilipsApi.NEW2_STANDBY_SENSORS,
+    ]
+    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT4]
+    AVAILABLE_SELECTS = [
+        PhilipsApi.NEW2_TIMER2,
+        PhilipsApi.NEW2_LAMP_MODE2,
+        PhilipsApi.NEW2_AMBIENT_LIGHT_MODE,
+    ]
+    AVAILABLE_BINARY_SENSORS = [PhilipsApi.NEW2_ERROR_CODE]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET2]
+
+
+class PhilipsHU1510(PhilipsHU1509):
+    """HU1510."""
+
+
+class PhilipsHU5710(PhilipsNew2GenericFan):
+    """HU5710."""
+
+    AVAILABLE_PRESET_MODES = {
+        PresetMode.AUTO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 0,
+        },
+        PresetMode.HIGH: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 65},
+        PresetMode.MEDIUM: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 19},
+        PresetMode.SLEEP: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 17},
+    }
+    AVAILABLE_SPEEDS = {
+        PresetMode.SLEEP: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 17},
+        PresetMode.MEDIUM: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 19},
+        PresetMode.HIGH: {PhilipsApi.NEW2_POWER: 1, PhilipsApi.NEW2_MODE_B: 65},
+    }
+
+    AVAILABLE_SWITCHES = [
+        PhilipsApi.NEW2_CHILD_LOCK,
+        PhilipsApi.NEW2_BEEP,
+        PhilipsApi.NEW2_QUICKDRY_MODE,
+        PhilipsApi.NEW2_AUTO_QUICKDRY_MODE,
+        PhilipsApi.NEW2_STANDBY_SENSORS,
+    ]
+    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT4]
+    AVAILABLE_SELECTS = [
+        PhilipsApi.NEW2_TIMER2,
+        PhilipsApi.NEW2_LAMP_MODE2,
+        PhilipsApi.NEW2_AMBIENT_LIGHT_MODE,
+    ]
+    # AVAILABLE_NUMBERS = [PhilipsApi.NEW2_HUMIDITY_TARGET2]
+    AVAILABLE_BINARY_SENSORS = [PhilipsApi.NEW2_ERROR_CODE]
+    AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET2]
+
+
 model_to_class = {
     FanModel.AC0850_11: PhilipsAC085011,
     FanModel.AC0850_11C: PhilipsAC085011C,
@@ -1919,6 +1991,7 @@ model_to_class = {
     FanModel.AC0850_20C: PhilipsAC085020C,
     FanModel.AC0850_31: PhilipsAC085031,
     FanModel.AC0850_81: PhilipsAC085081,
+    FanModel.AC0850_85: PhilipsAC085085,
     FanModel.AC0950: PhilipsAC0950,
     FanModel.AC0951: PhilipsAC0951,
     FanModel.AC1214: PhilipsAC1214,
@@ -1938,6 +2011,7 @@ model_to_class = {
     FanModel.AC3220: PhilipsAC3220,
     FanModel.AC3221: PhilipsAC3221,
     FanModel.AC3259: PhilipsAC3259,
+    FanModel.AC3420: PhilipsAC3420,
     FanModel.AC3421: PhilipsAC3421,
     FanModel.AC3737: PhilipsAC3737,
     FanModel.AC3829: PhilipsAC3829,
@@ -1959,4 +2033,7 @@ model_to_class = {
     FanModel.AMF870: PhilipsAMF870,
     FanModel.CX5120: PhilipsCX5120,
     FanModel.CX3550: PhilipsCX3550,
+    FanModel.HU1509: PhilipsHU1510,
+    FanModel.HU1510: PhilipsHU1510,
+    FanModel.HU5710: PhilipsHU5710,
 }

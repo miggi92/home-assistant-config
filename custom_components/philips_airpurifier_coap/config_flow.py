@@ -126,10 +126,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )[0]
         self._device_id = status[PhilipsApi.DEVICE_ID]
         _LOGGER.debug(
-            "Detected host %s as model %s with name: %s",
+            "Detected host %s as model %s with name: %s and firmware %s",
             self._host,
             self._model,
             self._name,
+            self._wifi_version,
         )
         self._status = status
 
@@ -148,6 +149,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.info("Model family %s supported", model_family)
             self._model = model_family
         else:
+            _LOGGER.warning(
+                "Model %s of family %s not supported in DHCP discovery",
+                model,
+                model_family,
+            )
             return self.async_abort(reason="model_unsupported")
 
         # use the device ID as unique_id
@@ -293,10 +299,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 config_entry_data[CONF_STATUS] = status
 
                 _LOGGER.debug(
-                    "Detected host %s as model %s with name: %s",
+                    "Detected host %s as model %s with name: %s and firmware: %s",
                     self._host,
                     self._model,
                     self._name,
+                    self._wifi_version,
                 )
 
                 # check if model is supported
@@ -314,6 +321,11 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     _LOGGER.info("Model family %s supported", model_family)
                     config_entry_data[CONF_MODEL] = model_family
                 else:
+                    _LOGGER.warning(
+                        "Model %s of family %s not supported in user discovery",
+                        model,
+                        model_family,
+                    )
                     return self.async_abort(reason="model_unsupported")
 
                 # use the device ID as unique_id

@@ -41,7 +41,16 @@ from .model import DeviceInformation
 _LOGGER = logging.getLogger(__name__)
 
 
-PLATFORMS = ["binary_sensor", "fan", "light", "number", "select", "sensor", "switch"]
+PLATFORMS = [
+    "binary_sensor",
+    "fan",
+    "humidifier",
+    "light",
+    "number",
+    "select",
+    "sensor",
+    "switch",
+]
 
 
 # icons code thanks to Thomas Loven:
@@ -59,10 +68,16 @@ class ListingView(HomeAssistantView):
         self.iconpath = iconpath
         self.name = "Icon Listing"
 
-    async def get(self, request):
+    async def get(self, request, *args):
+        """Call executor to avoid blocking I/O call to get list of used icons."""
+        return await self.hass.async_add_executor_job(
+            self.get_icons_list, self.iconpath
+        )
+
+    def get_icons_list(self, iconpath):
         """Handle GET request to provide a JSON list of the used icons."""
         icons = []
-        for dirpath, _dirnames, filenames in walk(self.iconpath):
+        for dirpath, _dirnames, filenames in walk(iconpath):
             icons.extend(
                 [
                     {"name": (Path(dirpath[len(self.iconpath) :]) / fn[:-4]).as_posix()}
@@ -169,8 +184,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = config_entry_data
 
-    await coordinator.async_first_refresh()
-    _LOGGER.debug("coordinator did first refresh for host %s", host)
+    # await coordinator.async_first_refresh()
+    # _LOGGER.debug("coordinator did first refresh for host %s", host)
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

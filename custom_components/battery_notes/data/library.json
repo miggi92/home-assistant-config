@@ -259,6 +259,11 @@
             "battery_type": "CR2032"
         },
         {
+            "manufacturer": "_TZ3000_saiqcn0y",
+            "model": "TS0201",
+            "battery_type": "CR2450"
+        },
+        {
             "manufacturer": "_TZ3000_sj7jbgks",
             "model": "TS0043",
             "battery_type": "CR2032"
@@ -384,6 +389,11 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "_TZE200_iba1ckek",
+            "model": "TS0601",
+            "battery_type": "CR2450"
+        },
+        {
             "manufacturer": "_TZE200_kb5noeto",
             "model": "TS0601",
             "battery_type": "AAA",
@@ -416,6 +426,12 @@
             "manufacturer": "_TZE200_rccxox8p",
             "model": "TS0601",
             "battery_type": "PP3"
+        },
+        {
+            "manufacturer": "_TZE200_vvmbj46n",
+            "model": "TS0601",
+            "battery_type": "AAA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "_TZE200_yjjdcqsq",
@@ -1599,6 +1615,11 @@
             "battery_type": "MANUAL"
         },
         {
+            "manufacturer": "Ecowitt",
+            "model": "GW2001",
+            "battery_type": "MANUAL"
+        },
+        {
             "manufacturer": "ECOWITT",
             "model": "WH51",
             "battery_type": "AA"
@@ -2777,6 +2798,11 @@
         },
         {
             "manufacturer": "Hunter Douglas",
+            "model": "Duette by Hunter Douglas",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Hunter Douglas",
             "model": "Vertical Slats, Left Stack",
             "battery_type": "Rechargeable"
         },
@@ -3568,6 +3594,12 @@
         },
         {
             "manufacturer": "Moes",
+            "model": "Smart door and window sensor (ZSS-JM-GWM-C-MS)",
+            "model_id": "_TZ3000_decxrtwa",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Moes",
             "model": "Smoke sensor (ZSS-HM-SSD01)",
             "battery_type": "CR123A"
         },
@@ -4168,7 +4200,7 @@
         {
             "manufacturer": "Qingping",
             "model": "CGG1",
-            "battery_type": "CR2032"
+            "battery_type": "CR2430"
         },
         {
             "manufacturer": "Qingping Technology (Beijing) Co., Ltd.",
@@ -5176,6 +5208,18 @@
             "battery_type": "C",
             "battery_quantity": 4,
             "model_match_method": "startswith"
+        },
+        {
+            "manufacturer": "SwitchBot",
+            "model": "Meter",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "SwitchBot",
+            "model": "MeterPlus",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "SwitchBot",
@@ -6225,6 +6269,11 @@
         },
         {
             "manufacturer": "Universal Electronics Inc",
+            "model": "URC4460BC0-X-R",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Universal Electronics Inc",
             "model": "URC4470BC0-X-R",
             "battery_type": "CR123A",
             "battery_quantity": 2
@@ -6323,6 +6372,12 @@
             "manufacturer": "Visonic",
             "model": "Next K9-85",
             "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Waveshare",
+            "model": "Model A",
+            "battery_type": "18650",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "WAXMAN",
@@ -6666,6 +6721,11 @@
             "manufacturer": "Xiaomi",
             "model": "MCCGQ01LM",
             "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "MCCGQ02HL",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Xiaomi",

@@ -91,3 +91,20 @@ class NumberDescription(TypedDict):
     min: int
     max: int
     step: int
+
+
+class HumidifierDescription(TypedDict):
+    """Humidifier description class."""
+
+    icon: str
+    label: str
+    humidity: str
+    power: str
+    on: Any
+    off: Any
+    function: str
+    humidifying: str
+    idle: str
+    switch: bool
+    max_humidity: str
+    min_humidity: str
