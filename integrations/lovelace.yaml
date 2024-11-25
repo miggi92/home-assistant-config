@@ -82,6 +82,8 @@ lovelace:
       type: module
     - url: /hacsfiles/android-tv-card/universal-remote-card.min.js
       type: module
+    - url: /hacsfiles/ha-teamtracker-card/ha-teamtracker-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
