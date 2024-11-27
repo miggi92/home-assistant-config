@@ -1,0 +1,34 @@
+---
+# missing products binary_sensor.grocy_missing_products
+alias: GrocyMissingProds
+id: 18dc0537-cfe1-49c3-badc-0526216e7909
+description: "Benachrichtigt, wenn Produkte fehlen"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.grocy_missing_products
+    attribute: count
+
+condition:
+  - condition: state
+    entity_id: binary_sensor.grocy_missing_products
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        🥫 Produkte fehlen 🍲
+      value1: >-
+        {% set expiringProducts = state_attr("binary_sensor.grocy_missing_products", "missing_products")%}
+        {% set expiringCount = state_attr("binary_sensor.grocy_missing_products", "count")%}
+
+        Folgende {{expiringCount}} Produkte müssen gekauft werden:
+        {{- '\n' -}}
+        {% for i in expiringProducts %}
+        - {{ i.name }}
+        {{- '\n' -}}
+        {% endfor %}
+
+      who: "home"
+      tag_id: "information"
+      group: "Food"
+mode: single
