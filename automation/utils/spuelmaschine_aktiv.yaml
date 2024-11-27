@@ -1,0 +1,38 @@
+---
+# input_boolean.spulmaschine_aktiv
+description: "Spülmaschine aktiv"
+id: 5adc2685-36ef-4319-8a00-5e8b6c89b304
+mode: single
+triggers:
+  - type: power
+    device_id: 693f221d9b27a211511a735ae34fc6d0
+    entity_id: 63bfc36a2f736572074819f62b69d6ca
+    domain: sensor
+    trigger: device
+    above: 30
+    id: "on"
+  - type: power
+    device_id: 693f221d9b27a211511a735ae34fc6d0
+    entity_id: 63bfc36a2f736572074819f62b69d6ca
+    domain: sensor
+    trigger: device
+    below: 1
+    id: "off"
+conditions: []
+actions:
+  - if:
+      - condition: trigger
+        id:
+          - "on"
+    then:
+      - action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.spulmaschine_aktiv
+    else:
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.spulmaschine_aktiv

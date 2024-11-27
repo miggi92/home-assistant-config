@@ -8,7 +8,7 @@ cards:
       - type: back
       - type: spacer
       - type: entity
-        entity: input_boolean.dishwasher_ready
+        entity: input_boolean.spulmaschine_aktiv
       - type: conditional
         conditions:
           - entity: binary_sensor.alexa_presence_kitchen
@@ -37,6 +37,37 @@ cards:
         template: air_quality_humidity_template
         variables:
           - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kuche
+  - type: grid
+    columns: 2
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Spülmaschine Energieverbrauch insg.
+        type: sensor
+        entity: sensor.spulmaschine_energy
+        detail: 1
+      - name: Spülmaschine Verbrauch
+        type: sensor
+        entity: sensor.spulmaschine_power
+        graph: line
+        detail: 2
+        hours_to_show: 4
+        limits:
+          max: 300
+      - hours_to_show: 24
+        graph: line
+        name: Kaffemaschine Energieverbrauch insg.
+        type: sensor
+        entity: sensor.kaffemaschine_energy
+        detail: 1
+      - name: Kaffemaschine Verbrauch
+        type: sensor
+        entity: sensor.kaffemaschine_power
+        graph: line
+        detail: 2
+        hours_to_show: 4
+        limits:
+          max: 300
   - type: custom:decluttering-card
     template: amazon_echo_template
     variables:

@@ -1,0 +1,16 @@
+---
+# Lichterkette automatisch ausschalten
+alias: "Lichterkette"
+id: 20b69e8d-fc7f-4cbc-a49c-c750b72e8983
+description: "Schaltet die Lichterkette aus"
+mode: single
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.lichterkette
+action:
+  - service: switch.turn_off
+    data: {}
+    target:
+      entity_id: switch.lichterkette

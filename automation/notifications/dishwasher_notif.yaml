@@ -6,8 +6,8 @@ description: "Benachrichtigt wenn die Spülmaschine fertig ist"
 trigger:
   - platform: state
     entity_id:
-      - input_boolean.dishwasher_ready
-    to: "on"
+      - input_boolean.spulmaschine_aktiv
+    to: "off"
 action:
   - service: script.notify_engine
     data:

@@ -1,0 +1,25 @@
+---
+# Lichterketten Timer
+alias: "LichterkettenTimer"
+id: c63598d6-82f5-4be9-b300-1ddfa28ef650
+description: "Lichterketten timer"
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - switch.lichterkette
+action:
+  - if:
+      - condition: state
+        entity_id: switch.lichterkette
+        state: "on"
+    then:
+      - service: timer.start
+        data: {}
+        target:
+          entity_id: timer.lichterkette
+    else:
+      - service: timer.finish
+        data: {}
+        target:
+          entity_id: timer.lichterkette

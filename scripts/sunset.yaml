@@ -45,3 +45,15 @@ sunset_script:
               target:
                 entity_id: light.esstischlicht
               metadata: {}
+        - if:
+            - condition: state
+              entity_id: sensor.season
+              state: "winter"
+          then:
+            - action: switch.turn_on
+              target:
+                entity_id: switch.lichterkette
+            - action: timer.start
+              target:
+                entity_id: timer.lichterkette
+              data: {}
