@@ -11,6 +11,10 @@ triggers:
     trigger: device
     above: 30
     id: "on"
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
   - type: power
     device_id: 693f221d9b27a211511a735ae34fc6d0
     entity_id: 63bfc36a2f736572074819f62b69d6ca
@@ -18,6 +22,10 @@ triggers:
     trigger: device
     below: 1
     id: "off"
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
 conditions: []
 actions:
   - if:
