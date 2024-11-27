@@ -1595,14 +1595,12 @@
         {
             "manufacturer": "Ecowitt",
             "model": "GW1100A",
-            "battery_type": "AA",
-            "battery_quantity": 2
+            "battery_type": "MANUAL"
         },
         {
             "manufacturer": "ECOWITT",
             "model": "GW1101",
-            "battery_type": "AA",
-            "battery_quantity": 2
+            "battery_type": "MANUAL"
         },
         {
             "manufacturer": "Ecowitt",
@@ -3673,6 +3671,12 @@
             "manufacturer": "Namron AS",
             "model": "4512762",
             "battery_type": "CR2350"
+        },
+        {
+            "manufacturer": "Nedis",
+            "model": "Nedis Smart Climate Sensor Zigbee 3.0 (ZBSC30WT)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Neo",
@@ -6453,6 +6457,11 @@
         },
         {
             "manufacturer": "X-Sense",
+            "model": "XC04-WX",
+            "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "X-Sense",
             "model": "XS01-M",
             "battery_type": "CR123A"
         },
@@ -6850,6 +6859,11 @@
             "manufacturer": "Xiaomi",
             "model": "WXKG13LM",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "XMOSB01XS",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "Xiaomi",
