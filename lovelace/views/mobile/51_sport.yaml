@@ -1,0 +1,11 @@
+---
+# Sport page
+title: Sport
+path: sport
+icon: mdi:basketball
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: spacer
+  - !include ../../cards/sports.yaml
