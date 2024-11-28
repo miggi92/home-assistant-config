@@ -93,11 +93,9 @@ notify_engine:
       description: Möglichkeit auf Nachrichten direkt zu antworten
   mode: parallel
   sequence:
-    - condition: or
-      conditions:
-        - condition: state
-          entity_id: input_boolean.text_notifications
-          state: "on"
+    - condition: state
+      entity_id: input_boolean.text_notifications
+      state: "on"
     - variables:
         notifiers:
           home: notify.telegram_home_group
