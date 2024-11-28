@@ -9,7 +9,8 @@ cards:
       - type: spacer
   - type: custom:mushroom-title-card
     subtitle: Benachrichtigungen
-  - type: horizontal-stack
+  - type: grid
+    square: false
     cards:
       - entity: input_boolean.audible_notifications
         type: custom:mushroom-entity-card
@@ -31,7 +32,8 @@ cards:
           action: toggle
   - type: custom:mushroom-title-card
     subtitle: Automatisierungen
-  - type: horizontal-stack
+  - type: grid
+    square: false
     cards:
       - entity: input_boolean.lueften_aktiv
         type: custom:mushroom-entity-card
@@ -51,8 +53,6 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: horizontal-stack
-    cards:
       - entity: input_boolean.wecker_aktiv
         type: custom:mushroom-entity-card
         name: Aufstehen/Wecker
@@ -65,12 +65,8 @@ cards:
         name: Saugroboter
         tap_action:
           action: toggle
-      - entity: input_datetime.watering_time
-        type: custom:mushroom-entity-card
-        layout: vertical
-        tap_action:
-          action: more-info
-  - type: horizontal-stack
+  - type: grid
+    columns: 2
     cards:
       - entity: input_select.milo_person_sync
         type: custom:mushroom-select-card
@@ -81,15 +77,29 @@ cards:
         secondary_info: last-changed
         layout: vertical
   - type: custom:mushroom-title-card
-    subtitle: Home
-  - type: horizontal-stack
+    subtitle: Zeiten
+  - type: grid
+    square: false
     cards:
       - entity: input_datetime.chores_notif_time
         type: custom:mushroom-entity-card
         layout: vertical
         tap_action:
           action: more-info
+      - entity: input_datetime.watering_time
+        type: custom:mushroom-entity-card
+        layout: vertical
+        tap_action:
+          action: more-info
+  - type: custom:mushroom-title-card
+    subtitle: Home
+  - type: grid
+    square: false
+    cards:
       - entity: input_number.strompreis
+        type: custom:mushroom-entity-card
+        layout: vertical
+      - entity: input_number.wasserpreis_pro_m3
         type: custom:mushroom-entity-card
         layout: vertical
   - type: horizontal-stack

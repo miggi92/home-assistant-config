@@ -23,6 +23,32 @@ cards:
         type: sensor
         entity: sensor.badezimmertempsensor_humidity
         detail: 1
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_kalt_bad
+        layout: vertical
+        name: Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_warm_bad
+        layout: vertical
+        name: Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_kalt_bad_cost
+        layout: vertical
+        name: Kosten Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_warm_bad_cost
+        layout: vertical
+        name: Kosten Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_bad_kalt
+        layout: vertical
+        name: Zähler Kalt
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_bad_warm
+        layout: vertical
+        name: Zähler Warm
   - type: custom:decluttering-card
     template: amazon_echo_template
     variables:
