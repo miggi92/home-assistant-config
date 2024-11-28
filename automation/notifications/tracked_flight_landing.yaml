@@ -5,21 +5,19 @@ trigger:
   platform: event
   event_type: flightradar24_tracked_landed
 action:
-  - service: script.notify_engine
-    data:
+  - variables:
+      recipients: ["home", "family"]
       title: Flight
-      value1: >-
+      message: >-
         Flight landed {{ trigger.event.data.callsign }} to {{ trigger.event.data.airport_destination_city }}
         [Open FlightRadar](https://www.flightradar24.com/{{ trigger.event.data.callsign }})
-      who: "home"
-      tag_id: "information"
-      group: "Flights"
-  - service: script.notify_engine
-    data:
-      title: Flight
-      value1: >-
-        Flight landed {{ trigger.event.data.callsign }} to {{ trigger.event.data.airport_destination_city }}
-        [Open FlightRadar](https://www.flightradar24.com/{{ trigger.event.data.callsign }})
-      who: "family"
-      tag_id: "information"
-      group: "Flights"
+  - repeat:
+      for_each: "{{ recipients }}"
+      sequence:
+        - service: script.notify_engine
+          data:
+            title: "{{ title }}"
+            value1: "{{ message }}"
+            who: "{{ repeat.item }}"
+            tag_id: "information"
+            group: "Flights"
