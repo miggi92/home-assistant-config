@@ -24,6 +24,7 @@ action:
         {{- '\n' -}}
         {% for i in chores %}
         - {{ i.name }}
+          📝 {{ i.description }}
           👤 {{ i.next_execution_assigned_user.display_name }}
           🗓️ {{ as_timestamp(i.next_estimated_execution_time) | timestamp_custom('%d.%m.%Y %H:%M') }}
         {% endfor %}
