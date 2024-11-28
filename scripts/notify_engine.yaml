@@ -51,17 +51,11 @@ notify_engine:
       description: Benachrichtigungsinhalt Teil 3
     who:
       selector:
-        select:
-          options:
-            - home
-            - miguel
-            - silke
-            - work
-            - tv
-            - family
+        text:
+          multiline: true
       default: home
       name: Who
-      description: An wen soll die Benachrichtigung gehen?
+      description: An wen soll die Benachrichtigung gehen? (Kommagetrennt für mehrere Empfänger)
     photo:
       selector:
         text: null
@@ -104,100 +98,102 @@ notify_engine:
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
           family: notify.signalfamily
-        notifier: "{{ notifiers.get(who, 'notify.miguel_telegram') }}"
-        title: ""
-        value1: ""
-        value2: ""
-        value3: ""
-        group: ""
-        tag_id: "information"
-    - choose:
-        - conditions:
-            - condition: template
-              value_template: "{{ 'telegram' in notifier }}"
-          sequence:
-            - action: "{{ notifier }}"
-              alias: "Send notification via telegram"
-              data:
-                title: "{{ title }}"
-                message: "{{ value1 }} {{ value2 }} {{ value3 }}"
-                data: >
-                  {% set data = {} %}
-                  {% if photo %}
-                    {% set data = data.update({'photo': [{'url': photo, 'caption': value1  ~ ' ' ~ value2  ~ ' ' ~ value3 | default}]}) %}
-                  {% elif photos %}
-                    {% set data = data.update({'photo': photos}) %}
-                  {% endif %}
-                  {{ data }}
-        - conditions:
-            - condition: template
-              value_template: "{{ who == 'tv' }}"
-          sequence:
-            - action: "{{ notifier }}"
-              alias: "Send Notification to TV"
-              data:
-                title: "{{ title  }}"
-                message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+        recipient_list: "{{ who.split(',') | map('trim') | list }}"
+    - repeat:
+        for_each: "{{ recipient_list }}"
+        sequence:
+          - variables:
+              notifier: "{{ notifiers.get(repeat.item, 'notify.miguel_telegram') }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ 'telegram' in notifier }}"
+                sequence:
+                  - action: "{{ notifier }}"
+                    alias: "Send notification via telegram"
+                    data:
+                      title: "{{ title }}"
+                      message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                      data: >
+                        {% set data = {} %}
+                        {% if photo %}
+                          {% set data = dict(data, **{'photo': [{'url': photo, 'caption': value1  ~ ' ' ~ value2  ~ ' ' ~ value3 | default}]}) %}
+                        {% elif photos %}
+                          {% set data = dict(data, **{'photo': photos}) %}
+                        {% endif %}
+                        {% if tag_id %}
+                          {% set data = dict(data, **{'message_tag': tag_id}) %}
+                        {% endif %}
+                        {{ data }}
+              - conditions:
+                  - condition: template
+                    value_template: "{{ who == 'tv' }}"
+                sequence:
+                  - action: "{{ notifier }}"
+                    alias: "Send Notification to TV"
+                    data:
+                      title: "{{ title  }}"
+                      message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                      data:
+                        image:
+                          url: "{{ photo  }}"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ 'signal' in notifier }}"
+                sequence:
+                  - action: "{{ notifier }}"
+                    alias: "Signal notification "
+                    data:
+                      title: "{{ title }}"
+                      message: "{{ value1 }} {{ value2 }}"
+            default:
+              - action: "{{ notifier }}"
+                alias: "Default notification"
                 data:
-                  image:
-                    url: "{{ photo  }}"
-        - conditions:
-            - condition: template
-              value_template: "{{ 'signal' in notifier }}"
-          sequence:
-            - action: "{{ notifier }}"
-              alias: "Signal notification "
-              data:
-                title: "{{ title }}"
-                message: "{{ value1 }} {{ value2 }}"
-      default:
-        - action: "{{ notifier }}"
-          alias: "Default notification"
-          data:
-            title: "{{ title }}"
-            message: "{{ value1 }} {{ value2 }} {{ value3 }}"
-            data:
-              group: "{{ group }}"
-              tag: "{{ tag_id }}"
-              image: "{{ photo }}"
-    - parallel:
-        - if:
-            - condition: template
-              value_template: "{{ who != 'tv' }}"
-            - condition: state
-              entity_id: device_tracker.gtv
-              state: "home"
-            - condition: not
-              conditions:
-                - condition: state
-                  entity_id: media_player.gtv
-                  state: "off"
-          then:
-            - action: script.notify_engine
-              data:
-                title: "{{ title }}"
-                value1: "{{ value1 }}"
-                value2: "{{ value2 }}"
-                value3: "{{ value3 }}"
-                who: "tv"
-                group: "{{ group }}"
-                photo: "{{ photo }}"
-                tag_id: "{{ tag_id }}"
-        - if:
-            - condition: template
-              value_template: "{{ who != 'work' }}"
-            - condition: state
-              entity_id: device_tracker.bcwmc5cg4100cy0
-              state: "home"
-          then:
-            - action: script.notify_engine
-              data:
-                title: "{{ title }}"
-                value1: "{{ value1 }}"
-                value2: "{{ value2 }}"
-                value3: "{{ value3 }}"
-                who: "work"
-                group: "{{ group }}"
-                photo: "{{ photo }}"
-                tag_id: "{{ tag_id }}"
-      alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
+                  title: "{{ title }}"
+                  message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                  data:
+                    group: "{{ group }}"
+                    tag: "{{ tag_id }}"
+                    image: "{{ photo }}"
+          - parallel:
+              - if:
+                  - condition: template
+                    value_template: "{{ who != 'tv' }}"
+                  - condition: state
+                    entity_id: device_tracker.gtv
+                    state: "home"
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: media_player.gtv
+                        state: "off"
+                then:
+                  - action: script.notify_engine
+                    data:
+                      title: "{{ title }}"
+                      value1: "{{ value1 }}"
+                      value2: "{{ value2 }}"
+                      value3: "{{ value3 }}"
+                      who: "tv"
+                      group: "{{ group }}"
+                      photo: "{{ photo }}"
+                      tag_id: "{{ tag_id }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ who != 'work' }}"
+                  - condition: state
+                    entity_id: device_tracker.bcwmc5cg4100cy0
+                    state: "home"
+                then:
+                  - action: script.notify_engine
+                    data:
+                      title: "{{ title }}"
+                      value1: "{{ value1 }}"
+                      value2: "{{ value2 }}"
+                      value3: "{{ value3 }}"
+                      who: "work"
+                      group: "{{ group }}"
+                      photo: "{{ photo }}"
+                      tag_id: "{{ tag_id }}"
+            alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
