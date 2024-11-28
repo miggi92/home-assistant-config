@@ -6,18 +6,14 @@ trigger:
   event_type: flightradar24_tracked_landed
 action:
   - variables:
-      recipients: ["home", "family"]
       title: Flight
       message: >-
         Flight landed {{ trigger.event.data.callsign }} to {{ trigger.event.data.airport_destination_city }}
         [Open FlightRadar](https://www.flightradar24.com/{{ trigger.event.data.callsign }})
-  - repeat:
-      for_each: "{{ recipients }}"
-      sequence:
-        - service: script.notify_engine
-          data:
-            title: "{{ title }}"
-            value1: "{{ message }}"
-            who: "{{ repeat.item }}"
-            tag_id: "information"
-            group: "Flights"
+  - service: script.notify_engine
+    data:
+      title: "{{ title }}"
+      value1: "{{ message }}"
+      who: "home, family"
+      tag_id: "information"
+      group: "Flights"
