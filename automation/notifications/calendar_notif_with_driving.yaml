@@ -1,0 +1,25 @@
+---
+# Terminerinnerung mit Fahrzeit
+alias: Terminerinnerung mit Fahrzeit
+id: ccbc1585-d243-44f4-bdf0-ede4445fefb5
+trigger:
+  - trigger: calendar
+    entity_id: calendar.familie
+    event: start
+    offset: "0:10:0"
+condition:
+  - condition: template
+    value_template: "{{ trigger.calendar_event.location != '' }}"
+action:
+  - variables:
+      start_time: "{{ state_attr('calendar.familie', 'start_time') | as_timestamp | timestamp_custom('%H:%M', True) }}"
+  - service: script.notify_engine
+    data:
+      title: |
+        🗓️ Terminerinnerung - {{ trigger.calendar_event.summary }} 🗓️
+      value1: >-
+        Du hast einen Termin um {{ start_time }} Uhr
+          🗺️ Ort: {{ trigger.calendar_event.location }}.
+      who: "home"
+      tag_id: "information"
+      group: "Calendar"
