@@ -67,7 +67,7 @@ cards:
         detail: 2
         hours_to_show: 4
         limits:
-          max: 300
+          max: 700
   - type: custom:decluttering-card
     template: amazon_echo_template
     variables:
