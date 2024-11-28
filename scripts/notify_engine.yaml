@@ -99,94 +99,69 @@ notify_engine:
           entity_id: input_boolean.text_notifications
           state: "on"
     - variables:
-        notifier: >
-          {% if who == 'home' %}
-            notify.telegram_home_group
-          {% elif who == 'miguel' %}
-            notify.miguel_telegram
-          {% elif who == 'silke' %}
-            notify.silke_telegram
-          {% elif who == 'work' %}
-            notify.html5_workmiguellaptop
-          {% elif who == 'tv' %}
-            notify.gtv
-          {% elif who == 'family' %}
-            notify.signalfamily
-          {% else %}
-            notify.miguel_telegram
-          {% endif %}
-    - if:
-        - condition: template
-          value_template: "{{ 'telegram' in notifier }}"
-      then:
-        - if:
+        notifiers:
+          home: notify.telegram_home_group
+          miguel: notify.miguel_telegram
+          silke: notify.silke_telegram
+          work: notify.html5_workmiguellaptop
+          tv: notify.gtv
+          family: notify.signalfamily
+        notifier: "{{ notifiers.get(who, 'notify.miguel_telegram') }}"
+        title: ""
+        value1: ""
+        value2: ""
+        value3: ""
+        group: ""
+        tag_id: "information"
+    - choose:
+        - conditions:
             - condition: template
-              value_template: "{{ photo == undefined }}"
-            - condition: template
-              value_template: "{{ photos == undefined }}"
-          then:
+              value_template: "{{ 'telegram' in notifier }}"
+          sequence:
             - action: "{{ notifier }}"
-              alias: "Send text via telegram"
+              alias: "Send notification via telegram"
               data:
-                title: "{{ title | default }}"
-                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-        - if:
-            - condition: template
-              value_template: "{{ photo != undefined }}"
-          then:
-            - action: "{{ notifier }}"
-              alias: "Send photo via telegram. Doesn't work with text"
-              data:
-                title: "{{ title | default }}"
-                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-                data:
-                  photo:
-                    - url: "{{ photo }}"
-                      caption: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-        - if:
-            - condition: template
-              value_template: "{{ photos != undefined }}"
-          then:
-            - action: "{{ notifier }}"
-              alias: "Send photos via telegram."
-              data:
-                title: "{{ title | default }}"
-                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-                data:
-                  photo: "{{ photos }}"
-      else:
-        - if:
+                title: "{{ title  }}"
+                message: "{{ value1  }} {{ value2  }} {{ value3  }}"
+                data: >
+                  {% set data = {} %}
+                  {% if photo %}
+                    {% set data = data.update({'photo': [{'url': photo, 'caption': value1  ~ ' ' ~ value2  ~ ' ' ~ value3 | default}]}) %}
+                  {% elif photos %}
+                    {% set data = data.update({'photo': photos}) %}
+                  {% endif %}
+                  {{ data }}
+        - conditions:
             - condition: template
               value_template: "{{ who == 'tv' }}"
-          then:
+          sequence:
             - action: "{{ notifier }}"
               alias: "Send Notification to TV"
               data:
-                title: "{{ title | default }}"
-                message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
+                title: "{{ title  }}"
+                message: "{{ value1 }} {{ value2 }} {{ value3 }}"
                 data:
                   image:
-                    url: "{{ photo | default }}"
-          else:
-            - if:
-                - condition: template
-                  value_template: "{{ 'signal' in notifier }}"
-              then:
-                - action: "{{ notifier }}"
-                  alias: "Signal notification "
-                  data:
-                    title: "{{ title | default }}"
-                    message: "{{ value1 | default }} {{ value2 | default }}"
-              else:
-                - action: "{{ notifier }}"
-                  alias: "Default notification"
-                  data:
-                    title: "{{ title | default }}"
-                    message: "{{ value1 | default }} {{ value2 | default }} {{ value3 | default }}"
-                    data:
-                      group: "{{ group | default }}"
-                      tag: "{{ tag_id | default }}"
-                      image: "{{ photo | default }}"
+                    url: "{{ photo  }}"
+        - conditions:
+            - condition: template
+              value_template: "{{ 'signal' in notifier }}"
+          sequence:
+            - action: "{{ notifier }}"
+              alias: "Signal notification "
+              data:
+                title: "{{ title }}"
+                message: "{{ value1 }} {{ value2 }}"
+      default:
+        - action: "{{ notifier }}"
+          alias: "Default notification"
+          data:
+            title: "{{ title }}"
+            message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+            data:
+              group: "{{ group }}"
+              tag: "{{ tag_id }}"
+              image: "{{ photo }}"
     - parallel:
         - if:
             - condition: state
@@ -202,14 +177,14 @@ notify_engine:
           then:
             - action: script.notify_engine
               data:
-                title: "{{ title | default }}"
-                value1: "{{ value1 | default }}"
-                value2: "{{ value2 | default }}"
-                value3: "{{ value3 | default }}"
+                title: "{{ title }}"
+                value1: "{{ value1 }}"
+                value2: "{{ value2 }}"
+                value3: "{{ value3 }}"
                 who: "tv"
-                group: "{{ group | default }}"
-                photo: "{{ photo | default }}"
-                tag_id: "{{ tag_id | default }}"
+                group: "{{ group }}"
+                photo: "{{ photo }}"
+                tag_id: "{{ tag_id }}"
         - if:
             - condition: state
               entity_id: device_tracker.bcwmc5cg4100cy0
@@ -219,12 +194,12 @@ notify_engine:
           then:
             - action: script.notify_engine
               data:
-                title: "{{ title | default }}"
-                value1: "{{ value1 | default }}"
-                value2: "{{ value2 | default }}"
-                value3: "{{ value3 | default }}"
+                title: "{{ title }}"
+                value1: "{{ value1 }}"
+                value2: "{{ value2 }}"
+                value3: "{{ value3 }}"
                 who: "work"
-                group: "{{ group | default }}"
-                photo: "{{ photo | default }}"
-                tag_id: "{{ tag_id | default }}"
+                group: "{{ group }}"
+                photo: "{{ photo }}"
+                tag_id: "{{ tag_id }}"
       alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
