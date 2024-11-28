@@ -99,6 +99,7 @@ notify_engine:
           tv: notify.gtv
           family: notify.signalfamily
         recipient_list: "{{ who.split(',') | map('trim') | list }}"
+        message: "{{ value1 }} {{ value2 }} {{ value3 }}"
     - repeat:
         for_each: "{{ recipient_list }}"
         sequence:
@@ -112,8 +113,8 @@ notify_engine:
                   - action: "{{ notifier }}"
                     alias: "Send notification via telegram"
                     data:
-                      title: "{{ title }}"
-                      message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                      title: "*{{ title }}*"
+                      message: "{{ message }}"
                       data: >
                         {% set data = {} %}
                         {% if photo %}
@@ -133,7 +134,7 @@ notify_engine:
                     alias: "Send Notification to TV"
                     data:
                       title: "{{ title  }}"
-                      message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                      message: "{{ message }}"
                       data:
                         image:
                           url: "{{ photo  }}"
@@ -145,13 +146,13 @@ notify_engine:
                     alias: "Signal notification "
                     data:
                       title: "{{ title }}"
-                      message: "{{ value1 }} {{ value2 }}"
+                      message: "{{ message }}"
             default:
               - action: "{{ notifier }}"
                 alias: "Default notification"
                 data:
                   title: "{{ title }}"
-                  message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+                  message: "{{ message }}"
                   data:
                     group: "{{ group }}"
                     tag: "{{ tag_id }}"
