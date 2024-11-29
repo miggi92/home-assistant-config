@@ -2537,6 +2537,11 @@
         },
         {
             "manufacturer": "Govee",
+            "model": "H5100",
+            "battery_type": "AAA"
+        },
+        {
+            "manufacturer": "Govee",
             "model": "H5101/H5102/H5177",
             "battery_type": "AAA"
         },
