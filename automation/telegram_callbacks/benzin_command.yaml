@@ -1,6 +1,6 @@
 ---
 # Send fuel prices
-# group.all_fuel_sensors
+# sensor.alle_benzinpreise
 alias: benzinCommand
 id: 1f17b5a2-16bd-4b6c-aab0-fce9174702d8
 description: "Antwortet auf den /benzin Befehl"
@@ -16,7 +16,7 @@ action:
       title: |
         ⛽ Benzinpreise ⛽
       value1: >-
-        {% for fuel_station in states.group.all_fuel_sensors.attributes.entity_id %}
+        {% for fuel_station in statessensor.alle_benzinpreise.attributes.entity_id %}
 
         {{ state_attr(fuel_station, 'friendly_name') }}: {{ states(fuel_station) }}{{ state_attr(fuel_station, 'unit_of_measurement') }}
         {% endfor %}
