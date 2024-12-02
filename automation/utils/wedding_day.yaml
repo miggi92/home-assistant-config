@@ -1,0 +1,34 @@
+---
+# Wedding day
+# sensor.anniversary_special_hochzeitstag
+alias: weddingDay
+id: 434eeb1e-ac51-4b60-a424-736b54d44c9b
+description: "Hochzeitstag"
+trigger:
+  - platform: state
+    entity_id: sensor.anniversary_special_hochzeitstag
+condition:
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: "{{ trigger.entity_id }}"
+        state: "0"
+      - condition: numeric_state
+        entity_id: "{{ trigger.entity_id }}"
+        above: 363
+action:
+  - if:
+      - condition: state
+        entity_id: "{{ trigger.entity_id }}"
+        state: "0"
+    then:
+      - service: switch.turn_on
+        data: {}
+        target:
+          entity_id: switch.herz
+    else:
+      - service: switch.turn_off
+        data: {}
+        target:
+          entity_id: switch.herz
+mode: single
