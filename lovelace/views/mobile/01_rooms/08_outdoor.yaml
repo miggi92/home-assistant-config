@@ -38,16 +38,6 @@ cards:
         show_forecast: true
       - type: picture
         image_entity: image.ai_generated_weather_image
-
-  - type: custom:flower-card
-    entity: plant.sonnenblumen
-    show_bars:
-      - illuminance
-      - humidity
-      - moisture
-      - conductivity
-      - temperature
-    battery_sensor: sensor.groser_topf_balkon_battery
   - type: vertical-stack
     title: Flightradar24
     cards:
