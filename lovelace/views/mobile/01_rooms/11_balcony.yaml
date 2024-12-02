@@ -27,3 +27,12 @@ cards:
     layout: vertical
     tap_action:
       action: toggle
+  - type: custom:flower-card
+    entity: plant.sonnenblumen
+    show_bars:
+      - illuminance
+      - humidity
+      - moisture
+      - conductivity
+      - temperature
+    battery_sensor: sensor.groser_topf_balkon_battery
