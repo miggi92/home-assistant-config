@@ -34,4 +34,6 @@ async def async_setup_entry(
         _LOGGER.error("Unsupported model: %s", model)
         return
 
-    async_add_entities([fan_entity])
+    # some humidifiers don't need a fan entity
+    if fan_entity.CREATE_FAN:
+        async_add_entities([fan_entity])

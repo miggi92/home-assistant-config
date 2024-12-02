@@ -188,6 +188,8 @@ class PhilipsGenericControlBase(PhilipsEntity):
 class PhilipsGenericFanBase(PhilipsGenericControlBase, FanEntity):
     """Class as basis to manage a generic Philips fan."""
 
+    CREATE_FAN = True
+
     AVAILABLE_SPEEDS = {}
     REPLACE_SPEED = None
     AVAILABLE_SWITCHES = []
@@ -1915,6 +1917,8 @@ class PhilipsCX3550(PhilipsNew2GenericFan):
 class PhilipsHU1509(PhilipsNew2GenericFan):
     """HU1509."""
 
+    CREATE_FAN = False
+
     AVAILABLE_PRESET_MODES = {
         PresetMode.AUTO: {
             PhilipsApi.NEW2_POWER: 1,
@@ -1950,6 +1954,8 @@ class PhilipsHU1510(PhilipsHU1509):
 
 class PhilipsHU5710(PhilipsNew2GenericFan):
     """HU5710."""
+
+    CREATE_FAN = False
 
     AVAILABLE_PRESET_MODES = {
         PresetMode.AUTO: {

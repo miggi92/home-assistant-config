@@ -107,16 +107,23 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
             self._description[FanAttributes.HUMIDITY]
         )
 
-        # not all humidifiers can set a mode
+        # 2-in-1 devices have a switch to select humidification vs purification
         if self._switch:
             self._attr_supported_features = HumidifierEntityFeature.MODES
-            self._attr_available_modes = {FanAttributes.IDLE, FanAttributes.HUMIDIFYING}
+            self._attr_available_modes = {
+                FanAttributes.PURIFICATION,
+                FanAttributes.HUMIDIFICATION,
+            }
+
+        # pure humidification devices are identified by the function being the power and have the fan modes as modes
+        elif self._function_key == self._power_key:
+            self._attr_supported_features = HumidifierEntityFeature.MODES
+            self._attr_available_modes = list(self._available_preset_modes.keys())
 
     @property
     def action(self) -> str:
         """Return the current action."""
         function_status = self._device_status.get(self._function_key)
-        _LOGGER.debug("function_status: %s", function_status)
 
         if function_status == self._description[FanAttributes.HUMIDIFYING]:
             return HumidifierAction.HUMIDIFYING
@@ -137,35 +144,54 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
     def mode(self) -> str | None:
         """Return the current mode."""
 
-        # not all humidifiers can set a mode
-        if not self._switch:
-            return None
+        #  first we treat 2-in-1 devices
+        if self._switch:
+            function_status = self._device_status.get(self._function_key)
+            if function_status == self._description[FanAttributes.HUMIDIFYING]:
+                return FanAttributes.HUMIDIFICATION
+            return FanAttributes.PURIFICATION
 
-        function_status = self._device_status.get(self._function_key)
-        if function_status == self._description[FanAttributes.HUMIDIFYING]:
-            return FanAttributes.HUMIDIFYING
+        # then we treat pure humidification devices
+        if self._function_key == self._power_key:
+            for preset_mode, status_pattern in self._available_preset_modes.items():
+                for k, v in status_pattern.items():
+                    status = self._device_status.get(k)
+                    if status != v:
+                        break
+                else:
+                    return preset_mode
 
-        return FanAttributes.IDLE
+        # no mode found
+        return None
 
     async def async_set_mode(self, mode: str) -> None:
         """Set the mode of the humidifier."""
         if mode not in self._attr_available_modes:
             return
 
-        if mode == FanAttributes.IDLE:
-            function_value = self._description[FanAttributes.IDLE]
-        else:
-            function_value = self._description[FanAttributes.HUMIDIFYING]
+        # first we treat the 2-in-1 devices
+        if self._switch:
+            if mode == FanAttributes.PURIFICATION:
+                function_value = self._description[FanAttributes.IDLE]
+            else:
+                function_value = self._description[FanAttributes.HUMIDIFYING]
 
-        await self.coordinator.client.set_control_values(
-            data={
-                self._power_key: self._description[FanAttributes.ON],
-                self._function_key: function_value,
-            }
-        )
-        self._device_status[self._power_key] = self._description[FanAttributes.ON]
-        self._device_status[self._function_key] = function_value
-        self._handle_coordinator_update()
+            await self.coordinator.client.set_control_values(
+                data={
+                    self._power_key: self._description[FanAttributes.ON],
+                    self._function_key: function_value,
+                }
+            )
+            self._device_status[self._power_key] = self._description[FanAttributes.ON]
+            self._device_status[self._function_key] = function_value
+            self._handle_coordinator_update()
+
+        # then we treat pure humidification devices
+        elif self._function_key == self._power_key:
+            status_pattern = self._available_preset_modes.get(mode)
+            await self.coordinator.client.set_control_values(data=status_pattern)
+            self._device_status.update(status_pattern)
+            self._handle_coordinator_update()
 
     @property
     def is_on(self) -> bool | None:
@@ -195,7 +221,7 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
                 self._power_key: self._description[FanAttributes.OFF],
             }
         )
-        self._device_status[self._power_key] = self._description[FanAttributes.ON]
+        self._device_status[self._power_key] = self._description[FanAttributes.OFF]
         self._handle_coordinator_update()
 
     async def async_set_humidity(self, humidity: str) -> None:

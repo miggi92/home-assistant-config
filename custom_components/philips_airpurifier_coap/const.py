@@ -258,6 +258,7 @@ class FanAttributes(StrEnum):
     FILTER_NANOPROTECT = "nanoprotect_filter"
     FILTER_NANOPROTECT_CLEAN = "pre_filter"
     FUNCTION = "function"
+    PURIFICATION = "purification"
     HUMIDITY = "humidity"
     HUMIDIFICATION = "humidification"
     HUMIDIFIER = "humidifier"
