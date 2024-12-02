@@ -15,7 +15,7 @@ cards:
             service: browser_mod.popup
             data:
               title: "TV Programm"
-              content: !include ../../cards/tv_prog.yaml
+              content: !include ../../../cards/tv_prog.yaml
 
       - type: conditional
         conditions:

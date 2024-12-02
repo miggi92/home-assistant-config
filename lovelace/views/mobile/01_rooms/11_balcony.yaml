@@ -1,0 +1,9 @@
+---
+title: Balkon
+path: balcony
+icon: mdi:balcony
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: spacer

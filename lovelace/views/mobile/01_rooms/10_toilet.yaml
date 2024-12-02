@@ -1,0 +1,36 @@
+---
+title: WC
+path: toilet
+icon: mdi:toilet
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: spacer
+  - type: grid
+    square: false
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasserzahler_klo_kalt
+        layout: vertical
+        name: Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_klo_warm
+        layout: vertical
+        name: Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasserzahler_klo_kalt_cost
+        layout: vertical
+        name: Kosten Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_klo_warm_cost
+        layout: vertical
+        name: Kosten Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_kalt_klo
+        layout: vertical
+        name: Zähler Kalt
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_warm_klo
+        layout: vertical
+        name: Zähler Warm
