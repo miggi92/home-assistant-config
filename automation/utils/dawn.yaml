@@ -1,0 +1,24 @@
+---
+# Trigged on dawn
+alias: Dawn
+id: 62b1c754-f5f8-4780-b08c-5d77d1f0f344
+description: "Dämmerungsautomation"
+trigger:
+  - platform: time
+    at: sensor.sun_next_dawn
+condition: []
+action:
+  - if:
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: sensor.season
+            state: "autumn"
+          - condition: state
+            entity_id: sensor.season
+            state: "winter"
+    then:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.lichterkette
+mode: single
