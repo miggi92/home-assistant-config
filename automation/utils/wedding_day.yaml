@@ -10,17 +10,17 @@ trigger:
 condition:
   - condition: or
     conditions:
-      - condition: state
-        entity_id: "{{ trigger.entity_id }}"
-        state: "0"
-      - condition: numeric_state
-        entity_id: "{{ trigger.entity_id }}"
-        above: 363
+      - condition: template
+        value_template: |-
+          {{ states(trigger.entity_id) == 0 }}
+      - condition: template
+        value_template: |-
+          {{ states(trigger.entity_id) >= 363 }}
 action:
   - if:
-      - condition: state
-        entity_id: "{{ trigger.entity_id }}"
-        state: "0"
+      - condition: template
+        value_template: |-
+          {{ states(trigger.entity_id) == 0 }}
     then:
       - service: switch.turn_on
         data: {}
