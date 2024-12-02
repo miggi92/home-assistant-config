@@ -7,3 +7,23 @@ cards:
     chips:
       - type: back
       - type: spacer
+  - type: custom:mushroom-entity-card
+    entity: switch.lichterkette
+    icon: mdi:string-lights
+  - type: custom:mushroom-template-card
+    primary: Lichterkette
+    secondary: >-
+      {% if states("timer.lichterkette") == "active" %}
+        {{ state_attr('timer.lichterkette', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
+      {% endif %}
+    entity: switch.lichterkette
+    icon: mdi:string-lights
+    icon_color: |-
+      {% if states("switch.lichterkette") == "on" %}
+        yellow
+      {% else %}
+        grey
+      {% endif %}
+    layout: vertical
+    tap_action:
+      action: toggle
