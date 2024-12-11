@@ -96,7 +96,6 @@ class PhilipsSensor(PhilipsEntity, SensorEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         # the sensor could be a normal sensor or an extra sensor
         if kind in SENSOR_TYPES:
@@ -113,9 +112,7 @@ class PhilipsSensor(PhilipsEntity, SensorEntity):
         self._attr_state_class = self._description.get(ATTR_STATE_CLASS)
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
         self._attr_entity_category = self._description.get(CONF_ENTITY_CATEGORY)
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
         self._attr_native_unit_of_measurement = self._description.get(
             FanAttributes.UNIT
         )
@@ -139,6 +136,9 @@ class PhilipsSensor(PhilipsEntity, SensorEntity):
     @property
     def icon(self) -> str:
         """Return the icon of the sensor."""
+
+        # if the sensor has an icon map, use it to determine the icon
+        # otherwise, we return the default icon, which might be None and then uses icon translation
         icon = self._norm_icon
         if not self._icon_map:
             return icon
@@ -165,23 +165,20 @@ class PhilipsFilterSensor(PhilipsEntity, SensorEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         self._description = FILTER_TYPES[kind]
-        self._icon_map = self._description[FanAttributes.ICON_MAP]
+        self._icon_map = self._description.get(FanAttributes.ICON_MAP)
         self._norm_icon = (
             next(iter(self._icon_map.items()))[1]
             if self._icon_map is not None
             else None
         )
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
 
         self._value_key = kind
         self._total_key = self._description[FanAttributes.TOTAL]
         self._type_key = self._description[FanAttributes.TYPE]
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
 
         if self._has_total:
             self._attr_native_unit_of_measurement = PERCENTAGE
@@ -243,6 +240,9 @@ class PhilipsFilterSensor(PhilipsEntity, SensorEntity):
     @property
     def icon(self) -> str:
         """Return the icon of the sensor."""
+
+        # if the sensor has an icon map, use it to determine the icon
+        # otherwise, we return the default icon, which might be None and then uses icon translation
         icon = self._norm_icon
         if not self._icon_map:
             return icon

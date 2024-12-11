@@ -15,7 +15,7 @@ from homeassistant.const import (
     PERCENTAGE,
 )
 
-__version__ = "5.0.0"
+__version__ = "5.0.3"
 PROJECT_URL = "https://github.com/alandtse/alexa_media_player/"
 ISSUE_URL = f"{PROJECT_URL}issues"
 NOTIFY_URL = f"{PROJECT_URL}wiki/Configuration%3A-Notification-Component#use-the-notifyalexa_media-service"
@@ -110,6 +110,14 @@ RECURRING_PATTERN_ISO_SET = {
 ATTR_MESSAGE = "message"
 ATTR_EMAIL = "email"
 ATTR_NUM_ENTRIES = "entries"
+STREAMING_ERROR_MESSAGE = (
+    "Sorry folks! Amazon doesn't allow streaming music like this. "
+    "Please take it up with them!"
+)
+PUBLIC_URL_ERROR_MESSAGE = (
+    "To send TTS, please set the public URL in integration configuration."
+)
+ANNOUNCE_ERROR_MESSAGE = "To send TTS, please set Announce=true."
 STARTUP = f"""
 -------------------------------------------------------------------
 {DOMAIN}

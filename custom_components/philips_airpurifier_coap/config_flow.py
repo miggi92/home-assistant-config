@@ -16,6 +16,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util.timeout import TimeoutManager
 
 from .const import CONF_DEVICE_ID, CONF_MODEL, CONF_STATUS, DOMAIN, PhilipsApi
+from .helpers import extract_model, extract_name
 from .philips import model_to_class
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,37 +94,12 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             raise exceptions.ConfigEntryNotReady from ex
 
         # autodetect model
-        model_map = map(
-            status.get,
-            [
-                PhilipsApi.MODEL_ID,
-                PhilipsApi.NEW_MODEL_ID,
-                PhilipsApi.NEW2_MODEL_ID,
-            ],
-        )
-        _LOGGER.debug("model_map retrieved: %s", model_map)
-        model_filter = filter(None, model_map)
-        _LOGGER.debug("model_filter applied: %s", model_filter)
-        model_list = list(model_filter)
-        _LOGGER.debug("model_list built: %s", model_list)
-        first_model = model_list[0]
-        _LOGGER.debug("first model selected: %s", first_model)
-        self._model = first_model[:9]
-        _LOGGER.debug("model type extracted: %s", self._model)
+        self._model = extract_model(status)
 
         # autodetect Wifi version
         self._wifi_version = status.get(PhilipsApi.WIFI_VERSION)
 
-        # autodetect name
-        self._name = list(
-            filter(
-                None,
-                map(
-                    status.get,
-                    [PhilipsApi.NAME, PhilipsApi.NEW_NAME, PhilipsApi.NEW2_NAME],
-                ),
-            )
-        )[0]
+        self._name = extract_name(status)
         self._device_id = status[PhilipsApi.DEVICE_ID]
         _LOGGER.debug(
             "Detected host %s as model %s with name: %s and firmware %s",
@@ -256,41 +232,12 @@ class PhilipsAirPurifierConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     raise exceptions.ConfigEntryNotReady from ex
 
                 # autodetect model
-                model_map = map(
-                    status.get,
-                    [
-                        PhilipsApi.MODEL_ID,
-                        PhilipsApi.NEW_MODEL_ID,
-                        PhilipsApi.NEW2_MODEL_ID,
-                    ],
-                )
-                _LOGGER.debug("model_map retrieved: %s", model_map)
-                model_filter = filter(None, model_map)
-                _LOGGER.debug("model_filter applied: %s", model_filter)
-                model_list = list(model_filter)
-                _LOGGER.debug("model_list built: %s", model_list)
-                first_model = model_list[0]
-                _LOGGER.debug("first model selected: %s", first_model)
-                self._model = first_model[:9]
-                _LOGGER.debug("model type extracted: %s", self._model)
+                self._model = extract_model(status)
 
                 # autodetect Wifi version
                 self._wifi_version = status.get(PhilipsApi.WIFI_VERSION)
 
-                # autodetect name
-                self._name = list(
-                    filter(
-                        None,
-                        map(
-                            status.get,
-                            [
-                                PhilipsApi.NAME,
-                                PhilipsApi.NEW_NAME,
-                                PhilipsApi.NEW2_NAME,
-                            ],
-                        ),
-                    )
-                )[0]
+                self._name = extract_name(status)
                 self._device_id = status[PhilipsApi.DEVICE_ID]
                 config_entry_data[CONF_MODEL] = self._model
                 config_entry_data[CONF_NAME] = self._name

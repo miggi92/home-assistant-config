@@ -37,5 +37,5 @@
     "aioairctrl==0.2.5",
     "getmac==0.9.4"
   ],
-  "version": "v0.29.0"
+  "version": "v0.33.0"
 }

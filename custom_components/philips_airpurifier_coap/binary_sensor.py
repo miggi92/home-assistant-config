@@ -63,20 +63,11 @@ class PhilipsBinarySensor(PhilipsEntity, BinarySensorEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         self._description = BINARY_SENSOR_TYPES[kind]
-        self._icon_map = self._description.get(FanAttributes.ICON_MAP)
-        self._norm_icon = (
-            next(iter(self._icon_map.items()))[1]
-            if self._icon_map is not None
-            else None
-        )
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
         self._attr_entity_category = self._description.get(CONF_ENTITY_CATEGORY)
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
 
         model = config_entry_data.device_information.model
         device_id = config_entry_data.device_information.device_id
@@ -93,12 +84,3 @@ class PhilipsBinarySensor(PhilipsEntity, BinarySensorEntity):
         if convert:
             value = convert(value)
         return cast(bool, value)
-
-    @property
-    def icon(self) -> str:
-        """Return the icon of the binary sensor."""
-        icon = self._norm_icon
-        if not self._icon_map:
-            return icon
-
-        return self._icon_map[self.is_on]

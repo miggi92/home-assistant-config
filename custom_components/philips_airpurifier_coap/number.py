@@ -66,13 +66,12 @@ class PhilipsNumber(PhilipsEntity, NumberEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         self._description = NUMBER_TYPES[number]
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
         label = FanAttributes.LABEL
         label = label.partition("#")[0]
-        self._attr_name = f"{name} {self._description[label].replace('_', ' ').title()}"
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
         self._attr_entity_category = self._description.get(CONF_ENTITY_CATEGORY)
         self._attr_icon = self._description.get(ATTR_ICON)
         self._attr_mode = "slider"  # hardwired for now

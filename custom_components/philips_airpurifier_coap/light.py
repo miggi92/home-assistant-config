@@ -15,7 +15,7 @@ from homeassistant.components.light import (
     LightEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, CONF_ENTITY_CATEGORY
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ENTITY_CATEGORY
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
 
@@ -84,7 +84,6 @@ class PhilipsLight(PhilipsEntity, LightEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         self._description = LIGHT_TYPES[light]
         self._on = self._description.get(SWITCH_ON)
@@ -93,10 +92,7 @@ class PhilipsLight(PhilipsEntity, LightEntity):
         self._auto = self._description.get(SWITCH_AUTO)
         self._dimmable = self._description.get(DIMMABLE)
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
-        self._attr_icon = self._description.get(ATTR_ICON)
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
         self._attr_entity_category = self._description.get(CONF_ENTITY_CATEGORY)
 
         if self._dimmable is None:

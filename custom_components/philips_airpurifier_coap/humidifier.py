@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
 
 from .config_entry_data import ConfigEntryData
-from .const import ATTR_ICON, DOMAIN, HUMIDIFIER_TYPES, FanAttributes
+from .const import DOMAIN, HUMIDIFIER_TYPES, FanAttributes, FanFunction
 from .philips import PhilipsGenericControlBase, model_to_class
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,14 +81,10 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
         latest_status = config_entry_data.latest_status
 
         self._description = HUMIDIFIER_TYPES[humidifier]
         self._attr_device_class = HumidifierDeviceClass.HUMIDIFIER
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
 
         device_id = config_entry_data.device_information.device_id
         self._attr_unique_id = f"{self._model}-{device_id}-{humidifier.lower()}"
@@ -111,8 +107,8 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
         if self._switch:
             self._attr_supported_features = HumidifierEntityFeature.MODES
             self._attr_available_modes = {
-                FanAttributes.PURIFICATION,
-                FanAttributes.HUMIDIFICATION,
+                FanFunction.PURIFICATION,
+                FanFunction.PURIFICATION_HUMIDIFICATION,
             }
 
         # pure humidification devices are identified by the function being the power and have the fan modes as modes
@@ -148,8 +144,8 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
         if self._switch:
             function_status = self._device_status.get(self._function_key)
             if function_status == self._description[FanAttributes.HUMIDIFYING]:
-                return FanAttributes.HUMIDIFICATION
-            return FanAttributes.PURIFICATION
+                return FanFunction.PURIFICATION_HUMIDIFICATION
+            return FanFunction.PURIFICATION
 
         # then we treat pure humidification devices
         if self._function_key == self._power_key:
@@ -245,8 +241,3 @@ class PhilipsHumidifier(PhilipsGenericControlBase, HumidifierEntity):
         )
         self._device_status[self._humidity_target_key] = humidity
         self._handle_coordinator_update()
-
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        return self._description[ATTR_ICON]

@@ -8,7 +8,7 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_ICON, CONF_ENTITY_CATEGORY
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ENTITY_CATEGORY
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
 
@@ -68,16 +68,12 @@ class PhilipsSwitch(PhilipsEntity, SwitchEntity):
         super().__init__(hass, config, config_entry_data)
 
         self._model = config_entry_data.device_information.model
-        name = config_entry_data.device_information.name
 
         self._description = SWITCH_TYPES[switch]
         self._on = self._description.get(SWITCH_ON)
         self._off = self._description.get(SWITCH_OFF)
         self._attr_device_class = self._description.get(ATTR_DEVICE_CLASS)
-        self._attr_icon = self._description.get(ATTR_ICON)
-        self._attr_name = (
-            f"{name} {self._description[FanAttributes.LABEL].replace('_', ' ').title()}"
-        )
+        self._attr_translation_key = self._description.get(FanAttributes.LABEL)
         self._attr_entity_category = self._description.get(CONF_ENTITY_CATEGORY)
 
         model = config_entry_data.device_information.model
@@ -90,7 +86,7 @@ class PhilipsSwitch(PhilipsEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return if switch is on."""
-        return self._device_status.get(self.kind) == self._on
+        return self._device_status.get(self.kind) != self._off
 
     async def async_turn_on(self, **kwargs) -> None:
         """Switch the switch on."""
