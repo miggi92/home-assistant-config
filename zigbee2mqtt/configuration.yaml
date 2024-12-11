@@ -113,3 +113,5 @@ devices:
     friendly_name: Spülmaschine
   '0x54ef441000cc05b7':
     friendly_name: Kaffemaschine
+  '0x08ddebfffed02f2f':
+    friendly_name: Flur Cam Stecker
