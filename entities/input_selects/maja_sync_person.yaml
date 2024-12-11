@@ -6,5 +6,5 @@ maja_person_sync:
     - silke
     - miguel
     - alleine
-  initial: miguel
+  initial: alleine
   icon: mdi:dog
