@@ -1,18 +1,7 @@
 ---
 # Twitch integration
-# sensor:
-#   - platform: twitch
-#     client_id: !secret twitch_client_id
-#     token: !secret twitch_oauth
-#     channels:
-#       - mgm12
-platform: twitch_helix
+platform: twitch
 client_id: !secret twitch_client_id
-client_secret: !secret twitch_client_secret
-own_channel: "mgm12"
+token: !secret twitch_oauth
 channels:
-  - "fallschaden4r"
-  - "mgm12"
-  - "meisterschaden"
-  - "dj_urban_o"
-  - "lamadingo"
+  - mgm12
