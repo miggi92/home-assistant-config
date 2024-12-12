@@ -28,13 +28,20 @@ action:
     data:
       title: "🌩️  {{ trigger.to_state.attributes.headline }} (NINA) 🌩️"
       value1: >-
-        {{ trigger.to_state.attributes.description }}
+        {% set attributes = trigger.to_state.attributes %}
+        {{ attributes.description }}
 
         *Zeitraum*
-        ⏰ _{{ as_datetime(trigger.to_state.attributes.start).astimezone().strftime("%a %H:%M")  ~ " - " ~  as_datetime(trigger.to_state.attributes.expires).astimezone().strftime("%a %H:%M")  }}_
+        ⏰ _{{ as_datetime(attributes.start)  ~ " - " ~  as_datetime(attributes.expires) }}_
+
+        *Handlungsempfehlung*
+          {{ attributes.recommended_actions }}
 
         *Warnung von:*
-        {{ trigger.to_state.attributes.sender }}
+          {{ attributes.sender }}
+
+        *Betroffene Bereiche*
+          {{ attributes.affected_areas }}
       who: "home"
       tag_id: "information"
       group: "Wetter"
