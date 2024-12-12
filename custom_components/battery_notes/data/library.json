@@ -1256,6 +1256,11 @@
             "battery_quantity": 4
         },
         {
+            "manufacturer": "BOSCH",
+            "model": "MD",
+            "battery_type": "CR123A"
+        },
+        {
             "manufacturer": "Bosch",
             "model": "Motion sensor (ISW-ZPR1-WP13)",
             "battery_type": "AA",
@@ -3586,6 +3591,11 @@
             "battery_type": "CR2477"
         },
         {
+            "manufacturer": "Mi",
+            "model": "MS009",
+            "battery_type": "CR2540"
+        },
+        {
             "manufacturer": "Mi light sensor",
             "model": "GZCGQ01LM",
             "battery_type": "CR2450"
@@ -5468,6 +5478,12 @@
             "manufacturer": "Third Reality",
             "model": "Temperature and Humidity Sensor Lite",
             "model_id": "3RTHS0224Z",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Third Reality",
+            "model": "Temperature and humidity sensor lite (3RTHS0224Z)",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
