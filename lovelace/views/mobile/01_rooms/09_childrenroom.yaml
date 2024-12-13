@@ -34,6 +34,11 @@ cards:
         collapsible_controls: true
         tap_action:
           action: toggle
+  - type: custom:decluttering-card
+    template: amazon_echo_template
+    variables:
+      - echo_id: echo_buro
+      - title: Echo Büro
   - type: custom:mushroom-cover-card
     entity: cover.rolladen_kinderzimmer
     name: Rollladen

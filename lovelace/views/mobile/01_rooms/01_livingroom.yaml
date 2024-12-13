@@ -45,6 +45,11 @@ cards:
         template: air_quality_humidity_template
         variables:
           - entity: sensor.absolute_luftfeuchtigkeit_unterschied_wohnzimmer
+  - type: custom:decluttering-card
+    template: amazon_echo_template
+    variables:
+      - echo_id: milos_dot
+      - title: Kinder Echo Dot
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-light-card

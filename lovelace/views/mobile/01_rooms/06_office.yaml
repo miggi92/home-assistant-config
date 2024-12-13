@@ -45,6 +45,11 @@ cards:
         template: air_quality_humidity_template
         variables:
           - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
+  - type: custom:decluttering-card
+    template: amazon_echo_template
+    variables:
+      - echo_id: echo_buro
+      - title: Echo Büro
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-light-card
