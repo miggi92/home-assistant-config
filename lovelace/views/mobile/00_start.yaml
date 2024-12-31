@@ -11,31 +11,37 @@ cards:
         entity: weather.home
         show_conditions: true
         show_temperature: true
-      - type: action
-        icon_color: red
-        icon: mdi:medication
-        tap_action:
-          action: fire-dom-event
-          browser_mod:
-            service: browser_mod.popup
-            data:
-              title: "Medizin & Tabletten"
-              content:
-                type: custom:auto-entities
-                filter:
-                  include:
-                    - entity_id: input_boolean.medis_*
-                      options:
-                        type: custom:mushroom-entity-card
-                        secondary_info: last-changed
-                        icon: mdi:pill
-                        icon_color: red
-                        tap_action:
-                          action: more-info
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.medis_mussen_genommen_werden
+            state: "on"
+        chip:
+          type: action
+          icon_color: red
+          icon: mdi:medication
+          tap_action:
+            action: fire-dom-event
+            browser_mod:
+              service: browser_mod.popup
+              data:
+                title: "Medizin & Tabletten"
+                content:
+                  type: custom:auto-entities
+                  filter:
+                    include:
+                      - entity_id: input_boolean.medis_*
+                        state: "off"
+                        options:
+                          type: custom:mushroom-entity-card
+                          secondary_info: last-changed
+                          icon: mdi:pill
+                          icon_color: red
+                          tap_action:
+                            action: more-info
 
-                show_empty: false
-                card:
-                  type: entities
+                  show_empty: false
+                  card:
+                    type: entities
 
       - type: entity
         icon: mdi:lightbulb

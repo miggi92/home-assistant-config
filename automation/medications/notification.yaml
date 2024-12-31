@@ -24,17 +24,17 @@ action:
       medis_miguel: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'miguel' in medi -%}
-            {{ state_attr(medi, 'friendly_name') }}
+            {{ state_attr(medi, 'friendly_name') | replace('Miguel', '', ignorecase=True) | trim }}
           {%- endif -%}
         {%- endfor -%}
       medis_silke: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'silke' in medi -%}
-            {{ state_attr(medi, 'friendly_name') }}
+            {{ state_attr(medi, 'friendly_name') | replace('Silke', '', ignorecase=True) | trim }}
           {%- endif -%}
         {%- endfor -%}
   - choose:
-      - conditions: "{{ medis_daily_miguel != '' }}"
+      - conditions: "{{ medis_miguel != '' }}"
         sequence:
           - action: notify.mobile_app_pixel_7_pro
             data:
@@ -44,7 +44,8 @@ action:
                 channel: Gesundheit
                 car_ui: true
                 notification_icon: "mdi:pill"
-      - conditions: "{{ medis_daily_silke != '' }}"
+  - choose:
+      - conditions: "{{ medis_silke != '' }}"
         sequence:
           - action: notify.mobile_app_sm_s911b
             data:
