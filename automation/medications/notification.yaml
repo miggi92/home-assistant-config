@@ -7,11 +7,21 @@ trigger:
   - platform: time
     at: input_datetime.miguel_medis_reminder_time
 action:
-  - action: notify.mobile_app_pixel_7_pro
-    data:
-      title: Medis
-      message: Medikament muss genommen werden
-      data:
-        channel: Gesundheit
-        car_ui: true
-        notification_icon: "mdi:pill"
+  - variables:
+      medis_daily: >
+        {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
+          {%- if states(medi)=="off" -%}
+            {{ state_attr(medi, 'friendly_name') }}
+          {%- endif -%}
+        {%- endfor -%}
+  - choose:
+      - conditions: "{{ medis_daily != '' }}"
+        sequence:
+          - action: notify.mobile_app_pixel_7_pro
+            data:
+              title: Zeit für deine täglichen Medikamente!
+              message: "{{ medis_daily }}"
+              data:
+                channel: Gesundheit
+                car_ui: true
+                notification_icon: "mdi:pill"

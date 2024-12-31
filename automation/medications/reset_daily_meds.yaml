@@ -10,3 +10,26 @@ action:
   - action: input_boolean.turn_off
     target:
       label_id: medisdaily
+  - variables:
+      heuschnupfen: >
+        {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
+          {%- if "heuschnupfen" in medi -%}
+            {{ medi }}
+          {%- endif -%}
+        {%- endfor -%}
+  - choose:
+      - conditions: "{{ heuschnupfen != '' }}"
+        sequence:
+          - repeat:
+              for_each: "{{ heuschnupfen.split(' ') }}"
+              sequence:
+                - variables:
+                    pollen_typ: "{{ repeat.item.split('_')[4] }}"
+                    pollen_sensor: "sensor.pollenflug_{{ pollen_typ }}_112"
+                - condition: template
+                  value_template: >
+                    {{ states(repeat.item) != 'on' and states(pollen_sensor) | int(0) == 0 }}
+                - action: input_boolean.turn_on
+                  target:
+                    entity_id: "{{ repeat.item }}"
+    alias: "Heuschnupfen anschalten, wenn gerade keine Pollen unterwegs sind"
