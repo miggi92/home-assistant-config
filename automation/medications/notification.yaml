@@ -40,6 +40,9 @@ action:
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_miguel }}"
+              actions:
+                - action: "/lovelace-mobile/start"
+                  title: "Übersicht aufrufen"
               data:
                 channel: Gesundheit
                 car_ui: true
@@ -51,6 +54,9 @@ action:
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_silke }}"
+              actions:
+                - action: "/lovelace-mobile/start"
+                  title: "Übersicht aufrufen"
               data:
                 channel: Gesundheit
                 car_ui: true
