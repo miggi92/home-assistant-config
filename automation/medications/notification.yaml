@@ -46,7 +46,7 @@ action:
                 notification_icon: "mdi:pill"
       - conditions: "{{ medis_daily_silke != '' }}"
         sequence:
-          - action: notify.mobile_app_pixel_7_pro
+          - action: notify.mobile_app_sm_s911b
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_silke }}"
