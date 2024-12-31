@@ -24,13 +24,13 @@ action:
       medis_miguel: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'miguel' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | replace('Miguel', '', ignorecase=True) | trim }}
+            {{ state_attr(medi, 'friendly_name') | regex_replace(find='Miguel', replace='', ignorecase=True) | trim }}
           {%- endif -%}
         {%- endfor -%}
       medis_silke: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'silke' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | replace('Silke', '', ignorecase=True) | trim }}
+            {{ state_attr(medi, 'friendly_name') | regex_replace(find='Silke', replace='', ignorecase=True) | trim }}
           {%- endif -%}
         {%- endfor -%}
   - choose:
