@@ -3004,6 +3004,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "IKEA",
+            "model": "SYMFONISK sound remote, gen 1",
+            "model_id": "E1744",
+            "hw_version": "24.4.5",
+            "battery_type": "CR2032"
+        },
+        {
             "manufacturer": "Ikea",
             "model": "SYMFONISK Sound remote, gen 2",
             "model_id": "E2123",
@@ -5702,6 +5709,12 @@
         },
         {
             "manufacturer": "Trust",
+            "model": "Wireless contact sensor",
+            "model_id": "ZCTS-808",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Trust",
             "model": "ZYCT-202",
             "battery_type": "CR2450"
         },
@@ -7020,6 +7033,11 @@
             "manufacturer": "Xiaomi",
             "model": "RTCGQ01LM",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "SJWS01LM",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Xiaomi",
