@@ -5,22 +5,51 @@ id: 98553e4d-5625-488b-8a7d-01c315807b24
 description: "Medi Notif"
 trigger:
   - platform: time
-    at: input_datetime.miguel_medis_reminder_time
+    at: input_datetime.medis_reminder_time
 action:
   - variables:
       medis_daily: >
         {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
           {%- if states(medi)=="off" -%}
+            {{ medi }}
+          {%- endif -%}
+        {%- endfor -%}
+      medis_weekly: >
+        {%- for medi in label_entities('MedisWeekly') | list if states(medi) in ('on','off') -%}
+          {%- if states(medi)=="off" -%}
+            {{ medi }}
+          {%- endif -%}
+        {%- endfor -%}
+  - variables:
+      medis_miguel: >
+        {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
+          {%- if 'miguel' in medi -%}
+            {{ state_attr(medi, 'friendly_name') }}
+          {%- endif -%}
+        {%- endfor -%}
+      medis_silke: >
+        {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
+          {%- if 'silke' in medi -%}
             {{ state_attr(medi, 'friendly_name') }}
           {%- endif -%}
         {%- endfor -%}
   - choose:
-      - conditions: "{{ medis_daily != '' }}"
+      - conditions: "{{ medis_daily_miguel != '' }}"
         sequence:
           - action: notify.mobile_app_pixel_7_pro
             data:
-              title: Zeit für deine täglichen Medikamente!
-              message: "{{ medis_daily }}"
+              title: Zeit für deine Medikamente!
+              message: "{{ medis_miguel }}"
+              data:
+                channel: Gesundheit
+                car_ui: true
+                notification_icon: "mdi:pill"
+      - conditions: "{{ medis_daily_silke != '' }}"
+        sequence:
+          - action: notify.mobile_app_pixel_7_pro
+            data:
+              title: Zeit für deine Medikamente!
+              message: "{{ medis_silke }}"
               data:
                 channel: Gesundheit
                 car_ui: true

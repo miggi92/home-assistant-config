@@ -1,6 +1,6 @@
 ---
 # Reset medi booleans, that the notification can be send
-alias: MedisResetDailyBool
+alias: MedisResetBool
 id: b67001f4-cf8f-414d-a1bb-84fe46b2b37b
 description: "Medis reset"
 trigger:
@@ -33,3 +33,9 @@ action:
                   target:
                     entity_id: "{{ repeat.item }}"
     alias: "Heuschnupfen anschalten, wenn gerade keine Pollen unterwegs sind"
+  - condition: time
+    weekday:
+      - sun
+  - action: input_boolean.turn_off
+    target:
+      label_id: medisweekly
