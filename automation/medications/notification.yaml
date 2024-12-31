@@ -8,29 +8,29 @@ trigger:
     at: input_datetime.medis_reminder_time
 action:
   - variables:
-      medis_daily: >
+      medis_daily: >-
         {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
           {%- if states(medi)=="off" -%}
-            {{ medi }}
+            {{ medi }}{{ ' ' }}
           {%- endif -%}
         {%- endfor -%}
-      medis_weekly: >
+      medis_weekly: >-
         {%- for medi in label_entities('MedisWeekly') | list if states(medi) in ('on','off') -%}
           {%- if states(medi)=="off" -%}
-            {{ medi }}
+            {{ medi }}{{ ' ' }}
           {%- endif -%}
         {%- endfor -%}
   - variables:
       medis_miguel: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'miguel' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | regex_replace(find='Miguel', replace='', ignorecase=True) | trim }}
+            {{ state_attr(medi, 'friendly_name') | replace('Miguel', '') }}
           {%- endif -%}
         {%- endfor -%}
       medis_silke: >
         {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
           {%- if 'silke' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | regex_replace(find='Silke', replace='', ignorecase=True) | trim }}
+            {{ state_attr(medi, 'friendly_name') | replace('Silke', '') }}
           {%- endif -%}
         {%- endfor -%}
   - choose:
@@ -40,9 +40,6 @@ action:
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_miguel }}"
-              actions:
-                - action: "/lovelace-mobile/start"
-                  title: "Übersicht aufrufen"
               data:
                 channel: Gesundheit
                 car_ui: true
@@ -54,9 +51,6 @@ action:
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_silke }}"
-              actions:
-                - action: "/lovelace-mobile/start"
-                  title: "Übersicht aufrufen"
               data:
                 channel: Gesundheit
                 car_ui: true
