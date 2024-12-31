@@ -71,7 +71,7 @@ cards:
   - type: custom:decluttering-card
     template: amazon_echo_template
     variables:
-      - echo_id: echo_kuche
+      - echo_id: echo_wohnzimmer
       - title: Echo Küche
   - type: custom:mushroom-title-card
     subtitle: Lichter
