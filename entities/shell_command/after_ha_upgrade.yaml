@@ -1,0 +1,3 @@
+---
+# auto commit custom components shell cmd
+after_ha_upgrade: "bash ./bash_scripts/after_ha_upgrade.sh"

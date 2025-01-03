@@ -1,0 +1,12 @@
+---
+# change version after HA upgrade
+alias: AfterHaUpgrade
+id: 7e2fd668-0ff5-4a40-859e-23a804c5c855
+description: "change version after HA upgrade"
+trigger:
+  - trigger: time
+    at: "23:55:00"
+condition: []
+action:
+  - service: shell_command.after_ha_upgrade
+mode: single
