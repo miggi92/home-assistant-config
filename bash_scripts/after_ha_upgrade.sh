@@ -6,7 +6,7 @@ current_version=$(cat .HA_VERSION)
 
 # Replace the version in the README.md file
 sed -i "s/\(https:\/\/github.com\/home-assistant\/core\/releases\/tag\/\)[^\)]*/\1$current_version/" README.md
-sed -i "s/\(HA%20Version-\)[^\)]*/\1$current_version -/" README.md
+sed -i "s/\(HA%20Version-\)[^-]*-\([^\)]*\)/\1$current_version\2/" README.md
 
 # Add changes to git
 git add .HA_VERSION
