@@ -1,4 +1,4 @@
 ---
 # browserless shell cmd
 # https://community.home-assistant.io/t/guide-scraping-dynamic-websites-with-browserless-multiscrape-v2-update/
-browserless_scraper: "bash ./scripts/browserless_scraper.sh {{function}} {{output}}"
+browserless_scraper: "bash ./bash_scripts/browserless_scraper.sh {{function}} {{output}}"
