@@ -1783,6 +1783,11 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-PB-2-WM55-2",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-PB-6-WM55",
             "battery_type": "AAA",
             "battery_quantity": 2
@@ -1855,7 +1860,18 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-Sec-TiS",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-Sen-MDIR-O-2",
+            "battery_type": "AA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-Sen-MDIR-SM",
             "battery_type": "AA",
             "battery_quantity": 3
         },
@@ -1864,6 +1880,11 @@
             "model": "HM-Sen-MDIR-WM55",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-SwI-3-FM",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "eQ-3",
@@ -2725,6 +2746,12 @@
             "model": "Z-Temp2",
             "battery_type": "AA",
             "battery_quantity": 3
+        },
+        {
+            "manufacturer": "Heatit",
+            "model": "Z-TEMP3",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "HEIMAN",
@@ -4563,6 +4590,30 @@
             "battery_type": "CR2477"
         },
         {
+            "manufacturer": "SAF Tehnika",
+            "model": "Aranet Radiation",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "SAF Tehnika",
+            "model": "Aranet Radon Plus",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "SAF Tehnika",
+            "model": "Aranet2 HOME",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "SAF Tehnika",
+            "model": "Aranet4 HOME",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "Samjin",
             "model": "button",
             "battery_type": "CR2"
@@ -6143,6 +6194,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Temperature & humidity sensor with clock (JM-TRH-ZGB-V1)",
+            "model_id": "_TZE200_vvmbj46n",
+            "battery_type": "AAA",
+            "battery_quantity": 3
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Temperature & humidity sensor with display (TS0201)",
             "battery_type": "AAA",
@@ -6628,6 +6686,12 @@
         },
         {
             "manufacturer": "Withings",
+            "model": "Body+",
+            "battery_type": "AAA",
+            "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Withings",
             "model": "Smart Body Analyzer",
             "battery_type": "AAA",
             "battery_quantity": 4
@@ -6878,6 +6942,11 @@
             "manufacturer": "Xiaomi",
             "model": "BTHome sensor",
             "battery_type": "MANUAL"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "CGDK2",
+            "battery_type": "CR2430"
         },
         {
             "manufacturer": "Xiaomi",
