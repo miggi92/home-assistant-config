@@ -10,7 +10,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from pygrocy.data_models.battery import Battery
+from pygrocy2.data_models.battery import Battery
 
 from .const import (
     ATTR_BATTERIES,
@@ -81,7 +81,8 @@ class GrocyData:
         query_filter = [f"next_estimated_execution_time<{datetime.now()}"]
 
         def wrapper():
-            return self.api.chores(get_details=True, query_filters=query_filter)
+            return []
+            # return self.api.chores(get_details=True, query_filters=query_filter)
 
         return await self.hass.async_add_executor_job(wrapper)
 
