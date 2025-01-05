@@ -894,6 +894,13 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Motion sensor",
+            "model_id": "RTCGQ11LM",
+            "hw_version": "1",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Motion sensor (RTCGQ11LM)",
             "battery_type": "CR2450"
         },
@@ -902,6 +909,13 @@
             "model": "Motion sensor P1 (RTCGQ14LM)",
             "battery_type": "CR2450",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Opple wireless switch (double band)",
+            "model_id": "WXCJKG12LM",
+            "hw_version": "1",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Aqara",
@@ -1877,6 +1891,11 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-Sec-Win",
+            "battery_type": "HM-Sec-Win-BaP"
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-Sen-MDIR-O-2",
             "battery_type": "AA",
             "battery_quantity": 3
@@ -1914,6 +1933,12 @@
             "manufacturer": "eQ-3",
             "model": "HM-WDS30-OT2-SM",
             "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HM-WDS30-T-O",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {
@@ -2823,6 +2848,12 @@
         },
         {
             "manufacturer": "Hive",
+            "model": "Door/window sensor",
+            "model_id": "DWS003",
+            "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Hive",
             "model": "Heating thermostat remote control (SLT3B)",
             "battery_type": "AA",
             "battery_quantity": 4
@@ -2832,6 +2863,12 @@
             "model": "Heating thermostat remote control (SLT3C)",
             "battery_type": "AA",
             "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Hive",
+            "model": "Motion Sensor",
+            "model_id": "MOT003",
+            "battery_type": "CR123A"
         },
         {
             "manufacturer": "Hive",
@@ -2861,6 +2898,17 @@
             "manufacturer": "Homematic",
             "model": "HM-Sec-SCo",
             "battery_type": "AAA"
+        },
+        {
+            "manufacturer": "Homematic",
+            "model": "HM-Sec-Win",
+            "battery_type": "HM-Sec-Win-BaP"
+        },
+        {
+            "manufacturer": "Homematic",
+            "model": "HM-WDS30-T-O",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Homematic",
@@ -3332,6 +3380,12 @@
         {
             "manufacturer": "Konke",
             "model": "3AFE28010402000D",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Konke",
+            "model": "Multi-function button",
+            "model_id": "2AJZ4KPKEY",
             "battery_type": "CR2450"
         },
         {
@@ -5911,6 +5965,13 @@
             "battery_type": "CR2450"
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Button scene switch",
+            "model_id": "SH-SC07",
+            "hw_version": "1",
+            "battery_type": "CR2450"
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Button scene switch (SH-SC07)",
             "battery_type": "CR2450"
@@ -5931,6 +5992,14 @@
             "manufacturer": "TuYa",
             "model": "Door and window sensor (TM001-ZA/TM081)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Door sensor",
+            "model_id": "19DZT",
+            "hw_version": "1",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "TuYa",
@@ -5990,6 +6059,20 @@
         {
             "manufacturer": "TuYa",
             "model": "Luminance motion sensor (ZG-204ZL)",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Motion sensor",
+            "model_id": "809WZT",
+            "hw_version": "1",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Motion sensor",
+            "model_id": "IH012-RT01",
+            "hw_version": "1",
             "battery_type": "CR2450"
         },
         {
@@ -6255,9 +6338,24 @@
         {
             "manufacturer": "Tuya",
             "model": "Temperature and humidity sensor",
+            "model_id": "TH02Z",
+            "hw_version": "1",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature and humidity sensor",
             "model_id": "ZG-227Z",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature and humidity sensor",
+            "model_id": "ZTH05",
+            "hw_version": "1",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "TuYa",
@@ -6519,6 +6617,14 @@
         {
             "manufacturer": "Tuya",
             "model": "Zigbee infrared remote (unsupported)",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Zigbee water flood sensor + 1m probe cable",
+            "model_id": "TS0207_water_leak_detector_1",
+            "hw_version": "1",
             "battery_type": "AAA",
             "battery_quantity": 2
         },
@@ -7076,6 +7182,12 @@
         },
         {
             "manufacturer": "Xiaomi",
+            "model": "Mi door and window sensor",
+            "model_id": "MCCGQ01LM",
+            "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Xiaomi",
             "model": "Mi door and window sensor (MCCGQ01LM)",
             "battery_type": "CR1632"
         },
@@ -7097,6 +7209,12 @@
         {
             "manufacturer": "Xiaomi",
             "model": "Mi temperature and humidity sensor (WSDCGQ01LM)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "Mi wireless switch",
+            "model_id": "WXKG01LM",
             "battery_type": "CR2032"
         },
         {
