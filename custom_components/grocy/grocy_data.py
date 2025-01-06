@@ -81,8 +81,7 @@ class GrocyData:
         query_filter = [f"next_estimated_execution_time<{datetime.now()}"]
 
         def wrapper():
-            return []
-            # return self.api.chores(get_details=True, query_filters=query_filter)
+            return self.api.chores(get_details=True, query_filters=query_filter)
 
         return await self.hass.async_add_executor_job(wrapper)
 
