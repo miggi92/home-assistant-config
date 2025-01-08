@@ -1,0 +1,12 @@
+---
+# Commit custom components when updated -> script auto_commit_cc
+alias: CommitCustomComponents
+id: 0be8fbce-80d5-4288-8531-b384258445d6
+description: "Automatischer commit der neusten HACS updates"
+trigger:
+  - trigger: time
+    at: "23:55:00"
+condition: []
+action:
+  - service: shell_command.auto_commit_cc
+mode: single
