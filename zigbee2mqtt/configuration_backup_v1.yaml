@@ -1,5 +1,4 @@
-homeassistant:
-  enabled: true
+homeassistant: true
 advanced:
   network_key:
     - 132
@@ -28,6 +27,9 @@ advanced:
     - 62
     - 113
     - 217
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
   channel: 11
   log_level: warning
   last_seen: ISO_8601_local
@@ -36,15 +38,14 @@ mqtt:
   user: addons
   password: dau6Keey9ahRohhiNge3Bahzaijaezoozahgei7iesag2chaet0aezah4wu3OhFo
 frontend:
-  enabled: true
   port: 8099
 serial:
   port: >-
     /dev/serial/by-id/usb-Nabu_Casa_SkyConnect_v1.0_08ab766346edec11b6444540ad51a8b2-if00-port0
   adapter: ezsp
-device_options: {}
-availability:
-  enabled: true
+device_options:
+  legacy: false
+availability: true
 devices:
   '0x0017880109437a9c':
     friendly_name: Kinderzimmerlicht
@@ -114,6 +115,3 @@ devices:
     friendly_name: Kaffemaschine
   '0x08ddebfffed02f2f':
     friendly_name: Flur Cam Stecker
-  '0x00158d000805aa96':
-    friendly_name: '0x00158d000805aa96'
-version: 4

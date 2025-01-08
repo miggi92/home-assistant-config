@@ -114,6 +114,4 @@ devices:
     friendly_name: Kaffemaschine
   '0x08ddebfffed02f2f':
     friendly_name: Flur Cam Stecker
-  '0x00158d000805aa96':
-    friendly_name: '0x00158d000805aa96'
-version: 4
+version: 3
