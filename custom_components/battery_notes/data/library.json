@@ -355,8 +355,7 @@
         {
             "manufacturer": "_TZE200_a8sdabtg",
             "model": "TS0601",
-            "battery_type": "AAA",
-            "battery_quantity": 2
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "_TZE200_b6wax7g0",
@@ -466,6 +465,18 @@
             "manufacturer": "_TZE204_t1blo2bj",
             "model": "TS0601",
             "battery_type": "CR123A",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "_TZE204_yjjdcqsq",
+            "model": "TS0601",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "_TZE284_aao3yzhs",
+            "model": "TS0601",
+            "battery_type": "AAA",
             "battery_quantity": 2
         },
         {
@@ -919,6 +930,13 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Opple wireless switch (single band)",
+            "model_id": "WXCJKG11LM",
+            "hw_version": "1",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Opple wireless switch (single band) (WXCJKG11LM)",
             "battery_type": "CR2032"
         },
@@ -972,6 +990,13 @@
             "model": "SRTS-A01",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Temperature and humidity sensor",
+            "model_id": "WSDCGQ11LM",
+            "hw_version": "30",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Aqara",
@@ -1554,6 +1579,13 @@
             "model": "KEYZB-110",
             "battery_type": "AA",
             "battery_quantity": 4
+        },
+        {
+            "manufacturer": "Develco",
+            "model": "Smoke detector with siren",
+            "model_id": "SMSZB-120",
+            "hw_version": "5.0.2",
+            "battery_type": "CR123"
         },
         {
             "manufacturer": "Develco",
@@ -3080,6 +3112,13 @@
         },
         {
             "manufacturer": "IKEA",
+            "model": "SOMRIG shortcut button",
+            "model_id": "E2213",
+            "hw_version": "1",
+            "battery_type": "AAA"
+        },
+        {
+            "manufacturer": "IKEA",
             "model": "SOMRIG shortcut button (E2213)",
             "battery_type": "AAA"
         },
@@ -3134,6 +3173,13 @@
         },
         {
             "manufacturer": "IKEA",
+            "model": "TRADFRI on/off switch",
+            "model_id": "E1743",
+            "hw_version": "1",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "IKEA",
             "model": "TRADFRI ON/OFF switch (E1743)",
             "battery_type": "CR2032"
         },
@@ -3150,6 +3196,13 @@
         {
             "manufacturer": "IKEA",
             "model": "TRADFRI shortcut button (E1812)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "IKEA",
+            "model": "TRADFRI wireless dimmer",
+            "model_id": "ICTC-G-1",
+            "hw_version": "30",
             "battery_type": "CR2032"
         },
         {
@@ -4716,6 +4769,11 @@
         },
         {
             "manufacturer": "samsung",
+            "model": "SM-G770F",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "samsung",
             "model": "SM-G955U",
             "battery_type": "Rechargeable"
         },
@@ -4736,7 +4794,17 @@
         },
         {
             "manufacturer": "samsung",
+            "model": "SM-R860",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "samsung",
             "model": "SM-S901U1",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "samsung",
+            "model": "SM-S918B",
             "battery_type": "Rechargeable"
         },
         {
@@ -5365,6 +5433,13 @@
         },
         {
             "manufacturer": "SONOFF",
+            "model": "Motion sensor",
+            "model_id": "SNZB-03",
+            "hw_version": "1",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "SONOFF",
             "model": "Motion sensor (SNZB-03)",
             "battery_type": "CR2450"
         },
@@ -5525,6 +5600,11 @@
             "model": "MeterPlus",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Switchbot",
+            "model": "W070160X",
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "SwitchBot",
@@ -6002,6 +6082,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Door sensor",
+            "model_id": "TS0203",
+            "hw_version": "1",
+            "battery_type": "CR2032"
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Door sensor (TS0203)",
             "battery_type": "CR2032"
@@ -6050,6 +6137,13 @@
             "model_id": "3towulqd",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Luminance motion sensor",
+            "model_id": "ZG-204ZL",
+            "hw_version": "1",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "Tuya",
@@ -6250,6 +6344,21 @@
             "manufacturer": "Tuya",
             "model": "Smoke Detector (lsjnzox4skgduemo)",
             "battery_type": "PP3"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Smoke sensor",
+            "model_id": "TS0205_smoke_2",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Smoke sensor",
+            "model_id": "TS0205_smoke_2",
+            "hw_version": "1",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "TuYa",
@@ -6562,6 +6671,13 @@
             "model": "WiFi Temperature & Humidity Sensor (q29ebws5adwye1l8)",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Wireless switch with 1 button",
+            "model_id": "TS0041",
+            "hw_version": "1",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "TuYa",
@@ -7200,6 +7316,13 @@
         },
         {
             "manufacturer": "Xiaomi",
+            "model": "Mi light sensor",
+            "model_id": "GZCGQ01LM",
+            "hw_version": "1",
+            "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Xiaomi",
             "model": "Mi light sensor (GZCGQ01LM)",
             "battery_type": "CR2450"
         },
@@ -7243,6 +7366,13 @@
             "manufacturer": "Xiaomi",
             "model": "MiJia door & window contact sensor (MCCGQ01LM)",
             "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "Mijia Honeywell smoke detector",
+            "model_id": "JTYJ-GD-01LM/BW",
+            "hw_version": "16",
+            "battery_type": "CR123A"
         },
         {
             "manufacturer": "Xiaomi",
