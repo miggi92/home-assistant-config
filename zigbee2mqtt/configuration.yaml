@@ -32,9 +32,9 @@ advanced:
   log_level: warning
   last_seen: ISO_8601_local
 mqtt:
-  server: "!secret.yaml mqtt_server"
-  user: "!secret.yaml mqtt_user"
-  password: "!secret.yaml mqtt_password"
+  server: "!secrets.yaml mqtt_server"
+  user: "!secrets.yaml mqtt_user"
+  password: "!secrets.yaml mqtt_password"
 frontend:
   enabled: true
   port: 8099
