@@ -9,8 +9,8 @@ sed -i "s/\(https:\/\/github.com\/home-assistant\/core\/releases\/tag\/\)[^\)]*/
 sed -i "s/\(HA%20Version-\)[^%]*%20-\([^\)]*\)/\1$current_version%20-\2/" README.md
 
 # git config
-git config username.user miggi92
-git config username.email miggi92@users.noreply.github.com
+git config --global user.name miggi92
+git config --global user.email miggi92@users.noreply.github.com
 
 # Add changes to git
 git add .HA_VERSION
