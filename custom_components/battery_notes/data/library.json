@@ -645,6 +645,12 @@
         },
         {
             "manufacturer": "Airthings",
+            "model": "Wave",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Airthings",
             "model": "Wave Plus",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -863,6 +869,13 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Door and window sensor",
+            "model_id": "MCCGQ11LM",
+            "hw_version": "2",
+            "battery_type": "CR1632"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Door and window sensor (MCCGQ11LM)",
             "battery_type": "CR1632"
         },
@@ -914,6 +927,14 @@
             "manufacturer": "Aqara",
             "model": "Motion sensor (RTCGQ11LM)",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Motion sensor P1",
+            "model_id": "RTCGQ14LM",
+            "hw_version": "1",
+            "battery_type": "CR2450",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Aqara",
@@ -982,6 +1003,19 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Smart smoke detector",
+            "model_id": "JY-GZ-01AQ",
+            "battery_type": "CR17450"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Smart smoke detector",
+            "model_id": "JY-GZ-01AQ",
+            "hw_version": "1",
+            "battery_type": "CR17450"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Smart smoke detector (JY-GZ-01AQ)",
             "battery_type": "CR17450"
         },
@@ -1012,6 +1046,12 @@
         {
             "manufacturer": "Aqara",
             "model": "Vibration sensor (DJT11LM)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Water leak sensor",
+            "model_id": "SJCGQ11LM",
             "battery_type": "CR2032"
         },
         {
@@ -1293,6 +1333,24 @@
             "manufacturer": "AVM",
             "model": "FRITZ!DECT 440",
             "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "AVM",
+            "model": "FRITZ!Smart Control 350",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "AVM",
+            "model": "FRITZ!Smart Control 440",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "AVM",
+            "model": "FRITZ!Smart Thermo 302",
+            "battery_type": "AA",
             "battery_quantity": 2
         },
         {
@@ -1842,7 +1900,8 @@
         {
             "manufacturer": "eQ-3",
             "model": "HM-PB-2-WM55-2",
-            "battery_type": "CR2032"
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "eQ-3",
@@ -2373,6 +2432,13 @@
             "manufacturer": "eWeLink",
             "model": "66666",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "eWeLink",
+            "model": "Contact sensor",
+            "model_id": "SNZB-04",
+            "hw_version": "0",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "eWeLink",
@@ -3220,6 +3286,14 @@
             "manufacturer": "Ikea",
             "model": "TREDANSEN cellular blind (E2103)",
             "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "IKEA",
+            "model": "VALLHORN wireless motion sensor",
+            "model_id": "E2134",
+            "hw_version": "1",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "IKEA",
@@ -6535,6 +6609,14 @@
             "model": "Thermostat radiator valve (TV02-Zigbee)",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Thermostatic radiator valve.",
+            "model_id": "TRV602Z",
+            "hw_version": "1",
+            "battery_type": "AA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "TuYa",
