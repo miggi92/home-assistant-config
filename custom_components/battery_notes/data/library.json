@@ -974,6 +974,13 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Radiator Thermostat E1",
+            "model_id": "SRTS-A01",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Roller shade driver E1",
             "model_id": "ZNJLBL01LM",
             "battery_type": "Rechargeable"
@@ -1035,6 +1042,11 @@
         {
             "manufacturer": "Aqara",
             "model": "Temperature and humidity sensor (WSDCGQ11LM)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Temperature and humidity sensor T1 (WSDCGQ12LM)",
             "battery_type": "CR2032"
         },
         {
@@ -4767,6 +4779,12 @@
         },
         {
             "manufacturer": "rtl_433",
+            "model": "Nexus-TH",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "rtl_433",
             "model": "Oregon-THGR122N",
             "battery_type": "AAA",
             "battery_quantity": 2
@@ -6129,6 +6147,14 @@
             "manufacturer": "TuYa",
             "model": "Button scene switch (SH-SC07)",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Contact sensor",
+            "model_id": "WL-19DWZ",
+            "hw_version": "0",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "Tuya",
