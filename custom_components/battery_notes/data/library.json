@@ -292,6 +292,11 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "_TZ3000_yj6k7vfo",
+            "model": "TS0041",
+            "battery_type": "CR2032"
+        },
+        {
             "manufacturer": "_TZ3000_ywagc4rj",
             "model": "TS0201",
             "battery_type": "CR2032"
@@ -362,6 +367,11 @@
             "model": "TS0601",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "_TZE200_bh3n6gk8",
+            "model": "TS0601",
+            "battery_type": "CR2450"
         },
         {
             "manufacturer": "_TZE200_bjawzodf",
@@ -2046,6 +2056,12 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-WDS40-TH-I",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-WDS40-TH-I-2",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -2288,6 +2304,26 @@
             "manufacturer": "eQ-3",
             "model": "HmIP-WTH-2",
             "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "Homematic IP Bewegungsmelder",
+            "model_id": "HmIP-SMO-A",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "Homematic IP Temperatur- und Luftfeuchtigkeitssensor",
+            "model_id": "HmIP-STHO",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "M-WDS40-TH-I",
+            "battery_type": "AA",
             "battery_quantity": 2
         },
         {
@@ -4185,6 +4221,13 @@
             "model": "NQ-9121",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Nous",
+            "model": "Temperature and humidity sensor with clock",
+            "model_id": "SZ-T04",
+            "battery_type": "AAA",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "NUKI",
