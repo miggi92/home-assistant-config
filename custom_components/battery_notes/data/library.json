@@ -1014,6 +1014,13 @@
         },
         {
             "manufacturer": "Aqara",
+            "model": "Smart Lock U200",
+            "model_id": "10242",
+            "hw_version": "1.0.0.0",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Aqara",
             "model": "Smart radiator thermostat E1 (SRTS-A01)",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -1313,7 +1320,7 @@
         {
             "manufacturer": "AVATTO",
             "model": "ME167",
-            "battery_type": "AAA",
+            "battery_type": "AA",
             "battery_quantity": 2
         },
         {
@@ -2517,6 +2524,11 @@
             "manufacturer": "eWeLink",
             "model": "SNZB-03",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "eWeLink",
+            "model": "SNZB-03P",
+            "battery_type": "CR2477"
         },
         {
             "manufacturer": "eWeLink",
@@ -4023,6 +4035,11 @@
         },
         {
             "manufacturer": "Moes",
+            "model": "Light sensor (ZSS-QT-LS-C)",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Moes",
             "model": "Smart door and window sensor (ZSS-JM-GWM-C-MS)",
             "model_id": "_TZ3000_decxrtwa",
             "battery_type": "CR2032"
@@ -4583,6 +4600,11 @@
             "manufacturer": "PLab",
             "model": "HomeButtons",
             "battery_type": "18650"
+        },
+        {
+            "manufacturer": "PLAID SYSTEMS",
+            "model": "Spruce temperature and moisture sensor (PS-SPRZMS-SLP3)",
+            "battery_type": "CR123"
         },
         {
             "manufacturer": "plant",
@@ -6514,6 +6536,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Smoke sensor",
+            "model_id": "TS0601_smoke_4",
+            "hw_version": "1",
+            "battery_type": "CR2"
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Smoke sensor (TS0205)",
             "battery_type": "CR123"
@@ -6573,6 +6602,11 @@
             "battery_type": "CR2450"
         },
         {
+            "manufacturer": "Tuya",
+            "model": "Temperature & humidity sensor (TT001ZAV20)",
+            "battery_type": "CR2450"
+        },
+        {
             "manufacturer": "TuYa",
             "model": "Temperature & humidity sensor (WSD500A)",
             "battery_type": "AAA",
@@ -6611,6 +6645,13 @@
             "model_id": "ZG-227Z",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature and humidity sensor",
+            "model_id": "ZG-227Z",
+            "hw_version": "1",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Tuya",
