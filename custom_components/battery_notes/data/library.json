@@ -2434,8 +2434,22 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "Homematic Funk-T\u00fcrschlossantrieb KeyMatic",
+            "model_id": "HM-Sec-Key",
+            "battery_type": "AA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "Homematic IP Bewegungsmelder",
             "model_id": "HmIP-SMO-A",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "Homematic IP Bewegungsmelder",
+            "model_id": "HmIP-SMO-A-2",
             "battery_type": "AA",
             "battery_quantity": 2
         },
@@ -4455,7 +4469,17 @@
         },
         {
             "manufacturer": "OnePlus",
+            "model": "BE2026",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "OnePlus",
             "model": "CPH2451",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "OnePlus",
+            "model": "ONEPLUS A6003",
             "battery_type": "Rechargeable"
         },
         {
@@ -5484,6 +5508,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "SilverCrest",
+            "model": "Window and Door Sensor",
+            "model_id": "TY0203",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
             "manufacturer": "Simplisafe",
             "model": "Alarm control panel",
             "battery_type": "AA",
@@ -6287,6 +6318,11 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "Tractive GmbH",
+            "model": "TRNJA4",
+            "battery_type": "Rechargeable"
+        },
+        {
             "manufacturer": "Trust",
             "model": "COSensor-EM",
             "battery_type": "CR123A"
@@ -6810,6 +6846,13 @@
             "manufacturer": "TuYa",
             "model": "Temperature & humidity LCD sensor (ZG-227ZL)",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Temperature & humidity sensor",
+            "model_id": "WSD500A",
+            "battery_type": "AAA",
+            "battery_quantity": 2
         },
         {
             "manufacturer": "TuYa",
