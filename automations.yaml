@@ -1,50 +1,50 @@
-- id: "1690789658458"
+- id: '1690789658458'
   alias: Android Auto Miguel
-  description: ""
+  description: ''
   trigger:
-    - platform: state
-      entity_id:
-        - binary_sensor.pixel_7_pro_android_auto
-      to: "on"
+  - platform: state
+    entity_id:
+    - binary_sensor.pixel_7_pro_android_auto
+    to: 'on'
   condition: []
   action:
-    - service: notify.mobile_app_pixel_7_pro
+  - service: notify.mobile_app_pixel_7_pro
+    data:
+      title: Connected 2 car
+      message: This device is connected to android auto.
       data:
-        title: Connected 2 car
-        message: This device is connected to android auto.
-        data:
-          car_ui: true
-          notification_icon: mdi:car
-          channel: Auto
-          importance: high
+        car_ui: true
+        notification_icon: mdi:car
+        channel: Auto
+        importance: high
   mode: single
-- id: "1691433091247"
-  alias: "Roomba Behälter "
-  description: "Roomba Behälter "
+- id: '1691433091247'
+  alias: 'Roomba Behälter '
+  description: 'Roomba Behälter '
   trigger:
-    - platform: state
-      entity_id:
-        - binary_sensor.roomba_bin_full
-      to: "on"
+  - platform: state
+    entity_id:
+    - binary_sensor.roomba_bin_full
+    to: 'on'
   condition: []
   action:
-    - service: notify.telegram_home_group
-      data:
-        title: "Roomba "
-        message: Behälter ist voll. Bitte leeren l.
+  - service: notify.telegram_home_group
+    data:
+      title: 'Roomba '
+      message: Behälter ist voll. Bitte leeren l.
   mode: single
-- id: "1708473160035"
-  alias: "Battery replacement "
-  description: ""
+- id: '1708473160035'
+  alias: 'Battery replacement '
+  description: ''
   use_blueprint:
     path: andrew-codechimp/battery_notes_battery_replaced.yaml
-- id: "1718953674625"
+- id: '1718953674625'
   alias: Miguel Heuschnupfen
-  description: ""
+  description: ''
   use_blueprint:
     path: Aohzan/medication_reminder_android.yaml
     input:
-      reminder_time: "10:30:00"
+      reminder_time: '10:30:00'
       notify_device: a56330b859925d5ea5863e1c7404cb69
       input_boolean: input_boolean.miguel_heuschnupfen_tablette_genommen
       notification_title: Tabletten Erinnerung!
@@ -56,29 +56,69 @@
       logbook_message_taken: Tabletten genommen
       logbook_message_skip: Erinnerung ausgesetzt
       logbook_message_no_answer: Keine Antwort
-- id: "1728850959105"
+- id: '1728850959105'
   alias: Reset Internet
   description: Steckdose an und ausschalten damit die Verbindung neu aufgebaut wird.
   triggers:
-    - trigger: state
-      entity_id:
-        - sensor.fritz_repeater_1200_ax_letzter_neustart
-      to: unavailable
+  - trigger: state
+    entity_id:
+    - sensor.fritz_repeater_1200_ax_letzter_neustart
+    to: unavailable
   conditions: []
   actions:
-    - action: switch.turn_off
-      metadata: {}
-      data: {}
-      target:
-        entity_id: switch.tabletsteckdose
-    - delay:
-        hours: 0
-        minutes: 0
-        seconds: 15
-        milliseconds: 0
-    - action: switch.turn_on
-      metadata: {}
-      data: {}
-      target:
-        entity_id: switch.tabletsteckdose
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.tabletsteckdose
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 15
+      milliseconds: 0
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.tabletsteckdose
+  mode: single
+- id: '1736551020218'
+  alias: SZ zu warm
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.schlafzimmertemperatur
+    above: 18
+  conditions:
+  - condition: sun
+    after: sunset
+    before: sunrise
+    before_offset: 01:00:00
+  actions:
+  - action: cover.open_cover
+    metadata: {}
+    data: {}
+    target:
+      area_id: schlafzimmer
+  mode: single
+- id: '1736807752549'
+  alias: SZ zu kalt
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.schlafzimmertemperatur
+    below: 15
+  conditions:
+  - condition: sun
+    before: sunrise
+    before_offset: 01:00:00
+    after: sunset
+  actions:
+  - action: cover.close_cover
+    metadata: {}
+    data: {}
+    target:
+      area_id: schlafzimmer
   mode: single

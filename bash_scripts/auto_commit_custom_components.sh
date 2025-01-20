@@ -2,8 +2,8 @@
 cd /config
 
 # git config
-git config username.user miggi92
-git config username.email miggi92@users.noreply.github.com
+git config --global user.name miggi92
+git config --global user.email miggi92@users.noreply.github.com
 
 git add custom_components/*
 git commit -m "chore: :arrow_up: upgrade custom components"
