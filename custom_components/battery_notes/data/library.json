@@ -2061,6 +2061,12 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HM-Sec-Key",
+            "battery_type": "AA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-Sec-MDIR-2",
             "battery_type": "AA",
             "battery_quantity": 3
@@ -2311,6 +2317,18 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HmIP-SMO-A",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HmIP-SMO-A-2",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HmIP-SPI",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -2330,6 +2348,12 @@
             "manufacturer": "eQ-3",
             "model": "HmIP-STHD",
             "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
+            "model": "HmIP-STHO",
+            "battery_type": "AA",
             "battery_quantity": 2
         },
         {
@@ -2429,34 +2453,6 @@
         {
             "manufacturer": "eQ-3",
             "model": "HmIP-WTH-B-2",
-            "battery_type": "AA",
-            "battery_quantity": 2
-        },
-        {
-            "manufacturer": "eQ-3",
-            "model": "Homematic Funk-T\u00fcrschlossantrieb KeyMatic",
-            "model_id": "HM-Sec-Key",
-            "battery_type": "AA",
-            "battery_quantity": 3
-        },
-        {
-            "manufacturer": "eQ-3",
-            "model": "Homematic IP Bewegungsmelder",
-            "model_id": "HmIP-SMO-A",
-            "battery_type": "AA",
-            "battery_quantity": 2
-        },
-        {
-            "manufacturer": "eQ-3",
-            "model": "Homematic IP Bewegungsmelder",
-            "model_id": "HmIP-SMO-A-2",
-            "battery_type": "AA",
-            "battery_quantity": 2
-        },
-        {
-            "manufacturer": "eQ-3",
-            "model": "Homematic IP Temperatur- und Luftfeuchtigkeitssensor",
-            "model_id": "HmIP-STHO",
             "battery_type": "AA",
             "battery_quantity": 2
         },
@@ -3835,6 +3831,13 @@
             "manufacturer": "Leedarson",
             "model": "4-Key Remote Controller (6ARCZABZH)",
             "battery_type": "CR2450"
+        },
+        {
+            "manufacturer": "Legrand",
+            "model": "Wireless double remote switch",
+            "model_id": "067774",
+            "hw_version": "V3",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Lidl",
@@ -6646,6 +6649,13 @@
             "model_id": "hbluag8nbjwtkyqs",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Tuya",
+            "model": "Photoelectric smoke detector",
+            "model_id": "PA-44Z",
+            "hw_version": "1",
+            "battery_type": "E"
         },
         {
             "manufacturer": "TuYa",
