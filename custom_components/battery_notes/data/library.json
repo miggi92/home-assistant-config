@@ -1106,7 +1106,7 @@
             "model": "U200",
             "model_id": "Aqara Smart Lock U200 (10242)",
             "hw_version": "1.0.0.0",
-            "battery_type": "Rechargable"
+            "battery_type": "Rechargeable"
         },
         {
             "manufacturer": "Aqara",
@@ -4427,6 +4427,16 @@
             "model": "Smart Valve",
             "battery_type": "AA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Nexturn",
+            "model": "Door_Sensor",
+            "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Nexturn",
+            "model": "Leak_Sensor",
+            "battery_type": "CR123A"
         },
         {
             "manufacturer": "Nortek Security & Control LLC",
@@ -7860,6 +7870,12 @@
             "manufacturer": "XIAOMI",
             "model": "lumi.sen_ill.mgl01",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Xiaomi",
+            "model": "lumi.sensor_magnet",
+            "model_id": "MCCGQ01LM",
+            "battery_type": "CR1632"
         },
         {
             "manufacturer": "Xiaomi",
