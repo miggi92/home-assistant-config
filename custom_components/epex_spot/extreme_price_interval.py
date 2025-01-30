@@ -30,14 +30,14 @@ def _calc_interval_price(marketdata, start_time: datetime, duration: timedelta):
             active_duration_in_this_segment = mp.end_time - start_time
 
         total_price += (
-            mp.price_eur_per_mwh
+            mp.price_per_kwh
             * active_duration_in_this_segment.total_seconds()
             / SECONDS_PER_HOUR
         )
 
         start_time = mp.end_time
 
-    return round(total_price, 2)
+    return round(total_price, 6)
 
 
 def _calc_start_times(
@@ -91,14 +91,14 @@ def find_extreme_price_interval(marketdata, start_times, duration: timedelta, cm
     if interval_start_time is None:
         return None
 
-    interval_price = round(interval_price, 2)
+    interval_price = round(interval_price, 6)
 
     return {
         "start": dt_util.as_local(interval_start_time),
         "end": dt_util.as_local(interval_start_time + duration),
         "interval_price": interval_price,
         "price_per_hour": round(
-            interval_price * SECONDS_PER_HOUR / duration.total_seconds(), 2
+            interval_price * SECONDS_PER_HOUR / duration.total_seconds(), 6
         ),
     }
 

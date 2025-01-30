@@ -153,7 +153,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="child_lock",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="child_lock",
-        on_value=SHCThermostat.ThermostatService.State.ON,
+        on_value=True,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:lock",
@@ -563,5 +563,4 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             "name": self._shc.name,
             "manufacturer": self._shc.manufacturer,
             "model": self._shc.model,
-            "via_device": self._shc.via_device_id,
         }

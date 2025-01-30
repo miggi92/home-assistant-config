@@ -1,20 +1,24 @@
-import aiohttp
+"""SourceShell"""
+
 from datetime import timedelta
 import logging
 from typing import Any
+
+import aiohttp
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.util import dt
 
 from .const import (
     CONF_DURATION,
-    CONF_EARLIEST_START_TIME,
     CONF_EARLIEST_START_POST,
-    CONF_LATEST_END_TIME,
+    CONF_EARLIEST_START_TIME,
     CONF_LATEST_END_POST,
+    CONF_LATEST_END_TIME,
     CONF_MARKET_AREA,
     CONF_SOURCE,
     CONF_SOURCE_AWATTAR,
+    CONF_SOURCE_ENERGYFORECAST,
     CONF_SOURCE_EPEX_SPOT_WEB,
     CONF_SOURCE_SMARD_DE,
     CONF_SOURCE_SMARTENERGY,
@@ -28,7 +32,7 @@ from .const import (
     DEFAULT_TAX,
     EMPTY_EXTREME_PRICE_INTERVAL_RESP,
 )
-from .EPEXSpot import SMARD, Awattar, EPEXSpotWeb, smartENERGY, Tibber
+from .EPEXSpot import SMARD, Awattar, Energyforecast, EPEXSpotWeb, Tibber, smartENERGY
 from .extreme_price_interval import find_extreme_price_interval, get_start_times
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,6 +65,12 @@ class SourceShell:
             )
         elif config_entry.data[CONF_SOURCE] == CONF_SOURCE_TIBBER:
             self._source = Tibber.Tibber(
+                market_area=config_entry.data[CONF_MARKET_AREA],
+                token=self._config_entry.data[CONF_TOKEN],
+                session=session,
+            )
+        elif config_entry.data[CONF_SOURCE] == CONF_SOURCE_ENERGYFORECAST:
+            self._source = Energyforecast.Energyforecast(
                 market_area=config_entry.data[CONF_MARKET_AREA],
                 token=self._config_entry.data[CONF_TOKEN],
                 session=session,
@@ -131,27 +141,35 @@ class SourceShell:
             self.marketdata,
         )
         sorted_sorted_marketdata_today = sorted(
-            sorted_marketdata_today, key=lambda e: e.price_eur_per_mwh
+            sorted_marketdata_today, key=lambda e: e.price_per_kwh
         )
         self._sorted_marketdata_today = sorted_sorted_marketdata_today
 
-    def to_net_price(self, price_eur_per_mwh):
-        net_p = price_eur_per_mwh / 10  # convert from EUR/MWh to ct/kWh
+    def to_net_price(self, price_per_kwh):
+        net_p = price_per_kwh
 
-        # Tibber already reaturns the net price for the customer
-        if "Tibber API" not in self.name:
-            surcharge_pct = self._config_entry.options.get(
-                CONF_SURCHARGE_PERC, DEFAULT_SURCHARGE_PERC
-            )
-            surcharge_abs = self._config_entry.options.get(
-                CONF_SURCHARGE_ABS, DEFAULT_SURCHARGE_ABS
-            )
-            tax = self._config_entry.options.get(CONF_TAX, DEFAULT_TAX)
+        # Retrieve tax and surcharge values from config
+        surcharge_abs = self._config_entry.options.get(
+            CONF_SURCHARGE_ABS, DEFAULT_SURCHARGE_ABS
+        )
+        tax = self._config_entry.options.get(CONF_TAX, DEFAULT_TAX)
+
+        surcharge_pct = self._config_entry.options.get(
+            CONF_SURCHARGE_PERC, DEFAULT_SURCHARGE_PERC
+        )
+
+        # Custom calculation for SMARTENERGY
+        if self.name == "smartENERGY API V1":
+            net_p *= 1.0 + (tax / 100.0)
+            net_p += surcharge_abs
+            net_p *= 1.0 + (surcharge_pct / 100.0)
+        # Standard calculation for other cases
+        elif "Tibber API" not in self.name:
             net_p = net_p + abs(net_p) * surcharge_pct / 100
             net_p += surcharge_abs
-            net_p *= 1 + (tax / 100)
+            net_p *= 1 + (tax / 100.0)
 
-        return round(net_p, 3)
+        return round(net_p, 6)
 
     def find_extreme_price_interval(self, call_data, cmp):
         duration: timedelta = call_data[CONF_DURATION]
@@ -176,7 +194,6 @@ class SourceShell:
         return {
             "start": result["start"],
             "end": result["start"] + duration,
-            "price_eur_per_mwh": result["price_per_hour"],
-            "price_ct_per_kwh": round(result["price_per_hour"] / 10, 3),
-            "net_price_ct_per_kwh": self.to_net_price(result["price_per_hour"]),
+            "price_per_kwh": round(result["price_per_hour"], 6),
+            "net_price_per_kwh": self.to_net_price(result["price_per_hour"]),
         }
