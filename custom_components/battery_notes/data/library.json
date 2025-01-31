@@ -1784,6 +1784,12 @@
         },
         {
             "manufacturer": "Danfoss",
+            "model": "LCZ251",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Danfoss",
             "model": "TRV001",
             "battery_type": "AA",
             "battery_quantity": 2
