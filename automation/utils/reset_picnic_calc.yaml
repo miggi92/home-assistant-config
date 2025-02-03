@@ -1,0 +1,18 @@
+---
+# Reset counter
+alias: Reset picnic counter
+id: 0adfa03b-b03a-487c-961c-657907bc05d5
+description: "Reset picnic counter every month"
+trigger:
+  - platform: time_pattern
+    hours: 0
+    minutes: 0
+    days: 1
+condition: []
+action:
+  - action: counter.reset
+    target:
+      entity_id:
+        - counter.picnic_monats_kosten
+    data: {}
+mode: single
