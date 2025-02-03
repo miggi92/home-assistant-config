@@ -44,6 +44,10 @@ action:
                 channel: Gesundheit
                 car_ui: true
                 notification_icon: "mdi:pill"
+                actions:
+                  - action: "URI"
+                    title: "Öffnen"
+                    uri: "/lovelace-mobile/medication"
   - choose:
       - conditions: "{{ medis_silke != '' }}"
         sequence:
@@ -55,3 +59,7 @@ action:
                 channel: Gesundheit
                 car_ui: true
                 notification_icon: "mdi:pill"
+                actions:
+                  - action: "URI"
+                    title: "Öffnen"
+                    uri: "/lovelace-mobile/medication"
