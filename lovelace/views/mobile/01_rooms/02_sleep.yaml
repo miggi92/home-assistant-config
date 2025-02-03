@@ -134,10 +134,6 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-entity-card
-        entity: sensor.schlafzimmerbewegungssensor_illuminance_lux
-  - type: horizontal-stack
-    cards:
-      - type: custom:mushroom-entity-card
         entity: binary_sensor.schlafzimmerbewegungssensor_occupancy
   - type: custom:decluttering-card
     template: area_battery_card_template
