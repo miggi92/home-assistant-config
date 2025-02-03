@@ -7,12 +7,24 @@ trigger:
   - platform: time_pattern
     hours: 0
     minutes: 0
-    days: 1
-condition: []
+condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
 action:
+  - if:
+      - condition: template
+        value_template: "{{ now().month == 1 }}"
+    then:
+      - action: counter.reset
+        target:
+          entity_id:
+            - counter.picnic_jahres_kosten
+        data: {}
+    alias: Check if it january
   - action: counter.reset
     target:
       entity_id:
         - counter.picnic_monats_kosten
     data: {}
+
 mode: single
