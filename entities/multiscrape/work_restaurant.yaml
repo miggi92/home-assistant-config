@@ -1,6 +1,6 @@
 ---
 # Work Restaurant
-resource: "{{ states('input_text.serverurl') }}/local/browserless/work_restaurant.html"
+resource_template: "{{ states('input_text.serverurl') }}/local/browserless/work_restaurant.html"
 scan_interval: 0
 timeout: 30
 log_response: true
