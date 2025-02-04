@@ -45,7 +45,7 @@ jobs:
       - name: ⤵️ Check out configuration from GitHub
         uses: actions/checkout@v4.2.2
       - name: 🚀 Run Home Assistant Configuration Check
-        uses: frenck/action-home-assistant@941d5d917f4c1c7a7e7d4087526daf90d53f4437 " v1.4.1
+        uses: frenck/action-home-assistant@3752f6a3b0d7b9f6739e6bfe06332822fcce2405 " v1.4.1
         with:
           path: "."
           secrets: ./secrets.fake.yaml
