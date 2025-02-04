@@ -1,0 +1,22 @@
+---
+# Calculate picnic prices
+alias: Calculate picnic price
+id: 70e62f73-2464-477a-9525-d12e171c3cdd
+description: "Calc picnic price"
+trigger:
+  - platform: state
+    entity_id: sensor.picnic_status_der_letzten_bestellung
+    to: "COMPLETED"
+condition: []
+action:
+  - action: counter.set_value
+    target:
+      entity_id: counter.picnic_monats_kosten
+    data:
+      value: "{{ ( states('counter.picnic_monats_kosten') | float + states('sensor.picnic_gesamtpreis_der_letzten_bestellung') | float ) | round(0) }}"
+  - action: counter.set_value
+    target:
+      entity_id: counter.picnic_jahres_kosten
+    data:
+      value: "{{ ( states('counter.picnic_jahres_kosten') | float + states('sensor.picnic_gesamtpreis_der_letzten_bestellung') | float ) | round(0) }}"
+mode: single

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from boschshcpy import SHCSession
+from boschshcpy import SHCSession, SHCEmma
 from boschshcpy.device import SHCDevice
 
 from homeassistant.components.sensor import (
@@ -19,7 +19,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -35,6 +35,7 @@ async def async_setup_entry(
     """Set up the SHC sensor platform."""
     entities: list[SensorEntity] = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    sensor: SHCDevice
 
     for sensor in session.device_helper.thermostats:
         await async_migrate_to_new_unique_id(
@@ -238,6 +239,14 @@ async def async_setup_entry(
             )
         )
 
+    sensor = session.emma
+    entities.append(
+        EmmaPowerSensor(
+            device=sensor,
+            entry_id=config_entry.entry_id,
+        )
+    )
+
     if entities:
         async_add_entities(entities)
 
@@ -402,6 +411,47 @@ class PowerSensor(SHCEntity, SensorEntity):
     def native_value(self):
         """Return the state of the sensor."""
         return self._device.powerconsumption
+
+
+class EmmaPowerSensor(SHCEntity, SensorEntity):
+    """Representation of an SHC power reporting sensor."""
+
+    _attr_entity_registry_enabled_default = False
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, device: SHCEmma, entry_id: str) -> None:
+        """Initialize an SHC power reporting sensor."""
+        super().__init__(device, entry_id)
+        self._attr_name = f"{device.name} Power"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_power"
+
+    async def async_added_to_hass(self):
+        """Subscribe to SHC events."""
+        await super().async_added_to_hass()
+
+        def update_entity_information():
+            self.schedule_update_ha_state()
+
+        self._device.subscribe_callback(self.entity_id, update_entity_information)
+
+    async def async_will_remove_from_hass(self):
+        """Unsubscribe from SHC events."""
+        await super().async_will_remove_from_hass()
+        self._device.unsubscribe_callback(self.entity_id)
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor. Negative value if power is consumed from the grid, positive if fed to the grid."""
+        return self._device.value
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "power_flow": self._device.localizedSubtitles,
+        }
 
 
 class EnergySensor(SHCEntity, SensorEntity):

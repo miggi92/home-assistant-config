@@ -1,0 +1,30 @@
+---
+# Reset counter
+alias: Reset picnic counter
+id: 0adfa03b-b03a-487c-961c-657907bc05d5
+description: "Reset picnic counter every month"
+trigger:
+  - platform: time_pattern
+    hours: 0
+    minutes: 0
+condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+action:
+  - if:
+      - condition: template
+        value_template: "{{ now().month == 1 }}"
+    then:
+      - action: counter.reset
+        target:
+          entity_id:
+            - counter.picnic_jahres_kosten
+        data: {}
+    alias: Check if it january
+  - action: counter.reset
+    target:
+      entity_id:
+        - counter.picnic_monats_kosten
+    data: {}
+
+mode: single

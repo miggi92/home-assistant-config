@@ -1,6 +1,6 @@
 ---
 # Work Restaurant
-resource: "{{ states('input_text.serverurl') }}/local/browserless/work_restaurant.html"
+resource_template: "{{ states('input_text.serverurl') }}/local/browserless/work_restaurant.html"
 scan_interval: 0
 timeout: 30
 log_response: true
@@ -9,19 +9,19 @@ name: Work Meals
 sensor:
   - unique_id: work_meals
     name: "Kantinenessen"
-    select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c144-7.ng-star-inserted > div > h1"
+    select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > div > h1"
     icon: mdi:silverware-fork-knife
     attributes:
       - name: "One"
-        select: "app-category:nth-child(1) .name-column > span"
-      - name: "One Two"
-        select: "app-category:nth-child(2) .name-column > span"
+        select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > mat-card-content > div > app-menu-card > app-category-list > div > app-category:nth-child(1) > app-product-list > div > div > div > div > div.name-column.pad-right-sm.pad-bottom-sm.text-xxl > span"
+      - name: "One two"
+        select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > mat-card-content > div > app-menu-card > app-category-list > div > app-category:nth-child(2) > app-product-list > div > div > div > div > div.name-column.pad-right-sm.pad-bottom-sm.text-xxl > span"
       - name: "Three"
-        select: "app-category:nth-child(4) .name-column > span"
+        select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > mat-card-content > div > app-menu-card > app-category-list > div > app-category:nth-child(4) > app-product-list > div:nth-child(1) > div > div > div > div.name-column.pad-right-sm.pad-bottom-sm.text-xxl > span"
       - name: "Four"
-        select: "app-category:nth-child(5) .name-column > span"
+        select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > mat-card-content > div > app-menu-card > app-category-list > div > app-category:nth-child(5) > app-product-list > div > div > div > div > div.name-column.pad-right-sm.pad-bottom-sm.text-xxl > span"
       - name: "Five"
-        select: "app-category:nth-child(6) .name-column > span"
+        select: "body > app-root > mat-sidenav-container > mat-sidenav-content > td-layout > mat-sidenav-container > mat-sidenav-content > td-layout-nav > div > div > div > div > app-menus > div > div:nth-child(2) > app-menu-container > mat-card.mat-card.mat-focus-indicator.menu-container.ng-tns-c60-7.ng-star-inserted > mat-card-content > div > app-menu-card > app-category-list > div > app-category:nth-child(6) > app-product-list > div > div > div > div > div.name-column.pad-right-sm.pad-bottom-sm.text-xxl > span"
 
 button:
   - unique_id: work_meals_refresh_button

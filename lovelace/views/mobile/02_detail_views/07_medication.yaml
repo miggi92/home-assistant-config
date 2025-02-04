@@ -1,0 +1,39 @@
+---
+title: Medizin
+path: medication
+icon: mdi:medication-outline
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: back
+      - type: spacer
+  - type: "custom:auto-entities"
+    show_empty: false
+    card:
+      type: entities
+    filter:
+      include:
+        - entity_id: input_boolean.medis_miguel*
+          state: "off"
+          options:
+            type: custom:mushroom-entity-card
+            secondary_info: last-changed
+            icon: mdi:pill
+            icon_color: red
+            tap_action:
+              action: more-info
+  - type: "custom:auto-entities"
+    show_empty: false
+    card:
+      type: entities
+    filter:
+      include:
+        - entity_id: input_boolean.medis_silke*
+          state: "off"
+          options:
+            type: custom:mushroom-entity-card
+            secondary_info: last-changed
+            icon: mdi:pill
+            icon_color: red
+            tap_action:
+              action: more-info
