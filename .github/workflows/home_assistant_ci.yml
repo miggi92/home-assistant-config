@@ -1,5 +1,7 @@
 ---
 name: Home Assistant CI
+permissions:
+  contents: read
 
 # yamllint disable-line rule:truthy
 on:
