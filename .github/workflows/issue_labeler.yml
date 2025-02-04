@@ -1,5 +1,7 @@
 ---
 name: "Issue Labeler"
+permissions:
+  issues: write
 on:
   issues:
     types: [opened, edited]
