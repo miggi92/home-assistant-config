@@ -16,10 +16,10 @@ The detailled integrations can be found in the [integrations](/config/integratio
 
 | Integration         | Count |
 | ------------------- | :---: |
-| Covers              |   4   |
-| Updates             |  43   |
-| Alarm               |   2   |
-| Selects             |  20   |
+| Covers              |      |
+| Updates             |     |
+| Alarm               |      |
+| Selects             |     |
 | Automations         |  109  |
 | Areas               |  11   |
 | Images              |   2   |

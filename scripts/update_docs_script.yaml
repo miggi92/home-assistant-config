@@ -1,0 +1,11 @@
+---
+# update docs script
+update_docs_script:
+  sequence:
+    - service: python_script.update_docs
+      data:
+        covers: "{{ states('sensor.covers') }}"
+        updates: "{{ states('sensor.update') }}"
+        alarm: "{{ states('sensor.alarm_control_panels') }}"
+        selects: "{{ states('sensor.selects') }}"
+        # ... (füge alle anderen Entitäten hinzu)
