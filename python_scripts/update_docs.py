@@ -1,4 +1,3 @@
-import os
 
 covers = data.get('covers')
 updates = data.get('updates')
