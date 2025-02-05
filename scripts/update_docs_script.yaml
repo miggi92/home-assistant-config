@@ -2,7 +2,7 @@
 # update docs script
 update_docs_script:
   sequence:
-    - service: python_script.update_docs
+    - action: python_script.update_docs
       data:
         covers: "{{ states('sensor.covers') }}"
         updates: "{{ states('sensor.update') }}"
