@@ -53,7 +53,8 @@ anniversary_template:
                     border-radius: 50%;
                     background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
                   }
-      exclude: []
+      exclude:
+        - state: "> 60"
     sort:
       method: state
       reverse: false
