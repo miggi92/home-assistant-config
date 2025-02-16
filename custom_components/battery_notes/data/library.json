@@ -1158,6 +1158,12 @@
             "manufacturer": "Aqara",
             "model": "Vibration Sensor",
             "model_id": "DJT11LM",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Aqara",
+            "model": "Vibration Sensor",
+            "model_id": "DJT11LM",
             "hw_version": "3",
             "battery_type": "CR2032"
         },
