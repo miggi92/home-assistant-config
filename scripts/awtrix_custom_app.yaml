@@ -24,7 +24,6 @@ awtrix3customapp:
           min: 1
           max: 60
       default: 10
-      required: true
   sequence:
     - action: mqtt.publish
       metadata: {}
