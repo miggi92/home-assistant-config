@@ -8,6 +8,8 @@ cards:
       - type: back
       - type: spacer
       - type: entity
+        entity: input_number.heissgetranke_zahler
+      - type: entity
         entity: input_boolean.spulmaschine_aktiv
       - type: conditional
         conditions:
