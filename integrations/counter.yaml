@@ -12,6 +12,7 @@ sensor:
                           'light.kameralichter',
                           'light.schrank',
                           'light.luftfilter_display_backlight',
+                          'light.awtrix_50ccb4_matrix',
                           'light.luftfilter_light_brightness'] %}
           {{ states.light |
               selectattr('state', 'eq', 'on') |

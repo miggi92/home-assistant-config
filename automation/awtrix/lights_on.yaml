@@ -20,6 +20,6 @@ action:
       - action: script.awtrix3customapp
         data:
           app_id: lights
-          text: "{{ states('sensor.count_lights_on') | int }} Lichter an"
+          text: "{{ states('sensor.count_lights_on') | int }}"
           icon: "1762"
 mode: single
