@@ -1,6 +1,6 @@
 ---
 # AWTRIX 3 Notifications
-awtrix3notif:
+awtrix3customApp:
   fields:
     app_id:
       selector:
@@ -13,11 +13,6 @@ awtrix3notif:
         text: null
       name: Text
       description: Text Benachrichtigung
-    rainbow:
-      selector:
-        boolean: {}
-      name: rainbow
-      default: false
   sequence:
     - action: mqtt.publish
       metadata: {}
@@ -27,7 +22,8 @@ awtrix3notif:
           {
             "text": "{{ text }}",
             "duration": 10,
-            "rainbow": "{{ rainbow }}"
+            "rainbow": false,
+            "icon": "{{ icon }}"
           }
-  alias: awtrix3Notif
+  alias: awtrix3CustomApp
   description: ""

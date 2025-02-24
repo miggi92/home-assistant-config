@@ -1,0 +1,16 @@
+---
+# Show daily hot beverages
+alias: Show daily hot beverages
+id: c8718743-1084-41e6-a047-3483fe692c8b
+description: "Show daily hot beverages"
+trigger:
+  - platform: state
+    entity_id: input_number.heissgetranke_zahler
+condition: []
+action:
+  - action: script.awtrix3notif
+    data:
+      app_id: coffee
+      text: "{{ states('input_number.heissgetranke_zahler') }}"
+      icon: "14060"
+mode: single
