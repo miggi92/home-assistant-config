@@ -7,7 +7,7 @@ trigger:
   - platform: numeric_state
     entity_id: sensor.kaffemaschine_power
     above: 1000
-    for: "00:00:30"
+    for: "00:00:15"
 condition: []
 action:
   - service: input_number.increment

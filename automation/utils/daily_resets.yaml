@@ -1,0 +1,14 @@
+---
+# Daily resets
+alias: DailyResets
+id: 041e11a9-6487-4743-b846-3c340834a87f
+description: "Daily reset"
+trigger:
+  platform: time
+  at: "00:00:00"
+action:
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.heissgetranke_zahler
+    data:
+      value: 0

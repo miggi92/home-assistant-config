@@ -1,6 +1,6 @@
 ---
 # AWTRIX 3 Notifications
-awtrix3customApp:
+awtrix3customapp:
   fields:
     app_id:
       selector:
@@ -13,6 +13,11 @@ awtrix3customApp:
         text: null
       name: Text
       description: Text Benachrichtigung
+    icon:
+      selector:
+        text: null
+      name: Icon Id
+      description: Icon ID
   sequence:
     - action: mqtt.publish
       metadata: {}

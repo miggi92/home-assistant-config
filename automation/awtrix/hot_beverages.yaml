@@ -8,9 +8,9 @@ trigger:
     entity_id: input_number.heissgetranke_zahler
 condition: []
 action:
-  - action: script.awtrix3notif
+  - action: script.awtrix3customapp
     data:
       app_id: coffee
-      text: "{{ states('input_number.heissgetranke_zahler') }}"
+      text: "{{ states('input_number.heissgetranke_zahler') | int }}"
       icon: "14060"
 mode: single
