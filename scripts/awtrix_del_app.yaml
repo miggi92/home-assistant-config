@@ -1,0 +1,18 @@
+---
+# AWTRIX 3 Delete App Notif
+awtrix3delapp:
+  fields:
+    app_id:
+      selector:
+        text: null
+      name: AppId
+      description: App ID der Benachrichtigung
+      required: true
+  sequence:
+    - action: mqtt.publish
+      metadata: {}
+      data:
+        topic: "awtrix_50ccb4/custom/{{ app_id }}"
+        payload: ""
+  alias: awtrix3DelApp
+  description: ""

@@ -1,0 +1,33 @@
+---
+# AWTRIX 3 Notifications
+awtrix3notif:
+  fields:
+    app_id:
+      selector:
+        text: null
+      name: AppId
+      description: App ID der Benachrichtigung
+      required: true
+    text:
+      selector:
+        text: null
+      name: Text
+      description: Text Benachrichtigung
+    rainbow:
+      selector:
+        boolean: {}
+      name: rainbow
+      default: false
+  sequence:
+    - action: mqtt.publish
+      metadata: {}
+      data:
+        topic: "awtrix_50ccb4/custom/{{ app_id }}"
+        payload: |-
+          {
+            "text": "{{ text }}",
+            "duration": 10,
+            "rainbow": "{{ rainbow }}"
+          }
+  alias: awtrix3Notif
+  description: ""
