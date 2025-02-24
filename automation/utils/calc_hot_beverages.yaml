@@ -6,8 +6,8 @@ description: "Calculate amount of hot beverages made"
 trigger:
   - platform: numeric_state
     entity_id: sensor.kaffemaschine_power
-    above: 1000
-    for: "00:00:15"
+    above: 600
+    for: "00:00:05"
 condition: []
 action:
   - service: input_number.increment
