@@ -1,0 +1,24 @@
+---
+#
+alias: Show waste on clock
+id: 33ea773e-67d2-4f5c-97ba-778d098b0ade
+description: "Show waste on clock"
+trigger:
+  - platform: state
+    entity_id: sensor.restmull_2
+condition: []
+action:
+  - if:
+      - condition: template
+        value_template: "{{ state_attr('sensor.restmull_2', 'daysTo') <= '1' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: waste
+          text: "{{ state_attr('sensor.restmull_2', 'friendly_name') }}"
+          icon: "57283"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: waste
+mode: single
