@@ -1,13 +1,7 @@
 ---
 # AWTRIX 3 Notifications
-awtrix3customapp:
+awtrix3notif:
   fields:
-    app_id:
-      selector:
-        text: null
-      name: AppId
-      description: App ID der Benachrichtigung
-      required: true
     text:
       selector:
         text: null
@@ -29,7 +23,7 @@ awtrix3customapp:
     - action: mqtt.publish
       metadata: {}
       data:
-        topic: "awtrix_50ccb4/custom/{{ app_id }}"
+        topic: "awtrix_50ccb4/notify"
         payload: |-
           {
             "text": "{{ text }}",
@@ -37,5 +31,5 @@ awtrix3customapp:
             "rainbow": false,
             "icon": "{{ icon }}"
           }
-  alias: awtrix3CustomApp
+  alias: awtrix3Notify
   description: ""
