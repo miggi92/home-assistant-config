@@ -42,6 +42,9 @@ async def async_setup_entry(
         PenaltiesSelect(coordinator, entry),
     ]
 
+    for kid_id in coordinator.kids_data.keys():
+        selects.append(ChoresKidSelect(coordinator, entry, kid_id))
+
     async_add_entities(selects)
 
 
@@ -152,3 +155,31 @@ class PenaltiesSelect(KidsChoresSelectBase):
             penalty_info.get("name", f"Penalty {penalty_id}")
             for penalty_id, penalty_info in self.coordinator.penalties_data.items()
         ]
+
+
+class ChoresKidSelect(KidsChoresSelectBase):
+    """Select entity listing only the chores assigned to a specific kid."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "chores_kid_select"
+
+    def __init__(
+        self, coordinator: KidsChoresDataCoordinator, entry: ConfigEntry, kid_id: str
+    ):
+        """Initialize the ChoresKidSelect."""
+        super().__init__(coordinator, entry)
+        self._kid_id = kid_id
+        kid_name = coordinator.kids_data.get(kid_id, {}).get("name", f"Kid {kid_id}")
+        self._attr_unique_id = f"{entry.entry_id}_chores_select_{kid_id}"
+        self._attr_name = f"KidsChores: Chores for {kid_name}"
+        self.entity_id = f"select.kc_{kid_name}_chore_list"
+
+    @property
+    def options(self) -> list[str]:
+        """Return a list of chore names assigned to this kid, with a 'None' option."""
+        # Start with a "None" entry
+        options = ["None"]
+        for chore_id, chore in self.coordinator.chores_data.items():
+            if self._kid_id in chore.get("assigned_kids", []):
+                options.append(chore.get("name", f"Chore {chore_id}"))
+        return options

@@ -153,7 +153,7 @@
           "icon": "Icon (mdi:xxx)",
           "assigned_kids": "Assigned Kids",
           "type": "Type of Achievement",
-          "selected_chore_id": "Select Chore Associated with Streak",
+          "selected_chore_id": "Select Chore Associated",
           "criteria": "Criteria (optional)",
           "target_value": "Achievement Target",
           "reward_points": "Extra Points for Completing Achievement",
@@ -352,7 +352,7 @@
           "icon": "Icon (mdi:xxx)",
           "assigned_kids": "Assigned Kids",
           "type": "Type of Achievement",
-          "selected_chore_id": "Select Chore Associated with Streak",
+          "selected_chore_id": "Select Chore Associated",
           "criteria": "Criteria (optional)",
           "target_value": "Achievement Target",
           "reward_points": "Extra Points for Completing Achievement",
@@ -467,7 +467,7 @@
           "icon": "Icon (mdi:xxx)",
           "assigned_kids": "Assigned Kids",
           "type": "Type of Achievement",
-          "selected_chore_id": "Select Chore Associated with Streak",
+          "selected_chore_id": "Select Chore Associated",
           "criteria": "Criteria (optional)",
           "target_value": "Achievement Target",
           "reward_points": "Extra Points for Completing Achievement",
@@ -571,6 +571,14 @@
       "invalid_parent": "Invalid Parent",
       "invalid_penalty": "Invalid Penalty",
       "invalid_reward": "Invalid Reward",
+      "no_kid": "No Kids are setup for edit. Add one entry first.",
+      "no_parent": "No Parents are setup for edit. Add one entry first.",
+      "no_chore": "No Chores are setup for edit. Add one entry first.",
+      "no_badge": "No Badges are setup for edit. Add one entry first.",
+      "no_reward": "No Rewards are setup for edit. Add one entry first.",
+      "no_penalty": "No Penalties are setup for edit. Add one entry first.",
+      "no_achievement": "No Achievements are setup for edit. Add one entry first.",
+      "no_challenge": "No Challenges are setup for edit. Add one entry first.",
       "setup_complete": "Setup Complete"
     }
   },
@@ -1067,28 +1075,45 @@
       "achievement_state_sensor": {
         "name": "Achievement - {achievement_name}",
         "state_attributes": {
+          "achievement_name": { "name": "Achievement Name" },
+          "description": { "name": "Description" },
+          "assigned_kids": { "name": "Assigned Kids" },
+          "type": { "name": "Type" },
+          "associated_chore": { "name": "Associated Chore" },
+          "critera": { "name": "Criteria" },
           "target_value": { "name": "Target" },
           "reward_points": { "name": "Reward Points" },
-          "type": { "name": "Type" },
           "kids_earned": { "name": "Earned by" }
         }
       },
       "challenge_state_sensor": {
         "name": "Challenge - {challenge_name}",
         "state_attributes": {
+          "challenge_name": { "name": "Challenge Name" },
+          "challenge_type": { "name": "Challenge Type" },
+          "description": { "name": "Description" },
+          "assigned_kids": { "name": "Assigned Kids" },
+          "type": { "name": "Type" },
+          "associated_chore": { "name": "Associated Chore" },
+          "critera": { "name": "Criteria" },
           "target_value": { "name": "Target" },
           "reward_points": { "name": "Reward Points" },
           "start_date": { "name": "Start Date" },
           "end_date": { "name": "End Date" },
-          "type": { "name": "Type" },
           "kids_earned": { "name": "Earned by" }
         }
       },
       "achievement_progress_sensor": {
         "name": "{kid_name} - Progress - {achievement_name}",
         "state_attributes": {
-          "achievement_name": { "name": "Name" },
+          "achievement_name": { "name": "Achievement Name" },
+          "description": { "name": "Description" },
+          "assigned_kids": { "name": "Assigned Kids" },
+          "type": { "name": "Type" },
+          "associated_chore": { "name": "Associated Chore" },
+          "critera": { "name": "Criteria" },
           "target_value": { "name": "Target" },
+          "reward_points": { "name": "Reward Points" },
           "raw_progress": { "name": "Progress" },
           "awarded": {
             "name": "Awarded",
@@ -1102,10 +1127,18 @@
       "challenge_progress_sensor": {
         "name": "{kid_name} - Progress - {challenge_name}",
         "state_attributes": {
-          "challenge_name": { "name": "Name" },
+          "challenge_name": { "name": "Challenge Name" },
+          "challenge_type": { "name": "Challenge Type" },
+          "description": { "name": "Description" },
+          "assigned_kids": { "name": "Assigned Kids" },
+          "type": { "name": "Type" },
+          "associated_chore": { "name": "Associated Chore" },
+          "critera": { "name": "Criteria" },
           "target_value": { "name": "Target" },
+          "reward_points": { "name": "Reward Points" },
+          "start_date": { "name": "Start Date" },
+          "end_date": { "name": "End Date" },
           "raw_progress": { "name": "Progress" },
-          "challenge_type": { "name": "Type" },
           "awarded": {
             "name": "Awarded",
             "state": {

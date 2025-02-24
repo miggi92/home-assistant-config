@@ -62,7 +62,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Initialize the storage manager to handle persistent data.
     storage_manager = KidsChoresStorageManager(hass, STORAGE_KEY)
-
     # Initialize new file.
     await storage_manager.async_initialize()
 
@@ -131,6 +130,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         storage_manager: KidsChoresStorageManager = hass.data[DOMAIN][entry.entry_id][
             "storage_manager"
         ]
-        await storage_manager.async_clear_data()
+        await storage_manager.async_delete_storage()
 
     LOGGER.info("KidsChores entry data cleared: %s", entry.entry_id)

@@ -6,6 +6,8 @@ the state is preserved across restarts. This includes data for kids, chores,
 badges, rewards, penalties, and their statuses.
 """
 
+import os
+
 from homeassistant.helpers.storage import Store
 from .const import (
     LOGGER,
@@ -169,6 +171,22 @@ class KidsChoresStorageManager:
             DATA_PENDING_CHORE_APPROVALS: {},
         }
         await self.async_save()
+
+    async def async_delete_storage(self) -> None:
+        """Delete the storage file completely from disk."""
+
+        # First clear in-memory data
+        await self.async_clear_data()
+
+        # Remove the file if it exists
+        if os.path.isfile(self._store._path):
+            try:
+                os.remove(self._store._path)
+                LOGGER.info("Storage file removed: %s", self._store._path)
+            except Exception as e:
+                LOGGER.error("Failed to remove storage file: %s", e)
+        else:
+            LOGGER.info("Storage file not found: %s", self._store._path)
 
     async def async_update_data(self, key, value):
         """Update a specific section of the data structure."""

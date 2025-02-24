@@ -49,13 +49,17 @@ from .const import (
     ATTR_ALLOW_MULTIPLE_CLAIMS_PER_DAY,
     ATTR_APPLICABLE_DAYS,
     ATTR_ASSIGNED_KIDS,
+    ATTR_ASSOCIATED_CHORE,
     ATTR_AWARDED,
     ATTR_BADGES,
     ATTR_CHALLENGE_NAME,
     ATTR_CHALLENGE_TYPE,
     ATTR_CLAIMED_ON,
+    ATTR_CHORE_CURRENT_STREAK,
+    ATTR_CHORE_HIGHEST_STREAK,
     ATTR_CHORE_NAME,
     ATTR_COST,
+    ATTR_CRITERIA,
     ATTR_DEFAULT_POINTS,
     ATTR_DESCRIPTION,
     ATTR_DUE_DATE,
@@ -398,10 +402,17 @@ class ChoreStatusSensor(CoordinatorEntity, SensorEntity):
             for k_id in assigned_kids_ids
         ]
 
+        kid_info = self.coordinator.kids_data.get(self._kid_id, {})
+        chore_streak_data = kid_info.get("chore_streaks", {}).get(self._chore_id, {})
+        current_streak = chore_streak_data.get("current_streak", 0)
+        highest_streak = chore_streak_data.get("max_streak", 0)
+
         attributes = {
             ATTR_KID_NAME: self._kid_name,
             ATTR_CHORE_NAME: self._chore_name,
             ATTR_DESCRIPTION: chore_info.get("description", ""),
+            ATTR_CHORE_CURRENT_STREAK: current_streak,
+            ATTR_CHORE_HIGHEST_STREAK: highest_streak,
             ATTR_SHARED_CHORE: shared,
             ATTR_GLOBAL_STATE: global_state,
             ATTR_RECURRING_FREQUENCY: chore_info.get("recurring_frequency", "None"),
@@ -1321,7 +1332,7 @@ class AchievementSensor(CoordinatorEntity, SensorEntity):
         self._achievement_id = achievement_id
         self._achievement_name = achievement_name
         self._attr_unique_id = f"{entry.entry_id}_{achievement_id}_achievement"
-        self._attr_native_unit_of_measurement = "Kids"
+        self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_translation_placeholders = {
             "achievement_name": achievement_name,
         }
@@ -1329,28 +1340,104 @@ class AchievementSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the number of kids that have earned this achievement."""
-        achievement = self.coordinator.achievements_data.get(self._achievement_id, {})
-        progress = achievement.get("progress", {})
+        """Return the overall progress percentage toward the achievement."""
 
-        # Count how many kids have been awarded
-        count = sum(1 for p in progress.values() if p.get("awarded", False))
-        return count
+        achievement = self.coordinator.achievements_data.get(self._achievement_id, {})
+        target = achievement.get("target_value", 1)
+        assigned_kids = achievement.get("assigned_kids", [])
+
+        if not assigned_kids:
+            return 0
+
+        ach_type = achievement.get("type")
+        if ach_type == ACHIEVEMENT_TYPE_TOTAL:
+            total_current = 0
+            total_effective_target = 0
+
+            for kid_id in assigned_kids:
+                progress_data = achievement.get("progress", {}).get(kid_id, {})
+                baseline = (
+                    progress_data.get("baseline", 0)
+                    if isinstance(progress_data, dict)
+                    else 0
+                )
+                current_total = self.coordinator.kids_data.get(kid_id, {}).get(
+                    "completed_chores_total", 0
+                )
+                total_current += current_total
+                total_effective_target += baseline + target
+
+            percent = (
+                (total_current / total_effective_target * 100)
+                if total_effective_target > 0
+                else 0
+            )
+
+        elif ach_type == ACHIEVEMENT_TYPE_STREAK:
+            total_current = 0
+
+            for kid_id in assigned_kids:
+                progress_data = achievement.get("progress", {}).get(kid_id, {})
+                total_current += (
+                    progress_data.get("current_streak", 0)
+                    if isinstance(progress_data, dict)
+                    else 0
+                )
+
+            global_target = target * len(assigned_kids)
+
+            percent = (total_current / global_target * 100) if global_target > 0 else 0
+
+        else:
+            percent = 0
+
+        return min(100, round(percent, 1))
 
     @property
     def extra_state_attributes(self):
         """Return extra attributes for this achievement."""
         achievement = self.coordinator.achievements_data.get(self._achievement_id, {})
         progress = achievement.get("progress", {})
+        kids_progress = {}
+
         earned_by = []
         for kid_id, data in progress.items():
             if data.get("awarded", False):
                 kid_name = self.coordinator._get_kid_name_by_id(kid_id) or kid_id
                 earned_by.append(kid_name)
+
+        associated_chore = ""
+        selected_chore_id = achievement.get("selected_chore_id")
+        if selected_chore_id:
+            associated_chore = self.coordinator.chores_data.get(
+                selected_chore_id, {}
+            ).get("name", "")
+
+        assigned_kids_ids = achievement.get("assigned_kids", [])
+        assigned_kids_names = [
+            self.coordinator._get_kid_name_by_id(k_id) or f"Kid {k_id}"
+            for k_id in assigned_kids_ids
+        ]
+        ach_type = achievement.get("type")
+        for kid_id in assigned_kids_ids:
+            kid_name = self.coordinator._get_kid_name_by_id(kid_id) or kid_id
+            progress_data = achievement.get("progress", {}).get(kid_id, {})
+            if ach_type == ACHIEVEMENT_TYPE_TOTAL:
+                kids_progress[kid_name] = progress_data.get("current_value", 0)
+            elif ach_type == ACHIEVEMENT_TYPE_STREAK:
+                kids_progress[kid_name] = progress_data.get("current_streak", 0)
+            else:
+                kids_progress[kid_name] = 0
+
         return {
+            ATTR_ACHIEVEMENT_NAME: self._achievement_name,
+            ATTR_DESCRIPTION: achievement.get("description", ""),
+            ATTR_ASSIGNED_KIDS: assigned_kids_names,
+            ATTR_TYPE: ach_type,
+            ATTR_ASSOCIATED_CHORE: associated_chore,
+            ATTR_CRITERIA: achievement.get("criteria", ""),
             ATTR_TARGET_VALUE: achievement.get("target_value"),
             ATTR_REWARD_POINTS: achievement.get("reward_points"),
-            ATTR_TYPE: achievement.get("type"),
             ATTR_KIDS_EARNED: earned_by,
         }
 
@@ -1377,7 +1464,7 @@ class ChallengeSensor(CoordinatorEntity, SensorEntity):
         self._challenge_id = challenge_id
         self._challenge_name = challenge_name
         self._attr_unique_id = f"{entry.entry_id}_{challenge_id}_challenge"
-        self._attr_native_unit_of_measurement = "Kids"
+        self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_translation_placeholders = {
             "challenge_name": challenge_name,
         }
@@ -1385,28 +1472,95 @@ class ChallengeSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        """Return the number of kids that have completed this challenge."""
+        """Return the overall progress percentage toward the challenge."""
+
         challenge = self.coordinator.challenges_data.get(self._challenge_id, {})
-        progress = challenge.get("progress", {})
-        count = sum(1 for p in progress.values() if p.get("awarded", False))
-        return count
+        target = challenge.get("target_value", 1)
+        assigned_kids = challenge.get("assigned_kids", [])
+
+        if not assigned_kids:
+            return 0
+
+        challenge_type = challenge.get("type")
+        total_progress = 0
+
+        for kid_id in assigned_kids:
+            progress_data = challenge.get("progress", {}).get(kid_id, {})
+
+            if challenge_type == CHALLENGE_TYPE_TOTAL_WITHIN_WINDOW:
+                total_progress += progress_data.get("count", 0)
+
+            elif challenge_type == CHALLENGE_TYPE_DAILY_MIN:
+                if isinstance(progress_data, dict):
+                    daily_counts = progress_data.get("daily_counts", {})
+                    total_progress += sum(daily_counts.values())
+
+                else:
+                    total_progress += 0
+
+            else:
+                total_progress += 0
+
+        global_target = target * len(assigned_kids)
+
+        percent = (total_progress / global_target * 100) if global_target > 0 else 0
+
+        return min(100, round(percent, 1))
 
     @property
     def extra_state_attributes(self):
         """Return extra attributes for this challenge."""
         challenge = self.coordinator.challenges_data.get(self._challenge_id, {})
         progress = challenge.get("progress", {})
+        kids_progress = {}
+        challenge_type = challenge.get("type")
+
         earned_by = []
         for kid_id, data in progress.items():
             if data.get("awarded", False):
                 kid_name = self.coordinator._get_kid_name_by_id(kid_id) or kid_id
                 earned_by.append(kid_name)
+
+        associated_chore = ""
+        selected_chore_id = challenge.get("selected_chore_id")
+        if selected_chore_id:
+            associated_chore = self.coordinator.chores_data.get(
+                selected_chore_id, {}
+            ).get("name", "")
+
+        assigned_kids_ids = challenge.get("assigned_kids", [])
+        assigned_kids_names = [
+            self.coordinator._get_kid_name_by_id(k_id) or f"Kid {k_id}"
+            for k_id in assigned_kids_ids
+        ]
+
+        for kid_id in assigned_kids_ids:
+            kid_name = self.coordinator._get_kid_name_by_id(kid_id) or kid_id
+            progress_data = challenge.get("progress", {}).get(kid_id, {})
+            if challenge_type == CHALLENGE_TYPE_TOTAL_WITHIN_WINDOW:
+                kids_progress[kid_name] = progress_data.get("count", 0)
+            elif challenge_type == CHALLENGE_TYPE_DAILY_MIN:
+                if isinstance(progress_data, dict):
+                    kids_progress[kid_name] = sum(
+                        progress_data.get("daily_counts", {}).values()
+                    )
+                else:
+                    kids_progress[kid_name] = 0
+            else:
+                kids_progress[kid_name] = 0
+
         return {
+            ATTR_CHALLENGE_NAME: self._challenge_name,
+            ATTR_CHALLENGE_TYPE: challenge_type,
+            ATTR_DESCRIPTION: challenge.get("description", ""),
+            ATTR_ASSIGNED_KIDS: assigned_kids_names,
+            ATTR_TYPE: challenge.get("type"),
+            ATTR_ASSOCIATED_CHORE: associated_chore,
+            ATTR_CRITERIA: challenge.get("criteria", ""),
             ATTR_TARGET_VALUE: challenge.get("target_value"),
             ATTR_REWARD_POINTS: challenge.get("reward_points"),
             ATTR_START_DATE: challenge.get("start_date"),
             ATTR_END_DATE: challenge.get("end_date"),
-            ATTR_TYPE: challenge.get("type"),
             ATTR_KIDS_EARNED: earned_by,
         }
 
@@ -1455,23 +1609,40 @@ class AchievementProgressSensor(CoordinatorEntity, SensorEntity):
         """Return the progress percentage toward the achievement."""
         achievement = self.coordinator.achievements_data.get(self._achievement_id, {})
         target = achievement.get("target_value", 1)
-        progress_data = achievement.get("progress", {}).get(self._kid_id)
+        ach_type = achievement.get("type")
 
-        if not progress_data:
-            # For total achievements, fallback to kid's total completed chores
-            if achievement.get("type") == ACHIEVEMENT_TYPE_TOTAL:
-                progress = self.coordinator.kids_data.get(self._kid_id, {}).get(
-                    "completed_chores_total", 0
-                )
-            else:
-                progress = 0
+        if ach_type == ACHIEVEMENT_TYPE_TOTAL:
+            progress_data = achievement.get("progress", {}).get(self._kid_id, {})
+
+            baseline = (
+                progress_data.get("baseline", 0)
+                if isinstance(progress_data, dict)
+                else 0
+            )
+
+            current_total = self.coordinator.kids_data.get(self._kid_id, {}).get(
+                "completed_chores_total", 0
+            )
+
+            effective_target = baseline + target
+
+            percent = (
+                (current_total / effective_target * 100) if effective_target > 0 else 0
+            )
+
+        elif ach_type == ACHIEVEMENT_TYPE_STREAK:
+            progress_data = achievement.get("progress", {}).get(self._kid_id, {})
+
+            progress = (
+                progress_data.get("current_streak", 0)
+                if isinstance(progress_data, dict)
+                else 0
+            )
+
+            percent = (progress / target * 100) if target > 0 else 0
+
         else:
-            if achievement.get("type") == ACHIEVEMENT_TYPE_STREAK:
-                progress = progress_data.get("current_streak", 0)
-            else:
-                progress = progress_data
-
-        percent = (progress / target * 100) if target > 0 else 0
+            percent = 0
 
         return min(100, round(percent, 1))
 
@@ -1487,21 +1658,41 @@ class AchievementProgressSensor(CoordinatorEntity, SensorEntity):
             else False
         )
 
-        # For total achievements, get the completed chores total instead
-        if achievement.get("type") == ACHIEVEMENT_TYPE_TOTAL and not progress_data:
-            raw_progress = self.coordinator.kids_data.get(self._kid_id, {}).get(
-                "completed_chores_total", 0
+        if achievement.get("type") == ACHIEVEMENT_TYPE_TOTAL:
+            raw_progress = (
+                progress_data.get("current_value", 0)
+                if isinstance(progress_data, dict)
+                else 0
             )
         else:
             raw_progress = (
                 progress_data.get("current_streak", 0)
                 if isinstance(progress_data, dict)
-                else progress_data
+                else 0
             )
+
+        associated_chore = ""
+        selected_chore_id = achievement.get("selected_chore_id")
+        if selected_chore_id:
+            associated_chore = self.coordinator.chores_data.get(
+                selected_chore_id, {}
+            ).get("name", "")
+
+        assigned_kids_ids = achievement.get("assigned_kids", [])
+        assigned_kids_names = [
+            self.coordinator._get_kid_name_by_id(k_id) or f"Kid {k_id}"
+            for k_id in assigned_kids_ids
+        ]
 
         return {
             ATTR_ACHIEVEMENT_NAME: self._achievement_name,
+            ATTR_DESCRIPTION: achievement.get("description", ""),
+            ATTR_ASSIGNED_KIDS: assigned_kids_names,
+            ATTR_TYPE: achievement.get("type"),
+            ATTR_ASSOCIATED_CHORE: associated_chore,
+            ATTR_CRITERIA: achievement.get("criteria", ""),
             ATTR_TARGET_VALUE: target,
+            ATTR_REWARD_POINTS: achievement.get("reward_points"),
             ATTR_RAW_PROGRESS: raw_progress,
             ATTR_AWARDED: awarded,
         }
@@ -1561,30 +1752,31 @@ class ChallengeProgressSensor(CoordinatorEntity, SensorEntity):
             raw_progress = (
                 progress_data.get("count", 0) if isinstance(progress_data, dict) else 0
             )
+
         elif challenge_type == CHALLENGE_TYPE_DAILY_MIN:
             if isinstance(progress_data, dict):
                 daily_counts = progress_data.get("daily_counts", {})
                 raw_progress = sum(daily_counts.values())
+                # Optionally, compute target as required_daily * number_of_days:
+                start_date = dt_util.parse_datetime(challenge.get("start_date"))
+                end_date = dt_util.parse_datetime(challenge.get("end_date"))
 
-                start_date = challenge.get("start_date")
-                end_date = challenge.get("end_date")
                 if start_date and end_date:
-                    start = dt_util.parse_datetime(start_date)
-                    end = dt_util.parse_datetime(end_date)
-                    if start and end:
-                        num_days = (end.date() - start.date()).days + 1
-                    else:
-                        num_days = 1
+                    num_days = (end_date.date() - start_date.date()).days + 1
+
                 else:
                     num_days = 1
                 required_daily = challenge.get("required_daily", 1)
                 target = required_daily * num_days
+
             else:
                 raw_progress = 0
+
         else:
             raw_progress = 0
 
         percent = (raw_progress / target * 100) if target > 0 else 0
+
         return min(100, round(percent, 1))
 
     @property
@@ -1613,11 +1805,31 @@ class ChallengeProgressSensor(CoordinatorEntity, SensorEntity):
         else:
             raw_progress = 0
 
+        associated_chore = ""
+        selected_chore_id = challenge.get("selected_chore_id")
+        if selected_chore_id:
+            associated_chore = self.coordinator.chores_data.get(
+                selected_chore_id, {}
+            ).get("name", "")
+
+        assigned_kids_ids = challenge.get("assigned_kids", [])
+        assigned_kids_names = [
+            self.coordinator._get_kid_name_by_id(k_id) or f"Kid {k_id}"
+            for k_id in assigned_kids_ids
+        ]
+
         return {
             ATTR_CHALLENGE_NAME: self._challenge_name,
-            ATTR_TARGET_VALUE: target,
-            ATTR_RAW_PROGRESS: raw_progress,
+            ATTR_DESCRIPTION: challenge.get("description", ""),
+            ATTR_ASSIGNED_KIDS: assigned_kids_names,
+            ATTR_ASSOCIATED_CHORE: associated_chore,
             ATTR_CHALLENGE_TYPE: challenge_type,
+            ATTR_CRITERIA: challenge.get("criteria", ""),
+            ATTR_TARGET_VALUE: target,
+            ATTR_REWARD_POINTS: challenge.get("reward_points"),
+            ATTR_START_DATE: challenge.get("start_date"),
+            ATTR_END_DATE: challenge.get("end_date"),
+            ATTR_RAW_PROGRESS: raw_progress,
             ATTR_AWARDED: awarded,
         }
 
@@ -1660,22 +1872,8 @@ class KidHighestStreakSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> int:
         """Return the highest current streak among all streak achievements for the kid."""
-        max_streak = 0
-        for achievement in self.coordinator.achievements_data.values():
-            if achievement.get("type") == ACHIEVEMENT_TYPE_STREAK:
-                progress_for_kid = achievement.get("progress", {}).get(self._kid_id)
-                current_streak = 0
-
-                if isinstance(progress_for_kid, dict):
-                    current_streak = progress_for_kid.get("current_streak", 0)
-
-                elif isinstance(progress_for_kid, int):
-                    current_streak = progress_for_kid
-
-                if current_streak > max_streak:
-                    max_streak = current_streak
-
-        return max_streak
+        kid_info = self.coordinator.kids_data.get(self._kid_id, {})
+        return kid_info.get("overall_chore_streak", 0)
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -1736,21 +1934,10 @@ class ChoreStreakSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> int:
         """Return the current streak (in days) for this kid and chore."""
-        streak_val = 0
-        for achievement in self.coordinator.achievements_data.values():
-            if (
-                achievement.get("type") == ACHIEVEMENT_TYPE_STREAK
-                and achievement.get("selected_chore_id") == self._chore_id
-            ):
-                progress_for_kid = achievement.get("progress", {}).get(self._kid_id)
-
-                if isinstance(progress_for_kid, dict):
-                    streak_val = progress_for_kid.get("current_streak", 0)
-
-                elif isinstance(progress_for_kid, int):
-                    streak_val = progress_for_kid
-                break
-        return streak_val
+        kid_info = self.coordinator.kids_data.get(self._kid_id, {})
+        streaks = kid_info.get("chore_streaks", {})
+        streak_info = streaks.get(self._chore_id, {})
+        return streak_info.get("current_streak", 0)
 
     @property
     def extra_state_attributes(self) -> dict:

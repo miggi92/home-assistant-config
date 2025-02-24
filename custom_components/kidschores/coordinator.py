@@ -94,6 +94,7 @@ from .const import (
     FREQUENCY_WEEKLY,
     LOGGER,
     UPDATE_INTERVAL,
+    WEEKDAY_OPTIONS,
 )
 
 from .storage_manager import KidsChoresStorageManager
@@ -198,6 +199,21 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         LOGGER.info("Chore data migration complete.")
 
     # -------------------------------------------------------------------------------------
+    # Normalize Lists
+    # -------------------------------------------------------------------------------------
+
+    def _normalize_kid_lists(self, kid_info: dict[str, Any]) -> None:
+        "Normalize lists and ensuring they are not dict"
+        for key in [
+            "claimed_chores",
+            "approved_chores",
+            "pending_rewards",
+            "redeemed_rewards",
+        ]:
+            if not isinstance(kid_info.get(key), list):
+                kid_info[key] = []
+
+    # -------------------------------------------------------------------------------------
     # Periodic + First Refresh
     # -------------------------------------------------------------------------------------
 
@@ -210,7 +226,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         """
         try:
             # Check overdue chores and reset daily/weekly/monthly counts
-            self._handle_scheduled_tasks()
+            await self._check_overdue_chores()
 
             # Notify entities of changes
             self.async_update_listeners()
@@ -252,6 +268,10 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
 
         # Merge config entry data (options) into the stored data
         self._initialize_data_from_config()
+
+        # Normalize all kids list fields
+        for kid in self._data.get(DATA_KIDS, {}).values():
+            self._normalize_kid_lists(kid)
 
         self._persist()
         await super().async_config_entry_first_refresh()
@@ -387,6 +407,10 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             else:
                 update_method(entity_id, entity_body)
 
+        # Cleanup for orphaned shared chore sensors.
+        if section == DATA_CHORES:
+            self.hass.async_create_task(self._remove_orphaned_shared_chore_sensors())
+
     def _remove_entities_in_ha(self, section: str, item_id: str):
         """Remove all platform entities whose unique_id references the given item_id."""
         ent_reg = er.async_get(self.hass)
@@ -398,6 +422,27 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                     entity_entry.entity_id,
                     entity_entry.unique_id,
                 )
+
+    async def _remove_orphaned_shared_chore_sensors(self):
+        """Remove SharedChoreGlobalStateSensor entities for chores no longer marked as shared."""
+        ent_reg = er.async_get(self.hass)
+        prefix = f"{self.config_entry.entry_id}_"
+        suffix = "_global_state"
+        for entity_entry in list(ent_reg.entities.values()):
+            if (
+                entity_entry.domain == "sensor"
+                and entity_entry.unique_id.startswith(prefix)
+                and entity_entry.unique_id.endswith(suffix)
+            ):
+                # Extract chore_id from the unique_id.
+                chore_id = entity_entry.unique_id[len(prefix) : -len(suffix)]
+                chore_info = self.chores_data.get(chore_id)
+                if not chore_info or not chore_info.get("shared_chore", False):
+                    ent_reg.async_remove(entity_entry.entity_id)
+                    LOGGER.debug(
+                        "Removed orphaned SharedChoreGlobalStateSensor: %s",
+                        entity_entry.entity_id,
+                    )
 
     # -------------------------------------------------------------------------------------
     # Create/Update Entities
@@ -435,7 +480,13 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "use_persistent_notifications": kid_data.get(
                 "use_persistent_notifications", True
             ),
+            "chore_streaks": {},
+            "overall_chore_streak": 0,
+            "last_chore_date": None,
         }
+
+        self._normalize_kid_lists(self._data[DATA_KIDS][kid_id])
+
         LOGGER.debug(
             "Added new kid '%s' with ID: %s",
             self._data[DATA_KIDS][kid_id]["name"],
@@ -475,6 +526,11 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "use_persistent_notifications",
             kid_info.get("use_persistent_notifications", True),
         )
+        kid_info.setdefault("chore_streaks", {})
+        kid_info.setdefault("overall_chore_streak", 0)
+        kid_info.setdefault("last_chore_date", None)
+
+        self._normalize_kid_lists(self._data[DATA_KIDS][kid_id])
 
         LOGGER.debug("Updated kid '%s' with ID: %s", kid_info["name"], kid_id)
 
@@ -571,7 +627,6 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         self._data[DATA_CHORES][chore_id] = {
             "name": chore_data.get("name", ""),
             "state": chore_data.get("state", CHORE_STATE_PENDING),
-            "assigned_to": chore_data.get("assigned_to"),
             "default_points": chore_data.get("default_points", DEFAULT_POINTS),
             "allow_multiple_claims_per_day": chore_data.get(
                 "allow_multiple_claims_per_day", DEFAULT_MULTIPLE_CLAIMS_PER_DAY
@@ -626,9 +681,6 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         chore_info = self._data[DATA_CHORES][chore_id]
         chore_info["name"] = chore_data.get("name", chore_info["name"])
         chore_info["state"] = chore_data.get("state", chore_info["state"])
-        chore_info["assigned_to"] = chore_data.get(
-            "assigned_to", chore_info["assigned_to"]
-        )
         chore_info["default_points"] = chore_data.get(
             "default_points", chore_info["default_points"]
         )
@@ -801,6 +853,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "icon": achievement_data.get("icon", ""),  # or a default icon
             "assigned_kids": achievement_data.get("assigned_kids", []),
             "type": achievement_data.get("type", "individual"),
+            "selected_chore_id": achievement_data.get("selected_chore_id", ""),
             "criteria": achievement_data.get("criteria", ""),
             "target_value": achievement_data.get("target_value", 1),
             "reward_points": achievement_data.get("reward_points", 0),
@@ -832,6 +885,9 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         achievement_info["type"] = achievement_data.get(
             "type", achievement_info["type"]
         )
+        achievement_info["selected_chore_id"] = achievement_data.get(
+            "selected_chore_id", achievement_info.get("selected_chore_id", "")
+        )
         achievement_info["criteria"] = achievement_data.get(
             "criteria", achievement_info["criteria"]
         )
@@ -856,6 +912,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "icon": challenge_data.get("icon", ""),
             "assigned_kids": challenge_data.get("assigned_kids", []),
             "type": challenge_data.get("type", "individual"),
+            "selected_chore_id": challenge_data.get("selected_chore_id", ""),
             "criteria": challenge_data.get("criteria", ""),
             "target_value": challenge_data.get("target_value", 1),
             "reward_points": challenge_data.get("reward_points", 0),
@@ -881,6 +938,9 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "assigned_kids", challenge_info["assigned_kids"]
         )
         challenge_info["type"] = challenge_data.get("type", challenge_info["type"])
+        challenge_info["selected_chore_id"] = challenge_data.get(
+            "selected_chore_id", challenge_info.get("selected_chore_id", "")
+        )
         challenge_info["criteria"] = challenge_data.get(
             "criteria", challenge_info["criteria"]
         )
@@ -1154,7 +1214,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         else:
             chore_info["state"] = CHORE_STATE_APPROVED
 
-        old_points = kid_info["points"]
+        old_points = float(kid_info["points"])
         new_points = old_points + awarded_points
         self.update_kid_points(kid_id, new_points)
 
@@ -1165,6 +1225,10 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         kid_info["completed_chores_total"] += 1
 
         chore_info["last_completed"] = dt_util.utcnow().isoformat()
+
+        today = dt_util.as_local(dt_util.utcnow()).date()
+        self._update_chore_streak_for_kid(kid_id, chore_id, today)
+        self._update_overall_chore_streak(kid_id, today)
 
         # remove from pending approvals
         self._data[DATA_PENDING_CHORE_APPROVALS] = [
@@ -1178,13 +1242,6 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             kid_info["chore_approvals"][chore_id] += 1
         else:
             kid_info["chore_approvals"][chore_id] = 1
-
-        # REMOVE: Rescheduling to be handled on daily resets!
-        # handle recurring if frequency != none
-        # freq = chore_info.get("recurring_frequency", FREQUENCY_NONE)
-        # due_date_str = chore_info.get("due_date")
-        # if freq != FREQUENCY_NONE and due_date_str:
-        #    self._reschedule_next_due_date(chore_info)
 
         # Manage Achievements and Challenges
         today = dt_util.as_local(dt_util.utcnow()).date()
@@ -1200,6 +1257,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                     self._update_streak_progress(progress, today)
 
         # For challenges that require a total count within a time window
+        today_iso = dt_util.as_local(dt_util.utcnow()).date().isoformat()
         for challenge_id, challenge in self.challenges_data.items():
             if challenge.get("type") == CHALLENGE_TYPE_TOTAL_WITHIN_WINDOW:
                 start_date = dt_util.parse_datetime(challenge.get("start_date"))
@@ -1217,6 +1275,19 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                         kid_id, {"count": 0, "awarded": False}
                     )
                     progress["count"] += 1
+
+            if challenge.get("type") == CHALLENGE_TYPE_DAILY_MIN:
+                # If a selected_chore is set, update only if it matches the approved chore.
+                selected_chore = challenge.get("selected_chore_id")
+                if selected_chore and selected_chore != chore_id:
+                    continue
+                if kid_id in challenge.get("assigned_kids", []):
+                    progress = challenge.setdefault("progress", {}).setdefault(
+                        kid_id, {"daily_counts": {}, "awarded": False}
+                    )
+                    progress["daily_counts"][today_iso] = (
+                        progress["daily_counts"].get(today_iso, 0) + 1
+                    )
 
         # Send a notification to the kid that chore was approved
         if chore_info.get(CONF_NOTIFY_ON_APPROVAL, DEFAULT_NOTIFY_ON_APPROVAL):
@@ -1275,7 +1346,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                         e,
                     )
             now = dt_util.utcnow()
-            if due_date and now > due_date:
+            if due_date and now >= due_date:
                 chore_info["state"] = CHORE_STATE_OVERDUE
             else:
                 chore_info["state"] = CHORE_STATE_PENDING
@@ -1360,7 +1431,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             LOGGER.warning("Update kid points: Kid ID '%s' not found", kid_id)
             return
 
-        old_points = kid_info["points"]
+        old_points = float(kid_info["points"])
         delta = new_points - old_points
         if delta == 0:
             LOGGER.debug("No change in points for kid '%s'. Skipping updates", kid_id)
@@ -1476,7 +1547,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                 )
 
             # Deduct
-            new_points = kid_info["points"] - cost
+            new_points = float(kid_info["points"]) - cost
             self.update_kid_points(kid_id, new_points)
 
             kid_info["pending_rewards"].remove(reward_id)
@@ -1714,7 +1785,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             raise HomeAssistantError(f"Kid with ID '{kid_id}' not found.")
 
         penalty_pts = penalty.get("points", 0)
-        new_points = kid_info["points"] + penalty_pts
+        new_points = float(kid_info["points"]) + penalty_pts
         self.update_kid_points(kid_id, new_points)
 
         # increment penalty_applies
@@ -1792,8 +1863,22 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
 
             # For a total achievement, simply compare total completed chores:
             elif ach_type == ACHIEVEMENT_TYPE_TOTAL:
-                completed = kid_info.get("completed_chores_total", 0)
-                if completed >= target:
+                # Get per–kid progress for this achievement.
+                progress = achievement.setdefault("progress", {}).setdefault(
+                    kid_id, {"baseline": None, "current_value": 0, "awarded": False}
+                )
+                # Set the baseline so that we only count chores done after deployment.
+                if progress["baseline"] is None:
+                    progress["baseline"] = kid_info.get("completed_chores_total", 0)
+
+                # Calculate progress as (current total minus baseline)
+                current_total = kid_info.get("completed_chores_total", 0)
+
+                progress["current_value"] = current_total
+
+                effective_target = progress["baseline"] + target
+
+                if current_total >= effective_target:
                     self._award_achievement(kid_id, achievement_id)
 
     def _award_achievement(self, kid_id: str, achievement_id: str):
@@ -1822,7 +1907,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         extra_points = achievement.get("reward_points", 0)
         kid_info = self.kids_data.get(kid_id)
         if kid_info is not None:
-            new_points = kid_info["points"] + extra_points
+            new_points = float(kid_info["points"]) + extra_points
             self.update_kid_points(kid_id, new_points)
 
         # Notify kid and parents
@@ -1932,7 +2017,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         extra_points = challenge.get("reward_points", 0)
         kid_info = self.kids_data.get(kid_id)
         if kid_info is not None:
-            new_points = kid_info["points"] + extra_points
+            new_points = float(kid_info["points"]) + extra_points
             self.update_kid_points(kid_id, new_points)
 
         # Notify kid and parents
@@ -1979,16 +2064,69 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             progress["current_streak"] = 1
         progress["last_date"] = today.isoformat()
 
+    def _update_chore_streak_for_kid(
+        self, kid_id: str, chore_id: str, completion_date: datetime.date
+    ):
+        """Update (or initialize) the streak for a specific chore for a kid, and update the max streak achieved so far."""
+
+        kid_info = self.kids_data.get(kid_id)
+        if not kid_info:
+            return
+        # Ensure a streak dictionary exists
+        if "chore_streaks" not in kid_info:
+            kid_info["chore_streaks"] = {}
+
+        # Initialize the streak record if not already present
+        streak = kid_info["chore_streaks"].get(
+            chore_id, {"current_streak": 0, "max_streak": 0, "last_date": None}
+        )
+        last_date = None
+        if streak["last_date"]:
+            try:
+                last_date = datetime.fromisoformat(streak["last_date"]).date()
+            except Exception:
+                pass
+
+        if last_date == completion_date - timedelta(days=1):
+            streak["current_streak"] += 1
+        else:
+            streak["current_streak"] = 1
+
+        streak["last_date"] = completion_date.isoformat()
+
+        # Update the maximum streak if the current streak is higher.
+        if streak["current_streak"] > streak.get("max_streak", 0):
+            streak["max_streak"] = streak["current_streak"]
+
+        kid_info["chore_streaks"][chore_id] = streak
+
+    def _update_overall_chore_streak(self, kid_id: str, completion_date: datetime.date):
+        """Update the overall streak for a kid (days in a row with at least one approved chore)."""
+
+        kid_info = self.kids_data.get(kid_id)
+        if not kid_info:
+            return
+        last_date = None
+        if "last_chore_date" in kid_info and kid_info["last_chore_date"]:
+            try:
+                last_date = datetime.fromisoformat(kid_info["last_chore_date"]).date()
+            except Exception:
+                pass
+        if last_date == completion_date - timedelta(days=1):
+            kid_info["overall_chore_streak"] = (
+                kid_info.get("overall_chore_streak", 0) + 1
+            )
+        else:
+            kid_info["overall_chore_streak"] = 1
+        kid_info["last_chore_date"] = completion_date.isoformat()
+
     # -------------------------------------------------------------------------------------
     # Recurring / Reset / Overdue
     # -------------------------------------------------------------------------------------
 
-    def _handle_scheduled_tasks(self):
-        """Check overdue chores, handle recurring resets, etc."""
-        self._check_overdue_chores()
-
-    def _check_overdue_chores(self):
+    async def _check_overdue_chores(self):
         """Check and mark overdue chores if due_date is passed.
+
         Send an overdue notification only if not sent in the last 24 hours.
         """
         now = dt_util.utcnow()
@@ -2004,6 +2142,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             due_str = chore_info.get("due_date")
             if not due_str:
                 continue
+
             try:
                 due_date = dt_util.parse_datetime(due_str) or datetime.fromisoformat(
                     due_str
@@ -2035,7 +2174,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                     continue
 
             # If the current time is past the due date…
-            if now > due_date:
+            if now >= due_date:
                 assigned_kids = chore_info.get("assigned_kids", [])
                 any_approved = any(
                     chore_id
@@ -2095,7 +2234,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         """Trigger resets based on the current time for all frequencies."""
         await self._handle_recurring_chore_resets(now)
         await self._reset_daily_reward_statuses()
-        self._check_overdue_chores()
+        await self._check_overdue_chores()
 
     async def _handle_recurring_chore_resets(self, now: datetime):
         """Handle recurring resets for daily, weekly, and monthly frequencies."""
@@ -2188,11 +2327,28 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         """Reset chore statuses and clear approved/claimed chores for chores with these freq."""
         LOGGER.info("Executing _reset_daily_chore_statuses")
 
+        now = dt_util.utcnow()
         for chore_id, chore_info in self.chores_data.items():
-            if (
-                chore_info.get("recurring_frequency") in target_freqs
-                or chore_info.get("recurring_frequency") == FREQUENCY_NONE
-            ):
+            frequency = chore_info.get("recurring_frequency", FREQUENCY_NONE)
+            # Only consider chores whose frequency is either in target_freqs or FREQUENCY_NONE.
+            if frequency in target_freqs or frequency == FREQUENCY_NONE:
+                due_date_str = chore_info.get("due_date")
+                if due_date_str:
+                    try:
+                        due_date = dt_util.parse_datetime(
+                            due_date_str
+                        ) or datetime.fromisoformat(due_date_str)
+                        # If the due date has not yet been reached, skip resetting this chore.
+                        if now < due_date:
+                            continue
+                    except Exception as e:
+                        LOGGER.warning(
+                            "Error parsing due_date '%s' for chore '%s': %s",
+                            due_date_str,
+                            chore_id,
+                            e,
+                        )
+                # If no due date or the due date has passed, then reset the chore state
                 if chore_info["state"] not in [
                     CHORE_STATE_PENDING,
                     CHORE_STATE_OVERDUE,
@@ -2205,7 +2361,8 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                         previous_state,
                         CHORE_STATE_PENDING,
                     )
-                    # remove from kids
+
+                    # Remove the chore from each kid's approved and claimed lists.
                     for kid_info in self.kids_data.values():
                         if chore_id in kid_info.get("approved_chores", []):
                             kid_info["approved_chores"].remove(chore_id)
@@ -2227,10 +2384,7 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         self._persist()
 
     async def _reset_daily_reward_statuses(self):
-        """Reset all kids' reward states daily.
-
-        Clears pending and approved states if you'd like them ephemeral.
-        """
+        """Reset all kids' reward states daily."""
         # Remove from global pending reward approvals
         self._data[DATA_PENDING_REWARD_APPROVALS] = []
         LOGGER.debug("Cleared all pending reward approvals globally")
@@ -2304,6 +2458,13 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                 next_due += timedelta(weeks=1)
             elif freq == FREQUENCY_MONTHLY:
                 next_due = self._add_one_month(next_due)
+
+        applicable_days = chore_info.get(CONF_APPLICABLE_DAYS, DEFAULT_APPLICABLE_DAYS)
+        if applicable_days:
+            weekday_mapping = {i: key for i, key in enumerate(WEEKDAY_OPTIONS.keys())}
+            # Increment next_due day-by-day until its weekday is in applicable_days.
+            while weekday_mapping[next_due.weekday()] not in applicable_days:
+                next_due += timedelta(days=1)
 
         chore_info["due_date"] = next_due.isoformat()
 

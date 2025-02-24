@@ -153,7 +153,7 @@
           "icon": "Ícono (mdi:xxx)",
           "assigned_kids": "Niños asignados",
           "type": "Tipo de logro",
-          "selected_chore_id": "Selecciona la tarea asociada a la racha",
+          "selected_chore_id": "Selecciona la tarea asociada",
           "criteria": "Criterios (opcional)",
           "target_value": "Objetivo del logro",
           "reward_points": "Puntos extra por completar el logro",
@@ -352,7 +352,7 @@
           "icon": "Ícono (mdi:xxx)",
           "assigned_kids": "Niños asignados",
           "type": "Tipo de logro",
-          "selected_chore_id": "Selecciona la tarea asociada a la racha",
+          "selected_chore_id": "Selecciona la tarea asociada",
           "criteria": "Criterios (opcional)",
           "target_value": "Objetivo del logro",
           "reward_points": "Puntos extra por completar el logro",
@@ -467,7 +467,7 @@
           "icon": "Ícono (mdi:xxx)",
           "assigned_kids": "Niños asignados",
           "type": "Tipo de logro",
-          "selected_chore_id": "Selecciona la tarea asociada a la racha",
+          "selected_chore_id": "Selecciona la tarea asociada",
           "criteria": "Criterios (opcional)",
           "target_value": "Objetivo del logro",
           "reward_points": "Puntos extra por completar el logro",
@@ -571,6 +571,14 @@
       "invalid_parent": "Padre/Madre no válido",
       "invalid_penalty": "Penalización no válida",
       "invalid_reward": "Recompensa no válida",
+      "no_kid": "No hay niños configurados. Adiciona una entrada primero.",
+      "no_parent": "No hay padres configurados. Adiciona una entrada primero.",
+      "no_chore": "No hay tareas configuradas. Adiciona una entrada primero.",
+      "no_badge": "No hay insignias configuradas. Adiciona una entrada primero.",
+      "no_reward": "No hay recompensas configuradas. Adiciona una entrada primero.",
+      "no_penalty": "No hay penalizaciones configuradas. Adiciona una entrada primero.",
+      "no_achievement": "No hay logros configurados. Adiciona una entrada primero.",
+      "no_challenge": "No hay desafíos configurados. Adiciona una entrada primero.",
       "setup_complete": "Configuración Completa"
     }
   },
@@ -1069,28 +1077,45 @@
       "achievement_state_sensor": {
         "name": "Logro - {achievement_name}",
         "state_attributes": {
+          "achievement_name": { "name": "Nombre del Logro" },
+          "description": { "name": "Descripción" },
+          "assigned_kids": { "name": "Niños Asignados" },
+          "type": { "name": "Tipo" },
+          "associated_chore": { "name": "Tarea Asociada" },
+          "critera": { "name": "Criterios" },
           "target_value": { "name": "Objetivo" },
           "reward_points": { "name": "Puntos de Recompensa" },
-          "type": { "name": "Tipo" },
-          "kids_earned": { "name": "Obtenido por" }
+          "kids_earned": { "name": "Ganado por" }
         }
       },
       "challenge_state_sensor": {
-        "name": "Reto - {challenge_name}",
+        "name": "Desafío - {challenge_name}",
         "state_attributes": {
+          "challenge_name": { "name": "Nombre del Desafío" },
+          "challenge_type": { "name": "Tipo de Desafío" },
+          "description": { "name": "Descripción" },
+          "assigned_kids": { "name": "Niños Asignados" },
+          "type": { "name": "Tipo" },
+          "associated_chore": { "name": "Tarea Asociada" },
+          "critera": { "name": "Criterios" },
           "target_value": { "name": "Objetivo" },
           "reward_points": { "name": "Puntos de Recompensa" },
           "start_date": { "name": "Fecha de Inicio" },
           "end_date": { "name": "Fecha de Finalización" },
-          "type": { "name": "Tipo" },
-          "kids_earned": { "name": "Obtenido por" }
+          "kids_earned": { "name": "Ganado por" }
         }
       },
       "achievement_progress_sensor": {
         "name": "{kid_name} - Progreso - {achievement_name}",
         "state_attributes": {
-          "achievement_name": { "name": "Nombre" },
+          "achievement_name": { "name": "Nombre del Logro" },
+          "description": { "name": "Descripción" },
+          "assigned_kids": { "name": "Niños Asignados" },
+          "type": { "name": "Tipo" },
+          "associated_chore": { "name": "Tarea Asociada" },
+          "critera": { "name": "Criterios" },
           "target_value": { "name": "Objetivo" },
+          "reward_points": { "name": "Puntos de Recompensa" },
           "raw_progress": { "name": "Progreso" },
           "awarded": {
             "name": "Otorgado",
@@ -1104,10 +1129,18 @@
       "challenge_progress_sensor": {
         "name": "{kid_name} - Progreso - {challenge_name}",
         "state_attributes": {
-          "challenge_name": { "name": "Nombre" },
+          "challenge_name": { "name": "Nombre del Desafío" },
+          "challenge_type": { "name": "Tipo de Desafío" },
+          "description": { "name": "Descripción" },
+          "assigned_kids": { "name": "Niños Asignados" },
+          "type": { "name": "Tipo" },
+          "associated_chore": { "name": "Tarea Asociada" },
+          "critera": { "name": "Criterios" },
           "target_value": { "name": "Objetivo" },
+          "reward_points": { "name": "Puntos de Recompensa" },
+          "start_date": { "name": "Fecha de Inicio" },
+          "end_date": { "name": "Fecha de Finalización" },
           "raw_progress": { "name": "Progreso" },
-          "challenge_type": { "name": "Tipo" },
           "awarded": {
             "name": "Otorgado",
             "state": {

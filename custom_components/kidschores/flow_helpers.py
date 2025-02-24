@@ -188,7 +188,13 @@ def build_chore_schema(kids_dict, default=None):
             ): str,
             vol.Required(
                 "default_points", default=default.get("default_points", 5)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Required(
                 "assigned_kids", default=default.get("assigned_kids", [])
             ): cv.multi_select(kid_choices),
@@ -282,11 +288,21 @@ def build_badge_schema(default=None):
             ),
             vol.Required(
                 "threshold_value", default=default.get("threshold_value", 10)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Required(
                 "points_multiplier",
                 default=points_multiplier_default,
-            ): vol.All(vol.Coerce(float), vol.Range(min=1.0)),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX, step=0.01, min=1.0
+                )
+            ),
             vol.Optional(
                 "icon", default=default.get("icon", "")
             ): selector.IconSelector(),
@@ -307,8 +323,14 @@ def build_reward_schema(default=None):
             vol.Optional(
                 "reward_description", default=default.get("description", "")
             ): str,
-            vol.Required("reward_cost", default=default.get("cost", 10.0)): vol.Coerce(
-                float
+            vol.Required(
+                "reward_cost", default=default.get("cost", 10.0)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
             ),
             vol.Optional(
                 "icon", default=default.get("icon", "")
@@ -334,6 +356,10 @@ def build_achievement_schema(kids_dict, chores_dict, default=None):
         chore_options.append({"value": chore_id, "label": chore_name})
 
     default_selected_chore = default.get("selected_chore_id", "")
+    available_values = [option["value"] for option in chore_options]
+    if default_selected_chore not in available_values:
+        default_selected_chore = ""
+
     default_criteria = default.get("criteria", "")
     default_assigned_kids = default.get("assigned_kids", [])
     if not isinstance(default_assigned_kids, list):
@@ -380,10 +406,22 @@ def build_achievement_schema(kids_dict, chores_dict, default=None):
             vol.Optional("criteria", default=default_criteria): str,
             vol.Required(
                 "target_value", default=default.get("target_value", 1)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Required(
                 "reward_points", default=default.get("reward_points", 0)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Required("internal_id", default=internal_id_default): str,
         }
     )
@@ -405,6 +443,10 @@ def build_challenge_schema(kids_dict, chores_dict, default=None):
         chore_options.append({"value": chore_id, "label": chore_name})
 
     default_selected_chore = default.get("selected_chore_id", "")
+    available_values = [option["value"] for option in chore_options]
+    if default_selected_chore not in available_values:
+        default_selected_chore = ""
+
     default_criteria = default.get("criteria", "")
     default_assigned_kids = default.get("assigned_kids", [])
     if not isinstance(default_assigned_kids, list):
@@ -457,10 +499,22 @@ def build_challenge_schema(kids_dict, chores_dict, default=None):
             vol.Optional("criteria", default=default_criteria): str,
             vol.Required(
                 "target_value", default=default.get("target_value", 1)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Required(
                 "reward_points", default=default.get("reward_points", 0)
-            ): vol.Coerce(float),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
+            ),
             vol.Optional("start_date", default=default.get("start_date")): vol.Any(
                 None, selector.DateTimeSelector()
             ),
@@ -490,8 +544,14 @@ def build_penalty_schema(default=None):
             vol.Optional(
                 "penalty_description", default=default.get("description", "")
             ): str,
-            vol.Required("penalty_points", default=display_points): vol.All(
-                vol.Coerce(float), vol.Range(min=0.1)
+            vol.Required(
+                "penalty_points", default=display_points
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    mode=selector.NumberSelectorMode.BOX,
+                    min=0,
+                    step=0.1,
+                )
             ),
             vol.Optional(
                 "icon", default=default.get("icon", "")

@@ -311,7 +311,9 @@ class ApproveChoreButton(CoordinatorEntity, ButtonEntity):
                     ERROR_NOT_AUTHORIZED_ACTION_FMT.format("approve chores")
                 )
 
-            parent_name = "ParentOrAdmin"
+            user_obj = await self.hass.auth.async_get_user(user_id) if user_id else None
+            parent_name = user_obj.name if user_obj else "ParentOrAdmin"
+
             self.coordinator.approve_chore(
                 parent_name=parent_name,
                 kid_id=self._kid_id,
@@ -807,7 +809,7 @@ class PointsAdjustButton(CoordinatorEntity, ButtonEntity):
             "sign_label": sign_label,
             "points_label": points_label,
         }
-        self.entity_id = f"button.kc_{kid_name}_{sign_text}_{points_label}"
+        self.entity_id = f"button.kc_{kid_name}_{sign_text}_points"
 
         # Decide the icon based on whether delta is positive or negative
         if delta >= 2:
