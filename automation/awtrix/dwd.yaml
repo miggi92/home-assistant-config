@@ -1,0 +1,25 @@
+---
+# Display dwd warning
+alias: Show dwd warning on clock
+id: 6ce30133-5f41-456c-a80f-111fbe92bd0c
+description: "Show dwd warning on clock"
+trigger:
+  - platform: state
+    entity_id: sensor.home_aktuelle_warnstufe
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: sensor.home_aktuelle_warnstufe
+        state: "0"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: dwd
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: dwd
+          text: "{{ states('sensor.home_aktuelle_warnstufe') | int }}"
+          icon: "6874"
+mode: single
