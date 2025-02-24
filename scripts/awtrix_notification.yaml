@@ -9,15 +9,21 @@ awtrix3notif:
       description: Text Benachrichtigung
     icon:
       selector:
-        text: null
+        number:
+          min: 0
+          max: 100000
+      default: 2883
       name: Icon Id
       description: Icon ID
+      required: true
     duration:
       selector:
         number:
           min: 1
-          max: 60
+          max: 180
+          step: 1
       default: 10
+      required: true
   sequence:
     - action: mqtt.publish
       metadata: {}

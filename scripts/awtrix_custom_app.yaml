@@ -15,14 +15,18 @@ awtrix3customapp:
       description: Text Benachrichtigung
     icon:
       selector:
-        text: null
+        number:
+          min: 0
+          max: 100000
+      default: 2883
       name: Icon Id
       description: Icon ID
     duration:
       selector:
         number:
           min: 1
-          max: 60
+          max: 180
+          step: 1
       default: 10
   sequence:
     - action: mqtt.publish
@@ -38,3 +42,5 @@ awtrix3customapp:
           }
   alias: awtrix3CustomApp
   description: ""
+  mode: parallel
+  max: 10
