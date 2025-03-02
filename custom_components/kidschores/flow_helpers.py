@@ -515,12 +515,12 @@ def build_challenge_schema(kids_dict, chores_dict, default=None):
                     step=0.1,
                 )
             ),
-            vol.Optional("start_date", default=default.get("start_date")): vol.Any(
-                None, selector.DateTimeSelector()
-            ),
-            vol.Optional("end_date", default=default.get("end_date")): vol.Any(
-                None, selector.DateTimeSelector()
-            ),
+            vol.Required(
+                "start_date", default=default.get("start_date")
+            ): selector.DateTimeSelector(),
+            vol.Required(
+                "end_date", default=default.get("end_date")
+            ): selector.DateTimeSelector(),
             vol.Required("internal_id", default=internal_id_default): str,
         }
     )

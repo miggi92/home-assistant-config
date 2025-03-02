@@ -860,7 +860,7 @@ class PendingRewardApprovalsSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_pending_reward_approvals"
         self._attr_icon = "mdi:gift-open-outline"
-        self.entity_id = f"sensor.kc_pending_reward_approvals"
+        self.entity_id = f"sensor.kc_global_pending_reward_approvals"
 
     @property
     def native_value(self):

@@ -419,7 +419,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_badge_count"
 
-        schema = vol.Schema({vol.Required("badge_count", default=1): vol.Coerce(int)})
+        schema = vol.Schema({vol.Required("badge_count", default=0): vol.Coerce(int)})
         return self.async_show_form(
             step_id="badge_count", data_schema=schema, errors=errors
         )
@@ -481,7 +481,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_reward_count"
 
-        schema = vol.Schema({vol.Required("reward_count", default=1): vol.Coerce(int)})
+        schema = vol.Schema({vol.Required("reward_count", default=0): vol.Coerce(int)})
         return self.async_show_form(
             step_id="reward_count", data_schema=schema, errors=errors
         )
@@ -541,7 +541,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_penalty_count"
 
-        schema = vol.Schema({vol.Required("penalty_count", default=1): vol.Coerce(int)})
+        schema = vol.Schema({vol.Required("penalty_count", default=0): vol.Coerce(int)})
         return self.async_show_form(
             step_id="penalty_count", data_schema=schema, errors=errors
         )
@@ -602,7 +602,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_achievement_count"
         schema = vol.Schema(
-            {vol.Required("achievement_count", default=1): vol.Coerce(int)}
+            {vol.Required("achievement_count", default=0): vol.Coerce(int)}
         )
         return self.async_show_form(
             step_id="achievement_count", data_schema=schema, errors=errors
@@ -676,7 +676,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_challenge_count"
         schema = vol.Schema(
-            {vol.Required("challenge_count", default=1): vol.Coerce(int)}
+            {vol.Required("challenge_count", default=0): vol.Coerce(int)}
         )
         return self.async_show_form(
             step_id="challenge_count", data_schema=schema, errors=errors
@@ -809,7 +809,7 @@ class KidsChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 parents_summary.append(parent["name"])
 
         summary = (
-            f"Kids: {', '.join(kid_data['name'] for kid_data in self._kids_temp.values()) or 'None'}\n\n"
+            f"\nKids: {', '.join(kid_data['name'] for kid_data in self._kids_temp.values()) or 'None'}\n\n"
             f"Parents: {', '.join(parents_summary) or 'None'}\n\n"
             f"Chores: {', '.join(chore_data['name'] for chore_data in self._chores_temp.values()) or 'None'}\n\n"
             f"Badges: {', '.join(badge_data['name'] for badge_data in self._badges_temp.values()) or 'None'}\n\n"

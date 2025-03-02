@@ -129,10 +129,10 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
     # -------------------------------------------------------------------------------------
 
     def _migrate_datetime(self, dt_str: str) -> str:
-        """Convert a datetime string to a UTC-aware ISO string.
+        """Convert a datetime string to a UTC-aware ISO string."""
+        if not isinstance(dt_str, str):
+            return dt_str
 
-        If the string is naive (lacking tzinfo), assume it represents local time.
-        """
         try:
             # Try to parse using Home Assistant’s utility first:
             dt_obj = dt_util.parse_datetime(dt_str)
@@ -173,12 +173,17 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
 
         # Migrate datetime on Challenges
         for challenge in self._data.get(DATA_CHALLENGES, {}).values():
-            if challenge.get("start_date"):
-                challenge["start_date"] = self._migrate_datetime(
-                    challenge["start_date"]
-                )
-            if challenge.get("end_date"):
-                challenge["end_date"] = self._migrate_datetime(challenge["end_date"])
+            start_date = challenge.get("start_date")
+            if not isinstance(start_date, str) or not start_date.strip():
+                challenge["start_date"] = None
+            else:
+                challenge["start_date"] = self._migrate_datetime(start_date)
+
+            end_date = challenge.get("end_date")
+            if not isinstance(end_date, str) or not end_date.strip():
+                challenge["end_date"] = None
+            else:
+                challenge["end_date"] = self._migrate_datetime(end_date)
 
     def _migrate_chore_data(self):
         """Migrate each chore's data to include new fields if missing.
@@ -255,11 +260,16 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                 DATA_REWARDS: {},
                 DATA_PARENTS: {},
                 DATA_PENALTIES: {},
-                DATA_PENDING_CHORE_APPROVALS: [],
-                DATA_PENDING_REWARD_APPROVALS: [],
                 DATA_ACHIEVEMENTS: {},
                 DATA_CHALLENGES: {},
+                DATA_PENDING_CHORE_APPROVALS: [],
+                DATA_PENDING_REWARD_APPROVALS: [],
             }
+
+        if not isinstance(self._data.get(DATA_PENDING_CHORE_APPROVALS), list):
+            self._data[DATA_PENDING_CHORE_APPROVALS] = []
+        if not isinstance(self._data.get(DATA_PENDING_REWARD_APPROVALS), list):
+            self._data[DATA_PENDING_REWARD_APPROVALS] = []
 
         # Register daily/weekly/monthly resets
         async_track_time_change(
@@ -320,15 +330,14 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             DATA_BADGES,
             DATA_REWARDS,
             DATA_PENALTIES,
-            DATA_PENDING_CHORE_APPROVALS,
-            DATA_PENDING_REWARD_APPROVALS,
             DATA_ACHIEVEMENTS,
             DATA_CHALLENGES,
         ]:
-            if key in (DATA_PENDING_CHORE_APPROVALS, DATA_PENDING_REWARD_APPROVALS):
-                self._data.setdefault(key, [])
-            else:
-                self._data.setdefault(key, {})
+            self._data.setdefault(key, {})
+
+        for key in [DATA_PENDING_CHORE_APPROVALS, DATA_PENDING_REWARD_APPROVALS]:
+            if not isinstance(self._data.get(key), list):
+                self._data[key] = []
 
     # -------------------------------------------------------------------------------------
     # Helpers to Sync Entities from config
@@ -394,11 +403,22 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         for entity_id in entities_to_remove:
             # Remove entity from data
             del self._data[section][entity_id]
+
             # Remove entity from HA registry
             self._remove_entities_in_ha(section, entity_id)
-            LOGGER.debug(
-                f"Removed {section[:-1]} with ID '{entity_id}' as it's no longer in configuration"
-            )
+            if section == DATA_CHORES:
+                for kid_id in self.kids_data.keys():
+                    self._remove_kid_chore_entities(kid_id, entity_id)
+
+            # Remove deleted kids from parents list
+            self._cleanup_parent_assignments()
+
+            # Remove chore approvals on chore delete
+            self._cleanup_pending_chore_approvals()
+
+            # Remove reward approvals on reward delete
+            if section == DATA_REWARDS:
+                self._cleanup_pending_reward_approvals()
 
         # Add or update entities
         for entity_id, entity_body in config_data.items():
@@ -443,6 +463,53 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                         "Removed orphaned SharedChoreGlobalStateSensor: %s",
                         entity_entry.entity_id,
                     )
+
+    def _remove_kid_chore_entities(self, kid_id: str, chore_id: str) -> None:
+        """Remove all kid-specific chore entities for a given kid and chore."""
+        ent_reg = er.async_get(self.hass)
+        for entity_entry in list(ent_reg.entities.values()):
+            if (kid_id in entity_entry.unique_id) and (
+                chore_id in entity_entry.unique_id
+            ):
+                ent_reg.async_remove(entity_entry.entity_id)
+                LOGGER.debug(
+                    "Removed kid-specific entity '%s' for kid '%s' and chore '%s'",
+                    entity_entry.entity_id,
+                    kid_id,
+                    chore_id,
+                )
+
+    def _cleanup_pending_chore_approvals(self) -> None:
+        """Remove any pending chore approvals for chore IDs that no longer exist."""
+        valid_chore_ids = set(self._data.get(DATA_CHORES, {}).keys())
+        self._data[DATA_PENDING_CHORE_APPROVALS] = [
+            ap
+            for ap in self._data.get(DATA_PENDING_CHORE_APPROVALS, [])
+            if ap.get("chore_id") in valid_chore_ids
+        ]
+
+    def _cleanup_pending_reward_approvals(self) -> None:
+        """Remove any pending reward approvals for reward IDs that no longer exist."""
+        valid_reward_ids = set(self._data.get(DATA_REWARDS, {}).keys())
+        self._data[DATA_PENDING_REWARD_APPROVALS] = [
+            approval
+            for approval in self._data.get(DATA_PENDING_REWARD_APPROVALS, [])
+            if approval.get("reward_id") in valid_reward_ids
+        ]
+
+    def _cleanup_parent_assignments(self) -> None:
+        """Remove any kid IDs from parent's 'associated_kids' that no longer exist."""
+        valid_kid_ids = set(self.kids_data.keys())
+        for parent in self._data.get(DATA_PARENTS, {}).values():
+            original = parent.get("associated_kids", [])
+            filtered = [kid_id for kid_id in original if kid_id in valid_kid_ids]
+            if filtered != original:
+                parent["associated_kids"] = filtered
+                LOGGER.debug(
+                    "Cleaned up associated_kids for parent '%s'. New list: %s",
+                    parent.get("name"),
+                    filtered,
+                )
 
     # -------------------------------------------------------------------------------------
     # Create/Update Entities
@@ -709,7 +776,13 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                     chore_data.get("name", chore_id),
                     kid_name,
                 )
-        chore_info["assigned_kids"] = assigned_kids_ids
+        old_assigned = set(chore_info.get("assigned_kids", []))
+        new_assigned = set(assigned_kids_ids)
+        removed_kids = old_assigned - new_assigned
+        for kid in removed_kids:
+            self._remove_kid_chore_entities(kid, chore_id)
+        # Update the chore's assigned kids list with the new assignments
+        chore_info["assigned_kids"] = list(new_assigned)
 
         chore_info["recurring_frequency"] = chore_data.get(
             "recurring_frequency", chore_info["recurring_frequency"]
@@ -916,8 +989,12 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
             "criteria": challenge_data.get("criteria", ""),
             "target_value": challenge_data.get("target_value", 1),
             "reward_points": challenge_data.get("reward_points", 0),
-            "start_date": challenge_data.get("start_date"),
-            "end_date": challenge_data.get("end_date"),
+            "start_date": challenge_data.get("start_date")
+            if challenge_data.get("start_date") not in [None, {}]
+            else None,
+            "end_date": challenge_data.get("end_date")
+            if challenge_data.get("end_date") not in [None, {}]
+            else None,
             "progress": challenge_data.get("progress", {}),
             "internal_id": challenge_id,
         }
@@ -950,11 +1027,15 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         challenge_info["reward_points"] = challenge_data.get(
             "reward_points", challenge_info["reward_points"]
         )
-        challenge_info["start_date"] = challenge_data.get(
-            "start_date", challenge_info.get("start_date")
+        challenge_info["start_date"] = (
+            challenge_data.get("start_date")
+            if challenge_data.get("start_date") not in [None, {}]
+            else None
         )
-        challenge_info["end_date"] = challenge_data.get(
-            "end_date", challenge_info.get("end_date")
+        challenge_info["end_date"] = (
+            challenge_data.get("end_date")
+            if challenge_data.get("end_date") not in [None, {}]
+            else None
         )
         LOGGER.debug(
             "Updated challenge '%s' with ID: %s", challenge_info["name"], challenge_id
@@ -1082,6 +1163,12 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         if not kid_info:
             LOGGER.warning("Claim chore: Kid ID '%s' not found", kid_id)
             raise HomeAssistantError(f"Kid with ID '{kid_id}' not found.")
+        self._normalize_kid_lists(kid_info)
+
+        if chore_info.get("allow_multiple_claims_per_day", False):
+            # If already approved, remove it so the new claim can trigger a new approval flow
+            if chore_id in kid_info.get("approved_chores", []):
+                kid_info["approved_chores"].remove(chore_id)
 
         if not chore_info.get("allow_multiple_claims_per_day", False):
             if chore_id in kid_info.get(
@@ -1260,13 +1347,21 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
         today_iso = dt_util.as_local(dt_util.utcnow()).date().isoformat()
         for challenge_id, challenge in self.challenges_data.items():
             if challenge.get("type") == CHALLENGE_TYPE_TOTAL_WITHIN_WINDOW:
-                start_date = dt_util.parse_datetime(challenge.get("start_date"))
-                if start_date and start_date.tzinfo is None:
-                    start_date = start_date.replace(tzinfo=dt_util.UTC)
+                start_date_raw = challenge.get("start_date")
+                if isinstance(start_date_raw, str):
+                    start_date = dt_util.parse_datetime(start_date_raw)
+                    if start_date and start_date.tzinfo is None:
+                        start_date = start_date.replace(tzinfo=dt_util.UTC)
+                else:
+                    start_date = None
 
-                end_date = dt_util.parse_datetime(challenge.get("end_date"))
-                if end_date and end_date.tzinfo is None:
-                    end_date = end_date.replace(tzinfo=dt_util.UTC)
+                end_date_raw = challenge.get("end_date")
+                if isinstance(end_date_raw, str):
+                    end_date = dt_util.parse_datetime(end_date_raw)
+                    if end_date and end_date.tzinfo is None:
+                        end_date = end_date.replace(tzinfo=dt_util.UTC)
+                else:
+                    end_date = None
 
                 now = dt_util.utcnow()
 
@@ -1953,16 +2048,22 @@ class KidsChoresDataCoordinator(DataUpdateCoordinator):
                 continue
 
             # Check challenge window
-            start_date = challenge.get("start_date")
-            end_date = challenge.get("end_date")
-            if start_date:
-                start = dt_util.parse_datetime(start_date)
-                if start and now < start:
-                    continue
-            if end_date:
-                end = dt_util.parse_datetime(end_date)
-                if end and now > end:
-                    continue
+            start_date_raw = challenge.get("start_date")
+            if isinstance(start_date_raw, str):
+                start = dt_util.parse_datetime(start_date_raw)
+            else:
+                start = None
+
+            end_date_raw = challenge.get("end_date")
+            if isinstance(end_date_raw, str):
+                end = dt_util.parse_datetime(end_date_raw)
+            else:
+                end = None
+
+            if start and now < start:
+                continue
+            if end and now > end:
+                continue
 
             target = challenge.get("target_value", 1)
             challenge_type = challenge.get("type")
