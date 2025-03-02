@@ -1,0 +1,26 @@
+---
+#
+alias: Show spotify on the clock
+id: 65f0caac-6ebc-4025-af11-4ef6bf3b75e1
+description: "Show spotify on the clock"
+trigger:
+  - platform: state
+    entity_id: media_player.spotify_miguel
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: media_player.spotify_miguel
+        state: "playing"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: spotify
+          text: "{{states.media_player.spotify_miguel.attributes.media_title}}"
+          icon: "12676"
+          repeat: 1
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: spotify
+mode: single
