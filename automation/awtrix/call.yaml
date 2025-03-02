@@ -1,0 +1,54 @@
+---
+# Festnetzbenachrichtigung
+alias: UhrFestnetz
+id: 9369a9dc-88fb-4ee8-a724-94559678db81
+description: "Uhr Festnetz"
+trigger:
+  - platform: state
+    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch
+condition: []
+action:
+  - variables:
+      from: >-
+        {{ state_attr('sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch', 'from_name') }} - {{ state_attr('sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch', 'from')}}
+  - if:
+      - condition: template
+        value_template: "{{  trigger.to_state.state == 'ringing' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: phone
+          text: "{{ from }}"
+          icon: "1232"
+          duration: 30
+      - action: script.awtrix3switch2app
+        data:
+          app_id: phone
+  - if:
+      - condition: or
+        conditions:
+          - condition: and
+            alias: "Verpasst"
+            conditions:
+              - condition: template
+                value_template: "{{ trigger.to_state.state == 'idle' }}"
+              - condition: template
+                value_template: "{{ trigger.from_state.state == 'ringing' }}"
+          - condition: and
+            alias: "AB Weiterleitung"
+            conditions:
+              - condition: template
+                value_template: "{{  trigger.to_state.state == 'talking' }}"
+              - condition: template
+                value_template: "{{ trigger.to_state.attributes.device == '40' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: phone
+          text: "{{ from }}"
+          icon: "21482"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: phone
+mode: single

@@ -1,0 +1,21 @@
+---
+# AWTRIX 3 Delete App Notif
+awtrix3switch2app:
+  fields:
+    app_id:
+      selector:
+        text: null
+      name: AppId
+      description: App zu der gewechselt werden soll
+      required: true
+  sequence:
+    - action: mqtt.publish
+      metadata: {}
+      data:
+        topic: "awtrix_50ccb4/switch"
+        payload: |-
+          {
+            "name": "{{ app_id }}"
+          }
+  alias: awtrix3Switch2App
+  description: ""
