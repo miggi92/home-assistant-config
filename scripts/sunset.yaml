@@ -27,9 +27,6 @@ sunset_script:
               state: "on"
             - condition: or
               conditions:
-                - condition: state
-                  entity_id: media_player.wztv
-                  state: "on"
                 - condition: and
                   conditions:
                     - condition: not
