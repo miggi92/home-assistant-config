@@ -10,7 +10,7 @@ condition: []
 action:
   - variables:
       from: >-
-        {{ state_attr('sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch', 'from_name') }} - {{ state_attr('sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch', 'from')}}
+        {{ trigger.from_state.attributes.from_name }} - {{ trigger.from_state.attributes.from}}
   - if:
       - condition: template
         value_template: "{{  trigger.to_state.state == 'ringing' }}"
@@ -21,9 +21,11 @@ action:
           text: "{{ from }}"
           icon: "1232"
           duration: 30
-      - action: script.awtrix3switch2app
-        data:
-          app_id: phone
+  # - delay:
+  #     seconds: 1
+  # - action: script.awtrix3switch2app
+  #   data:
+  #     app_id: phone
   - if:
       - condition: or
         conditions:
@@ -47,6 +49,7 @@ action:
           app_id: phone
           text: "{{ from }}"
           icon: "21482"
+          duration: 30
     else:
       - action: script.awtrix3delapp
         data:
