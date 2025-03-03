@@ -40,7 +40,7 @@ awtrix3notif:
           {
             "text": "{{ text }}",
             "duration": "{{ duration }}",
-            "rainbow": false,
+            "rainbow": "{{ rainbow }}",
             "icon": "{{ icon }}",
             "repeat": "{{ repeat }}"
           }
