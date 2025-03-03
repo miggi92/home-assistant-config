@@ -30,7 +30,6 @@ action:
           text: "{{ to_state }}"
           icon: "1232"
           repeat: 2
-          rainbow: true
   - if:
       - condition: or
         conditions:

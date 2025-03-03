@@ -15,7 +15,6 @@ awtrix3notif:
       default: 2883
       name: Icon Id
       description: Icon ID
-      required: true
     duration:
       selector:
         number:
@@ -23,7 +22,6 @@ awtrix3notif:
           max: 180
           step: 1
       default: 10
-      required: true
     repeat:
       selector:
         number:
@@ -31,6 +29,11 @@ awtrix3notif:
           max: 10
           step: 1
       default: 1
+    overlay:
+      selector:
+        text: null
+      name: Overlayeffekt
+      description: Overlayeffekt der Benachrichtigung
   sequence:
     - action: mqtt.publish
       metadata: {}
@@ -40,9 +43,10 @@ awtrix3notif:
           {
             "text": "{{ text }}",
             "duration": "{{ duration }}",
-            "rainbow": "{{ rainbow }}",
+            "rainbow": "false",
             "icon": "{{ icon }}",
-            "repeat": "{{ repeat }}"
+            "repeat": "{{ repeat }}",
+            "overlay" : "{{ overlay }}"
           }
   alias: awtrix3Notify
   description: ""
