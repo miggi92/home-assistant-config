@@ -15,17 +15,13 @@ action:
       - condition: template
         value_template: "{{  trigger.to_state.state == 'ringing' }}"
     then:
-      - action: script.awtrix3customapp
+      - action: script.awtrix3notification
         data:
-          app_id: phone
           text: "{{ from }}"
           icon: "1232"
+          repeat: 2
+          rainbow: true
           duration: 30
-  # - delay:
-  #     seconds: 1
-  # - action: script.awtrix3switch2app
-  #   data:
-  #     app_id: phone
   - if:
       - condition: or
         conditions:
