@@ -10,9 +10,17 @@ condition: []
 action:
   - variables:
       from_state: >-
-        {{ trigger.from_state.attributes.from_name }} - {{ trigger.from_state.attributes.from }}
+        {% if trigger.from_state.attributes.from_name %}
+          {{ trigger.from_state.attributes.from_name }}
+        {% else %}
+          {{ trigger.from_state.attributes.from }}
+        {% endif %}
       to_state: >-
-        {{ trigger.to_state.attributes.from_name }} - {{ trigger.to_state.attributes.from }}
+        {% if trigger.to_state.attributes.from_name %}
+          {{ trigger.to_state.attributes.from_name }}
+        {% else %}
+          {{ trigger.to_state.attributes.from }}
+        {% endif %}
   - if:
       - condition: template
         value_template: "{{  trigger.to_state.state == 'ringing' }}"
@@ -45,7 +53,7 @@ action:
       - action: script.awtrix3customapp
         data:
           app_id: phone
-          text: "{{ from }}"
+          text: "{{ from_state }}"
           icon: "21482"
           duration: 15
     else:
