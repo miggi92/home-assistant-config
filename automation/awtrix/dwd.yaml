@@ -20,6 +20,6 @@ action:
       - action: script.awtrix3customapp
         data:
           app_id: dwd
-          text: "{{ states('sensor.home_aktuelle_warnstufe') | int }}"
+          text: "{{ states('sensor.home_aktuelle_warnstufe') | int }} - {{ state_attr('sensor.home_aktuelle_warnstufe','warning_1_name')}}"
           icon: "6874"
 mode: single
