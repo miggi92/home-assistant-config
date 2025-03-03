@@ -35,6 +35,11 @@ awtrix3customapp:
           max: 10
           step: 1
       default: 1
+    overlay:
+      selector:
+        text: null
+      name: Overlayeffekt
+      description: Overlayeffekt der Benachrichtigung
   sequence:
     - action: mqtt.publish
       metadata: {}
@@ -46,7 +51,8 @@ awtrix3customapp:
             "duration": "{{ duration }}",
             "rainbow": false,
             "icon": "{{ icon }}",
-            "repeat": "{{ repeat }}"
+            "repeat": "{{ repeat }}",
+            "overlay" : "{{ overlay }}"
           }
   alias: awtrix3CustomApp
   description: ""
