@@ -9,19 +9,21 @@ trigger:
 condition: []
 action:
   - variables:
-      from: >-
-        {{ trigger.from_state.attributes.from_name }} - {{ trigger.from_state.attributes.from}}
+      from_state: >-
+        {{ trigger.from_state.attributes.from_name }} - {{ trigger.from_state.attributes.from }}
+      to_state: >-
+        {{ trigger.to_state.attributes.from_name }} - {{ trigger.to_state.attributes.from }}
   - if:
       - condition: template
         value_template: "{{  trigger.to_state.state == 'ringing' }}"
     then:
-      - action: script.awtrix3notification
+      - action: script.awtrix3notif
         data:
-          text: "{{ from }}"
+          text: "{{ to_state }}"
           icon: "1232"
           repeat: 2
           rainbow: true
-          duration: 30
+          duration: 15
   - if:
       - condition: or
         conditions:
@@ -45,7 +47,7 @@ action:
           app_id: phone
           text: "{{ from }}"
           icon: "21482"
-          duration: 30
+          duration: 15
     else:
       - action: script.awtrix3delapp
         data:
