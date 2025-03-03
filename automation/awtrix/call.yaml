@@ -31,7 +31,6 @@ action:
           icon: "1232"
           repeat: 2
           rainbow: true
-          duration: 15
   - if:
       - condition: or
         conditions:
