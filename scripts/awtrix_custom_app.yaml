@@ -48,38 +48,26 @@ awtrix3customapp:
           step: 1
       default: -1
   sequence:
-    - if:
-        - condition: template
-          value_template: "{{ progress != -1 }}"
-      then:
-        - action: mqtt.publish
-          metadata: {}
-          data:
-            topic: "awtrix_50ccb4/custom/{{ app_id }}"
-            payload: |-
-              {
-                "text": "{{ text }}",
-                "duration": "{{ duration }}",
-                "rainbow": false,
-                "icon": "{{ icon }}",
-                "repeat": "{{ repeat }}",
-                "overlay" : "{{ overlay }}",
-                "progress" : "{{ progress }}"
-              }
-      else:
-        - action: mqtt.publish
-          metadata: {}
-          data:
-            topic: "awtrix_50ccb4/custom/{{ app_id }}"
-            payload: |-
-              {
-                "text": "{{ text }}",
-                "duration": "{{ duration }}",
-                "rainbow": false,
-                "icon": "{{ icon }}",
-                "repeat": "{{ repeat }}",
-                "overlay" : "{{ overlay }}"
-              }
+    - variables:
+        icon: "{{ icon | default(2883) }}"
+        repeat: "{{ repeat | default(1) }}"
+        progress: "{{ progress | default(-1) }}"
+        duration: "{{ duration | default(10) }}"
+
+    - action: mqtt.publish
+      metadata: {}
+      data:
+        topic: "awtrix_50ccb4/custom/{{ app_id }}"
+        payload: |-
+          {
+            "text": "{{ text }}",
+            "duration": "{{ duration }}",
+            "rainbow": false,
+            "icon": "{{ icon }}",
+            "repeat": "{{ repeat }}",
+            "overlay" : "{{ overlay }}",
+            "progress" : "{{ progress }}"
+          }
   alias: awtrix3CustomApp
   description: ""
   mode: parallel
