@@ -25,18 +25,6 @@ sunset_script:
             - condition: state
               entity_id: input_boolean.automatic_lights
               state: "on"
-            - condition: or
-              conditions:
-                - condition: and
-                  conditions:
-                    - condition: not
-                      conditions:
-                        - condition: state
-                          entity_id: group.parents
-                          state: "home"
-                    - condition: state
-                      entity_id: group.residents
-                      state: "home"
           then:
             - action: light.turn_on
               target:
