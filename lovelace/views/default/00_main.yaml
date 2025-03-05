@@ -27,7 +27,7 @@ badges:
 
 cards:
   - type: iframe
-    url: https://clock.kohgeb.family/fullscreen
+    url: !secret clock_url
     aspect_ratio: 25%
   - !include ../../cards/residents.yaml
   - !include ../../cards/floorplan.yaml
