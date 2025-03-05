@@ -1,0 +1,26 @@
+---
+# Show lights on
+alias: Show lightstrip time
+id: 5f7b6ea8-5d4b-4bf8-80d0-cd976f9ea7d5
+description: "Show lightstrip time"
+trigger:
+  - platform: time_pattern
+    minutes: "/5"
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: timer.lichterkette
+        state: "idle"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: lightstrip
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: lightstrip
+          text: "Lichterkette"
+          icon: "66625"
+          progress: "{{  ( 100 - max(0, ((state_attr('timer.lichterkette', 'finishes_at') | as_datetime - now().replace(microsecond=0)).total_seconds() / 25200) * 100) ) | round(2) }}"
+mode: single
