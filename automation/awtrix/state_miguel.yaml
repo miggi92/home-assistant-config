@@ -1,0 +1,25 @@
+---
+# Display state miguel
+alias: Show state of miguel
+id: f6d85177-1780-4f92-a00b-db0a583a1bad
+description: "Show miguels state on clock"
+trigger:
+  - platform: state
+    entity_id: person.miguel
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: person.miguel
+        state: "home"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: miguel
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: miguel
+          text: "{{ states('person.miguel') }}"
+          icon: "28759"
+mode: single

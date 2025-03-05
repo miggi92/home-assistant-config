@@ -1,0 +1,25 @@
+---
+# Display state milo
+alias: Show state of milo
+id: de7d8756-e929-4001-ade4-1c02b9a2c5c6
+description: "Show milos state on clock"
+trigger:
+  - platform: state
+    entity_id: person.milo_carlos
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: person.milo_carlos
+        state: "home"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: milo
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: milo
+          text: "{{ states('person.milo_carlos') }}"
+          icon: "48342"
+mode: single
