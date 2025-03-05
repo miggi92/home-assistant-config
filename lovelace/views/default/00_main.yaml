@@ -26,6 +26,9 @@ badges:
         name: Roggen
 
 cards:
+  - type: iframe
+    url: https://clock.kohgeb.family/fullscreen
+    aspect_ratio: 25%
   - !include ../../cards/residents.yaml
   - !include ../../cards/floorplan.yaml
   - type: grid
