@@ -1,0 +1,32 @@
+---
+# Display bed state
+alias: Show state of bed
+id: 0a55979a-ca8c-4eef-8cb0-aade40ac6c1f
+description: "Show bed state on clock"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.withings_in_bed_miguel
+  - platform: state
+    entity_id: binary_sensor.withings_in_bed_silke
+condition: []
+action:
+  - if:
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: binary_sensor.withings_in_bed_miguel
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.withings_in_bed_silke
+            state: "on"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: bed
+          text: "Zz Zz Zz Zz Zz Zz"
+          icon: "19723"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: bed
+mode: single
