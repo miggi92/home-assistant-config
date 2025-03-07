@@ -6,19 +6,21 @@ description: "Show waste on clock"
 trigger:
   - platform: state
     entity_id: sensor.restmull_2
+  - platform: state
+    entity_id: sensor.papier
 condition: []
 action:
   - if:
       - condition: template
-        value_template: "{{ state_attr('sensor.restmull_2', 'daysTo') | int <= 1 }}"
+        value_template: "{{ trigger.to_state.attributes.daysTo | int <= 1 }}"
     then:
       - action: script.awtrix3customapp
         data:
-          app_id: waste
-          text: "{{ state_attr('sensor.restmull_2', 'friendly_name') }}"
+          app_id: "waste_{{ trigger.from_state.friendly_name }}"
+          text: "{{ trigger.to_state.state }}"
           icon: "57283"
     else:
       - action: script.awtrix3delapp
         data:
-          app_id: waste
-mode: single
+          app_id: "waste_{{ trigger.from_state.friendly_name }}"
+mode: parallel
