@@ -10,7 +10,7 @@ condition: []
 action:
   - if:
       - condition: template
-        value_template: "{{ state_attr('sensor.restmull_2', 'daysTo') <= '1' }}"
+        value_template: "{{ state_attr('sensor.restmull_2', 'daysTo') | int <= 1 }}"
     then:
       - action: script.awtrix3customapp
         data:
