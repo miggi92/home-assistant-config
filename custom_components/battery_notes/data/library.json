@@ -4694,6 +4694,13 @@
         },
         {
             "manufacturer": "Moes",
+            "model": "Thermostat radiator valve",
+            "model_id": "TV01-ZB",
+            "battery_type": "AA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Moes",
             "model": "Thermostat radiator valve (TV01-ZB)",
             "battery_type": "AA",
             "battery_quantity": 2
