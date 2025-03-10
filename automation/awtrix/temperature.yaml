@@ -1,0 +1,16 @@
+---
+# sensor.wohnungstemperatur
+alias: Show temperature on clock
+id: 4439da33-a3b6-4566-981d-fcfa49f6786b
+description: " Show temperature on clock"
+trigger:
+  - platform: state
+    entity_id: sensor.wohnungstemperatur
+condition: []
+action:
+  - action: script.awtrix3customapp
+    data:
+      app_id: temperature
+      text: "{{ states('sensor.wohnungstemperatur') }}"
+      icon: "4481"
+mode: single
