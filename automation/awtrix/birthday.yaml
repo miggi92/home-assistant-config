@@ -5,7 +5,7 @@ id: 18139b1d-4666-4261-b024-e737cf1e9159
 description: "Show birthdays on clock"
 trigger:
   - platform: time
-    at: "00:00:00"
+    at: "00:01:00"
 condition: []
 action:
   - variables:
