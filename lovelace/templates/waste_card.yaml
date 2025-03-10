@@ -11,7 +11,7 @@ waste_card_template:
   card:
     type: custom:mushroom-template-card
     icon: |
-      {% if  state_attr(config.entity, "remaining") == 0 %}
+      {% if  state_attr(config.entity, "daysTo") == 0 %}
       [[icon_open]]
       {% else %}
       [[icon]]
@@ -20,14 +20,14 @@ waste_card_template:
     icon_color: "[[icon_color]]"
     layout: "[[layout]]"
     secondary: >-
-      {{ state_attr(entity, "remaining") }}
+      {{ state_attr(entity, "daysTo") }}
       Tage
     entity: "[[entity]]"
     card_mod:
       style:
         mushroom-shape-icon$: |
           .shape {
-            background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-blue)) {{ state_attr(config.entity, "remaining") / [[max_days]] * 100 }}% 0%, var(--card-background-color) 0% 100%);
+            background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-blue)) {{ state_attr(config.entity, "daysTo") / [[max_days]] * 100 }}% 0%, var(--card-background-color) 0% 100%);
           }
           .shape:after {
             content: "";
