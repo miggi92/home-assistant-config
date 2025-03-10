@@ -11,6 +11,6 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: humidity
-      text: "{{ states('sensor.wohnungsfeuchtigkeit') }} %"
+      text: "{{ states('sensor.wohnungsfeuchtigkeit') }}  {{ state_attr('sensor.wohnungsfeuchtigkeit', 'unit_of_measurement') }}"
       icon: "2423"
 mode: single

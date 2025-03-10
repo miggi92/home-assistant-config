@@ -11,6 +11,6 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: temperature
-      text: "{{ states('sensor.wohnungstemperatur') }} °C"
+      text: "{{ states('sensor.wohnungstemperatur') }} {{ state_attr('sensor.wohnungstemperatur', 'unit_of_measurement') }}"
       icon: "4481"
 mode: single
