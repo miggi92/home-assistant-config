@@ -8,7 +8,7 @@ trigger:
       - sensor.restmull
       - sensor.papiertonne
       - sensor.schadstoffe
-    attribute: remaining
+    attribute: "DaysTo"
     to: 0
     id: heute
   - platform: state
@@ -16,7 +16,7 @@ trigger:
       - sensor.restmull
       - sensor.papiertonne
       - sensor.schadstoffe
-    attribute: remaining
+    attribute: "DaysTo"
     to: 1
     id: morgen
 
@@ -31,8 +31,6 @@ action:
         🗑️ Abfall 🗑️
       value1: |
         {{ trigger.to_state.attributes.friendly_name }} wird {{ trigger.id }} abgeholt.
-      value2: |
-        {{ trigger.to_state.attributes.description }}
       who: "home"
       tag_id: "information"
       group: "Abfall"
