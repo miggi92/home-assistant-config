@@ -6,7 +6,7 @@ trigger:
   - platform: state
     entity_id:
       - sensor.restmull
-      - sensor.papiertonne
+      - sensor.papier
       - sensor.schadstoffe
     attribute: "DaysTo"
     to: 0
