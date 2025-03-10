@@ -1,8 +1,0 @@
----
-# Schadstoffe
-platform: abfallplus
-name: Schadstoffe
-key: !secret abfall_key
-municipality: !secret abfall_municipality
-street: !secret abfall_street
-trash_ids: "654"

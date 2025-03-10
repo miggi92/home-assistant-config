@@ -1,8 +1,0 @@
----
-# Restmüll
-platform: abfallplus
-name: Restmüll
-key: !secret abfall_key
-municipality: !secret abfall_municipality
-street: !secret abfall_street
-trash_ids: "31"
