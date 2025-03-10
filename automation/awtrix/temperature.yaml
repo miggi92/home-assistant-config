@@ -11,6 +11,6 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: temperature
-      text: "{{ states('sensor.wohnungstemperatur') }}"
+      text: "{{ states('sensor.wohnungstemperatur') }} °C"
       icon: "4481"
 mode: single
