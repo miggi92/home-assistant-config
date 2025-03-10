@@ -8,7 +8,7 @@ trigger:
       - sensor.restmull
       - sensor.papier
       - sensor.schadstoffe
-    attribute: "DaysTo"
+    attribute: "daysTo"
     to: 0
     id: heute
   - platform: state
@@ -16,7 +16,7 @@ trigger:
       - sensor.restmull
       - sensor.papiertonne
       - sensor.schadstoffe
-    attribute: "DaysTo"
+    attribute: "daysTo"
     to: 1
     id: morgen
 
