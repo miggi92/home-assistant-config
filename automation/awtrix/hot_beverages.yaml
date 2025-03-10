@@ -9,9 +9,8 @@ trigger:
 condition: []
 action:
   - if:
-      - condition: state
-        entity_id: input_number.heissgetranke_zahler
-        state: "0"
+      - condition: template
+        value_template: "{{ states('input_number.heissgetranke_zahler') | int == 0 }}"
     then:
       - action: script.awtrix3delapp
         data:
