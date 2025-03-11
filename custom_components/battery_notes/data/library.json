@@ -281,6 +281,13 @@
             "battery_quantity": 2
         },
         {
+            "manufacturer": "_TZ3000_rr1cqjwu",
+            "model": "TS0207_water_leak_detector",
+            "model_id": "TS0207",
+            "hw_version": "0122052017",
+            "battery_type": "CR2032"
+        },
+        {
             "manufacturer": "_TZ3000_rsqqkdxv",
             "model": "TS0041",
             "battery_type": "CR2032"
@@ -559,6 +566,12 @@
             "manufacturer": "ABUS Security-Center GmbH Co. KG",
             "model": "SHRM10000",
             "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Acurite",
+            "model": "Acurite-5n1",
+            "battery_type": "AA",
+            "battery_quantity": 4
         },
         {
             "manufacturer": "Adaprox",
@@ -8302,6 +8315,12 @@
             "manufacturer": "Vision Security",
             "model": "ZS5101",
             "battery_type": "CR123A"
+        },
+        {
+            "manufacturer": "Visonic",
+            "model": "Magnetic door & window contact sensor",
+            "model_id": "MCT-340 E",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Visonic",
