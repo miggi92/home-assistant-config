@@ -6890,9 +6890,23 @@
         },
         {
             "manufacturer": "tado\u00b0 GmbH",
+            "model": "Smart Radiator Thermostat X (1)",
+            "hw_version": "VA04",
+            "battery_type": "LR6",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "tado\u00b0 GmbH",
             "model": "Smart Thermostat X",
             "model_id": "RU04",
             "battery_type": "AAA",
+            "battery_quantity": 3
+        },
+        {
+            "manufacturer": "tado\u00b0 GmbH",
+            "model": "Wireless Temperature Sensor X (3)",
+            "hw_version": "SU04",
+            "battery_type": "LR03",
             "battery_quantity": 3
         },
         {
