@@ -5805,6 +5805,16 @@
             "battery_type": "Rechargeable"
         },
         {
+            "manufacturer": "Samsung",
+            "model": "SM-A546B",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Samsung",
+            "model": "SM-A556B",
+            "battery_type": "Rechargeable"
+        },
+        {
             "manufacturer": "samsung",
             "model": "SM-G770F",
             "battery_type": "Rechargeable"
@@ -5832,6 +5842,11 @@
         {
             "manufacturer": "samsung",
             "model": "SM-G998U",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Samsung",
+            "model": "SM-L310",
             "battery_type": "Rechargeable"
         },
         {
