@@ -4762,6 +4762,13 @@
         },
         {
             "manufacturer": "Moes",
+            "model": "Smart temperature and humidity meter with display",
+            "model_id": "ZSS-ZK-THL",
+            "hw_version": "1",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "Moes",
             "model": "Smoke sensor (ZSS-HM-SSD01)",
             "battery_type": "CR123A"
         },
@@ -5190,6 +5197,11 @@
         },
         {
             "manufacturer": "Oral-B",
+            "model": "Smart Series 6000",
+            "battery_type": "Rechargeable"
+        },
+        {
+            "manufacturer": "Oral-B",
             "model": "Smart Series 8000",
             "battery_type": "Rechargeable"
         },
@@ -5299,6 +5311,12 @@
             "manufacturer": "Perenio",
             "model": "PECWS01",
             "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "PETLIBRO",
+            "model": "PLAF301",
+            "battery_type": "D",
+            "battery_quantity": 3
         },
         {
             "manufacturer": "Philio Technology Corp",
