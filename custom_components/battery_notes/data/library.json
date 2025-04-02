@@ -2215,6 +2215,11 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "ELV-SH-CTH",
+            "battery_type": "CR2032"
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HM-CC-RT-DN",
             "battery_type": "AA",
             "battery_quantity": 2
