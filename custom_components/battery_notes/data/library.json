@@ -2766,6 +2766,12 @@
         },
         {
             "manufacturer": "eQ-3",
+            "model": "HmIP-WTH-A",
+            "battery_type": "AAA",
+            "battery_quantity": 2
+        },
+        {
+            "manufacturer": "eQ-3",
             "model": "HmIP-WTH-B-2",
             "battery_type": "AA",
             "battery_quantity": 2
@@ -5418,6 +5424,13 @@
             "model": "Hue motion sensor (9290030675)",
             "battery_type": "AAA",
             "battery_quantity": 2
+        },
+        {
+            "manufacturer": "Philips",
+            "model": "Hue smart button",
+            "model_id": "8718699693985",
+            "hw_version": "1",
+            "battery_type": "CR2032"
         },
         {
             "manufacturer": "Philips",
