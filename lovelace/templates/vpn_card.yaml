@@ -1,0 +1,20 @@
+---
+# VPN card
+vpn_card_template:
+  defaults:
+    title: "VPN Device"
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:mushroom-title-card
+        subtitle: "[[title]] - VPN"
+      - type: entities
+        entities:
+          - entity: "binary_sensor.vpn_wg_[[id]]_online_status"
+            name: "[[title]] Online"
+          - entity: "sensor.vpn_wg_[[id]]_data"
+            name: "[[title]] Data"
+          - entity: "sensor.vpn_wg_[[id]]_last_handshake"
+            name: "[[title]] Last handshake"
+          - entity: "sensor.vpn_wg_[[id]]_ip"
+            name: "[[title]] IP"

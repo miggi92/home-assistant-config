@@ -8,6 +8,21 @@ cards:
       - type: back
       - type: spacer
   - type: custom:decluttering-card
+    template: vpn_card_template
+    variables:
+      - title: Silke Handy
+      - id: "kdkb_3zxq"
+  - type: custom:decluttering-card
+    template: vpn_card_template
+    variables:
+      - title: Miguel Handy
+      - id: "krkh_4bv0"
+  - type: custom:decluttering-card
+    template: vpn_card_template
+    variables:
+      - title: Fire Tab
+      - id: "hryg_ktyg"
+  - type: custom:decluttering-card
     template: network_card_template
     variables:
       - title: Drucker & Festplatten
