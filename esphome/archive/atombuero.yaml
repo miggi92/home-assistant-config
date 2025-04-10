@@ -1,0 +1,31 @@
+---
+esphome:
+  name: atombuero
+  friendly_name: AtomBuero
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "Dd4tIgfYisCadAKO8Pqwmn1wPIV7Ay3gQ7HWzF1uiJw="
+
+ota:
+  password: "ef8035e9d18680923f04e2484119011f"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Atombuero Fallback Hotspot"
+    password: "SKXFq7wd48Rk"
+
+captive_portal:
