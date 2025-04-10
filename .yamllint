@@ -5,7 +5,6 @@ ignore: |
   blueprints/*/homeassistant/*.yaml
   custom_components/
   esphomeyaml/*/
-  esphome/.esphome/
   ip_bans.yaml
   notebooks/
   scenes.yaml
@@ -13,7 +12,7 @@ ignore: |
   themes/*
   zigbee2mqtt/*
   dwains-dashboard/*
-  esphome/esp32-s3box-3.yaml
+  esphome/*
 rules:
   braces:
     level: error

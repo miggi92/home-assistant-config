@@ -1133,32 +1133,32 @@ image:
     id: idle_img
     resize: 320x240
     type: RGB24
-    use_transparency: true
+    transparency: true
   - file: "https://github.com/jlpouffier/home-assistant-s3-box-community-illustrations/raw/main/jarvis_female/illustrations/listening.png"
     id: listening_img
     resize: 320x240
     type: RGB24
-    use_transparency: true
+    transparency: true
   - file: "https://github.com/jlpouffier/home-assistant-s3-box-community-illustrations/raw/main/jarvis_female/illustrations/thinking.png"
     id: thinking_img
     resize: 320x240
     type: RGB24
-    use_transparency: true
+    transparency: true
   - file: "https://github.com/jlpouffier/home-assistant-s3-box-community-illustrations/raw/main/jarvis_female/illustrations/replying.png"
     id: replying_img
     resize: 320x240
     type: RGB24
-    use_transparency: true
+    transparency: true
   - file: "https://github.com/jlpouffier/home-assistant-s3-box-community-illustrations/raw/main/jarvis_female/illustrations/loading.png"
     id: loading_img
     resize: 320x240
     type: RGB24
-    use_transparency: true
+    transparency: true
   - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/logo.png"
     id: logo_img
     resize: 80x75
     type: RGB24
-    use_transparency: true
+    transparency: true
 font:
   - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
     id: my_font
