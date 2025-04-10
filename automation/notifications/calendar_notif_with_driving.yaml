@@ -12,7 +12,7 @@ condition:
     value_template: "{{ trigger.calendar_event.location != '' }}"
 action:
   - variables:
-      start_time: "{{ state_attr('calendar.familie', 'start_time') | as_timestamp | timestamp_custom('%H:%M', True) }}"
+      start_time: "{{ trigger.calendar_event.start_time | as_timestamp | timestamp_custom('%H:%M', True) }}"
   - service: script.notify_engine
     data:
       title: |
