@@ -86,6 +86,8 @@ lovelace:
       type: module
     - url: /hacsfiles/upcoming-media-card/upcoming-media-card.js
       type: module
+    - url: /hacsfiles/week-planner-card/week-planner-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
