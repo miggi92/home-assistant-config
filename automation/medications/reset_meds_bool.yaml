@@ -28,7 +28,7 @@ action:
                     pollen_sensor: "sensor.pollenflug_{{ pollen_typ }}_112"
                 - condition: template
                   value_template: >
-                    {{ states(repeat.item) != 'on' and states(pollen_sensor) | int(0) == 0 }}
+                    {{ states(repeat.item) != 'on' and states(pollen_sensor) | float == 0 }}
                 - action: input_boolean.turn_on
                   target:
                     entity_id: "{{ repeat.item }}"
