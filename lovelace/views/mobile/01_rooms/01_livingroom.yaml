@@ -123,14 +123,7 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: custom:mini-media-player
-    entity: media_player.fernseher_im_wohnzimmer
-    artwork: full-cover
-    info: scroll
-    hide:
-      source: true
-      volume: true
-      power_state: false
+
   - type: custom:mini-media-player
     entity: media_player.wztv
     artwork: cover
@@ -138,12 +131,15 @@ cards:
       source: true
       controls: true
       power_state: false
+
   - type: custom:decluttering-card
     template: android_tv_remote_template
     variables:
       - name: 1&1 Box
+        entity: fernseher_im_wohnzimmer
         media_player: media_player.fernseher_im_wohnzimmer
         remote: remote.fernseher_im_wohnzimmer
+        active_app: sensor.active_app
 
   - type: custom:decluttering-card
     template: area_battery_card_template
