@@ -39,6 +39,6 @@ android_tv_remote_template:
             volume_level: "{{ value | float }}"
         vertical: true
         icon: mdi:volume-high
-    keyboard_id: media_player.fernseher_im_wohnzimmer_3
-    media_player_id: media_player.fernseher_im_wohnzimmer_3
+    keyboard_id: media_player.fernseher_im_wohnzimmer
+    media_player_id: media_player.fernseher_im_wohnzimmer
     title: "[[name]]"
