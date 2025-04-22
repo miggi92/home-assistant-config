@@ -139,6 +139,11 @@ cards:
       controls: true
       power_state: false
   - type: custom:decluttering-card
+    template: android_tv_remote_template
+    variables:
+      - name: 1&1 Box
+
+  - type: custom:decluttering-card
     template: area_battery_card_template
     variables:
       - area: Wohnzimmer
