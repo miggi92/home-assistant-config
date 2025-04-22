@@ -1,0 +1,4 @@
+---
+# https://github.com/DJS91/HAMusicAssistantJukebox
+# revokes they key and deletes the key file from config/www
+delete_jukebox_token: python3 /config/python_scripts/manage_tokens.py delete

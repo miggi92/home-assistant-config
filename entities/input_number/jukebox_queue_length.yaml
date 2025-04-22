@@ -1,0 +1,5 @@
+---
+# https://github.com/DJS91/HAMusicAssistantJukebox
+jukebox_queue_length:
+  name: Jukebox Queue Length
+  initial: 0
