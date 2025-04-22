@@ -1,0 +1,7 @@
+---
+# Active tv app
+- sensor:
+    - name: WZ TV Active App
+      unique_id: wz_tv_active_app
+      state: >
+        {{ state_attr('media_player.fernseher_im_wohnzimmer', 'app_name') }}
