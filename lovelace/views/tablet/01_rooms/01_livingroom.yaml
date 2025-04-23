@@ -3,7 +3,7 @@ title: Wohnzimmer
 path: living
 icon: mdi:sofa
 type: sections
-max_columns: 4
+max_columns: 3
 subview: true
 header:
   layout: center
@@ -32,7 +32,6 @@ badges:
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid
-    column_span: 2
     cards:
       - hours_to_show: 24
         graph: line

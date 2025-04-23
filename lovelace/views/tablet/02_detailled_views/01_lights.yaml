@@ -2,7 +2,7 @@
 title: Lichter
 path: lights
 type: sections
-max_columns: 4
+max_columns: 3
 subview: true
 icon: mdi:lightbulb
 header:
@@ -17,7 +17,6 @@ badges:
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid
-    column_span: 2
     cards:
       - type: custom:mushroom-light-card
         entity: light.schlafzimmerlicht

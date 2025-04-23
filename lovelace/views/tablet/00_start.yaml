@@ -3,11 +3,10 @@ title: Tablet Dashboard
 path: start
 icon: mdi:home
 type: sections
-max_columns: 4
+max_columns: 3
 sections:
   - !include ../../cards/tablet/left_side.yaml
   - type: grid
-    column_span: 2
     cards:
       - !include ../../cards/residents.yaml
   - !include ../../cards/tablet/right_side.yaml
