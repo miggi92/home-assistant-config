@@ -18,8 +18,21 @@ header:
 badges:
   - type: custom:mushroom-template-badge
     entity: alarm_control_panel.alarmo
-    icon: mdi:alarm-panel
-    content: "{{ states(entity) }}"
+    icon: |-
+      {% set alarm_mode = states(entity) %}
+      {% if alarm_mode == 'armed_home' %}
+        mdi:shield-account
+      {% elif alarm_mode == 'armed_away' %}
+        mdi:shield-lock
+      {% elif alarm_mode == 'armed_vacation' %}
+        mdi:palm-tree
+      {% elif alarm_mode == 'armed_night' %}
+        mdi:shield-moon
+      {% elif alarm_mode == 'arming' %}
+        mdi:shield
+      {% else %}
+        mdi:shield-off
+      {% endif %}
     tap_action:
       action: more-info
   - type: custom:mushroom-template-badge
