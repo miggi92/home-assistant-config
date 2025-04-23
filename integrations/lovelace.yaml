@@ -103,6 +103,7 @@ lovelace:
       title: Tablet
       icon: mdi:tablet
       show_in_sidebar: true
+
     lovelace-floorplan:
       mode: yaml
       filename: lovelace/dashboards/floorplan.yaml

@@ -1,4 +1,49 @@
 ---
+wallpanel:
+  enabled: true
+  hide_toolbar: true
+  hide_sidebar: true
+  fullscreen: false
+  idle_time: 10
+  display_time: 15
+  image_url: http://picsum.photos/${width}/${height}?random=${timestamp}
+  image_fit: cover
+  image_list_update_interval: 3600
+  image_order: sorted
+  image_excludes: []
+  show_exif_info: false
+  fetch_address_data: true
+  exif_info_template: >-
+    ${address.town|address.city!prefix=!suffix= //
+    }${DateTimeOriginal!options=year:numeric,month:long}
+  media_entity_load_unchanged: true
+  info_animation_duration_x: 30
+  info_animation_duration_y: 11
+  info_animation_timing_function_x: ease-in-out
+  info_animation_timing_function_y: ease-in-out
+  info_move_pattern: random
+  info_move_interval: 0
+  info_move_fade_duration: 2
+  cards:
+    - type: custom:clock-weather-card
+      entity: weather.home
+      title: Home
+      sun_entity: sun.sun
+      temperature_sensor: sensor.daikinap90134_outside_temperature
+      humidity_sensor: sensor.luftfeuchtigkeit
+      weather_icon_type: line
+      animated_icon: true
+      forecast_rows: 5
+      locale: de
+      time_format: 24
+      hide_today_section: false
+      hide_forecast_section: false
+      show_humidity: false
+      hide_clock: false
+      hide_date: false
+      hourly_forecast: false
+      use_browser_time: true
+      aqi_sensor: sensor.u_s_air_quality_index
 title: Tablet Dashboard
 background: var(--background-image)
 decluttering_templates: !include_dir_merge_named ../templates
