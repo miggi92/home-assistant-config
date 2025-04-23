@@ -1,8 +1,0 @@
----
-# Silke
-name: Silke
-id: silke
-device_trackers:
-  - device_tracker.silkehandy_gps
-  - device_tracker.google_maps_silke
-user_id: 292f843d537a48b9a4cbc4849f6523f0

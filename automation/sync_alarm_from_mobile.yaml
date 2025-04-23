@@ -8,7 +8,7 @@ trigger:
     entity_id: sensor.pixel_7_pro_next_alarm
     id: "miguel"
   - platform: state
-    entity_id: sensor.silkehandy_next_alarm
+    entity_id: sensor.silke_handy_next_alarm
     id: "silke"
 
 condition: []
@@ -27,7 +27,7 @@ action:
       - service: input_datetime.set_datetime
         data:
           timestamp: >-
-            {{ ( state_attr("sensor.silkehandy_next_alarm", "Time in Milliseconds")  | int  / 1000 ) }}
+            {{ ( state_attr("sensor.silke_handy_next_alarm", "Time in Milliseconds")  | int  / 1000 ) }}
         target:
           entity_id: input_datetime.silke_wecker
 mode: single

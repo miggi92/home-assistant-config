@@ -25,7 +25,7 @@ cards:
           - work_zone: zone.work_silke
           - eta_work: sensor.silke_eta_work
           - eta_home: sensor.silke_eta_home
-          - phone: silkehandy
+          - phone: silke_handy
           - watch: silke_uhr
           - id: silke
           - beacon: sensor.beacongalaxys23
