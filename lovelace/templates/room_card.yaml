@@ -1,16 +1,17 @@
 ---
 # Room card
 room_card_template:
-  variables:
+  default:
     - on_color: orange
+    - layout: vertical
   card:
     type: custom:mushroom-template-card
     entity: "[[light]]"
     primary: "[[title]]"
-    layout: vertical
+    layout: "[[layout]]"
     icon_color: |
       {% if is_state('[[light]]','on') %}
-      orange
+      {{ '[[on_color]]' }}
       {% endif %}
     secondary: |
       {% if not states('[[temperature]]') or states('[[temperature]]') == "unknown" %}
