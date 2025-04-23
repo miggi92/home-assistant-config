@@ -43,16 +43,17 @@ cards:
           - entity: person.maja
           - id: maja
           - work_zone: zone.home
-  - type: conditional
-    conditions:
-      - entity: person.dorte
-        state: "home"
+  - type: custom:auto-entities
+    show_empty: false
     card:
       type: horizontal-stack
       title: Gäste
-      cards:
-        - type: custom:mushroom-person-card
-          layout: vertical
-          entity: person.dorte
-          icon: mdi:face-woman
-          secondary_info: last-changed
+    card_param: cards
+    filter:
+      include:
+        - group: group.guests
+          state: home
+          options:
+            type: custom:mushroom-person-card
+            secondary_info: last-changed
+            layout: vertical

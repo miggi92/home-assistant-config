@@ -1,0 +1,10 @@
+---
+# Gäste Gruppe
+guests:
+  name: Gäste
+  icon: mdi:home-account
+  entities:
+    - person.dorte
+    - person.lisa
+    - person.thomas
+    - person.ceci
