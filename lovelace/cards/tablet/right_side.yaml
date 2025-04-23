@@ -10,10 +10,9 @@ cards:
       - nav_path: living
       - light: light.wohnzimmer
       - temperature: sensor.wohnzimmer_heizung_temperature
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -22,20 +21,18 @@ cards:
       - nav_path: sleep
       - light: light.schlafzimmerlicht
       - temperature: sensor.schlafzimmertemperatur
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
       - title: Flur
       - icon: mdi:coat-rack
       - nav_path: hallway
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -43,10 +40,9 @@ cards:
       - icon: mdi:countertop
       - nav_path: kitchen
       - temperature: sensor.kuchentempsensor_temperatur
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -54,10 +50,9 @@ cards:
       - icon: mdi:shower
       - nav_path: bath
       - temperature: sensor.badezimmertempsensor_temperature
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -66,10 +61,9 @@ cards:
       - nav_path: storage
       - light: light.abstellkammerlicht
       - temperature: sensor.abstellkammertempsensor_temperature
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -77,10 +71,9 @@ cards:
       - icon: mdi:chair-rolling
       - nav_path: office
       - light: light.buro
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
@@ -89,18 +82,16 @@ cards:
       - nav_path: child
       - light: light.kinderzimmerlicht
       - temperature: sensor.kinderzimmertempsensor_temperature
-      - layout: horizontal
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
   - type: custom:decluttering-card
     template: room_card_template
     variables:
       - title: Außen
       - icon: mdi:tree
       - nav_path: outdoor
-      - layout: horizontal
       - temperature: sensor.daikinap90134_outside_temperature
     grid_options:
       columns: 6
-      rows: 1
+      rows: 2
