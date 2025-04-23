@@ -1,0 +1,35 @@
+---
+# left side on the tablet dashboard
+type: grid
+cards:
+  - type: custom:clock-weather-card
+    entity: weather.home
+    title: Home
+    sun_entity: sun.sun
+    temperature_sensor: sensor.daikinap90134_outside_temperature
+    humidity_sensor: sensor.luftfeuchtigkeit
+    weather_icon_type: line
+    animated_icon: true
+    forecast_rows: 5
+    locale: de
+    time_format: 24
+    hide_today_section: false
+    hide_forecast_section: false
+    show_humidity: false
+    hide_clock: false
+    hide_date: false
+    hourly_forecast: false
+    use_browser_time: true
+    aqi_sensor: sensor.u_s_air_quality_index
+  - !include ../../cards/floorplan.yaml
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: group.residents
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: group.parents
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: group.guests
+        layout: vertical

@@ -1,0 +1,75 @@
+---
+title: Lichter
+path: lights
+type: sections
+max_columns: 4
+subview: true
+icon: mdi:lightbulb
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    column_span: 2
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schlafzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.bett
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-light-card
+        entity: light.tv_licht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.esstischlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.thekenlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.abstellkammerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.schreibtischlicht
+        layout: vertical
+        show_brightness_control: true
+        show_color_control: true
+        show_color_temp_control: true
+        collapsible_controls: true
+        use_light_color: true
+      - type: custom:mushroom-light-card
+        entity: light.kinderzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        use_light_color: true
+  - !include ../../../cards/tablet/right_side.yaml

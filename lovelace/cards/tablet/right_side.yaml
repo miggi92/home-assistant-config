@@ -1,0 +1,70 @@
+---
+# right side on the tablet
+type: grid
+cards:
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Wohnzimmer
+      - icon: mdi:sofa
+      - nav_path: living
+      - light: light.wohnzimmer
+      - temperature: sensor.wohnzimmer_heizung_temperature
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Schlafzimmer
+      - icon: mdi:bed-double
+      - nav_path: sleep
+      - light: light.schlafzimmerlicht
+      - temperature: sensor.schlafzimmertemperatur
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Flur
+      - icon: mdi:coat-rack
+      - nav_path: hallway
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Küche
+      - icon: mdi:countertop
+      - nav_path: kitchen
+      - temperature: sensor.kuchentempsensor_temperatur
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Bad
+      - icon: mdi:shower
+      - nav_path: bath
+      - temperature: sensor.badezimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Abstellkammer
+      - icon: mdi:library-shelves
+      - nav_path: storage
+      - light: light.abstellkammerlicht
+      - temperature: sensor.abstellkammertempsensor_temperature
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Arbeitszimmer
+      - icon: mdi:chair-rolling
+      - nav_path: office
+      - light: light.buro
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Kinderzimmer
+      - icon: mdi:teddy-bear
+      - nav_path: child
+      - light: light.kinderzimmerlicht
+      - temperature: sensor.kinderzimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: room_card_template
+    variables:
+      - title: Außen
+      - icon: mdi:tree
+      - nav_path: outdoor
+      - temperature: sensor.daikinap90134_outside_temperature
