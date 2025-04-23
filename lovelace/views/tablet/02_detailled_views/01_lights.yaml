@@ -3,6 +3,7 @@ title: Lichter
 path: lights
 type: sections
 max_columns: 3
+theme: ios-dark-mode-blue-red
 subview: true
 icon: mdi:lightbulb
 header:

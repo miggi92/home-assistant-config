@@ -4,6 +4,7 @@ path: start
 icon: mdi:home
 type: sections
 max_columns: 3
+theme: ios-dark-mode-blue-red
 sections:
   - !include ../../cards/tablet/left_side.yaml
   - type: grid

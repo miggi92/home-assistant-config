@@ -4,6 +4,7 @@ path: living
 icon: mdi:sofa
 type: sections
 max_columns: 3
+theme: ios-dark-mode-blue-red
 subview: true
 header:
   layout: center
