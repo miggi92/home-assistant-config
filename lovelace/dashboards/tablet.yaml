@@ -24,6 +24,19 @@ wallpanel:
   info_move_pattern: random
   info_move_interval: 0
   info_move_fade_duration: 2
+  style:
+    wallpanel-screensaver-info-box:
+      "--wp-card-width": 450px
+      background-color: "#00000099"
+      box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12)
+    wallpanel-screensaver-info-box-content:
+      "--ha-card-background": none
+      "--ha-card-box-shadow": none
+      "--ha-card-border-width": 0px
+      "--primary-background-color": "#111111"
+      "--secondary-background-color": "#202020"
+      "--primary-text-color": "#e1e1e1"
+      "--secondary-text-color": "#9b9b9b"
   cards:
     - type: custom:clock-weather-card
       entity: weather.home
