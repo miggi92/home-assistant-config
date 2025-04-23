@@ -6,7 +6,7 @@ cards:
   - type: custom:mushroom-chips-card
     chips:
       - type: alarm-control-panel
-        entity: alarm_control_panel.home_alarm
+        entity: alarm_control_panel.alarmo
       - type: weather
         entity: weather.home
         show_conditions: true

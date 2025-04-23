@@ -17,7 +17,7 @@ action:
     data:
       code: !secret alarm_code
     target:
-      entity_id: alarm_control_panel.home_alarm
+      entity_id: alarm_control_panel.alarmo
   - action: switch.turn_off
     target:
       entity_id: switch.kamera_steckdose_wz

@@ -8,7 +8,7 @@ substitutions:
   friendly_name: ESP32-S3-Box-3
   ##change this to your external media player enity_id: do not include media_player.
   external_media_player: your_media_player
-  alarm_control_pannel: alarm_control_panel.home_alarm
+  alarm_control_pannel: alarm_control_panel.alarmo
   home_assistant_host: !secret ha_host ##change to the full url or IP of your HA server including port
   tts_voice_speed: "24000" #options #nabu casa "24000" #piper "16000" elevenlabs "44100" must include quotes
 

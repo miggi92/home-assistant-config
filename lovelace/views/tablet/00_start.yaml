@@ -17,7 +17,7 @@ header:
   badges_position: top
 badges:
   - type: custom:mushroom-template-badge
-    entity: alarm_control_panel.home_alarm
+    entity: alarm_control_panel.alarmo
     icon: mdi:alarm-panel
     content: "{{ states(entity) }}"
     tap_action:

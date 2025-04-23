@@ -4,7 +4,7 @@ alias: onAlarm
 description: Alarm Automation
 trigger:
   - platform: state
-    entity_id: alarm_control_panel.home_alarm
+    entity_id: alarm_control_panel.alarmo
     to: "triggered"
 condition: []
 action:

@@ -5,13 +5,13 @@ id: d671c363-5a0c-4f56-b8ff-857234b23b61
 description: "Schaltet das Smart Home System in den Urlaubsmodus."
 trigger:
   - platform: state
-    entity_id: alarm_control_panel.home_alarm
+    entity_id: alarm_control_panel.alarmo
 
 condition: []
 action:
   - if:
       - condition: state
-        entity_id: alarm_control_panel.home_alarm
+        entity_id: alarm_control_panel.alarmo
         state: "armed_vacation"
     then:
       - service: script.notify_engine
