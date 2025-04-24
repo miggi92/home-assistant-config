@@ -1,0 +1,95 @@
+---
+title: Küche
+path: kitchen
+icon: mdi:countertop
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.kuchentempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.kuchentempsensor_humidity
+  - type: custom:mushroom-template-badge
+    entity: input_number.heissgetranke_zahler
+    icon: mdi:coffee-maker
+    content: "{{states(entity) }}"
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
+    entity: input_boolean.spulmaschine_aktiv
+    icon: |-
+      {% set active = states(entity) %}
+      {% if active == 'on' %}
+        mdi:dishwasher
+      {% else %}
+        mdi:dishwasher-off
+      {% endif %}
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.thekenlicht
+        layout: vertical
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-entity-card
+        entity: device_tracker.thermomix_eeafb9
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: device_tracker.delonghi
+        layout: vertical
+  - type: grid
+    cards:
+      - hours_to_show: 24
+        graph: line
+        name: Spülmaschine Energieverbrauch insg.
+        type: sensor
+        entity: sensor.spulmaschine_energy
+        detail: 1
+      - name: Spülmaschine Verbrauch
+        type: sensor
+        entity: sensor.spulmaschine_power
+        graph: line
+        detail: 2
+        hours_to_show: 4
+        limits:
+          max: 300
+      - hours_to_show: 24
+        graph: line
+        name: Kaffemaschine Energieverbrauch insg.
+        type: sensor
+        entity: sensor.kaffemaschine_energy
+        detail: 1
+      - name: Kaffemaschine Verbrauch
+        type: sensor
+        entity: sensor.kaffemaschine_power
+        graph: line
+        detail: 2
+        hours_to_show: 4
+        limits:
+          max: 700
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: echo_wohnzimmer
+          - title: Echo Küche
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Küche
