@@ -43,34 +43,14 @@ badges:
       action: navigate
       navigation_path: lights
     content: "{{ states(entity) }} an"
-  - type: custom:mushroom-template-badge
-    content: "{{states(entity) }} °C"
-    icon: mdi:thermometer
-    entity: sensor.wohnungstemperatur
-    color: |-
-      {% set temp = states(entity) %}
-      {% if temp >= '22' %}
-        red
-      {% elif temp < '17' %}
-        blue
-      {% else %}
-        green
-      {% endif %}
-    tap_action:
-      action: more-info
-  - type: custom:mushroom-template-badge
-    icon: mdi:water-percent
-    entity: sensor.wohnungsfeuchtigkeit
-    content: "{{states(entity) }} %"
-    color: |-
-      {% set hum = states(entity) %}
-      {% if hum >= '60' or hum <= '40' %}
-        red
-      {% else %}
-        blue
-      {% endif %}
-    tap_action:
-      action: more-info
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.wohnungstemperatur
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.wohnungsfeuchtigkeit
   - type: custom:mushroom-template-badge
     entity: sensor.wohnungsluftdruck
     content: "{{states(entity) }} hPa"

@@ -1,0 +1,19 @@
+---
+motion_badge_template:
+  card:
+    type: custom:mushroom-template-badge
+    entity: "[[entity]]"
+    icon: |-
+      {% set motion = states(entity) %}
+      {% if motion == 'on' %}
+        mdi:motion-sensor
+      {% else %}
+        mdi:motion-sensor-off
+      {% endif %}
+    color: |-
+      {% set motion = states(entity) %}
+      {% if motion == 'on' %}
+        yellow
+      {% endif %}
+    tap_action:
+      action: more-info

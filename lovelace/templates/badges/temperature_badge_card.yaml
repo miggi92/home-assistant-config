@@ -1,0 +1,18 @@
+---
+temperature_badge_template:
+  card:
+    type: custom:mushroom-template-badge
+    content: "{{states(entity) }} °C"
+    icon: mdi:thermometer
+    entity: "[[entity]]"
+    color: |-
+      {% set temp = states(entity) %}
+      {% if temp >= '22' %}
+        red
+      {% elif temp < '17' %}
+        blue
+      {% else %}
+        green
+      {% endif %}
+    tap_action:
+      action: more-info

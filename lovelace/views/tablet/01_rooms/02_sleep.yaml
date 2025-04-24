@@ -15,38 +15,18 @@ badges:
     tap_action:
       action: navigate
       navigation_path: start
-  - type: custom:mushroom-template-badge
-    entity: group.sleep_motion_sensors
-    icon: mdi:motion-sensor
-    content: "{{ states(entity) }}"
-  - type: custom:mushroom-template-badge
-    content: "{{states(entity) }} °C"
-    icon: mdi:thermometer
-    entity: sensor.schlafzimmertemperatur
-    color: |-
-      {% set temp = states(entity) %}
-      {% if temp >= '22' %}
-        red
-      {% elif temp < '17' %}
-        blue
-      {% else %}
-        green
-      {% endif %}
-    tap_action:
-      action: more-info
-  - type: custom:mushroom-template-badge
-    icon: mdi:water-percent
-    entity: sensor.schlafzimmerluftfeuchtigkeit
-    content: "{{states(entity) }} %"
-    color: |-
-      {% set hum = states(entity) %}
-      {% if hum >= '60' or hum <= '40' %}
-        red
-      {% else %}
-        blue
-      {% endif %}
-    tap_action:
-      action: more-info
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: group.sleep_motion_sensors
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.schlafzimmertemperatur
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.schlafzimmerluftfeuchtigkeit
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid

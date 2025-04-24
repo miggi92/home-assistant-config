@@ -26,10 +26,10 @@ badges:
             data:
               title: "TV Programm"
               content: !include ../../../cards/tv_prog.yaml
-  - type: custom:mushroom-template-badge
-    entity: group.living_motion_sensors
-    icon: mdi:motion-sensor
-    content: "{{ states(entity) }}"
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: group.living_motion_sensors
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid
