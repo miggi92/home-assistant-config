@@ -1,0 +1,85 @@
+---
+title: Arbeitszimmer
+path: office
+icon: mdi:chair-rolling
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.luftqualitat_buro_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.luftqualitat_buro_humidity
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schreibtischlicht
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        layout: vertical
+        tap_action:
+          action: toggle
+      - type: gauge
+        entity: sensor.luftqualitat_buro_pm25
+        name: Feinstaub
+        severity:
+          green: 0
+          yellow: 12
+          red: 50
+        max: 50
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: gauge
+        entity: sensor.luftqualitat_buro_voc_index
+        name: Luftqualität
+        severity:
+          green: 0
+          yellow: 200
+          red: 400
+        max: 500
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: custom:decluttering-card
+        template: pc_card_template
+        variables:
+          - title: Laptop
+          - icon: mdi:laptop
+          - switch: sensor.bcwmc5cg4100cy0_sitzungstatus
+          - switch_on_state: "Unlocked"
+          - uptime: sensor.bcwmc5cg4100cy0_uptime
+          # - cpu_temp: sensor.bcwmc5cg4100cy0_cputemp
+          - picture: /local/logo/work_miguel_logo.svg
+          - battery: sensor.bcwmc5cg4100cy0_batterie_charge_remaining_percentage
+          - webcam: binary_sensor.teams_video
+          - powerline: sensor.bcwmc5cg4100cy0_batterie_powerline_status
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: echo_buro
+          - title: Echo Büro
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Büro
