@@ -1,0 +1,116 @@
+---
+title: Schlafzimmer
+path: sleep
+icon: mdi:bed-double
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:mushroom-template-badge
+    entity: group.sleep_motion_sensors
+    icon: mdi:motion-sensor
+    content: "{{ states(entity) }}"
+  - type: custom:mushroom-template-badge
+    content: "{{states(entity) }} °C"
+    icon: mdi:thermometer
+    entity: sensor.schlafzimmertemperatur
+    color: |-
+      {% set temp = states(entity) %}
+      {% if temp >= '22' %}
+        red
+      {% elif temp < '17' %}
+        blue
+      {% else %}
+        green
+      {% endif %}
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
+    icon: mdi:water-percent
+    entity: sensor.schlafzimmerluftfeuchtigkeit
+    content: "{{states(entity) }} %"
+    color: |-
+      {% set hum = states(entity) %}
+      {% if hum >= '60' or hum <= '40' %}
+        red
+      {% else %}
+        blue
+      {% endif %}
+    tap_action:
+      action: more-info
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.schlafzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-light-card
+        entity: light.bett
+        layout: vertical
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-fan-card
+        entity: fan.luftfilter
+        icon: mdi:fan
+        icon_type: icon
+        icon_animation: true
+        show_percentage_control: true
+        collapsible_controls: true
+        layout: vertical
+
+      - type: custom:mushroom-cover-card
+        entity: cover.rollladen_schlafzimmer
+        name: Rollladen
+        fill_container: false
+        show_buttons_control: true
+        show_position_control: true
+        tap_action:
+          action: toggle
+
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.miguel_wecker
+        layout: horizontal
+        tap_action:
+          action: none
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.silke_wecker
+        layout: horizontal
+        tap_action:
+          action: none
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.withings_in_bed_miguel
+        tap_action:
+          action: none
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.withings_in_bed_silke
+        tap_action:
+          action: none
+      - type: custom:mini-media-player
+        entity: media_player.gtv
+        artwork: full-cover
+        hide:
+          power_state: false
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Schlafzimmer
