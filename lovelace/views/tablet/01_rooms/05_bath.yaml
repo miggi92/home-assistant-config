@@ -1,0 +1,76 @@
+---
+title: Bad
+path: bath
+icon: mdi:shower
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.badezimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.badezimmertempsensor_humidity
+  - type: custom:mushroom-template-badge
+    entity: binary_sensor.dusche
+    icon: |-
+      {% set active = states(entity) %}
+      {% if active == 'on' %}
+        mdi:shower-head
+      {% else %}
+        mdi:water-off
+      {% endif %}
+    tap_action:
+      action: more-info
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_kalt_bad
+        layout: vertical
+        name: Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_warm_bad
+        layout: vertical
+        name: Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_kalt_bad_cost
+        layout: vertical
+        name: Kosten Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_warm_bad_cost
+        layout: vertical
+        name: Kosten Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_bad_kalt
+        layout: vertical
+        name: Zähler Kalt
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_bad_warm
+        layout: vertical
+        name: Zähler Warm
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: echo_kuche
+          - title: Echo Bad
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Bad
