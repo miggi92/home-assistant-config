@@ -1,0 +1,48 @@
+---
+title: WC
+path: toilet
+icon: mdi:toilet
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasserzahler_klo_kalt
+        layout: vertical
+        name: Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_klo_warm
+        layout: vertical
+        name: Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasserzahler_klo_kalt_cost
+        layout: vertical
+        name: Kosten Kaltwasser
+      - type: custom:mushroom-entity-card
+        entity: sensor.wasser_klo_warm_cost
+        layout: vertical
+        name: Kosten Warmwasser
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_kalt_klo
+        layout: vertical
+        name: Zähler Kalt
+      - type: custom:mushroom-entity-card
+        entity: input_number.wasser_warm_klo
+        layout: vertical
+        name: Zähler Warm
+  - type: grid
+    cards: []
