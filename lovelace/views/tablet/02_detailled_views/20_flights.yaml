@@ -14,7 +14,7 @@ badges:
     icon: mdi:arrow-left
     tap_action:
       action: navigate
-      navigation_path: start
+      navigation_path: outdoor
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid

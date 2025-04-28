@@ -1,0 +1,120 @@
+---
+title: Außen
+path: outdoor
+icon: mdi:tree
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.badezimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.badezimmertempsensor_humidity
+  - type: custom:mushroom-template-badge
+    entity: sun.sun
+    content: "{{ state_translated(entity) }}"
+    icon: mdi:theme-light-dark
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
+    entity: sensor.moon
+    content: "{{ state_translated(entity) }}"
+    icon: mdi:weather-night
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
+    entity: sensor.zodiac
+    content: "{{ state_translated(entity) }}"
+    icon: "mdi:zodiac-{{ states(entity)}}"
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: picture-entity
+        entity: camera.rathaus
+        show_state: false
+        camera_image: camera.rathaus
+        grid_options:
+          columns: 6
+          rows: 3
+      - type: picture-entity
+        entity: camera.schleuse_oberwasser
+        show_state: false
+        camera_image: camera.schleuse_oberwasser
+        grid_options:
+          columns: 6
+          rows: 3
+      - type: picture-entity
+        entity: camera.schleuse_unterwasser
+        show_state: false
+        camera_image: camera.schleuse_unterwasser
+        grid_options:
+          columns: 6
+          rows: 3
+      - type: custom:mushroom-template-card
+        entity: sensor.flightradar24_current_in_area
+        primary: "Flightradar"
+        layout: vertical
+        icon: mdi-airplane
+        tap_action:
+          action: navigate
+          navigation_path: "flights"
+      - type: custom:uv-index-card
+        entity: sensor.current_uv_index
+
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: waste_card_template
+        variables:
+          - entity: sensor.restmull
+          - title: Restmüll
+          - max_days: 15
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: custom:decluttering-card
+        template: waste_card_template
+        variables:
+          - entity: sensor.papier
+          - title: Papiertonne
+          - icon_color: blue
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: custom:decluttering-card
+        template: waste_card_template
+        variables:
+          - entity: sensor.schadstoffe
+          - title: Schadstoffe
+          - icon_color: yellow
+          - max_days: 80
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: custom:decluttering-card
+        template: waste_card_template
+        variables:
+          - entity: sensor.bio
+          - title: Biotonne
+          - icon_color: brown
+          - max_days: 15
+        grid_options:
+          columns: 6
+          rows: 2
+      - type: custom:decluttering-card
+        template: pollen_card_template
