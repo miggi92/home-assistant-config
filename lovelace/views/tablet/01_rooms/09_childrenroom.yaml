@@ -1,0 +1,57 @@
+---
+title: Kinderzimmer
+path: child
+icon: mdi:teddy-bear
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.kinderzimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.kinderzimmertempsensor_humidity
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.kinderzimmerlicht
+        layout: vertical
+        show_brightness_control: true
+        collapsible_controls: true
+        tap_action:
+          action: toggle
+      - type: custom:mushroom-cover-card
+        entity: cover.rolladen_kinderzimmer
+        name: Rollladen
+        fill_container: false
+        show_buttons_control: true
+        show_position_control: true
+        tap_action:
+          action: toggle
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: echo_buro
+          - title: Echo Büro
+
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Kinderzimmer
