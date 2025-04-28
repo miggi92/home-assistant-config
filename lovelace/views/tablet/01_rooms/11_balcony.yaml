@@ -1,0 +1,53 @@
+---
+title: Balkon
+path: balcony
+icon: mdi:balcony
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: switch.lichterkette
+        icon: mdi:string-lights
+      - type: custom:mushroom-template-card
+        primary: Lichterkette
+        secondary: >-
+          {% if states("timer.lichterkette") == "active" %}
+            {{ state_attr('timer.lichterkette', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
+          {% endif %}
+        entity: switch.lichterkette
+        icon: mdi:string-lights
+        icon_color: |-
+          {% if states("switch.lichterkette") == "on" %}
+            yellow
+          {% else %}
+            grey
+          {% endif %}
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: grid
+    cards:
+      - type: custom:flower-card
+        entity: plant.sonnenblumen
+        show_bars:
+          - illuminance
+          - humidity
+          - moisture
+          - conductivity
+          - temperature
+        battery_sensor: sensor.groser_topf_balkon_battery
