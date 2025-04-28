@@ -32,9 +32,9 @@ advanced:
   log_level: warning
   last_seen: ISO_8601_local
 mqtt:
-  server: "!secrets.yaml mqtt_server"
-  user: "!secrets.yaml mqtt_user"
-  password: "!secrets.yaml mqtt_password"
+  server: mqtt://core-mosquitto:1883
+  user: addons
+  password: dau6Keey9ahRohhiNge3Bahzaijaezoozahgei7iesag2chaet0aezah4wu3OhFo
 frontend:
   enabled: true
   port: 8099
@@ -46,74 +46,74 @@ device_options: {}
 availability:
   enabled: true
 devices:
-  "0x0017880109437a9c":
+  '0x0017880109437a9c':
     friendly_name: Kinderzimmerlicht
-  "0x00158d00094642c0":
+  '0x00158d00094642c0':
     friendly_name: Kinderzimmertempsensor
-  "0x943469fffe75cedc":
+  '0x943469fffe75cedc':
     friendly_name: Kinderzimmerbewegungssensor
-  "0x54ef4410004eb0cb":
+  '0x54ef4410004eb0cb':
     friendly_name: Trockner Steckdose
-  "0x00158d000945db29":
+  '0x00158d000945db29':
     friendly_name: Abstellkammertürsensor
-  "0x54ef4410004dba2d":
+  '0x54ef4410004dba2d':
     friendly_name: Waschmaschinen Steckdose
-  "0x187a3efffe6dce80":
+  '0x187a3efffe6dce80':
     friendly_name: Abstellkammerlicht
-  "0xb4e3f9fffeaf95a5":
+  '0xb4e3f9fffeaf95a5':
     friendly_name: Schrank
-  "0x0017880109438982":
+  '0x0017880109438982':
     friendly_name: Schlafzimmerlicht
-  "0x0017880108b82014":
+  '0x0017880108b82014':
     friendly_name: Thekenlicht
-  "0x0017880103f57cdc":
+  '0x0017880103f57cdc':
     friendly_name: Bett
-  "0x001788010bd4f0cf":
+  '0x001788010bd4f0cf':
     friendly_name: TV Licht
-  "0x0017880108c00305":
+  '0x0017880108c00305':
     friendly_name: Esstischlicht
-  "0x00178801032a69f0":
+  '0x00178801032a69f0':
     friendly_name: Schlafzimmerbewegungssensor
-  "0xb4e3f9fffe3e07e7":
-    friendly_name: "Range Extender "
-  "0x00158d0009451a1e":
+  '0xb4e3f9fffe3e07e7':
+    friendly_name: 'Range Extender '
+  '0x00158d0009451a1e':
     friendly_name: Abstellkammertempsensor
-  "0x3c2ef5fffe3337de":
+  '0x3c2ef5fffe3337de':
     friendly_name: Luftqualität Büro
-  "0x00158d000802c152":
+  '0x00158d000802c152':
     friendly_name: Badezimmertempsensor
-  "0x001788010866cff8":
+  '0x001788010866cff8':
     friendly_name: Sofabewegungssensor
-  "0x001788010b0a03ed":
+  '0x001788010b0a03ed':
     friendly_name: Wohnzimmerbewegungssensor
-  "0x00158d00091c5647":
+  '0x00158d00091c5647':
     friendly_name: Küchentempsensor
-  "0x00158d0007b89a5f":
+  '0x00158d0007b89a5f':
     friendly_name: Schlafzimmertempsensor
-  "0x0017880102551d27":
+  '0x0017880102551d27':
     friendly_name: Schreibtischlicht
-  "0x00158d0008d09824":
+  '0x00158d0008d09824':
     friendly_name: Duschsensor
-  "0x84ba20fffead3854":
+  '0x84ba20fffead3854':
     friendly_name: Maja Gassi
-  "0xcc86ecfffe924d9c":
+  '0xcc86ecfffe924d9c':
     friendly_name: Tabletsteckdose
-  "0x54ef441000442eea":
+  '0x54ef441000442eea':
     friendly_name: Luftqualitätssensor
-  "0x00178801001f2e28":
+  '0x00178801001f2e28':
     friendly_name: Discolicht
-  "0x44e2f8fffebbf742":
+  '0x44e2f8fffebbf742':
     friendly_name: Kamera Steckdose WZ
-  "0x8c65a3fffeaed4e5":
+  '0x8c65a3fffeaed4e5':
     friendly_name: Herz
-  "0xa4c138ddcb83950e":
+  '0xa4c138ddcb83950e':
     friendly_name: Lichterkette
-  "0x54ef441000cbfc0a":
+  '0x54ef441000cbfc0a':
     friendly_name: Spülmaschine
-  "0x54ef441000cc05b7":
+  '0x54ef441000cc05b7':
     friendly_name: Kaffemaschine
-  "0x08ddebfffed02f2f":
+  '0x08ddebfffed02f2f':
     friendly_name: Flur Cam Stecker
-  "0x00158d000805aa96":
+  '0x00158d000805aa96':
     friendly_name: Briefkasten
 version: 4
