@@ -72,4 +72,5 @@ sections:
         show_brightness_control: true
         collapsible_controls: true
         use_light_color: true
-  - !include ../../../cards/tablet/right_side.yaml
+  - type: grid
+    cards: []
