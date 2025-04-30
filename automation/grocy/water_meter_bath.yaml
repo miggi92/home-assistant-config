@@ -1,0 +1,15 @@
+---
+alias: Track Chore Water Bath
+id: b900d37b-f0b2-4155-8251-bc7acbb7f1d4
+description: "Track Chore Water Bath"
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.wasser_warm_bad
+condition: []
+action:
+  - action: grocy.execute_chore
+    data:
+      chore_id: "8"
+      done_by: "2"
+mode: single

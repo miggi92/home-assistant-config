@@ -1,0 +1,15 @@
+---
+alias: Track Chore Water WC
+id: 1a599a28-f737-4dcc-996a-38a7a6c647f4
+description: "Track Chore Water WC"
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.wasser_klo_warm
+condition: []
+action:
+  - action: grocy.execute_chore
+    data:
+      chore_id: "9"
+      done_by: "2"
+mode: single
