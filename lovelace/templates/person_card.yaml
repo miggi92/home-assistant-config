@@ -31,9 +31,9 @@ person_card_template:
         {{ states("[[entity]]") }}
       {% endif %}
     picture: |-
-      {% set driving = states("binary_sensor.[[phone]]_android_auto") %}
+      {% set driving = states("sensor.[[phone]]_detected_activity") %}
       {% set state =  states("[[entity]]") %}
-      {% if driving == "on" %}
+      {% if driving == "in_vehicle" %}
         /local/images/persons/{{"[[id]]"}}/auto.png
       {% elif state == "work_silke" or state == "work_miguel" %}
         /local/images/persons/{{"[[id]]"}}/work.png
