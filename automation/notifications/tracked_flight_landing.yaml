@@ -1,6 +1,7 @@
 ---
 #
 alias: "Scheduled flight lands"
+id: 9b87a72c-877b-44c2-8181-73437d50869d
 trigger:
   platform: event
   event_type: flightradar24_tracked_landed

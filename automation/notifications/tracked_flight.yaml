@@ -1,6 +1,7 @@
 ---
 #
 alias: "Scheduled flight takes off"
+id: a4d5f9d0-3232-443c-95e8-18ff404959c6
 trigger:
   platform: event
   event_type: flightradar24_tracked_took_off
