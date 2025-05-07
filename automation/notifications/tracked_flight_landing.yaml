@@ -17,3 +17,8 @@ action:
       who: "home, family"
       tag_id: "information"
       group: "Flights"
+  - service: text.set_value
+    data:
+      value: "{{ trigger.event.data.aircraft_registration }}"
+    target:
+      entity_id: text.flightradar24_remove_from_track
