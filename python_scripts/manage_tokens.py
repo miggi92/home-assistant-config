@@ -5,7 +5,7 @@ import os
 
 # Configuration
 ADMINTOKEN = "<YOUR ADMIN TOKEN HERE>" #used to rotate API keys
-HAHOST = "ws://<YOUR LOCAL HA ADDRESS>:8123/api/websocket"
+HAHOST = "ws://127.0.0.1:8123/api/websocket"
 TOKENNAME = "jukeboxtoken"
 TOKENPATH = "/config/www/jukeboxtoken.key"
 
