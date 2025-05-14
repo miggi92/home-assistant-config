@@ -28,15 +28,15 @@ action:
     data:
       title: "🌩️ {{state_attr('binary_sensor.meteoalarm', 'headline')}} 🌩️"
       value1: >-
+        🕰️ {{ state_attr('binary_sensor.meteoalarm', 'effective')|as_timestamp|timestamp_custom('%d.%m.%Y %H:%M:%S %Z') }} - {{ state_attr('binary_sensor.meteoalarm', 'expires')|as_timestamp|timestamp_custom('%d.%m.%Y %H:%M:%S %Z') }}
+
         {{state_attr('binary_sensor.meteoalarm', 'description')}}
 
-        {{ state_attr('binary_sensor.meteoalarm', 'effective')|as_timestamp|timestamp_custom('%d.%m.%Y %H:%M:%S %Z') }}
+        **Handlungsempfehlung:**
+          {{state_attr('binary_sensor.meteoalarm', 'instruction')}}
 
-        *Handlungsempfehlung:*
-        {{state_attr('binary_sensor.meteoalarm', 'instruction')}}
-
-        Gesendet von:
-        {{state_attr('binary_sensor.meteoalarm', 'senderName')}}
+        **Gesendet von:**
+          {{state_attr('binary_sensor.meteoalarm', 'senderName')}}
       who: "family"
       tag_id: "information"
       # group: "Wetter"
