@@ -28,9 +28,9 @@ action:
           mdi:weather-windy
           {% elif is_state("weather.home","cloudy") %}
           mdi:weather-cloudy
-          {% elif is_state("weather.home","partly-cloudy") %}
+          {% elif is_state("weather.home","partlycloudy") %}
           mdi:weather-partly-cloudy
-          {% elif is_state("weather.home","partly-cloudy-night") %}
+          {% elif is_state("weather.home","partlycloudy-night") %}
           mdi:weather-night-partly-cloudy
           {% elif is_state("weather.home","hail") %}
           mdi:weather-hail
