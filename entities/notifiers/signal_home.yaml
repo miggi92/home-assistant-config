@@ -1,0 +1,8 @@
+---
+#
+name: signalHome
+platform: signal_messenger
+url: "http://127.0.0.1:8080" # the URL where the Signal Messenger REST API is listening
+number: !secret signal_number # the sender number
+recipients: # one or more recipients
+  - !secret signal_home

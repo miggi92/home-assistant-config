@@ -93,6 +93,7 @@ notify_engine:
     - variables:
         notifiers:
           home: notify.telegram_home_group
+          sig_home: notify.signal_home
           miguel: notify.miguel_telegram
           silke: notify.silke_telegram
           work: notify.html5_work_laptop_hp
@@ -147,6 +148,9 @@ notify_engine:
                     data:
                       title: "{{ title }}"
                       message: "{{ message }}"
+                      text_mode: styled
+                      attachments:
+                        - "{{ photo }}"
             default:
               - action: "{{ notifier }}"
                 alias: "Default notification"
