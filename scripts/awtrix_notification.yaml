@@ -50,3 +50,5 @@ awtrix3notif:
           }
   alias: awtrix3Notify
   description: ""
+  mode: queued
+  max: 10

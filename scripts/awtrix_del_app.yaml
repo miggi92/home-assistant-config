@@ -16,3 +16,5 @@ awtrix3delapp:
         payload: ""
   alias: awtrix3DelApp
   description: ""
+  mode: queued
+  max: 10
