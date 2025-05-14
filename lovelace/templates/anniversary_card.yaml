@@ -54,7 +54,7 @@ anniversary_template:
                     background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
                   }
       exclude:
-        - state: "> 60"
+        - state: "> 90"
     sort:
       method: state
       reverse: false
