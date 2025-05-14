@@ -1,0 +1,18 @@
+---
+name: TvOverlayNotifyFixed
+platform: rest
+method: POST_JSON
+resource: http://192.168.0.133:5001/notify_fixed
+verify_ssl: false
+title_param_name: title
+data:
+  id: "{{ data.id | default(null) }}" # string | can be used to edit or remove the fixed notification | default: [random]
+  text: "{{ data.text  | default(null) }}" # string | main text | default: null
+  icon: "{{ data.icon | default(null) }}" # string | accepts mdi icons, image urls and Bitmap encoded to Base64 | default: null
+  textColor: "{{ data.textColor | default(null) }}" # string | accepts 6 or 8 digit color hex. the '#' is optional | default: #FFFFFF
+  iconColor: "{{ data.iconColor | default(null) }}" # string | accepts 6 or 8 digit color hex. the '#' is optional | default: #FFFFFF
+  borderColor: "{{ data.borderColor | default(null) }}" # string | accepts 6 or 8 digit color hex. the '#' is optional | default: #FFFFFF
+  backgroundColor: "{{ data.backgroundColor | default(null) }}" # string | accepts 6 or 8 digit color hex. the '#' is optional | default: #66000000
+  shape: "{{ data.shape | default(null) }}" # string | frame style. accept values: circle, rounded, rectangular | default: "rounded"
+  visible: "{{ data.visible | default(true) }}" # boolean || if false, removes the fixed notification with matching id || default: true
+  expiration: "{{ data.expiration | default(null) }}" # string or int | when the notification will be removed. valid formats: 1695693410 (Epoch time), 1y2w3d4h5m6s (duration format) or 123 (for seconds) | default:  null

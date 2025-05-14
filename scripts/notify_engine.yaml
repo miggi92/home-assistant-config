@@ -197,13 +197,19 @@ notify_engine:
                       group: "{{ group }}"
                       photo: "{{ photo }}"
                       tag_id: "{{ tag_id }}"
-              - action: notify.tvoverlaynotify
-                data:
-                  title: "{{ title }}"
-                  message: "{{ message }}"
-                  data:
-                    appTitle: "{{ group }}"
-                    seconds: 7
-                    image: "{{ photo }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ who != 'work' }}"
+                  - condition: template
+                    value_template: "{{ who != 'tv' }}"
+                then:
+                  - action: notify.tvoverlaynotify
+                    data:
+                      title: "{{ title }}"
+                      message: "{{ message }}"
+                      data:
+                        appTitle: "{{ group }}"
+                        seconds: 10
+                        image: "{{ photo }}"
 
             alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
