@@ -21,6 +21,9 @@ cards:
       exclude:
         - name: /[Ll]ow/
         - name: /[Ss]tate/
+        - entity_id: "*plus"
+        - entity_id: "*plus_*"
+        - state: unavailable
     sort:
       method: state
       numeric: true
