@@ -7,7 +7,22 @@ trigger:
   - platform: state
     entity_id: binary_sensor.meteoalarm
     to: "on"
-condition: []
+condition:
+  - condition: or
+    conditions:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: zone.eltern_haus_spanien
+            attribute: persons
+            state: "0"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: zone.heim_abu
+            attribute: persons
+            state: "0"
+
 action:
   - action: script.notify_engine
     data:
@@ -15,10 +30,13 @@ action:
       value1: >-
         {{state_attr('binary_sensor.meteoalarm', 'description')}}
 
-        {{state_attr('binary_sensor.meteoalarm', 'effective')}}
+        {{ state_attr('binary_sensor.meteoalarm', 'effective')|as_timestamp|timestamp_custom('%d.%m.%Y %H:%M:%S %Z') }}
 
         *Handlungsempfehlung:*
         {{state_attr('binary_sensor.meteoalarm', 'instruction')}}
+
+        Gesendet von:
+        {{state_attr('binary_sensor.meteoalarm', 'senderName')}}
       who: "family"
       tag_id: "information"
       # group: "Wetter"
