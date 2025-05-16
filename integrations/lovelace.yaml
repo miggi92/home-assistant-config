@@ -94,6 +94,8 @@ lovelace:
       type: module
     - url: /hacsfiles/pi-hole-card/pi-hole-card.js
       type: module
+    - url: /hacsfiles/slider-button-card/slider-button-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
