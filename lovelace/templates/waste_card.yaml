@@ -23,19 +23,5 @@ waste_card_template:
       {{ state_attr(entity, "daysTo") }}
       Tage
     entity: "[[entity]]"
-    card_mod:
-      style:
-        mushroom-shape-icon$: |
-          .shape {
-            background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-blue)) {{ state_attr(config.entity, "daysTo") / [[max_days]] * 100 }}% 0%, var(--card-background-color) 0% 100%);
-          }
-          .shape:after {
-            content: "";
-            height: 100%;
-            width: 100%;
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
-          }
     tap_action:
       action: more-info
