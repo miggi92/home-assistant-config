@@ -12,7 +12,7 @@ trigger:
       hours: 0
       minutes: 3
       seconds: 0
-    id: einkaufsliste
+    id: picnic_einkaufswagen
   - platform: state
     entity_id:
       - zone.getranke_markt
