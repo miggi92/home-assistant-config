@@ -4,7 +4,7 @@ wallpanel:
   hide_toolbar: false
   hide_sidebar: true
   fullscreen: false
-  idle_time: 60
+  idle_time: 120
   display_time: 15
   image_url: http://picsum.photos/${width}/${height}?random=${timestamp}
   image_fit: cover
