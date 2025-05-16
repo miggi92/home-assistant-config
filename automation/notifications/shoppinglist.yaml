@@ -36,23 +36,23 @@ condition: []
 
 action:
   - variables:
-      list: "todo.{{ trigger.id }}"
+      list_id: "todo.{{ trigger.id }}"
   - condition: template
-    value_template: "{{ states(list) | int > 0 }}"
-  - service: todo.get_items
+    value_template: "{{ states(list_id) | int > 0 }}"
+  - action: todo.get_items
     target:
-      entity_id: todo.einkaufsliste
+      entity_id: "{{ list_id }}"
     data:
       status: needs_action
     response_variable: incompleteItems
-  - service: script.notify_engine
+  - action: script.notify_engine
     data:
-      title: "Einkaufsliste - {{ states(list) }} Dinge"
-      value1: >-
-        {% for i in incompleteItems[list].items %}
-          - {{ i.name }}
-        {% endfor %}
+      title: Einkaufsliste - {{ states(list_id) }} Dinge
+      value1: |
+        {% for i in incompleteItems[list_id]['items'] %}
+          - {{ i.summary }} {%
+        endfor %}
       who: "home"
-      tag_id: "information"
-      group: "Einkauf"
+      tag_id: information
+      group: Einkauf
 mode: single
