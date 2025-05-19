@@ -4,7 +4,7 @@ spotify_audio:
     - condition: state
       entity_id: group.residents
       state: home
-    - service: script.spotify_echo
+    - action: script.spotify_echo
       data:
         source: >
           {{ source }}

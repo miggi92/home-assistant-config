@@ -221,7 +221,7 @@ notify_engine:
                       message: "{{ message }}"
                       data:
                         appTitle: "{{ group }}"
-                        seconds: 10
+                        seconds: 15
                         image: "{{ photo }}"
 
             alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"

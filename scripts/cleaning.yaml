@@ -2,7 +2,7 @@
 # Cleaning script
 cleaning:
   sequence:
-    - service: vacuum.start
+    - action: vacuum.start
       data: {}
       target:
         entity_id: vacuum.roomba

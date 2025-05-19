@@ -2,7 +2,7 @@
 # Gassi script
 gassi:
   sequence:
-    - service: script.notify_engine
+    - action: script.notify_engine
       data:
         title: |
           🐕‍🦺 Maja Gassi 🐕‍🦺
@@ -16,7 +16,7 @@ gassi:
         minutes: 1
         seconds: 0
         milliseconds: 0
-    - service: input_boolean.turn_off
+    - action: input_boolean.turn_off
       target:
         entity_id: input_boolean.maja_home
       data: {}
@@ -25,7 +25,7 @@ gassi:
         minutes: 45
         seconds: 0
         milliseconds: 0
-    - service: input_boolean.turn_on
+    - action: input_boolean.turn_on
       target:
         entity_id: input_boolean.maja_home
       data: {}

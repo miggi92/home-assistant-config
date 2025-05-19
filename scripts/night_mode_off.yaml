@@ -5,12 +5,12 @@ night_mode_off:
     # - service: light.turn_off
     #   target:
     #     entity_id: light.bett
-    - service: alarm_control_panel.alarm_disarm
+    - action: alarm_control_panel.alarm_disarm
       data:
         code: !secret alarm_code
       target:
         entity_id: alarm_control_panel.alarmo
-    - service: switch.turn_off
+    - action: switch.turn_off
       data: {}
       target:
         entity_id:

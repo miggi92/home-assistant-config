@@ -7,7 +7,7 @@ cleaning_without_dog:
           entity_id: input_boolean.maja_home
           state: "off"
       then:
-        - service: script.notify_engine
+        - action: script.notify_engine
           data:
             title: |
               Roomba
@@ -16,10 +16,10 @@ cleaning_without_dog:
             who: "home"
             tag_id: "information"
             group: "Cleaning"
-        - service: script.cleaning
+        - action: script.cleaning
           data: {}
       else:
-        - service: script.notify_engine
+        - action: script.notify_engine
           data:
             title: |
               Roomba
@@ -28,5 +28,5 @@ cleaning_without_dog:
             who: "home"
             tag_id: "information"
             group: "Cleaning"
-        - service: script.cleaning_stop
+        - action: script.cleaning_stop
           data: {}
