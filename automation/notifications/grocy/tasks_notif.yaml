@@ -57,7 +57,7 @@ action:
         ✅ Es stehen keine ToDo's in den nächsten 10 Tagen an.
         {% endif %}
 
-      who: "miguel"
+      who: "home"
       tag_id: "information"
       group: "Hausarbeiten"
 mode: single
