@@ -1,15 +1,19 @@
 ---
 wallpanel:
   enabled: true
-  hide_toolbar: false
+  hide_toolbar: true
+  hide_toolbar_on_subviews: true
   hide_sidebar: true
   fullscreen: false
   idle_time: 120
-  display_time: 15
-  image_url: http://picsum.photos/${width}/${height}?random=${timestamp}
+  display_time: 30
+  image_url: !secret screensaver_url
   image_fit: cover
   image_list_update_interval: 3600
-  image_order: sorted
+  show_image_info: true
+  image_info_template: >-
+    <span style="font-family: 'Roboto Condensed', sans-serif; font-size: 1em; font-weight: 400; color:##999">//</span> ${description|alt_description}
+  image_order: random
   image_excludes: []
   show_exif_info: false
   fetch_address_data: true
