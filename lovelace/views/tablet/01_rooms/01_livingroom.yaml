@@ -15,6 +15,18 @@ badges:
     tap_action:
       action: navigate
       navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.wohnzimmertemperatur
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.wohnzimmer_heizung_humidity
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: group.living_motion_sensors
   - type: custom:mushroom-chips-card
     chips:
       - type: action
@@ -26,26 +38,10 @@ badges:
             data:
               title: "TV Programm"
               content: !include ../../../cards/tv_prog.yaml
-  - type: custom:decluttering-card
-    template: motion_badge_template
-    variables:
-      - entity: group.living_motion_sensors
 sections:
   - !include ../../../cards/tablet/left_side.yaml
   - type: grid
     cards:
-      - hours_to_show: 24
-        graph: line
-        name: Temperatur
-        type: sensor
-        entity: sensor.wohnzimmertemperatur
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftfeuchtigkeit
-        type: sensor
-        entity: sensor.wohnzimmer_heizung_humidity
-        detail: 1
       - type: custom:mushroom-light-card
         entity: light.tv_licht
         layout: vertical
