@@ -4,7 +4,7 @@ wallpanel:
   hide_toolbar: true
   hide_toolbar_on_subviews: true
   hide_sidebar: true
-  fullscreen: false
+  fullscreen: true
   idle_time: 120
   display_time: 30
   image_url: !secret screensaver_url
