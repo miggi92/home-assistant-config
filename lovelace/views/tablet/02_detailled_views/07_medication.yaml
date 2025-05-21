@@ -1,0 +1,68 @@
+---
+title: Medizin
+path: medication
+icon: mdi:medication-outline
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+subview: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - !include ../../../cards/tablet/left_side.yaml
+  - type: grid
+    cards:
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          type: entities
+        filter:
+          include:
+            - entity_id: input_boolean.medis_miguel*
+              state: "off"
+              options:
+                type: custom:mushroom-entity-card
+                secondary_info: last-changed
+                icon: mdi:pill
+                icon_color: red
+                tap_action:
+                  action: more-info
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          type: entities
+        filter:
+          include:
+            - entity_id: input_boolean.medis_milo*
+              state: "off"
+              options:
+                type: custom:mushroom-entity-card
+                secondary_info: last-changed
+                icon: mdi:pill
+                icon_color: red
+                tap_action:
+                  action: more-info
+  - type: grid
+    cards:
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          type: entities
+        filter:
+          include:
+            - entity_id: input_boolean.medis_silke*
+              state: "off"
+              options:
+                type: custom:mushroom-entity-card
+                secondary_info: last-changed
+                icon: mdi:pill
+                icon_color: red
+                tap_action:
+                  action: more-info

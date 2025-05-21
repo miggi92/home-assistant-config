@@ -57,3 +57,9 @@ badges:
     icon: mdi:gauge
     tap_action:
       action: more-info
+  - type: custom:mushroom-template-badge
+    icon: mdi:medication
+    color: red
+    tap_action:
+      action: navigate
+      navigation_path: medication
