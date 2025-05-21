@@ -16,7 +16,7 @@ action:
           mdi:weather-sunny
           {% elif is_state("weather.home","clear-night") %}
           mdi:weather-night
-          {% elif is_state("weather.home","rain") %}
+          {% elif is_state("weather.home","rainy") %}
           mdi:weather-rainy
           {% elif is_state("weather.home","snow") %}
           mdi:weather-snowy
