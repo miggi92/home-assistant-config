@@ -6,11 +6,11 @@
   trigger:
     - trigger: state
       entity_id:
-        - binary_sensor.pixel_7_pro_android_auto
+        - binary_sensor.pixel_9_pro_android_auto
       to: "on"
   condition: []
   action:
-    - action: notify.mobile_app_pixel_7_pro
+    - action: notify.mobile_app_pixel_9_pro
       data:
         title: Connected 2 car
         message: This device is connected to android auto.

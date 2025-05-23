@@ -5,4 +5,4 @@ resident_beacons:
   icon: mdi:bluetooth
   entities:
     - sensor.beacongalaxys23
-    - sensor.beaconpixel7pro
+    - sensor.beaconpixel9pro

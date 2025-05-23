@@ -13,9 +13,9 @@ cards:
           - work_zone: zone.work_miguel
           - eta_work: sensor.miguel_eta_work
           - eta_home: sensor.miguel_eta_home
-          - phone: pixel_7_pro
+          - phone: pixel_9_pro
           - id: miguel
-          - beacon: sensor.beaconpixel7pro
+          - beacon: sensor.beaconpixel9pro
           - watch: pixel_watch_3
       - type: custom:decluttering-card
         template: person_card_template

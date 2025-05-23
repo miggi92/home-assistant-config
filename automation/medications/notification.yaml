@@ -36,7 +36,7 @@ action:
   - choose:
       - conditions: "{{ medis_miguel != '' }}"
         sequence:
-          - action: notify.mobile_app_pixel_7_pro
+          - action: notify.mobile_app_pixel_9_pro
             data:
               title: Zeit für deine Medikamente!
               message: "{{ medis_miguel }}"

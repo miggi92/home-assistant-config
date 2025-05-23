@@ -4,7 +4,7 @@ alias: "Wecker 3 synchronisieren"
 id: 6f228bce-1c81-4807-9c66-59ce30b2a5f9
 trigger:
   - platform: state
-    entity_id: sensor.pixel_7_pro_next_alarm
+    entity_id: sensor.pixel_9_pro_next_alarm
   - platform: state
     entity_id: sensor.silke_handy_next_alarm
 action:
@@ -12,7 +12,7 @@ action:
     entity_id: input_datetime.wecker_family
     data_template:
       datetime: >-
-        {% set wecker1_time = as_timestamp(states('sensor.pixel_7_pro_next_alarm')) %}
+        {% set wecker1_time = as_timestamp(states('sensor.pixel_9_pro_next_alarm')) %}
         {% set wecker2_time = as_timestamp(states('sensor.silke_handy_next_alarm')) %}
         {% if wecker1_time >= wecker2_time %}
           {{ strptime(as_local(wecker1_time).strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S') }}
