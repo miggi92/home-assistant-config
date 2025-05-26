@@ -13,7 +13,11 @@ anniversary_template:
             type: custom:mushroom-template-card
             icon: "[[icon]]"
             primary: |
+              {% if state_attr(entity, 'years_at_anniversary') == 0 %}
+              {{ state_attr(entity, 'friendly_name') }}
+              {% else %}
               {{ state_attr(entity, 'friendly_name') }} ({{state_attr(entity, 'years_at_anniversary') }})
+              {% endif %}
             icon_color: green
             secondary: |
               {%- set event_date = state_attr(entity, 'next_date') %}
