@@ -1,30 +1,33 @@
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import logging
-import aiohttp
-from datetime import datetime
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     team_id = entry.data["team_id"]
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN].setdefault(team_id, {})
-    
-    async_add_entities([HandballNetSensor(hass, team_id)], update_before_add=True)
+    all_sensor = HandballAllGamesSensor(hass, entry, team_id)
+    heim_sensor = HandballHeimspielSensor(hass, entry, team_id)
+    aus_sensor = HandballAuswaertsspielSensor(hass, entry, team_id)
+    async_add_entities([all_sensor, heim_sensor, aus_sensor], update_before_add=True)
 
-class HandballNetSensor(Entity):
-    def __init__(self, hass, team_id):
+class HandballAllGamesSensor(Entity):
+    def __init__(self, hass, entry, team_id):
         self.hass = hass
         self._team_id = team_id
         self._state = None
         self._attributes = {}
-        self._name = f"Handball Team {team_id}"
-
-    @property
-    def name(self):
-        return self._name
+        self._attr_name = f"Alle Spiele {team_id}"
+        self._attr_unique_id = f"handball_allgames_{team_id}"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, self._team_id)},
+            "name": f"Handball Team {self._team_id}",
+            "manufacturer": "handball.net",
+            "model": "Team Kalender + Sensor",
+            "entry_type": "service"
+        }
+        self._attr_config_entry_id = entry.entry_id
 
     @property
     def state(self):
@@ -44,14 +47,69 @@ class HandballNetSensor(Entity):
                     return
                 data = await resp.json()
                 matches = data.get("data", [])
-                team_name = matches[0]["homeTeam"]["name"] if matches else "Unbekannt"
+
+                heimspiele = []
+                auswaertsspiele = []
+                team_name = None
+
+                for match in matches:
+                    if match["homeTeam"]["id"] == self._team_id:
+                        heimspiele.append(match)
+                        team_name = match["homeTeam"]["name"]
+                    elif match["awayTeam"]["id"] == self._team_id:
+                        auswaertsspiele.append(match)
+                        team_name = match["awayTeam"]["name"]
 
                 self._state = f"{team_name} ({len(matches)} Spiele)"
-                self._attributes = {
-                    "spiele": matches
-                }
+                self._attributes = {"spiele": matches}
 
                 self.hass.data[DOMAIN][self._team_id]["matches"] = matches
+                self.hass.data[DOMAIN][self._team_id]["heimspiele"] = heimspiele
+                self.hass.data[DOMAIN][self._team_id]["auswaertsspiele"] = auswaertsspiele
 
         except Exception as e:
             _LOGGER.error("Fehler beim Abrufen der Handballdaten: %s", e)
+
+class HandballHeimspielSensor(Entity):
+    def __init__(self, hass, entry, team_id):
+        self.hass = hass
+        self._team_id = team_id
+        self._attr_name = f"Handball Heimspiele {team_id}"
+        self._attr_unique_id = f"handball_heim_{team_id}"
+        self._attr_config_entry_id = entry.entry_id
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, team_id)},
+            "name": f"Handball Team {team_id}",
+            "manufacturer": "handball.net",
+            "model": "Team Kalender + Sensor"
+        }
+
+    @property
+    def state(self):
+        return len(self.hass.data[DOMAIN][self._team_id].get("heimspiele", []))
+
+    @property
+    def extra_state_attributes(self):
+        return {"heimspiele": self.hass.data[DOMAIN][self._team_id].get("heimspiele", [])}
+
+class HandballAuswaertsspielSensor(Entity):
+    def __init__(self, hass, entry, team_id):
+        self.hass = hass
+        self._team_id = team_id
+        self._attr_name = f"Handball Auswärtsspiele {team_id}"
+        self._attr_unique_id = f"handball_auswaerts_{team_id}"
+        self._attr_config_entry_id = entry.entry_id
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, team_id)},
+            "name": f"Handball Team {team_id}",
+            "manufacturer": "handball.net",
+            "model": "Team Kalender + Sensor"
+        }
+
+    @property
+    def state(self):
+        return len(self.hass.data[DOMAIN][self._team_id].get("auswaertsspiele", []))
+
+    @property
+    def extra_state_attributes(self):
+        return {"auswaertsspiele": self.hass.data[DOMAIN][self._team_id].get("auswaertsspiele", [])}
