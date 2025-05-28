@@ -7,14 +7,20 @@ trigger:
   - platform: time
     at: "00:01:00"
     id: "daily"
-  - platform: time
-    at: "06:00:00"
+  - trigger: time
+    at:
+      entity_id: input_datetime.medis_reminder_time_morning
+      offset: "-01:00:00"
     id: "morgens"
-  - platform: time
-    at: "10:00:00"
+  - trigger: time
+    at:
+      entity_id: input_datetime.medis_reminder_time_evening
+      offset: "-01:00:00"
     id: "mittags"
-  - platform: time
-    at: "18:00:00"
+  - trigger: time
+    at:
+      entity_id: input_datetime.medis_reminder_time_night
+      offset: "-01:00:00"
     id: "abends"
 action:
   - if:

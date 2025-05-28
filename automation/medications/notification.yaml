@@ -5,7 +5,11 @@ id: 98553e4d-5625-488b-8a7d-01c315807b24
 description: "Medi Notif"
 trigger:
   - platform: time
-    at: input_datetime.medis_reminder_time
+    at: input_datetime.medis_reminder_time_morning
+  - platform: time
+    at: input_datetime.medis_reminder_time_evening
+  - platform: time
+    at: input_datetime.medis_reminder_time_night
 action:
   - variables:
       persons:
