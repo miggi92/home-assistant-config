@@ -8,58 +8,84 @@ trigger:
     at: input_datetime.medis_reminder_time
 action:
   - variables:
-      medis_daily: >-
-        {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
-          {%- if states(medi)=="off" -%}
-            {{ medi }}{{ ' ' }}
-          {%- endif -%}
-        {%- endfor -%}
-      medis_weekly: >-
-        {%- for medi in label_entities('MedisWeekly') | list if states(medi) in ('on','off') -%}
-          {%- if states(medi)=="off" -%}
-            {{ medi }}{{ ' ' }}
-          {%- endif -%}
-        {%- endfor -%}
+      persons:
+        - key: miguel
+          device: notify.mobile_app_pixel_9_pro
+          name: Miguel
+        - key: silke
+          device: notify.mobile_app_sm_s911b
+          name: Silke
+        - key: milo
+          device: notify.mobile_app_pixel_9_pro
+          name: Milo
+        - key: maja
+          device: notify.mobile_app_pixel_9_pro
+          name: Maja
+
+      medis_daily: >
+        {% set result = namespace(items=[]) %}
+        {% for medi in label_entities('MedisDaily') %}
+          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+            {% set result.items = result.items + [medi] %}
+          {% endif %}
+        {% endfor %}
+        {{ result.items }}
+
+      medis_weekly: >
+        {% set result = namespace(items=[]) %}
+        {% for medi in label_entities('MedisWeekly') %}
+          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+            {% set result.items = result.items + [medi] %}
+          {% endif %}
+        {% endfor %}
+        {{ result.items }}
+
   - variables:
-      medis_miguel: >
-        {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
-          {%- if 'miguel' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | replace('Miguel', '') }}
-          {%- endif -%}
-        {%- endfor -%}
-      medis_silke: >
-        {%- for medi in medis_daily.split(' ') + medis_weekly.split(' ') -%}
-          {%- if 'silke' in medi -%}
-            {{ state_attr(medi, 'friendly_name') | replace('Silke', '') }}
-          {%- endif -%}
-        {%- endfor -%}
-  - choose:
-      - conditions: "{{ medis_miguel != '' }}"
-        sequence:
-          - action: notify.mobile_app_pixel_9_pro
-            data:
-              title: Zeit für deine Medikamente!
-              message: "{{ medis_miguel }}"
-              data:
-                channel: Gesundheit
-                car_ui: true
-                notification_icon: "mdi:pill"
-                actions:
-                  - action: "URI"
-                    title: "Öffnen"
-                    uri: "/lovelace-mobile/medication"
-  - choose:
-      - conditions: "{{ medis_silke != '' }}"
-        sequence:
-          - action: notify.mobile_app_sm_s911b
-            data:
-              title: Zeit für deine Medikamente!
-              message: "{{ medis_silke }}"
-              data:
-                channel: Gesundheit
-                car_ui: true
-                notification_icon: "mdi:pill"
-                actions:
-                  - action: "URI"
-                    title: "Öffnen"
-                    uri: "/lovelace-mobile/medication"
+      all_medis: >
+        {% set result = namespace(items=[]) %}
+        {% for daily in medis_daily %}
+          {% set result.items = result.items + [daily] %}
+        {% endfor %}
+        {% for weekly in medis_weekly %}
+          {% set result.items = result.items + [weekly] %}
+        {% endfor %}
+        {{ result.items }}
+  - variables:
+      medis_by_person: >
+        {% set result = namespace(data={}) %}
+        {% for person in persons %}
+          {% set medi_list = namespace(items=[]) %}
+          {% for entity_id in all_medis %}
+            {% if person.key in entity_id %}
+              {% set raw_name = state_attr(entity_id, 'friendly_name') or entity_id %}
+              {% set name = raw_name | replace(person.name, '') | trim %}
+              {% set medi_list.items = medi_list.items + [name] %}
+            {% endif %}
+          {% endfor %}
+          {% set result.data = result.data | combine({ person.key: medi_list.items | join(', ') }) %}
+        {% endfor %}
+        {{ result.data }}
+
+  - repeat:
+      for_each: "{{ persons }}"
+      sequence:
+        - variables:
+            person_key: "{{ repeat.item.key }}"
+            person_info: "{{ repeat.item.name }}"
+            person_device: "{{ repeat.item.device }}"
+            medi_message: "{{ medis_by_person[person_key] }}"
+        - choose:
+            - conditions: "{{ medi_message != '' }}"
+              sequence:
+                - service: "{{ person_device }}"
+                  data:
+                    title: "Zeit für {{ person_info }}s Medikamente!"
+                    message: "{{ medi_message }}"
+                    data:
+                      channel: Gesundheit
+                      car_ui: true
+                      notification_icon: "mdi:pill"
+                      actions:
+                        - action: "URI"
+                          title: "Öffnen"
+                          uri: "/lovelace-mobile/medication"
