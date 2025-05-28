@@ -11,9 +11,11 @@ cards:
     show_empty: false
     card:
       type: entities
+      title: "Müssen genommen werden"
+      show_header_toggle: false
     filter:
       include:
-        - entity_id: input_boolean.medis_miguel*
+        - entity_id: input_boolean.medis_*
           state: "off"
           options:
             type: custom:mushroom-entity-card
@@ -26,14 +28,39 @@ cards:
     show_empty: false
     card:
       type: entities
+      title: "Zuletzt genommen"
+      show_header_toggle: false
     filter:
       include:
-        - entity_id: input_boolean.medis_silke*
-          state: "off"
+        - entity_id: input_boolean.medis_*
+          state: "on"
           options:
             type: custom:mushroom-entity-card
             secondary_info: last-changed
             icon: mdi:pill
             icon_color: red
             tap_action:
-              action: more-info
+              action: none
+      exclude:
+        - last_changed: "> 1 d ago"
+    sort:
+      method: last_changed
+      reverse: true
+      count: 5
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.medis_reminder_time_morning
+        layout: vertical
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.medis_reminder_time_evening
+        layout: vertical
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.medis_reminder_time_night
+        layout: vertical
+        tap_action:
+          action: more-info
