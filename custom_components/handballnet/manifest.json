@@ -1,6 +1,6 @@
 {
   "domain": "handballnet",
-  "name": "Handball.net Integration",
+  "name": "Handball.net",
   "codeowners": [
     "@miggi92"
   ],
@@ -12,5 +12,5 @@
   "requirements": [
     "aiohttp"
   ],
-  "version": "0.0.1"
+  "version": "0.0.3"
 }
