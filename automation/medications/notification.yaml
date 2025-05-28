@@ -21,6 +21,14 @@ action:
         - key: maja
           device: notify.mobile_app_pixel_9_pro
           name: Maja
+      medis_hourly: >
+        {% set result = namespace(items=[]) %}
+        {% for medi in label_entities('MedisHourly') %}
+          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+            {% set result.items = result.items + [medi] %}
+          {% endif %}
+        {% endfor %}
+        {{ result.items }}
 
       medis_daily: >
         {% set result = namespace(items=[]) %}
@@ -43,6 +51,9 @@ action:
   - variables:
       all_medis: >
         {% set result = namespace(items=[]) %}
+        {% for hourly in medis_hourly %}
+          {% set result.items = result.items + [hourly] %}
+        {% endfor %}
         {% for daily in medis_daily %}
           {% set result.items = result.items + [daily] %}
         {% endfor %}
