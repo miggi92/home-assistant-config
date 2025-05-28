@@ -1,0 +1,46 @@
+---
+# Consume product in grocy to track stock
+alias: MedisConsume
+id: fa040eca-2d48-4243-a8c6-28b78d5b3f7c
+description: "Medi consume in Grocy"
+trigger:
+  - platform: state
+    entity_id: input_boolean.medis_miguel_heuschnupfen_graeser
+    to: "on"
+    id: heuschnupfen
+  - platform: state
+    entity_id:
+      - input_boolean.medis_miguel_vitamind
+      - input_boolean.medis_silke_vitamind
+    to: "on"
+    id: vitamin_d
+action:
+  - variables:
+      product_id: ""
+  - alias: "Typ von medi rausfinden"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{  trigger.id == 'heuschnupfen' }}"
+        sequence:
+          - variables:
+              product_id: "66"
+      - conditions:
+          - condition: template
+            value_template: "{{  trigger.id == 'vitamin_d' }}"
+        sequence:
+          - variables:
+              product_id: "68"
+  - if:
+      - condition: template
+        value_template: "{{ product_id != '' }}"
+    then:
+      - action: grocy.consume_product_from_stock
+        data:
+          allow_subproduct_substitution: true
+          transaction_type: CONSUME
+          product_id: "{{ product_id }}"
+          amount: 1
+          spoiled: false
+mode: queued
+max: 5
