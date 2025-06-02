@@ -1,0 +1,14 @@
+---
+resource: !secret signal_home_webhook
+headers:
+  Content-Type: application/json
+sensor:
+  - name: "Signal message received"
+    value_template: "" # this will fetch the message
+    json_attributes_path: $[0].envelope
+    json_attributes:
+      - source
+      - sourceName
+      - timestamp
+      - typingMessage
+      - dataMessage
