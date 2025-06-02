@@ -101,6 +101,15 @@ notify_engine:
           family: notify.signalfamily
         recipient_list: "{{ who.split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+    - variables:
+        duplications:
+          - who: tv
+            condition: "{{ who != 'tv' }}"
+            device: device_tracker.gtv
+            media_check: media_player.gtv
+          - who: work
+            condition: "{{ who != 'work' }}"
+            device: device_tracker.bcwmc5cg4100cy0
     - repeat:
         for_each: "{{ recipient_list }}"
         sequence:
@@ -172,45 +181,6 @@ notify_engine:
           - parallel:
               - if:
                   - condition: template
-                    value_template: "{{ who != 'tv' }}"
-                  - condition: state
-                    entity_id: device_tracker.gtv
-                    state: "home"
-                  - condition: not
-                    conditions:
-                      - condition: state
-                        entity_id: media_player.gtv
-                        state: "off"
-                then:
-                  - action: script.notify_engine
-                    data:
-                      title: "{{ title }}"
-                      value1: "{{ value1 }}"
-                      value2: "{{ value2 }}"
-                      value3: "{{ value3 }}"
-                      who: "tv"
-                      group: "{{ group }}"
-                      photo: "{{ photo }}"
-                      tag_id: "{{ tag_id }}"
-              - if:
-                  - condition: template
-                    value_template: "{{ who != 'work' }}"
-                  - condition: state
-                    entity_id: device_tracker.bcwmc5cg4100cy0
-                    state: "home"
-                then:
-                  - action: script.notify_engine
-                    data:
-                      title: "{{ title }}"
-                      value1: "{{ value1 }}"
-                      value2: "{{ value2 }}"
-                      value3: "{{ value3 }}"
-                      who: "work"
-                      group: "{{ group }}"
-                      photo: "{{ photo }}"
-                      tag_id: "{{ tag_id }}"
-              - if:
-                  - condition: template
                     value_template: "{{ who != 'work' }}"
                   - condition: template
                     value_template: "{{ who != 'tv' }}"
@@ -225,3 +195,31 @@ notify_engine:
                         image: "{{ photo }}"
 
             alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
+    - repeat:
+        for_each: "{{ duplications }}"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ repeat.item.condition }}"
+              - condition: template
+                value_template: "{{ states(repeat.item.device) == 'home' }}"
+              - condition: or
+                conditions:
+                  - condition: template
+                    value_template: "{{ repeat.item.who != 'tv' }}"
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: media_player.gtv
+                        state: "off"
+            then:
+              - action: script.notify_engine
+                data:
+                  title: "{{ title }}"
+                  value1: "{{ value1 }}"
+                  value2: "{{ value2 }}"
+                  value3: "{{ value3 }}"
+                  who: "{{ repeat.item.who }}"
+                  group: "{{ group }}"
+                  photo: "{{ photo }}"
+                  tag_id: "{{ tag_id }}"
