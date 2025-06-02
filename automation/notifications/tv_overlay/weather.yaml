@@ -12,7 +12,7 @@ action:
       data:
         id: fixed_weather
         icon: >-
-          {% if is_state("weather.home","clear-day") %}
+          {% if is_state("weather.home","sunny") %}
           mdi:weather-sunny
           {% elif is_state("weather.home","clear-night") %}
           mdi:weather-night
