@@ -71,6 +71,11 @@ notify_engine:
         object: null
       name: Actions
       description: Actions
+    icon:
+      selector:
+        text: null
+      name: Icon
+      description: Icon
 
   mode: parallel
   sequence:
@@ -82,12 +87,12 @@ notify_engine:
           home: notify.telegram_home_group
           sig_home: notify.signalhome
           miguel: notify.mobile_app_pixel_9_pro
-          silke: notify.silke_telegram
+          silke: notify.mobile_app_pixel_9_pro
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify
           family: notify.signalfamily
-        recipient_list: "{{ who.split(',') | map('trim') | list }}"
+        recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
     - variables:
         duplications:
@@ -181,6 +186,9 @@ notify_engine:
                     {% endif %}
                     {% if tag_id is defined and tag_id %}
                       {% set d.data = dict(d.data, tag=tag_id) %}
+                    {% endif %}
+                    {% if icon is defined and icon %}
+                      {% set d.data = dict(d.data, notification_icon=icon) %}
                     {% endif %}
                     {% if photo is defined and photo %}
                       {% set d.data = dict(d.data, image=photo) %}
