@@ -38,6 +38,7 @@ node_modules
 /www/images/screenshots
 /www/downloaded
 /www/cam_captures
+/www/mail_and_packages
 /image
 /node-red
 /tts
