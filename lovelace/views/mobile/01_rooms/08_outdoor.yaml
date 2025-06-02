@@ -93,10 +93,6 @@ cards:
     template: pollen_card_template
   - type: custom:mushroom-title-card
     subtitle: Sonne
-  - type: horizontal-stack
-    cards:
-      - type: custom:uv-index-card
-        entity: sensor.current_uv_index
   - type: custom:mushroom-title-card
     subtitle: Abfall
   - type: vertical-stack

@@ -73,8 +73,6 @@ sections:
         tap_action:
           action: navigate
           navigation_path: "flights"
-      - type: custom:uv-index-card
-        entity: sensor.current_uv_index
 
   - type: grid
     cards:

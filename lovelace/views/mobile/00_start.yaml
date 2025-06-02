@@ -155,31 +155,6 @@ cards:
       - picture_url: /local/images/anniversaries.png
       - path: special
 
-  - type: conditional
-    conditions:
-      - entity: calendar.geburtstage
-        state: "on"
-    card:
-      type: custom:mushroom-template-card
-      icon: mdi:gift
-      icon_color: deep-orange
-      primary: |-
-        {{ state_attr("calendar.geburtstage","message") }}
-      card_mod:
-        style:
-          mushroom-shape-icon$: |
-            ha-icon {
-              --icon-animation: surprise 3s ease infinite;
-            }
-            @keyframes surprise {
-              0%, 20%, 100% { transform: translateY(0); }
-              2.5% { transform: translateY(-6px) rotate(-14deg); }
-              5% { transform: translateY(-6px) rotate(11deg); }
-              7.5% { transform: translateY(-6px) rotate(-8deg); }
-              10% { transform: translateY(-6px) rotate(5deg); }
-              12.5% { transform: translateY(0); }
-              15% { transform: translateY(-3px) }
-            }
   - type: custom:decluttering-card
     template: anniversary_template
     variables:

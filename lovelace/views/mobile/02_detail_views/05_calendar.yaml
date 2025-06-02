@@ -34,10 +34,6 @@ cards:
       - entity: calendar.familie
         color: yellow
         icon: mdi:human-male-female-child
-      - entity: calendar.geburtstage
-        color: orange
-        icon: mdi:cake
-        maxDaysToShow: 5
   - type: "custom:atomic-calendar-revive"
     name: Kalender
     defaultMode: calendar
@@ -59,6 +55,3 @@ cards:
       - entity: calendar.familie
         color: yellow
         icon: mdi:human-male-female-child
-      - entity: calendar.geburtstage
-        color: orange
-        icon: mdi:cake
