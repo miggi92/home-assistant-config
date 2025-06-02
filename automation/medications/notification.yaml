@@ -14,16 +14,16 @@ action:
   - variables:
       persons:
         - key: miguel
-          device: notify.mobile_app_pixel_9_pro
+          device: miguel
           name: Miguel
         - key: silke
-          device: notify.mobile_app_sm_s911b
+          device: silke
           name: Silke
         - key: milo
-          device: notify.mobile_app_pixel_9_pro
+          device: "miguel, silke"
           name: Milo
         - key: maja
-          device: notify.mobile_app_pixel_9_pro
+          device: "miguel, silke"
           name: Maja
       medis_hourly: >
         {% set result = namespace(items=[]) %}
@@ -92,15 +92,15 @@ action:
         - choose:
             - conditions: "{{ medi_message != '' }}"
               sequence:
-                - service: "{{ person_device }}"
+                - service: script.notify_engine
                   data:
                     title: "Zeit für {{ person_info }}s Medikamente!"
-                    message: "{{ medi_message }}"
-                    data:
-                      channel: Gesundheit
-                      car_ui: true
-                      notification_icon: "mdi:pill"
-                      actions:
-                        - action: "URI"
-                          title: "Öffnen"
-                          uri: "/lovelace-mobile/medication"
+                    who: "{{ person_device }}"
+                    value1: "{{ medi_message }}"
+                    group: "Health"
+                    tag_id: information
+                    icon: "mdi:pill"
+                    actions:
+                      - action: "URI"
+                        title: "Öffnen"
+                        uri: "/lovelace-mobile/medication"
