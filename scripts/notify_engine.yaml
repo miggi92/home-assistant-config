@@ -2,25 +2,6 @@
 #####
 # Notifications engine - adapted from CCOSTAN
 # Original Repo : https://github.com/CCOSTAN/Home-AssistantConfig
-#
-# Service template is used to select who will receive message.
-# It can be used for individual messages but groups too
-# for example - Discord sends message to both Discord and me etc.
-#
-# When you call script from automation, you can specify variables provided below to tweak ho notification will behave.
-#
-# List of variables you can used when calling this script:
-#
-# who:            List of available platforms and variable that is used to select where to push notification
-# title:          Title of the message - not all notification platforms support this
-# value1:         value variables are used as messge body. Up to 3 lines can be used
-# value2:
-# value3:
-# target_id:      Some platforms require you to specify target ID of the channel for message in ex. Discord, Telegram etc
-#
-# Additional variables that can be used to further customize Companion App notifications
-# tag_id:         Used to tag notifications, useful for mobile app notifications
-# group:          Used to group notificatrions, useful for mobile app notifications
 #####
 notify_engine:
   fields:
@@ -85,6 +66,12 @@ notify_engine:
         object: null
       name: Inline keyboard
       description: Möglichkeit auf Nachrichten direkt zu antworten
+    actions:
+      selector:
+        object: null
+      name: Actions
+      description: Actions
+
   mode: parallel
   sequence:
     - condition: state
@@ -94,10 +81,11 @@ notify_engine:
         notifiers:
           home: notify.telegram_home_group
           sig_home: notify.signalhome
-          miguel: notify.miguel_telegram
+          miguel: notify.mobile_app_pixel_9_pro
           silke: notify.silke_telegram
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
+          tv_overlay: notify.tvoverlaynotify
           family: notify.signalfamily
         recipient_list: "{{ who.split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
@@ -110,6 +98,10 @@ notify_engine:
           - who: work
             condition: "{{ who != 'work' }}"
             device: device_tracker.bcwmc5cg4100cy0
+          - who: tv_overlay
+            condition: "{{ who != 'tv_overlay' }}"
+            device: device_tracker.1und1_box
+            media_check: media_player.fernseher_im_wohnzimmer
     - repeat:
         for_each: "{{ recipient_list }}"
         sequence:
@@ -168,23 +160,10 @@ notify_engine:
                           {% set data = dict(data, **{'attachments': photos}) %}
                         {% endif %}
                         {{ data }}
-            default:
-              - action: "{{ notifier }}"
-                alias: "Default notification"
-                data:
-                  title: "{{ title }}"
-                  message: "{{ message }}"
-                  data:
-                    group: "{{ group }}"
-                    tag: "{{ tag_id }}"
-                    image: "{{ photo }}"
-          - parallel:
-              - if:
+              - conditions:
                   - condition: template
-                    value_template: "{{ who != 'work' }}"
-                  - condition: template
-                    value_template: "{{ who != 'tv' }}"
-                then:
+                    value_template: "{{ who == 'tv_overlay' }}"
+                sequence:
                   - action: notify.tvoverlaynotify
                     data:
                       title: "{{ title }}"
@@ -193,12 +172,36 @@ notify_engine:
                         appTitle: "{{ group }}"
                         seconds: 15
                         image: "{{ photo }}"
+            default:
+              - variables:
+                  notification_payload: >
+                    {% set d = namespace(data={}) %}
+                    {% if group is defined and group %}
+                      {% set d.data = dict(d.data, group=group) %}
+                    {% endif %}
+                    {% if tag_id is defined and tag_id %}
+                      {% set d.data = dict(d.data, tag=tag_id) %}
+                    {% endif %}
+                    {% if photo is defined and photo %}
+                      {% set d.data = dict(d.data, image=photo) %}
+                    {% endif %}
+                    {% if actions is defined and actions %}
+                      {% set d.data = dict(d.data, actions=actions) %}
+                    {% endif %}
+                    {{ d.data }}
 
-            alias: "Duplizieren der Nachrichten wenn andere Screens gerade verwendet werden"
+              - action: "{{ notifier }}"
+                alias: "Default notification"
+                data:
+                  title: "{{ title }}"
+                  message: "{{ message }}"
+                  data: "{{ notification_payload }}"
     - repeat:
         for_each: "{{ duplications }}"
         sequence:
           - if:
+              - condition: template
+                value_template: "{{ who != 'tv' and who != 'tv_overlay' and who != 'work'}}"
               - condition: template
                 value_template: "{{ repeat.item.condition }}"
               - condition: template
@@ -206,12 +209,11 @@ notify_engine:
               - condition: or
                 conditions:
                   - condition: template
-                    value_template: "{{ repeat.item.who != 'tv' }}"
+                    value_template: "{{ repeat.item.media_check != '' }}"
                   - condition: not
                     conditions:
-                      - condition: state
-                        entity_id: media_player.gtv
-                        state: "off"
+                      - condition: template
+                        value_template: "{{ states(repeat.item.media_check) == 'off' }}"
             then:
               - action: script.notify_engine
                 data:
