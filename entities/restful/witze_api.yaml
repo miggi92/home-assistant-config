@@ -1,0 +1,6 @@
+---
+resource: https://witzapi.de/api/joke/?limit=1&language=de
+sensor:
+  - name: joke
+    value_template: "{{ value_json[0].text }}"
+scan_interval: 3600
