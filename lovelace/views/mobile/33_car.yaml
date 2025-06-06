@@ -3,57 +3,85 @@ title: Auto
 path: car
 icon: mdi:car
 subview: true
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:mushroom-title-card
-    subtitle: Tankstellenpreise
-  - type: custom:mini-graph-card
-    entities:
-      - entity: sensor.jet_super
-        aggregate_func: avg
-        name: Jet
-        color: blue
-      - entity: sensor.agip_super
-        aggregate_func: avg
-        name: Agip
-        color: orange
-      - entity: sensor.shell_super
-        aggregate_func: avg
-        name: Shell
-        color: yellow
-      - entity: sensor.lenz_super
-        aggregate_func: avg
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.pixel_9_pro_android_auto
+      - type: custom:mushroom-template-card
+        entity: sensor.pixel_9_pro_car_speed
+        icon: mdi:gauge
+        primary: "Geschwindigkeit"
+        multiline_secondary: true
+        secondary: >
+          {%- set state = states(sensor.pixel_9_pro_car_speed) %}
+          {%- if state != "unavailable" %}
+            {%- set speed_mps = state | float %}
+            {%- if speed_mps is number %}
+              {{ (speed_mps * 3.6) | round(1) }} km/h
+            {%- else %}
+              Ungültiger Wert
+            {%- endif %}
+          {%- endif %}
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-template-card
+        entity: sensor.pixel_9_pro_geocoded_location
+        icon: mdi:map
+        primary: "Standort"
+        multiline_secondary: true
+        secondary: "{{ states(entity) }}"
+        tap_action:
+          action: more-info
+        grid_options:
+          columns: full
+          rows: auto
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.lenz_super
         name: Lenz
-        color: green
-    name: Benzinpreise 14 Tage (Durchschnitt)
-    hours_to_show: 336
-    group_by: date
+      - type: custom:mushroom-entity-card
+        entity: sensor.agip_super
+        name: AGIP
+      - type: custom:mushroom-entity-card
+        entity: sensor.jet_super
+        name: Jet
+      - type: custom:mushroom-entity-card
+        entity: sensor.shell_super
+        name: Shell
   - type: grid
     cards:
       - type: custom:mini-graph-card
         entities:
-          - sensor.lenz_super
-        name: Lenz
-        hours_to_show: 30
-        line_color: green
-      - type: custom:mini-graph-card
-        entities:
-          - sensor.agip_super
-        name: AGIP
-        hours_to_show: 30
-        line_color: orange
-      - type: custom:mini-graph-card
-        entities:
-          - sensor.jet_super
-        name: Jet
-        hours_to_show: 30
-        line_color: blue
-      - type: custom:mini-graph-card
-        entities:
-          - sensor.shell_super
-        name: Shell
-        hours_to_show: 30
-        line_color: yellow
+          - entity: sensor.jet_super
+            aggregate_func: avg
+            name: Jet
+            color: blue
+          - entity: sensor.agip_super
+            aggregate_func: avg
+            name: Agip
+            color: orange
+          - entity: sensor.shell_super
+            aggregate_func: avg
+            name: Shell
+            color: yellow
+          - entity: sensor.lenz_super
+            aggregate_func: avg
+            name: Lenz
+            color: green
+        name: Benzinpreise 14 Tage (Durchschnitt)
+        hours_to_show: 336
+        group_by: date
