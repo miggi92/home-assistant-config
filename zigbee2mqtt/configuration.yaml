@@ -38,6 +38,7 @@ mqtt:
 frontend:
   enabled: true
   port: 8099
+  package: zigbee2mqtt-windfront
 serial:
   port: >-
     /dev/serial/by-id/usb-Nabu_Casa_SkyConnect_v1.0_08ab766346edec11b6444540ad51a8b2-if00-port0
