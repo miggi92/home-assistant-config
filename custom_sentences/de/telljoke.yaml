@@ -1,0 +1,8 @@
+---
+language: "de"
+intents:
+  TellJoke:
+    data:
+      - sentences:
+          - "Erzähl ein Witz"
+          - "Witz"
