@@ -1,5 +1,11 @@
 ---
 title: Mobile Dashboard
-background: var(--background-image)
 decluttering_templates: !include_dir_merge_named ../templates
 views: !include_dir_list ../views/mobile
+background:
+  opacity: 33
+  alignment: center
+  size: cover
+  repeat: repeat
+  attachment: fixed
+  image: /api/image/serve/84d654ede1260e8c72d7cdbaa06205cd/original
