@@ -2,6 +2,7 @@
 title: Multimedia
 path: multimedia
 icon: mdi:multimedia
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:

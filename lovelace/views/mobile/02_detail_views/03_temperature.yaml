@@ -3,6 +3,7 @@
 title: Temperaturen
 path: temp
 icon: mdi:thermometer
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:

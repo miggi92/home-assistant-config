@@ -2,6 +2,7 @@
 title: Medizin
 path: medication
 icon: mdi:medication-outline
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -2,6 +2,7 @@
 title: Netzwerk
 path: network
 icon: mdi:network
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:

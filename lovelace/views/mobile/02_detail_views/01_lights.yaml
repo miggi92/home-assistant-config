@@ -2,6 +2,7 @@
 title: Lichter
 path: lights
 icon: mdi:lightbulb
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -2,6 +2,7 @@
 title: Auto
 path: car
 icon: mdi:car
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:
@@ -30,7 +31,7 @@ cards:
     name: Benzinpreise 14 Tage (Durchschnitt)
     hours_to_show: 336
     group_by: date
-  - type: horizontal-stack
+  - type: grid
     cards:
       - type: custom:mini-graph-card
         entities:
@@ -44,8 +45,6 @@ cards:
         name: AGIP
         hours_to_show: 30
         line_color: orange
-  - type: horizontal-stack
-    cards:
       - type: custom:mini-graph-card
         entities:
           - sensor.jet_super

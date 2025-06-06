@@ -2,6 +2,7 @@
 title: Kameras
 path: cams
 icon: mdi:cctv
+subview: true
 cards:
   - type: custom:mushroom-chips-card
     chips:
