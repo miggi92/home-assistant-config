@@ -4,56 +4,80 @@ title: Kalender
 path: calendar
 icon: mdi:calendar
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:mushroom-title-card
-    title: Aktuelle Termine
-  - type: custom:decluttering-card
-    template: calendar_event_template
-    variables:
-      - entity: calendar.miguel_gebhardt_googlemail_com
-      - title: Miguel's Termine
-  - type: "custom:atomic-calendar-revive"
-    name: Kalender nächste 7 Tage (Max. 10 Einträge)
-    maxEventCount: 10
-    maxDaysToShow: 7
-    disableEventLink: true
-    disableCalLocationLink: true
-    disableCalLink: true
-    showDescription: true
-    showDate: true
-    showLocation: true
-    hideFinishedEvents: true
-    showEventIcon: true
-    showWeekNumber: true
-    entities:
-      - entity: calendar.miguel_gebhardt_googlemail_com
-        icon: mdi:human-male
-      - entity: calendar.familie
-        color: yellow
-        icon: mdi:human-male-female-child
-  - type: "custom:atomic-calendar-revive"
-    name: Kalender
-    defaultMode: calendar
-    disableEventLink: true
-    disableCalLocationLink: true
-    disableCalEventLink: true
-    calShowDescription: true
-    showDate: true
-    showLocation: true
-    showEventIcon: true
-    calEventTime: true
-    showMultiDay: true
-    showMultiDayEventParts: true
-    showWeekDay: true
-    disableCalLink: true
-    entities:
-      - entity: calendar.miguel_gebhardt_googlemail_com
-        icon: mdi:human-male
-      - entity: calendar.familie
-        color: yellow
-        icon: mdi:human-male-female-child
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    column_span: 4
+    cards:
+      - type: custom:week-planner-card
+        calendars:
+          - entity: calendar.anniversaries
+            name: "Geburtstage "
+            color: orange
+            icon: mdi:cake
+            hideInLegend: false
+          - entity: calendar.familie
+            icon: mdi:human-male-female-child
+            color: lightblue
+            name: Familie
+          # - entity: calendar.daikin_hbl_spielplan
+          #   name: HBL
+          #   icon: mdi:handball
+          - entity: calendar.lisa1_gebhardt_gmail_com
+            name: Lisa
+            color: green
+            icon: mdi:doctor
+          - entity: calendar.saragebhardt_googlemail_com
+            name: Sara
+            color: yellow
+            icon: mdi:human-female-boy
+          - entity: calendar.mcmcamp1965_googlemail_com
+            name: Mama
+            color: red
+            icon: mdi:account
+        days: 7
+        startingDay: today
+        startingDayOffset: 0
+        hideWeekend: false
+        noCardBackground: false
+        compact: false
+        weather:
+          showCondition: true
+          showTemperature: true
+          showLowTemperature: false
+          useTwiceDaily: false
+          entity: weather.home
+        locale: de
+        showLocation: true
+        hidePastEvents: true
+        hideDaysWithoutEvents: false
+        hideTodayWithoutEvents: false
+        combineSimilarEvents: true
+        showLegend: true
+        showNavigation: true
+        showDescription: false
+        legendToggle: true
+        texts:
+          fullDay: Ganzer Tag
+          noEvents: Keine Termine
+          moreEvents: Mehr Termine
+          today: Heute
+          tomorrow: Morgen
+          yesterday: Gestern
+          sunday: Sonntag
+          monday: Montag
+          tuesday: Dienstag
+          wednesday: Mittwoch
+          thursday: Donnerstag
+          friday: Freitag
+          saturday: Samstag
+        grid_options:
+          columns: full
