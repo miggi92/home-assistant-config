@@ -2,3 +2,10 @@
 title: Floorplan Dashboard
 decluttering_templates: !include_dir_merge_named ../templates
 views: !include_dir_list ../views/floorplan
+background:
+  opacity: 33
+  alignment: center
+  size: cover
+  repeat: repeat
+  attachment: fixed
+  image: /api/image/serve/cae8dd3a0322d2f96cff441dcca0ec96/original
