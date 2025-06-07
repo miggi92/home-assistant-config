@@ -47,7 +47,7 @@ sections:
         startingDay: today
         startingDayOffset: 0
         hideWeekend: false
-        noCardBackground: false
+        noCardBackground: true
         compact: false
         weather:
           showCondition: true
