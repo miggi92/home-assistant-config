@@ -3,13 +3,26 @@
 title: Verbrauch
 path: consumption
 icon: mdi:barrel
+type: sections
+max_columns: 3
 subview: true
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: energy-distribution
-    link_dashboard: true
-  - type: energy-devices-graph
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: energy-distribution
+        link_dashboard: true
+  - type: grid
+    cards:
+      - type: energy-devices-graph
+  - type: grid
+    cards: []
