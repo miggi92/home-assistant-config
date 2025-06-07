@@ -3,6 +3,7 @@ title: Lichter
 path: lights
 icon: mdi:lightbulb
 subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

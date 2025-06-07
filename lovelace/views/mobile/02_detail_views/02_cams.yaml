@@ -3,6 +3,7 @@ title: Kameras
 path: cams
 icon: mdi:cctv
 subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

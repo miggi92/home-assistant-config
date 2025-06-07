@@ -3,6 +3,8 @@
 title: Arbeit
 path: work
 icon: mdi:briefcase
+subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -2,6 +2,7 @@
 title: Home
 path: home
 icon: mdi:home
+theme: ios-dark-mode-blue-red
 badges:
   - type: entity-filter
     state_filter:

@@ -3,6 +3,7 @@ title: Netzwerk
 path: network
 icon: mdi:network
 subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -2,6 +2,8 @@
 title: Haus
 path: home
 icon: mdi:home
+subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

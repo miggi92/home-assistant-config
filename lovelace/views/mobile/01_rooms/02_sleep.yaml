@@ -2,6 +2,8 @@
 title: Schlafzimmer
 path: sleep
 icon: mdi:bed-double
+subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -3,6 +3,8 @@
 title: System
 path: system
 icon: mdi:cellphone-arrow-down
+subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

@@ -3,6 +3,7 @@ title: Medizin
 path: medication
 icon: mdi:medication-outline
 subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

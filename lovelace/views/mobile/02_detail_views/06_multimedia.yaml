@@ -3,6 +3,7 @@ title: Multimedia
 path: multimedia
 icon: mdi:multimedia
 subview: true
+theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:
