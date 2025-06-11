@@ -3,54 +3,26 @@ title: Haus
 path: home
 icon: mdi:home
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: "custom:auto-entities"
-    show_empty: false
-    card:
-      show_header_toggle: false
-      title: Battery low
-      type: entities
-    filter:
-      include:
-        - attributes:
-            device_class: battery
-          state: "<= 15"
-      exclude:
-        - name: /[Ll]ow/
-        - name: /[Ss]tate/
-        - entity_id: "*plus"
-        - entity_id: "*plus_*"
-        - state: unavailable
-    sort:
-      method: state
-      numeric: true
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
   - type: grid
     cards:
-      - hours_to_show: 24
-        graph: line
-        name: Temperatur
-        type: sensor
-        entity: sensor.wohnungstemperatur
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftfeuchtigkeit
-        type: sensor
-        entity: sensor.wohnungsfeuchtigkeit
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftdruck
-        type: sensor
-        entity: sensor.wohnungsluftdruck
-        detail: 1
-  - type: horizontal-stack
-    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.night_mode
+        layout: vertical
+        tap_action:
+          action: toggle
       - type: custom:mushroom-cover-card
         entity: cover.rolllaeden
         name: Rollläden
@@ -67,44 +39,59 @@ cards:
         collapsible_controls: true
         tap_action:
           action: toggle
-  - type: horizontal-stack
+      - type: energy-sources-table
+  - type: grid
     cards:
-      - type: custom:mushroom-entity-card
-        entity: input_boolean.night_mode
-        layout: vertical
-        tap_action:
-          action: toggle
-  - type: energy-sources-table
-  - type: "custom:auto-entities"
-    show_empty: false
-    card:
-      show_header_toggle: false
-      title: "Pflanzen"
-      type: entities
-    filter:
-      include:
-        - attributes:
-            device_class: plant
-          options:
-            type: custom:flower-card
-            show_bars:
-              - illuminance
-              - humidity
-              - moisture
-              - conductivity
-              - temperature
-  - type: custom:mushroom-title-card
-    title: Hausarbeiten
-  - type: custom:state-switch
-    entity: user
-    states:
-      Miguel:
-        type: custom:decluttering-card
-        template: chores_card_template
-        variables:
-          - user_id: 2
-      Silke:
-        type: custom:decluttering-card
-        template: chores_card_template
-        variables:
-          - user_id: 3
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          show_header_toggle: false
+          title: "Pflanzen"
+          type: entities
+        filter:
+          include:
+            - attributes:
+                device_class: plant
+              options:
+                type: custom:flower-card
+                show_bars:
+                  - illuminance
+                  - humidity
+                  - moisture
+                  - conductivity
+                  - temperature
+  - type: grid
+    cards:
+      - type: custom:state-switch
+        entity: user
+        states:
+          Miguel:
+            type: custom:decluttering-card
+            template: chores_card_template
+            variables:
+              - user_id: 2
+          Silke:
+            type: custom:decluttering-card
+            template: chores_card_template
+            variables:
+              - user_id: 3
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          show_header_toggle: false
+          title: Battery low
+          type: entities
+        filter:
+          include:
+            - attributes:
+                device_class: battery
+              state: "<= 15"
+          exclude:
+            - name: /[Ll]ow/
+            - name: /[Ss]tate/
+            - entity_id: "*plus"
+            - entity_id: "*plus_*"
+            - state: unavailable
+        sort:
+          method: state
+          numeric: true
