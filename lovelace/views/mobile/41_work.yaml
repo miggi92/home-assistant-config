@@ -21,12 +21,12 @@ sections:
     cards:
       - type: grid
         title: Essen
+        columns: 2
         cards:
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
-              - id: "one"
-              - title: One
+              - entity: sensor.work_meal_one
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:

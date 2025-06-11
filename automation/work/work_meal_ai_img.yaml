@@ -18,7 +18,7 @@ actions:
               config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
               prompt: >-
                 Ein Bild von folgendem Essen:
-                {{ state_attr('sensor.work_meals', 'one') }}
+                {{ states('sensor.work_meal_one') }}
             response_variable: meal_one
           - action: downloader.download_file
             data:
@@ -36,7 +36,7 @@ actions:
               config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
               prompt: >-
                 Ein Bild von folgendem Essen:
-                {{ state_attr('sensor.work_meals', 'one_two') }}
+                {{ states('sensor.work_meal_one_two') }}
             response_variable: meal_one_two
           - action: downloader.download_file
             data:
@@ -54,7 +54,7 @@ actions:
               config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
               prompt: >-
                 Ein Bild von folgendem Essen:
-                {{ state_attr('sensor.work_meals', 'three') }}
+                {{ states('sensor.work_meal_three') }}
             response_variable: meal_three
           - action: downloader.download_file
             data:
@@ -72,7 +72,7 @@ actions:
               config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
               prompt: >-
                 Ein Bild von folgendem Essen:
-                {{ state_attr('sensor.work_meals', 'four') }}
+                {{ states('sensor.work_meal_four') }}
             response_variable: meal_four
           - action: downloader.download_file
             data:
@@ -90,7 +90,7 @@ actions:
               config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
               prompt: >-
                 Ein Bild von folgendem Essen:
-                {{ state_attr('sensor.work_meals', 'five') }}
+                {{ states('sensor.work_meal_five') }}
             response_variable: meal_five
           - action: downloader.download_file
             data:

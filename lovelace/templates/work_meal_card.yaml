@@ -1,33 +1,12 @@
 ---
 # Work meal card
-# type: custom:mushroom-template-card
-# primary: "[[title]]"
-# secondary: >-
-#   {{ state_attr('sensor.work_meals', "[[id]]" ) }}
-# multiline_secondary: true
-# fill_container: true
-# layout: vertical
-# picture: /local/downloaded/work_meals/[[id]].png
-# tap_action:
-#   action: more-info
-# - type: picture
-#   image: /local/downloaded/work_meals/[[id]].png
-# - type: custom:mushroom-template-card
-#   primary: "[[title]]"
-#   secondary: >-
-#     {{ state_attr('sensor.work_meals', "[[id]]" ) }}
-#   multiline_secondary: true
-#   fill_container: true
-#   tap_action:
-#     action: more-info
 work_meal_card_template:
   default:
     - id: "one"
     - title: "Essensausgabe"
   card:
-    type: picture-glance
-    image: /local/downloaded/work_meals/[[id]].png
-    title: "[[title]]"
-    entities:
-      - entity: sensor.work_meals
-        icon: mdi:food
+    type: picture-entity
+    show_state: true
+    show_name: false
+    entity: "sensor.work_meal_[[id]]"
+    camera_image: "camera.work_meal_[[id]]"

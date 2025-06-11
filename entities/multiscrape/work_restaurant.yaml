@@ -7,21 +7,45 @@ log_response: true
 method: GET
 name: Work Meals
 sensor:
-  - unique_id: work_meals
-    name: "Kantinenessen"
-    select: "app-menus h1" # this gives the title (e.g. date or menu heading)
-    icon: mdi:silverware-fork-knife
+  - unique_id: work_meal_one
+    name: "Essen One"
+    select: "app-category:nth-of-type(1) .name-column > span"
+    value_template: "{{ value }}"
     attributes:
-      - name: "One"
-        select: "app-category:nth-of-type(1) .name-column > span"
-      - name: "One two"
-        select: "app-category:nth-of-type(2) .name-column > span"
-      - name: "Three"
-        select: "app-category:nth-of-type(3) .name-column > span"
-      - name: "Four"
-        select: "app-category:nth-of-type(4) .name-column > span"
-      - name: "Five"
-        select: "app-category:nth-of-type(5) .name-column > span"
+      - name: image
+        value_template: "/local/downloaded/work_meals/one.png"
+
+  - unique_id: work_meal_one_two
+    name: "Essen One Two"
+    select: "app-category:nth-of-type(2) .name-column > span"
+    value_template: "{{ value }}"
+    attributes:
+      - name: image
+        value_template: "/local/downloaded/work_meals/one_two.png"
+
+  - unique_id: work_meal_three
+    name: "Essen Three"
+    select: "app-category:nth-of-type(4) .name-column > span"
+    value_template: "{{ value }}"
+    attributes:
+      - name: image
+        value_template: "/local/downloaded/work_meals/three.png"
+
+  - unique_id: work_meal_four
+    name: "Essen Four"
+    select: "app-category:nth-of-type(5) .name-column > span"
+    value_template: "{{ value }}"
+    attributes:
+      - name: image
+        value_template: "/local/downloaded/work_meals/four.png"
+
+  - unique_id: work_meal_five
+    name: "Essen Five"
+    select: "app-category:nth-of-type(6) .name-column > span"
+    value_template: "{{ value }}"
+    attributes:
+      - name: image
+        value_template: "/local/downloaded/work_meals/five.png"
 button:
   - unique_id: work_meals_refresh_button
     name: "Refresh work meals"
