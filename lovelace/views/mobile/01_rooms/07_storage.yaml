@@ -53,7 +53,7 @@ cards:
           max: 300
   - type: entities
     entities:
-      - binary_sensor.waschmaschine_door
+      - sensor.waschmaschine_tur
       - sensor.waschmaschine_operation_state
       - sensor.waschmaschine_remaining_program_time
   - type: horizontal-stack
