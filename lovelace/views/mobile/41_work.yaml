@@ -4,12 +4,19 @@ title: Arbeit
 path: work
 icon: mdi:briefcase
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
   - type: grid
     cards:
       - type: custom:decluttering-card
@@ -37,11 +44,7 @@ cards:
         variables:
           - id: "five"
           - title: Five
-  # - type: iframe
-  #   url: !secret work_restaurant
-  #   aspect_ratio: 100%
-  #   title: Speiseplan Arbeit
-  - type: vertical-stack
+  - type: grid
     cards:
       - type: custom:decluttering-card
         template: person_work_card
@@ -49,7 +52,7 @@ cards:
           - entity: person.miguel
           - work_zone: zone.work_miguel
           - picture: "/local/images/persons/miguel.png"
-  - type: vertical-stack
+  - type: grid
     cards:
       - type: custom:mushroom-entity-card
         entity: schedule.buro_tage
