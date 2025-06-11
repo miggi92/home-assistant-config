@@ -2,14 +2,21 @@
 title: Wetterwarnungen
 path: dwd
 icon: mdi:cloud-alert
+type: sections
+max_columns: 3
 subview: true
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: vertical-stack
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
     cards:
       - type: custom:meteoalarm-card
         integration: dwd
@@ -18,6 +25,11 @@ cards:
         entities:
           - entity: sensor.home_aktuelle_warnstufe
           - entity: sensor.home_vorwarnstufe
+  - type: grid
+    cards:
+      - !include ../../cards/dwd.yaml
+  - type: grid
+    cards:
       - type: custom:meteoalarm-card
         integration: nina
         hide_when_no_warning: true
@@ -27,4 +39,3 @@ cards:
           - entity: binary_sensor.warning_home_3
           - entity: binary_sensor.warning_home_4
           - entity: binary_sensor.warning_home_5
-      - !include ../../cards/dwd.yaml
