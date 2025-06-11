@@ -3,16 +3,20 @@ title: Einstellungen
 path: settings
 icon: mdi:cog
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:mushroom-title-card
-    subtitle: Benachrichtigungen
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
   - type: grid
-    square: false
     cards:
       - entity: input_boolean.audible_notifications
         type: custom:mushroom-entity-card
@@ -32,10 +36,7 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: custom:mushroom-title-card
-    subtitle: Automatisierungen
   - type: grid
-    square: false
     cards:
       - entity: input_boolean.lueften_aktiv
         type: custom:mushroom-entity-card
@@ -68,20 +69,6 @@ cards:
         tap_action:
           action: toggle
   - type: grid
-    columns: 2
-    cards:
-      - entity: input_select.milo_person_sync
-        type: custom:mushroom-select-card
-        secondary_info: last-changed
-        layout: vertical
-      - entity: input_select.maja_person_sync
-        type: custom:mushroom-select-card
-        secondary_info: last-changed
-        layout: vertical
-  - type: custom:mushroom-title-card
-    subtitle: Zeiten
-  - type: grid
-    square: false
     cards:
       - entity: input_datetime.chores_notif_time
         type: custom:mushroom-entity-card
@@ -93,21 +80,17 @@ cards:
         layout: vertical
         tap_action:
           action: more-info
-  - type: custom:mushroom-title-card
-    subtitle: Home
-  - type: grid
-    square: false
-    cards:
       - entity: input_number.strompreis
         type: custom:mushroom-entity-card
         layout: vertical
       - entity: input_number.wasserpreis_pro_m3
         type: custom:mushroom-entity-card
         layout: vertical
-  - type: horizontal-stack
-    cards:
-      - type: button
-        icon: mdi:server
-        tap_action:
-          action: navigate
-          navigation_path: /browser-mod
+      - entity: input_select.milo_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical
+      - entity: input_select.maja_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical
