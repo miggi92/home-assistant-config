@@ -14,14 +14,14 @@ condition:
     entity_id: schedule.buro_tage
     state: "on"
 action:
-  - service: shell_command.browserless_scraper
+  - action: shell_command.browserless_scraper
     data:
       function: "work_restaurant.js"
       output: "work_restaurant.html"
   - delay: "0:00:45"
-  - service: multiscrape.trigger_work_meals
+  - action: multiscrape.trigger_work_meals
   - delay: "0:05:00"
-  - service: script.notify_engine
+  - action: script.notify_engine
     data:
       title: |
         🍴 Heutiges Essen im Geschäft 🍽️
