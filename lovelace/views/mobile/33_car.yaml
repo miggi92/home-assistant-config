@@ -25,16 +25,7 @@ sections:
         icon: mdi:gauge
         primary: "Geschwindigkeit"
         multiline_secondary: true
-        secondary: >
-          {%- set state = states(sensor.pixel_9_pro_car_speed) %}
-          {%- if state != "unavailable" %}
-            {%- set speed_mps = state | float %}
-            {%- if speed_mps is number %}
-              {{ (speed_mps * 3.6) | round(1) }} km/h
-            {%- else %}
-              Ungültiger Wert
-            {%- endif %}
-          {%- endif %}
+        secondary: "{{states(sensor.pixel_9_pro_car_speed)}}"
         tap_action:
           action: more-info
       - type: custom:mushroom-template-card
