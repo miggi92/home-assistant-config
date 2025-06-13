@@ -4,10 +4,8 @@ alias: getWorkRestHTML
 id: 91949311-550e-466b-abf0-996d26e324f9
 description: "Get work restaurant html page"
 trigger:
-  - trigger: state
-    entity_id:
-      - schedule.buro_tage
-    to: "on"
+  - trigger: time
+    at: "20:00:00"
 condition:
   - condition: state
     entity_id: binary_sensor.workday_sensor
@@ -19,25 +17,4 @@ action:
       output: "work_restaurant.html"
   - delay: "0:00:45"
   - action: multiscrape.trigger_work_meals
-  - delay: "0:05:00"
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photos:
-        - file: "/config/www/downloaded/work_meals/one.png"
-          caputre: "{{ states('sensor.work_meal_one') }}"
-        - file: "/config/www/downloaded/work_meals/one_two.png"
-          caputre: "{{ states('sensor.work_meal_one_two') }}"
-        - file: "/config/www/downloaded/work_meals/three.png"
-          caputre: "{{ states('sensor.work_meal_three') }}"
-        - file: "/config/www/downloaded/work_meals/four.png"
-          caputre: "{{ states('sensor.work_meal_four') }}"
-        - file: "/config/www/downloaded/work_meals/five.png"
-          caputre: "{{ states('sensor.work_meal_five') }}"
 mode: single
