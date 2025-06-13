@@ -96,6 +96,8 @@ lovelace:
       type: module
     - url: /hacsfiles/slider-button-card/slider-button-card.js
       type: module
+    - url: /hacsfiles/Ultra-Vehicle-Card/ultra-vehicle-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
