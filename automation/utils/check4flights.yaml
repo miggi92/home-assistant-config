@@ -1,0 +1,14 @@
+---
+# Set Call monitor var
+alias: Check for flights
+id: 814a77e9-f008-44df-ac4d-60a4068f2ce8
+description: ""
+trigger:
+  - platform: time_pattern
+    hours: "/2"
+condition: []
+action:
+  - action: script.check_cal4flights
+    data:
+      lookahead_hours: 3
+mode: single

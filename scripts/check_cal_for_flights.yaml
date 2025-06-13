@@ -1,0 +1,70 @@
+---
+check_cal4flights:
+  alias: Find Upcoming Flights in Calendars
+  mode: parallel
+  max: 10
+  sequence:
+    - variables:
+        lookahead_hours: "{{ lookahead_hours | default(3) }}"
+        calendar_entities: |
+          {{ states.calendar | map(attribute='entity_id') | list }}
+        regex_pattern: ([A-Z]{2,3}\d{2,4})
+        now_ts: "{{ as_timestamp(now()) }}"
+        later_ts: "{{ as_timestamp(now() + timedelta(hours=lookahead_hours | int)) }}"
+        results: []
+    - repeat:
+        for_each: "{{ calendar_entities }}"
+        sequence:
+          - action: calendar.get_events
+            target:
+              entity_id: "{{ repeat.item }}"
+            data:
+              start_date_time: "{{ now_ts | timestamp_custom('%Y-%m-%dT%H:%M:%S') }}"
+              end_date_time: "{{ later_ts | timestamp_custom('%Y-%m-%dT%H:%M:%S') }}"
+            response_variable: calendar_response
+          - variables:
+              found: >
+                {% set matches = namespace(list=[]) %} {% set kalender =
+                calendar_response[repeat.item] if calendar_response[repeat.item]
+                is defined else namespace(events=[]) %} {% for event in
+                kalender['events'] %}
+                  {% set summary = event.summary | default('') %}
+                  {% set desc = event.description | default('') %}
+                  {% set location = event.location | default('') %}
+                  {% set all_text = summary ~ ' ' ~ desc ~ ' ' ~ location %}
+                  {% set clean = all_text
+                    | replace('\n', ' ')
+                    | replace('\r', ' ')
+                    | regex_replace('\\s+', ' ')
+                    | regex_replace('[^\\x00-\\x7F]', '') %}
+                  {% set flugnummern = clean | regex_findall(regex_pattern) %}
+                  {% for f in flugnummern %}
+                    {% set start = event.start | default('unbekannt') %}
+                    {% set matches.list = matches.list + [f] %}
+                  {% endfor %}
+                {% endfor %} {{ matches.list | unique | list }}
+          - variables:
+              results: "{{ results + found | unique | list }}"
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ results | length > 0 }}"
+          sequence:
+            - action: notify.miguel_telegram
+              data:
+                title: Gefundene Flüge
+                message: >
+                  In den nächsten 7 Tagen wurden folgende Flugnummern erkannt:
+                  {% set flugnummern = results | map('regex_findall', '([A-Z]{2,3}\\d{2,4})') | sum(start=[]) | unique | list %}
+                  {% for nr in flugnummern %}
+                  • {{ nr }}
+                  {% endfor %}
+            - repeat:
+                for_each: >
+                  {{ results | map('regex_findall', '([A-Z]{2,3}\\d{2,4})') | sum(start=[]) | unique | list }}
+                sequence:
+                  - action: text.set_value
+                    target:
+                      entity_id: text.flightradar24_add_to_track
+                    data:
+                      value: "{{ repeat.item }}"
