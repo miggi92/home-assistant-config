@@ -5,98 +5,37 @@ description: ""
 id: ffe67e29-366b-4661-a0b0-bfea95d4468e
 triggers:
   - trigger: state
-    entity_id: sensor.work_meals
+    entity_id: sensor.work_meal_one
+    id: one
+  - trigger: state
+    entity_id: sensor.work_meal_one_two
+    id: one_two
+  - trigger: state
+    entity_id: sensor.work_meal_three
+    id: three
+  - trigger: state
+    entity_id: sensor.work_meal_four
+    id: four
+  - trigger: state
+    entity_id: sensor.work_meal_five
+    id: five
 conditions: []
 actions:
-  - parallel:
-      - sequence:
-          - action: openai_conversation.generate_image
-            data:
-              size: 1024x1024
-              quality: standard
-              style: natural
-              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-              prompt: >-
-                Ein Bild von folgendem Essen:
-                {{ states('sensor.work_meal_one') }}
-            response_variable: meal_one
-          - action: downloader.download_file
-            data:
-              overwrite: true
-              url: "{{ meal_one.url }}"
-              filename: one.png
-              subdir: work_meals
-        alias: Theke ONE
-      - sequence:
-          - action: openai_conversation.generate_image
-            data:
-              size: 1024x1024
-              quality: standard
-              style: natural
-              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-              prompt: >-
-                Ein Bild von folgendem Essen:
-                {{ states('sensor.work_meal_one_two') }}
-            response_variable: meal_one_two
-          - action: downloader.download_file
-            data:
-              overwrite: true
-              url: "{{ meal_one_two.url }}"
-              filename: one_two.png
-              subdir: work_meals
-        alias: Theke ONE_TWO
-      - sequence:
-          - action: openai_conversation.generate_image
-            data:
-              size: 1024x1024
-              quality: standard
-              style: natural
-              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-              prompt: >-
-                Ein Bild von folgendem Essen:
-                {{ states('sensor.work_meal_three') }}
-            response_variable: meal_three
-          - action: downloader.download_file
-            data:
-              overwrite: true
-              url: "{{ meal_three.url }}"
-              filename: three.png
-              subdir: work_meals
-        alias: Theke Three
-      - sequence:
-          - action: openai_conversation.generate_image
-            data:
-              size: 1024x1024
-              quality: standard
-              style: natural
-              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-              prompt: >-
-                Ein Bild von folgendem Essen:
-                {{ states('sensor.work_meal_four') }}
-            response_variable: meal_four
-          - action: downloader.download_file
-            data:
-              overwrite: true
-              url: "{{ meal_four.url }}"
-              filename: four.png
-              subdir: work_meals
-        alias: Theke Four
-      - sequence:
-          - action: openai_conversation.generate_image
-            data:
-              size: 1024x1024
-              quality: standard
-              style: natural
-              config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-              prompt: >-
-                Ein Bild von folgendem Essen:
-                {{ states('sensor.work_meal_five') }}
-            response_variable: meal_five
-          - action: downloader.download_file
-            data:
-              overwrite: true
-              url: "{{ meal_five.url }}"
-              filename: five.png
-              subdir: work_meals
-        alias: Theke Five
-mode: single
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: vivid
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Generiere ein realistisches Bild von folgendem Essen:
+        {{ states(trigger.entity_id) }}
+        Der Fokus sollte auf dem Essen sein.
+    response_variable: meal
+  - action: downloader.download_file
+    data:
+      overwrite: true
+      url: "{{ meal.url }}"
+      filename: "{{ trigger.id }}.png"
+      subdir: work_meals
+mode: parallel
