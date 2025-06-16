@@ -14,7 +14,7 @@ person_card_template:
       {{ state_attr("[[entity]]","friendly_name") }}
     secondary: |-
       {% set state =  states("[[entity]]")  | slugify %}
-      {% set roomState =  states("[[beacon]]") | slugify %}
+      {% set roomState =  states("[[beacon]]") %}
       {% if state == "home" %}
         {% if roomState != "unknown" and roomState != "not_home" %}
         {{ roomState }}
@@ -100,7 +100,7 @@ person_card_template:
                       name: Location
                     - entity: "sensor.[[phone]]_battery_level"
                       name: Battery
-                    - entity: "sensor.[[phone]]_wifi_connection"
+                    - entity: "sensor.[[phone]]_wi_fi_connection"
                       name: WiFi
                   show_name: true
                   show_icon: true

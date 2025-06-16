@@ -15,7 +15,7 @@ cards:
           - eta_home: sensor.miguel_eta_home
           - phone: pixel_9_pro
           - id: miguel
-          - beacon: sensor.beaconpixel9pro
+          - beacon: sensor.ibeacon_pixel_9_pro_area
           - watch: pixel_watch_3
       - type: custom:decluttering-card
         template: person_card_template
@@ -28,7 +28,7 @@ cards:
           - phone: silke_handy
           - watch: silke_uhr
           - id: silke
-          - beacon: sensor.beacongalaxys23
+          - beacon: sensor.ibeacon_silke_handy_area
       - type: custom:decluttering-card
         template: person_card_template
         variables:
