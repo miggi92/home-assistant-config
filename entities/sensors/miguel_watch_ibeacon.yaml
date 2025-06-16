@@ -1,9 +1,0 @@
----
-# https://www.home-assistant.io/integrations/mqtt_room/
-# https://espresense.com/home_assistant
-platform: mqtt_room
-name: BeaconPixelWatch
-device_id: !secret pixel_watch_device_id
-state_topic: !secret pixel_watch_state_topic
-timeout: 10
-away_timeout: 120
