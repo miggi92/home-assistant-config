@@ -1,0 +1,36 @@
+---
+# Display holiday contdown
+alias: Show holiday countdown on clock
+id: 82d9f15e-5dae-4708-997f-6bae2bc337ee
+description: "Show holiday countdown on clock"
+trigger:
+  - platform: time
+    at: "00:01:00"
+condition: []
+action:
+  - variables:
+      triggered_entity: >-
+        {{ states
+          | selectattr('entity_id', 'match', 'sensor.anniversary_urlaub_')
+          | selectattr('state', 'is_number')
+          | selectattr('state', 'defined')
+          | selectattr('state', 'gt', '0')
+          | map(attribute='entity_id')
+          | list
+          | first
+        }}
+      entity_name: "{{ state_attr(triggered_entity, 'friendly_name') }}"
+  - if:
+      - condition: template
+        value_template: "{{ triggered_entity != '' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: "holiday_{{ entity_name }}"
+          text: "{{ states(triggered_entity) }} {{ state_attr(triggered_entity, 'unit_of_measurement')}} - {{ entity_name }}"
+          icon: "15644"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: "holiday_{{ entity_name }}"
+mode: single
