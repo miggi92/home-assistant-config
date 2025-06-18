@@ -50,9 +50,9 @@ awtrix3customapp:
   sequence:
     - variables:
         icon: "{{ icon | default(2883) }}"
-        repeat: "{{ repeat | default(1) }}"
+        repeat: "{{ repeat | default(2) }}"
         progress: "{{ progress | default(-1) }}"
-        duration: "{{ duration | default(10) }}"
+        duration: "{{ duration | default(15) }}"
 
     - action: mqtt.publish
       metadata: {}
