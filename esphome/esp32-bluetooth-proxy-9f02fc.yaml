@@ -1,0 +1,31 @@
+substitutions:
+  name: esp32-bluetooth-proxy-9f02fc
+  friendly_name: Sofa Proxy
+packages:
+  esphome.bluetooth-proxy: github://esphome/bluetooth-proxies/esp32-generic/esp32-generic.yaml@main
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+api:
+  encryption:
+    key: !secret sofa_proxy_encryption
+
+
+improv_serial:
+
+web_server:
+  port: 80
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  manual_ip:
+    static_ip: 192.168.0.3
+    gateway: !secret wifi_gateway
+    subnet: !secret wifi_subnet
+
+button:
+  - platform: safe_mode
+    entity_category: diagnostic
+    name: Safe mode boot
