@@ -30,13 +30,13 @@ action:
       group: "Work"
       photos:
         - file: "/config/www/downloaded/work_meals/one.png"
-          caputre: "{{ states('sensor.work_meal_one') }}"
+          caption: "{{ states('sensor.work_meal_one') }}"
         - file: "/config/www/downloaded/work_meals/one_two.png"
-          caputre: "{{ states('sensor.work_meal_one_two') }}"
+          caption: "{{ states('sensor.work_meal_one_two') }}"
         - file: "/config/www/downloaded/work_meals/three.png"
-          caputre: "{{ states('sensor.work_meal_three') }}"
+          caption: "{{ states('sensor.work_meal_three') }}"
         - file: "/config/www/downloaded/work_meals/four.png"
-          caputre: "{{ states('sensor.work_meal_four') }}"
+          caption: "{{ states('sensor.work_meal_four') }}"
         - file: "/config/www/downloaded/work_meals/five.png"
-          caputre: "{{ states('sensor.work_meal_five') }}"
+          caption: "{{ states('sensor.work_meal_five') }}"
 mode: single
