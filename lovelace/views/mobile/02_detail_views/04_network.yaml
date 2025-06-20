@@ -3,45 +3,100 @@ title: Netzwerk
 path: network
 icon: mdi:network
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:decluttering-card
-    template: vpn_card_template
-    variables:
-      - title: Silke Handy
-      - id: "kdkb_3zxq"
-  - type: custom:decluttering-card
-    template: vpn_card_template
-    variables:
-      - title: Miguel Handy
-      - id: "krkh_4bv0"
-  - type: custom:decluttering-card
-    template: vpn_card_template
-    variables:
-      - title: Fire Tab
-      - id: "hryg_ktyg"
-  - type: custom:decluttering-card
-    template: network_card_template
-    variables:
-      - title: Drucker & Festplatten
-      - entity_1: device_tracker.hp0a870d
-      - entity_2: device_tracker.nas
-  - type: custom:decluttering-card
-    template: network_card_template
-    variables:
-      - title: Smart Home
-      - entity_1: device_tracker.boschsh
-      - entity_2: device_tracker.huebridge
-  - type: custom:decluttering-card
-    template: network_card_template
-    variables:
-      - title: Alexas
-      - entity_1: device_tracker.echobad
-      - entity_2: device_tracker.echobuero
-      - entity_3: device_tracker.echokueche
-      - entity_4: device_tracker.echoschlafzimmer
-      - entity_5: device_tracker.echoshow
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.vpn_wg_kdkb_3zxq_online_status
+            state: "on"
+        card:
+          type: custom:decluttering-card
+          template: vpn_card_template
+          variables:
+            - title: Silke Handy
+            - id: "kdkb_3zxq"
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.vpn_wg_krkh_4bv0_online_status
+            state: "on"
+        card:
+          type: custom:decluttering-card
+          template: vpn_card_template
+          variables:
+            - title: Miguel Handy
+            - id: "krkh_4bv0"
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.vpn_wg_hryg_ktyg_online_status
+            state: "on"
+        card:
+          type: custom:decluttering-card
+          template: vpn_card_template
+          variables:
+            - title: Fire Tab
+            - id: "hryg_ktyg"
+  - type: grid
+    cards:
+      - type: grid
+        cards:
+          - type: gauge
+            entity: sensor.speedtest_download
+            max: 300
+            severity:
+              red: 0
+              yellow: 150
+              green: 200
+          - type: gauge
+            entity: sensor.speedtest_upload
+            max: 50
+            severity:
+              red: 0
+              yellow: 15
+              green: 30
+          - type: gauge
+            entity: sensor.speedtest_ping
+            max: 50
+            severity:
+              green: 0
+              yellow: 25
+              red: 30
+
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: network_card_template
+        variables:
+          - title: Drucker & Festplatten
+          - entity_1: device_tracker.hp0a870d
+          - entity_2: device_tracker.nas
+      - type: custom:decluttering-card
+        template: network_card_template
+        variables:
+          - title: Smart Home
+          - entity_1: device_tracker.boschsh
+          - entity_2: device_tracker.huebridge
+      - type: custom:decluttering-card
+        template: network_card_template
+        variables:
+          - title: Alexas
+          - entity_1: device_tracker.echobad
+          - entity_2: device_tracker.echobuero
+          - entity_3: device_tracker.echokueche
+          - entity_4: device_tracker.echoschlafzimmer
+          - entity_5: device_tracker.echoshow
