@@ -1,8 +1,0 @@
----
-# Beacon group
-resident_beacons:
-  name: Resident beacons
-  icon: mdi:bluetooth
-  entities:
-    - sensor.beacongalaxys23
-    - sensor.beaconpixel9pro
