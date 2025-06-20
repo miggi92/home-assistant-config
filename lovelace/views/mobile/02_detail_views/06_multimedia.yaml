@@ -55,7 +55,7 @@ cards:
           source: true
           power_state: false
       - type: custom:mini-media-player
-        entity: media_player.echo_wohnzimmer
+        entity: media_player.echo_show
         artwork: cover
         icon: fab:amazon
         info: short
