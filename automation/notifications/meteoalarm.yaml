@@ -14,13 +14,11 @@ condition:
         conditions:
           - condition: state
             entity_id: zone.eltern_haus_spanien
-            attribute: persons
             state: "0"
       - condition: not
         conditions:
           - condition: state
             entity_id: zone.heim_abu
-            attribute: persons
             state: "0"
 
 action:
