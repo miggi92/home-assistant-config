@@ -35,6 +35,11 @@ badges:
       {% else %}
         mdi:dishwasher-off
       {% endif %}
+  - type: entity-filter
+    state_filter:
+      - "on"
+    entities:
+      - entity: input_boolean.coffee_machine_is_washing
 sections:
   - type: grid
     cards:
