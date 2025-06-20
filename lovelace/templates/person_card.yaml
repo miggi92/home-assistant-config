@@ -38,7 +38,7 @@ person_card_template:
         /local/images/persons/{{"[[id]]"}}/auto.png
       {% elif state == "work_silke" or state == "work_miguel" %}
         /local/images/persons/{{"[[id]]"}}/work.png
-      {% elif state == "tsb_handball" %}
+      {% elif "handball" in state %}
         /local/images/persons/{{"[[id]]"}}/sport.png
       {% elif state == "rewe" or "dm" in state  or "getranke" in state %}
         /local/images/persons/{{"[[id]]"}}/shopping.png
