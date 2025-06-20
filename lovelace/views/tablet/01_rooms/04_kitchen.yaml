@@ -87,7 +87,7 @@ sections:
       - type: custom:decluttering-card
         template: amazon_echo_template
         variables:
-          - echo_id: echo_wohnzimmer
+          - echo_id: echo_show
           - title: Echo Küche
       - type: custom:decluttering-card
         template: area_battery_card_template
