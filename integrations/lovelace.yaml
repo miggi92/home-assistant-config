@@ -98,6 +98,8 @@ lovelace:
       type: module
     - url: /hacsfiles/Ultra-Vehicle-Card/ultra-vehicle-card.js
       type: module
+    - url: /hacsfiles/timer-bar-card/timer-bar-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
