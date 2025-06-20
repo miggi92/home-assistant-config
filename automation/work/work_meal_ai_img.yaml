@@ -19,7 +19,9 @@ triggers:
   - trigger: state
     entity_id: sensor.work_meal_five
     id: five
-conditions: []
+conditions:
+  - condition: template
+    value_template: "{{  states(trigger.entity_id) != 'unavailable' }}"
 actions:
   - action: openai_conversation.generate_image
     data:
