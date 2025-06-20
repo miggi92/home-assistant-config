@@ -1,0 +1,32 @@
+---
+# input_number.heissgetranke_zahler
+alias: Check if machine is washing
+id: 0c239eff-b9be-4e90-a936-2e0144783bc9
+description: "Check if machine is washing"
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.kaffemaschine_power
+    above: 600
+    for: "00:00:10"
+condition:
+  - condition: state
+    entity_id: timer.kaffeemaschine_auto_aus
+    state: "idle"
+action:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.coffee_machine_is_washing
+  - action: timer.start
+    data: {}
+    target:
+      entity_id: timer.kaffeemaschine_auto_aus
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.coffee_machine_is_washing
+
+mode: single

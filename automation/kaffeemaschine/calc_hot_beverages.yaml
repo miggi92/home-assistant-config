@@ -1,0 +1,33 @@
+---
+# input_number.heissgetranke_zahler
+alias: Calculate amount of hot beverages made
+id: 1f0f63b5-fdca-4410-8a84-5db88dc36775
+description: "Calculate amount of hot beverages made"
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.kaffemaschine_power
+    above: 600
+    for: "00:00:10"
+condition:
+  - condition: state
+    entity_id: input_boolean.coffee_machine_is_washing
+    state: "off"
+  - condition: state
+    entity_id: timer.kaffeemaschine_auto_aus
+    state: "active"
+action:
+  - service: input_number.increment
+    target:
+      entity_id: input_number.heissgetranke_zahler
+    data:
+      amount: 1
+  - action: timer.cancel
+    data: {}
+    target:
+      entity_id: timer.kaffeemaschine_auto_aus
+  - action: timer.start
+    data: {}
+    target:
+      entity_id: timer.kaffeemaschine_auto_aus
+
+mode: single
