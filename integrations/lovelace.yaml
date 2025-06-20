@@ -30,8 +30,6 @@ lovelace:
       type: module
     - url: /hacsfiles/mini-graph-card/mini-graph-card-bundle.js
       type: module
-    - url: /hacsfiles/bar-card/bar-card.js
-      type: module
     - url: /hacsfiles/swipe-card/swipe-card.js
       type: module
     - url: /hacsfiles/canvas-gauge-card/canvas-gauge-card.js
@@ -41,8 +39,6 @@ lovelace:
     - url: /hacsfiles/decluttering-card/decluttering-card.js
       type: module
     - url: /hacsfiles/uptime-card/uptime-card.js
-      type: module
-    - url: /hacsfiles/hass-shutter-card/hass-shutter-card.js
       type: module
     - url: /hacsfiles/lovelace-auto-entities/auto-entities.js
       type: module
