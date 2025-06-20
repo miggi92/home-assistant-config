@@ -21,6 +21,6 @@ send_cam_snaps:
         who: "home"
         photos:
           - file: "/config/www/cam_captures/flur_snap.jpg"
-            caputre: "Flur_Snapshot"
+            caption: "Flur_Snapshot"
           - file: "/config/www/cam_captures/korbchen_snap.jpg"
-            caputre: "Koerbchen_Snapshot"
+            caption: "Koerbchen_Snapshot"
