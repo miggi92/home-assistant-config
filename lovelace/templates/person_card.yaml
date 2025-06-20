@@ -94,6 +94,8 @@ person_card_template:
                 card:
                   type: glance
                   entities:
+                    - entity: "[[beacon]]"
+                      name: Raum
                     - entity: "[[eta_work]]"
                       name: ETA Work
                     - entity: "sensor.[[phone]]_geocoded_location"
@@ -136,6 +138,8 @@ person_card_template:
                       subtitle: Smartwatch
                     - type: glance
                       entities:
+                        - entity: "[[watch_beacon]]"
+                          name: Raum
                         - entity: "sensor.[[watch]]_heart_rate"
                           name: BPM
                         - entity: "sensor.[[watch]]_daily_steps"
