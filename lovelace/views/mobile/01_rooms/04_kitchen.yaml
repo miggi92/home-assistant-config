@@ -20,12 +20,12 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.kuchentempsensor_humidity
-  - type: custom:mushroom-template-badge
-    entity: input_number.heissgetranke_zahler
-    icon: mdi:coffee-maker
-    content: "{{states(entity) }}"
-    tap_action:
-      action: more-info
+  - type: entity-filter
+    state_filter:
+      - operator: "!="
+        value: "0"
+    entities:
+      - entity: input_number.heissgetranke_zahler
   - type: custom:mushroom-template-badge
     entity: input_boolean.spulmaschine_aktiv
     icon: |-
