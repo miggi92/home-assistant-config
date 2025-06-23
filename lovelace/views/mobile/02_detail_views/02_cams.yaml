@@ -3,32 +3,45 @@ title: Kameras
 path: cams
 icon: mdi:cctv
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: picture-entity
-    show_state: true
-    show_name: true
-    camera_view: auto
-    entity: camera.flurcam
-  - type: conditional
-    conditions:
-      - entity: switch.kamera_steckdose_wz
-        state: "on"
-    card:
-      type: picture-entity
-      show_state: true
-      show_name: true
-      camera_view: auto
-      entity: camera.korbchen
-  - type: horizontal-stack
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: conditional
+        conditions:
+          - entity: switch.flur_cam_stecker
+            state: "on"
+        card:
+          type: picture-entity
+          show_state: true
+          show_name: true
+          camera_view: auto
+          entity: camera.flurcam
+      - type: conditional
+        conditions:
+          - entity: switch.kamera_steckdose_wz
+            state: "on"
+        card:
+          type: picture-entity
+          show_state: true
+          show_name: true
+          camera_view: auto
+          entity: camera.korbchen
+  - type: grid
     cards:
       - type: custom:mushroom-entity-card
+        entity: switch.flur_cam_stecker
+      - type: custom:mushroom-entity-card
         entity: switch.kamera_steckdose_wz
-  - type: horizontal-stack
+  - type: grid
     cards:
       - type: custom:mushroom-light-card
         entity: light.flurcam_indicator_light
