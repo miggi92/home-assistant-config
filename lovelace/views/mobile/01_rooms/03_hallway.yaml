@@ -3,36 +3,39 @@ title: Flur
 path: hallway
 icon: mdi:coat-rack
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:flower-card
-    entity: plant.drachenbaum
-    show_bars:
-      - illuminance
-      - humidity
-      - moisture
-      - conductivity
-      - temperature
-    battery_sensor: sensor.drachenbaum_mi_battery
-  - type: custom:mushroom-vacuum-card
-    entity: vacuum.roomba
-    commands:
-      - start_pause
-      - stop
-      - locate
-      - return_home
-  - type: custom:mushroom-entity-card
-    entity: schedule.staubsaug_zeiten
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: entity
+    entity: binary_sensor.hausture_window
     tap_action:
       action: more-info
-  - type: custom:mushroom-lock-card
-    entity: lock.hausture
-  - type: horizontal-stack
+  - type: entity
+    entity: switch.pi_hole
+    icon: mdi:pi-hole
+    tap_action:
+      action: more-info
+sections:
+  - type: grid
     cards:
+      - type: custom:mushroom-lock-card
+        entity: lock.hausture
+      - type: custom:timer-bar-card
+        entity: timer.pihole_disabled
+        mushroom:
+          layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: switch.yggdrasil_wi_fi_fritz_box_gastzugang
+        layout: vertical
+        name: Guest WiFi
+        tap_action:
+          action: toggle
       - type: custom:mushroom-fan-card
         entity: fan.tower_fan
         icon: mdi:fan
@@ -42,30 +45,31 @@ cards:
         collapsible_controls: true
         show_oscillate_control: true
         layout: vertical
-      - type: custom:mushroom-template-card
-        primary: Pi-Hole
-        secondary: >-
-          {% if states("timer.pihole_disabled") == "active" %}
-            {{ state_attr('timer.pihole_disabled', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
-          {% endif %}
-        entity: switch.pi_hole
-        icon: mdi:pi-hole
-        icon_color: |-
-          {% if states("switch.pi_hole") == "on" %}
-            green
-          {% else %}
-            red
-          {% endif %}
-        layout: vertical
-        tap_action:
-          action: toggle
+  - type: grid
+    cards:
+      - type: custom:flower-card
+        entity: plant.drachenbaum
+        show_bars:
+          - illuminance
+          - humidity
+          - moisture
+          - conductivity
+          - temperature
+        battery_sensor: sensor.drachenbaum_mi_battery
+      - type: custom:mushroom-vacuum-card
+        entity: vacuum.roomba
+        commands:
+          - start_pause
+          - stop
+          - locate
+          - return_home
       - type: custom:mushroom-entity-card
-        entity: switch.yggdrasil_wi_fi_fritz_box_gastzugang
-        layout: vertical
-        name: Guest WiFi
+        entity: schedule.staubsaug_zeiten
         tap_action:
-          action: toggle
-  - type: custom:decluttering-card
-    template: area_battery_card_template
-    variables:
-      - area: Flur
+          action: more-info
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Flur
