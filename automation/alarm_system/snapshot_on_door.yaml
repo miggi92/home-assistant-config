@@ -1,0 +1,22 @@
+---
+# Snapshot when door opens
+id: 87a6c36c-7123-4083-bd32-0927d6fa36c4
+alias: snapshotOnDoorChange
+description: ""
+trigger:
+  - platform: state
+    entity_id: binary_sensor.hausture_window
+    to: "on"
+condition:
+  - condition: state
+    entity_id: switch.flur_cam_stecker
+    state: "on"
+action:
+  - action: camera.record
+    target:
+      entity_id:
+        - camera.flurcam
+    data:
+      duration: 5
+      filename: '/config/www/cam_captures/flur/{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}.mp4'
+mode: single
