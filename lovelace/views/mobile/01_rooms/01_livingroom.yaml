@@ -71,7 +71,7 @@ cards:
   - type: horizontal-stack
     cards:
       - type: custom:mushroom-entity-card
-        entity: scene.tv_gemutlich_2
+        entity: scene.tv_gemutlich
         layout: vertical
         tap_action:
           action: toggle
@@ -108,23 +108,10 @@ cards:
           - "off"
   - type: horizontal-stack
     cards:
-      - type: custom:mushroom-template-card
-        primary: Klima 1h an
-        secondary: >-
-          {% if states("timer.climate_auto_off") == "active" %}
-            {{ state_attr('timer.climate_auto_off', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
-          {% endif %}
-        entity: climate.daikinap90134
-        icon: mdi:home-thermometer
-        icon_color: |-
-          {% if states("climate.daikinap90134") == "off" %}
-            green
-          {% else %}
-            red
-          {% endif %}
-        layout: vertical
-        tap_action:
-          action: toggle
+      - type: custom:timer-bar-card
+        entity: timer.climate_auto_off
+        mushroom:
+          layout: vertical
 
   - type: custom:mini-media-player
     entity: media_player.wztv
