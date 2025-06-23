@@ -8,9 +8,6 @@ conditions:
 card:
   type: vertical-stack
   cards:
-    - type: picture-glance
-      entities: []
-      camera_image: camera.wetterwarnungen
     - type: markdown
       content: >-
         {% set current = 'sensor.home_aktuelle_warnstufe' %}

@@ -25,11 +25,6 @@ sections:
         entities:
           - entity: sensor.home_aktuelle_warnstufe
           - entity: sensor.home_vorwarnstufe
-  - type: grid
-    cards:
-      - !include ../../cards/dwd.yaml
-  - type: grid
-    cards:
       - type: custom:meteoalarm-card
         integration: nina
         hide_when_no_warning: true
@@ -39,3 +34,16 @@ sections:
           - entity: binary_sensor.warning_home_3
           - entity: binary_sensor.warning_home_4
           - entity: binary_sensor.warning_home_5
+      - type: custom:meteoalarm-card
+        integration: meteoalarm
+        hide_when_no_warning: true
+        entities:
+          - entity: binary_sensor.meteoalarm
+  - type: grid
+    cards:
+      - type: picture-glance
+        entities: []
+        camera_image: camera.wetterwarnungen
+  - type: grid
+    cards:
+      - !include ../../cards/dwd.yaml
