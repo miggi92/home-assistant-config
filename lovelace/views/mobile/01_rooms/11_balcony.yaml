@@ -3,38 +3,36 @@ title: Balkon
 path: balcony
 icon: mdi:balcony
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:mushroom-entity-card
-    entity: switch.lichterkette
-    icon: mdi:string-lights
-  - type: custom:mushroom-template-card
-    primary: Lichterkette
-    secondary: >-
-      {% if states("timer.lichterkette") == "active" %}
-        {{ state_attr('timer.lichterkette', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
-      {% endif %}
-    entity: switch.lichterkette
-    icon: mdi:string-lights
-    icon_color: |-
-      {% if states("switch.lichterkette") == "on" %}
-        yellow
-      {% else %}
-        grey
-      {% endif %}
-    layout: vertical
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
     tap_action:
-      action: toggle
-  - type: custom:flower-card
-    entity: plant.sonnenblumen
-    show_bars:
-      - illuminance
-      - humidity
-      - moisture
-      - conductivity
-      - temperature
-    battery_sensor: sensor.groser_topf_balkon_battery
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: switch.lichterkette
+        layout: vertical
+        icon: mdi:string-lights
+      - type: custom:timer-bar-card
+        entity: timer.lichterkette
+        mushroom:
+          layout: vertical
+  - type: grid
+    cards: []
+  - type: grid
+    cards:
+      - type: custom:flower-card
+        entity: plant.sonnenblumen
+        show_bars:
+          - illuminance
+          - humidity
+          - moisture
+          - conductivity
+          - temperature
+        battery_sensor: sensor.groser_topf_balkon_battery
