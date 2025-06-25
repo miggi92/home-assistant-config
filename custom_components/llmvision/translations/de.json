@@ -1,0 +1,123 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "LLM Vision Konfiguration",
+                "description": "Wähle einen Anbieter zum konfigurieren"
+            },
+            "localai": {
+                "title": "LocalAI konfigurieren",
+                "description": "Gib die IP-Adresse und den Port deines LocalAI Servers an.",
+                "data": {
+                    "localai_ip": "IP-Adresse",
+                    "localai_port": "Port",
+                    "localai_https": "HTTPS"
+                }
+            },
+            "ollama": {
+                "title": "Ollama konfigurieren",
+                "description": "Gib die IP-Adresse und den Port deines Ollama Servers an.",
+                "data": {
+                    "ollama_ip": "IP-Addresse",
+                    "ollama_port": "Port",
+                    "ollama_https": "HTTPS"
+                }
+            },
+            "openai": {
+                "title": "OpenAI konfigurieren",
+                "description": "Gib einen gültigen OpenAI API-key ein.",
+                "data": {
+                    "openai_api_key": "API-key"
+                }
+            },
+            "azure": {
+                "title": "Azure konfigurieren",
+                "description": "Gib einen gültigen Azure API-key, die Base URL, den Namen des Deployments und die API-Version an.\nDie Base URL muss dieses Format haben: `https://domain.openai.azure.com/` (einschliesslich des abschliessenden '/')",
+                "data": {
+                    "azure_api_key": "API key",
+                    "azure_base_url": "Base URL",
+                    "azure_deployment": "Deployment",
+                    "azure_version": "API Version"
+                }
+            },
+            "anthropic": {
+                "title": "Anthropic Claude konfigurieren",
+                "description": "Gib einen gültigen Anthropic API-key ein.",
+                "data": {
+                    "anthropic_api_key": "API-key"
+                }
+            },
+            "google": {
+                "title": "Google Gemini konfigurieren",
+                "description": "Gib einen gültigen Google Gemini API-key ein.",
+                "data": {
+                    "google_api_key": "API-key"
+                }
+            },
+            "groq": {
+                "title": "Groq konfigurieren",
+                "description": "Gib einen gültigen Groq API-key an.",
+                "data": {
+                    "groq_api_key": "API-key"
+                }
+            },
+            "custom_openai": {
+                "title": "OpenAI kompatiblen Provider konfigurieren",
+                "description": "**Wichtig**: Funktioniert nur wenn die API kompatibel mit der von OpenAI ist. Wenn deine API keinen Schlüssel benötigt, gib 'openai' ein. Der API Endpoint muss das folgende Format besitzen: `http(s)://baseURL(:port)/some/endpoint`",
+                "data": {
+                    "custom_openai_endpoint": "Endpoint",
+                    "custom_openai_api_key": "API-key",
+                    "custom_openai_default_model": "Standartmodell, zum Beispiel 'gpt-4o-mini'"
+                }
+            },
+            "aws_bedrock": {
+                "title": "AWS Bedrock konfigurieren",
+                "description": "**Wichtig**: Unterstützt derzeit nur die Modelle Nova und Anthropic Claude.",
+                "data": {
+                    "aws_access_key_id": "API-key",
+                    "aws_secret_access_key": "Secret",
+                    "aws_region_name": "Region",
+                    "aws_default_model": "Standartmodell"
+                }
+            },
+            "openwebui": {
+                "title": "OpenWebUI konfigurieren",
+                "description": "Gib einen gültigen OpenWebUI API-key, die IP-Adresse, den Port, das Standardmodell und ob HTTPS verwendet werden soll an.",
+                "data": {
+                    "openwebui_api_key": "API Key (JWT token)",
+                    "openwebui_ip": "IP Addresse",
+                    "openwebui_port": "Port",
+                    "openwebui_https": "HTTPS verwenden",
+                    "openwebui_default_model": "Standardmodell"
+                }
+            },
+            "timeline": {
+                "title": "Timeline",
+                "description": "Konfiguriere wie viele Tage Events gespeichert werden, danach werden sie automatisch gelöscht. Events werden nur lokal gespeichert und können in der Kalenderansicht gelöscht werden. (0 deaktiviert auto delete)",
+                "data": {
+                    "retention_time": "Automatisch löschen nach (in Tagen)"
+                }
+            },
+            "memory": {
+                "title": "Erinnerungen",
+                "description": "Erinnerungen sind providerübergreifend und werden verwended um dem Modell mehr kontext zur Verfügung zu stellen.\nWenn `use_memory` aktiviert ist, werden alle Erinnerungen mitgesendet. Dies kann zu längeren Ladezeiten und höheren Kosten führen. \n\n **Image file paths**: Provide the path to the image file. \n **Image descriptions**: Provide a description of the image (e.g.: 'This is Cookie, my dog'). \n Images and descriptions must be in the same order, and there must be as many descriptions as images. \n\n **System Prompt**: Benutze den System Prompt um zu verändern wie das Modell sich verhält und antwortet. \n **Title Prompt**: Die Anweisung die dem Modell gegeben wird um einen Titel zu generieren.",
+                "data": {
+                    "memory_paths": "Bildpfad",
+                    "memory_strings": "Bildbeschreibung",
+                    "system_prompt": "System Prompt",
+                    "title_prompt": "Title prompt"
+                }
+            }
+        },
+        "error": {
+            "handshake_failed": "Verbindung zum Server konnte nicht hergestellt werden. Überprüfe deinen API-key oder IP und Port",
+            "empty_api_key": "Ungültiger API-key",
+            "invalid_provider": "Ungültiger Provider ausgewählt",
+            "invalid_image_path": "Ein oder mehrere Bildpfade sind ungültig",
+            "mismatched_lengths": "Die Anzahl der Bildpfade und Beschreibungen muss übereinstimmen"
+        },
+        "abort": {
+            "unknown_provider": "Unbekannter Anbieter"
+        }
+    }
+}
