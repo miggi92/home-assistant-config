@@ -1,0 +1,34 @@
+---
+# AI Weather picture
+alias: WeatherAIPic
+description: ""
+id: c2e4550d-1016-4ff5-bff6-9d73d092a773
+triggers:
+  - trigger: state
+    entity_id: weather.home
+conditions: []
+actions:
+  - action: openai_conversation.generate_image
+    data:
+      size: 1024x1024
+      quality: standard
+      style: vivid
+      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
+      prompt: >-
+        Show the town of {{ state_attr('weather.home', 'friendly_name') }} in Germany in the picture. Include a dog in the
+        image wearing clothing which reflects the weather. The dog is a famous
+        tv-presenter who is presenting the weather-report live on-air right now.
+
+        It is {{ states('weather.home') }}, but keep in mind that the sun
+        is {{ states('sun.sun') | replace('_', ' the ')}}.
+        The temperature is {{ state_attr('weather.home','temperature') }}{{ state_attr('weather.home','temperature_unit') }}.
+
+        Make it as realistic as possible.
+    response_variable: picture
+  - action: downloader.download_file
+    data:
+      overwrite: true
+      url: "{{ picture.url }}"
+      filename: "weather_home.png"
+      subdir: weather
+mode: parallel

@@ -38,6 +38,12 @@ cards:
         secondary_info_attribute: humidity
         show_current: true
         show_forecast: true
+      - type: picture-entity
+        show_state: true
+        show_name: true
+        camera_image: camera.wetter_home
+        entity: weather.home
+
   - type: vertical-stack
     title: Flightradar24
     cards:
