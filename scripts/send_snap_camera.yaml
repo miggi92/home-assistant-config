@@ -8,19 +8,19 @@ send_cam_snaps:
       target:
         entity_id: camera.flurcam
       data:
-        filename: /media/cam_captures/flur_snap.jpg
+        filename: /media/flur_snap.jpg
     - action: camera.snapshot
       target:
         entity_id: camera.korbchen
       data:
-        filename: /media/cam_captures/korbchen_snap.jpg
+        filename: /media/korbchen_snap.jpg
     - action: script.notify_engine
       data:
         title: "📷 Kamera 📹"
         value1: "Aktueller Kamerabilder"
         who: "home"
         photos:
-          - file: "/media/cam_captures/flur_snap.jpg"
+          - file: "/media/flur_snap.jpg"
             caption: "Flur_Snapshot"
-          - file: "/media/cam_captures/korbchen_snap.jpg"
+          - file: "/media/korbchen_snap.jpg"
             caption: "Koerbchen_Snapshot"

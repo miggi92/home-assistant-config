@@ -18,5 +18,5 @@ action:
         - camera.flurcam
     data:
       duration: 5
-      filename: '/media/cam_captures/flur/{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}.mp4'
+      filename: '/media/{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}.mp4'
 mode: single
