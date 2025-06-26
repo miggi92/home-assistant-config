@@ -1,79 +1,58 @@
 ---
 # Anniversary template card
-anniversary_template:
+# Untertemplate für eine einzelne Anniversary-Card
+anniversary_card:
   default:
-    - title: Anniversary
     - icon: mdi:calendar
+    - icon_color: green
   card:
-    type: custom:auto-entities
-    filter:
-      include:
-        - entity_id: sensor.anniversary_[[path]]*
-          options:
-            type: custom:mushroom-template-card
-            icon: "[[icon]]"
-            primary: |
-              {% if state_attr(entity, 'years_at_anniversary') == 0 %}
-              {{ state_attr(entity, 'friendly_name') }}
-              {% else %}
-              {{ state_attr(entity, 'friendly_name') }} ({{state_attr(entity, 'years_at_anniversary') }})
-              {% endif %}
-            icon_color: green
-            secondary: |
-              {%- set event_date = state_attr(entity, 'next_date') %}
-              {%- set now = now() %}
-              {%- if event_date.date() == now.date() -%}
-                Heute
-              {%- else -%}
-                {%- set delta = event_date - now %}
-                {%- set weeks = (delta.days // 7) %}
-                {%- set days = delta.days % 7 %}
-                {%- set hours = delta.seconds // 3600 %}
-                {%- set minutes = (delta.seconds % 3600) // 60 %}
-                {{- "{} Wochen ".format(weeks) if weeks > 0 else "" -}}
-                {{- "{} Tage ".format(days) if days > 0 else "" -}}
-                {{- "{} Stunden ".format(hours) if hours > 0 else "" -}}
-                {{- "{} Minuten ".format(minutes) if minutes > 0 else "" -}}
-              {%- endif -%}
-            badge_icon: |-
-              {%- set event = int(states(entity)) %}
-              {% if (event) <= 10 %}
-              mdi:exclamation-thick
-              {% endif%}
-            badge_color: red
-            tap_action:
-              action: more-info
-            card_mod:
-              style:
-                mushroom-shape-icon$: |
-                  .shape {
-                    background: radial-gradient(var(--card-background-color) 60%, transparent 0%), conic-gradient(rgb(var(--rgb-red)) {{ (365-int(states(config.entity)))/365*100 }}% 0%, var(--card-background-color) 0% 100%);
-                  }
-                  .shape:after {
-                    content: "";
-                    height: 100%;
-                    width: 100%;
-                    position: absolute;
-                    border-radius: 50%;
-                    background: rgba(var(--rgb-{{ config.icon_color }}), 0.2);
-                  }
-      exclude:
-        - state: "> 90"
-    sort:
-      method: state
-      reverse: false
-      numeric: true
-      count: 3
-    show_empty: false
-    card:
-      type: entities
-      show_header_toggle: false
-      title: "[[title]]"
-      state_color: false
-      header:
-        type: picture
-        image: "[[picture_url]]"
-        tap_action:
-          action: none
-        hold_action:
-          action: none
+    type: custom:mushroom-template-card
+    icon: "[[icon]]"
+    entity: "[[entity]]"
+    primary: >
+      {% if state_attr(entity, 'years_at_anniversary') == 0 %}
+        {{ state_attr(entity, 'friendly_name') }}
+      {% else %}
+        {{ state_attr(entity, 'friendly_name') }} ({{ state_attr(entity, 'years_at_anniversary') }})
+      {% endif %}
+    icon_color: "[[icon_color]]"
+    secondary: >
+      {%- set event_date = state_attr(entity, 'next_date') %}
+      {%- set now = now() %}
+      {%- if event_date.date() == now.date() %}
+        Heute
+      {%- else %}
+        {%- set delta = event_date - now %}
+        {%- set weeks = (delta.days // 7) %}
+        {%- set days = delta.days % 7 %}
+        {%- set hours = delta.seconds // 3600 %}
+        {%- set minutes = (delta.seconds % 3600) // 60 %}
+        {{ "{} Wochen ".format(weeks) if weeks > 0 else "" }}
+        {{ "{} Tage ".format(days) if days > 0 else "" }}
+        {{ "{} Stunden ".format(hours) if hours > 0 else "" }}
+        {{ "{} Minuten ".format(minutes) if minutes > 0 else "" }}
+      {%- endif %}
+    badge_icon: >
+      {%- set event = int(states(entity)) %}
+      {% if event <= 10 %}
+        mdi:exclamation-thick
+      {% endif %}
+    badge_color: red
+    tap_action:
+      action: more-info
+    card_mod:
+      style:
+        mushroom-shape-icon$: |
+          .shape {
+            background: radial-gradient(var(--card-background-color) 60%, transparent 0%),
+                        conic-gradient(rgb(var(--rgb-red)) {{ (365 - int(states(config.entity))) / 365 * 100 }}% 0%,
+                        var(--card-background-color) 0% 100%);
+          }
+          .shape:after {
+            content: "";
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(var(--rgb-[[icon_color]]), 0.2);
+          }

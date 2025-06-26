@@ -94,16 +94,10 @@ sections:
       - type: custom:decluttering-card
         template: anniversary_template
         variables:
-          - title: Jahrestage
-          - picture_url: /local/images/anniversaries.png
-          - path: special
-
-      - type: custom:decluttering-card
-        template: anniversary_template
-        variables:
-          - title: Geburtstage
+          - title: Geburtstage & Jahrestage
           - picture_url: https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
           - path: birthday
+          - path2: special
           - icon: mdi:gift
   - type: grid
     cards:

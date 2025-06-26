@@ -1,0 +1,44 @@
+---
+# Anniversary template card
+anniversary_template:
+  default:
+    - title: Anniversary
+    - icon: mdi:calendar
+    - icon2: mdi:calendar-heart
+  card:
+    type: custom:auto-entities
+    filter:
+      include:
+        - entity_id: sensor.anniversary_[[path]]*
+          options:
+            type: custom:decluttering-card
+            template: anniversary_card
+            variables:
+              - icon: "[[icon]]"
+              - entity: this.entity_id
+        - entity_id: sensor.anniversary_[[path2]]*
+          options:
+            type: custom:decluttering-card
+            template: anniversary_card
+            variables:
+              - icon: "[[icon2]]"
+              - entity: this.entity_id
+      exclude:
+        - state: "> 90"
+    sort:
+      method: state
+      reverse: false
+      numeric: true
+      count: 3
+    show_empty: false
+    card:
+      type: entities
+      show_header_toggle: false
+      title: "[[title]]"
+      header:
+        type: picture
+        image: "[[picture_url]]"
+        tap_action:
+          action: none
+        hold_action:
+          action: none
