@@ -97,8 +97,8 @@ sections:
           - title: Geburtstage & Jahrestage
           - picture_url: https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
           - path: birthday
-          - path2: special
           - icon: mdi:gift
+          - path2: special
   - type: grid
     cards:
       - type: grid
