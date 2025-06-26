@@ -22,5 +22,4 @@ action:
           app_id: dwd
           text: "{{ state_attr('sensor.home_aktuelle_warnstufe','warning_1_name')}}"
           icon: "6874"
-          overlay: "frost"
 mode: single
