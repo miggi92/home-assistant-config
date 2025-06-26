@@ -29,7 +29,7 @@ advanced:
     - 113
     - 217
   channel: 11
-  log_level: warning
+  log_level: error
   last_seen: ISO_8601_local
 mqtt:
   server: mqtt://core-mosquitto:1883
