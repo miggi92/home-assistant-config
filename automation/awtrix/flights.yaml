@@ -1,0 +1,16 @@
+---
+# Flights above home
+alias: Flights above home
+id: 0d54b339-fb39-44f2-8675-cd24ccf2f17c
+description: "Flights above home"
+trigger:
+  - platform: event
+    event_type: flightradar24_entry
+condition: []
+action:
+  - action: script.awtrix3notif
+    data:
+      text: "{{ trigger.event.data.airport_origin_city }} -> {{ trigger.event.data.airport_destination_city }}"
+      icon: "8879"
+      repeat: 2
+mode: single
