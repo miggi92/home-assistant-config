@@ -88,7 +88,7 @@ sections:
         template: anniversary_template
         variables:
           - title: Urlaubscountdown
-          - picture_url: https://cdn.pixabay.com/photo/2018/01/31/16/12/beach-3121393_640.png
+          - picture_url: /local/images/urlaub_header.png
           - path: urlaub
           - icon: mdi:beach
       - type: custom:decluttering-card
