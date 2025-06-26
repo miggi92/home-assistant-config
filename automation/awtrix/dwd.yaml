@@ -8,18 +8,22 @@ trigger:
     entity_id: sensor.home_aktuelle_warnstufe
 condition: []
 action:
-  - if:
-      - condition: state
-        entity_id: sensor.home_aktuelle_warnstufe
-        state: "0"
-    then:
-      - action: script.awtrix3delapp
-        data:
-          app_id: dwd
-    else:
-      - action: script.awtrix3customapp
-        data:
-          app_id: dwd
-          text: "{{ state_attr('sensor.home_aktuelle_warnstufe','warning_1_name')}}"
-          icon: "6874"
+  - variables:
+      warn_count: "{{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') | int(0) }}"
+  - repeat:
+      for_each: "{{ range(1, warn_count + 1) | list }}"
+      sequence:
+        - service: script.awtrix3customapp
+          data:
+            app_id: "dwd_{{ repeat.item }}"
+            text: "{{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_' ~ repeat.item ~ '_name') }}"
+            icon: "6874"
+  - variables:
+      max_possible: 3
+  - repeat:
+      for_each: "{{ range(warn_count + 1, max_possible + 1) | list }}"
+      sequence:
+        - service: script.awtrix3delapp
+          data:
+            app_id: "dwd_{{ repeat.item }}"
 mode: single
