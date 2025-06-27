@@ -1,6 +1,6 @@
 ---
 # input_number.heissgetranke_zahler
-alias: Calculate amount of hot beverages made
+alias: CalHotBev
 id: a7e72c63-bbb1-4960-ac00-982d820e0853
 description: "Calculate amount of hot beverages made"
 trigger:
