@@ -96,6 +96,8 @@ lovelace:
       type: module
     - url: /hacsfiles/timer-bar-card/timer-bar-card.js
       type: module
+    - url: /hacsfiles/llmvision-card/llmvision-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
