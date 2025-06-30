@@ -41,11 +41,17 @@ sections:
         entity: switch.flur_cam_stecker
       - type: custom:mushroom-entity-card
         entity: switch.kamera_steckdose_wz
-  - type: grid
-    cards:
       - type: custom:mushroom-light-card
         entity: light.flurcam_indicator_light
         layout: vertical
       - type: custom:mushroom-light-card
         entity: light.korbchen_indicator_light
         layout: vertical
+  - type: grid
+    cards:
+      - type: custom:llmvision-card
+        entity: calendar.llm_vision_timeline
+        number_of_hours: 24
+        number_of_events: 5
+        language: de
+        header: Kamera Events

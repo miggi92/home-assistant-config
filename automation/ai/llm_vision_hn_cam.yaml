@@ -1,0 +1,15 @@
+---
+#
+alias: LLMVIsionCameraHN
+description: ""
+id: 7301525b-8f3b-411e-a473-da8c5a4afc57
+triggers:
+  - trigger: time_pattern
+    minutes: /5
+conditions: []
+actions:
+  - action: script.stream_analyzer
+    data:
+      camera:
+        - camera.rathaus
+mode: single

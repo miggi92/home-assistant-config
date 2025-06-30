@@ -1,0 +1,33 @@
+---
+#
+stream_analyzer:
+  fields:
+    camera:
+      selector:
+        entity:
+          multiple: true
+      name: Camera
+      description: Kamera
+      required: true
+      default:
+        - camera.rathaus
+  sequence:
+    - action: llmvision.stream_analyzer
+      data:
+        remember: true
+        use_memory: true
+        duration: 15
+        max_frames: 3
+        include_filename: true
+        target_width: 1280
+        max_tokens: 100
+        temperature: 0.5
+        generate_title: true
+        expose_images: true
+        provider: 01JYKXSJYJ05MF9BQJ6GW4YCNQ
+        image_entity: "{{camera}}"
+        message: what can you see in this stream?
+      response_variable: llm_response
+  alias: streamAnalyzer
+  description: "Analyze Stream via LLM"
+  icon: mdi:camera-wireless-outline
