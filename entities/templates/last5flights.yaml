@@ -2,7 +2,7 @@
 # Last 5 Flights sensor
 # https://github.com/AlexandrErohin/home-assistant-flightradar24?tab=readme-ov-file#last-flights-history-sensor
 - trigger:
-    - platform: event
+    - trigger: event
       event_type: flightradar24_exit
 
   sensor:
