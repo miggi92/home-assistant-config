@@ -50,7 +50,7 @@ sections:
   - type: grid
     cards:
       - type: custom:llmvision-card
-        entity: calendar.llm_vision_timeline
+        entity: binary_sensor.custom_camera_events
         number_of_hours: 24
         number_of_events: 5
         language: de

@@ -12,11 +12,33 @@ condition:
     entity_id: switch.flur_cam_stecker
     state: "on"
 action:
+  - variables:
+      timestamp: '{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
+  - variables:
+      file_path: "/media/{{ timestamp }}.mp4"
+      pic_path: "{{ timestamp }}.jpg"
+      start: "{{ now() }}"
+  - action: camera.snapshot
+    target:
+      entity_id: camera.flurcam
+    data:
+      filename: "/config/www/cams/{{ pic_path }}"
+  - variables:
+      end: "{{ now() }}"
+  - event: cam_event
+    event_data:
+      event: Haustüre geöffnet
+      starts: "{{ start }}"
+      ends: "{{ end }}"
+      summary: "Haustüre wurde geöffnet"
+      key_frame: "/local/cams/{{ pic_path }}"
+      camera: camera.flurcam
   - action: camera.record
     target:
       entity_id:
         - camera.flurcam
     data:
       duration: 5
-      filename: '/media/{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}.mp4'
+      filename: "{{ file_path }}"
+
 mode: single

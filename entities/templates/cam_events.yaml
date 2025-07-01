@@ -1,0 +1,54 @@
+---
+# Camera events
+- trigger:
+    - trigger: event
+      event_type: cam_event
+
+  binary_sensor:
+    - unique_id: custom_cam_events
+      name: "Custom camera events"
+      state: "off"
+      attributes:
+        events: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.events | count | default(0) %}
+          {{ [ trigger.event.data.event ] +
+              ( [] if m == 0 else
+                this.attributes.events[0:n-1] )
+          }}
+        starts: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.starts | count | default(0) %}
+          {{ [ trigger.event.data.starts ] +
+              ( [] if m == 0 else
+                this.attributes.starts[0:n-1] )
+          }}
+        ends: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.ends | count | default(0) %}
+          {{ [ trigger.event.data.ends ] +
+              ( [] if m == 0 else
+                this.attributes.ends[0:n-1] )
+          }}
+        summaries: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.summaries | count | default(0) %}
+          {{ [ trigger.event.data.summary ] +
+              ( [] if m == 0 else
+                this.attributes.summaries[0:n-1] )
+          }}
+        key_frames: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.key_frames | count | default(0) %}
+          {{ [ trigger.event.data.key_frame ] +
+              ( [] if m == 0 else
+                this.attributes.key_frames[0:n-1] )
+          }}
+        camera_names: >-
+          {% set n = 5 %}
+          {% set m = this.attributes.camera_names | count | default(0) %}
+          {{ [ trigger.event.data.camera ] +
+              ( [] if m == 0 else
+                this.attributes.camera_names[0:n-1] )
+          }}
+        icon: mdi:timeline-outline
