@@ -1,0 +1,27 @@
+---
+#
+video_analyzer:
+  fields:
+    file:
+      selector:
+        text: null
+      name: Filepath
+  sequence:
+    - action: llmvision.video_analyzer
+      data:
+        provider: 01JYKXSJYJ05MF9BQJ6GW4YCNQ
+        message: what can you see on this video?
+        remember: true
+        use_memory: true
+        include_filename: true
+        generate_title: true
+        expose_images: true
+        video_file: "{{ file }}"
+        max_tokens: 100
+        temperature: 0.5
+        max_frames: 3
+        target_width: 1280
+      response_variable: llm_response
+  alias: videoAnalyzer
+  description: "Analyze Stream via LLM"
+  icon: mdi:camera-wireless-outline
