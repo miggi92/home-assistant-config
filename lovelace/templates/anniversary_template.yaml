@@ -29,7 +29,7 @@ anniversary_template:
       method: state
       reverse: false
       numeric: true
-      count: 3
+      count: 5
     show_empty: false
     card:
       type: entities
