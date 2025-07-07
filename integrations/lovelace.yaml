@@ -102,6 +102,8 @@ lovelace:
       type: module
     - url: /hacsfiles/apexcharts-card/apexcharts-card.js
       type: module
+    - url: /hacsfiles/Bubble-Card/bubble-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
