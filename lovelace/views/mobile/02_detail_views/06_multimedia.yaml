@@ -3,82 +3,128 @@ title: Multimedia
 path: multimedia
 icon: mdi:multimedia
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: custom:mushroom-title-card
-    subtitle: Musik
-  - type: custom:mini-media-player
-    entity: media_player.spotify_miguel
-    artwork: full-cover
-    hide:
-      power: true
-      volume: true
-      controls: true
-      source: true
-      progress: true
-  - type: horizontal-stack
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
     cards:
       - type: custom:mini-media-player
-        entity: media_player.echo_gross
-        artwork: cover
-        icon: fab:amazon
-        info: short
-        hide:
-          mute: true
-          icon: true
-          source: true
-          power_state: false
-      - type: custom:mini-media-player
-        entity: media_player.echo_kuche
-        artwork: cover
-        icon: fab:amazon
-        info: short
-        hide:
-          mute: true
-          icon: true
-          source: true
-          power_state: false
-  - type: horizontal-stack
-    cards:
-      - type: custom:mini-media-player
-        entity: media_player.echo_schlafzimmer
-        artwork: cover
-        icon: fab:amazon
-        info: short
-        hide:
-          mute: true
-          icon: true
-          source: true
-          power_state: false
-      - type: custom:mini-media-player
-        entity: media_player.echo_show
-        artwork: cover
-        icon: fab:amazon
-        info: short
-        hide:
-          mute: true
-          icon: true
-          source: true
-          power_state: false
-  - type: custom:mushroom-title-card
-    subtitle: TV
-  - type: vertical-stack
-    cards:
-      - type: custom:mini-media-player
-        entity: media_player.fernseher_im_wohnzimmer
+        entity: media_player.spotify_miguel
         artwork: full-cover
         hide:
-          source: true
+          power: true
           volume: true
-          power_state: false
-      - type: custom:mini-media-player
-        entity: media_player.gtv
-        artwork: full-cover
-        hide:
+          controls: true
           source: true
-          volume: true
-          power_state: false
+          progress: true
+      - type: grid
+        cards:
+          - type: custom:mini-media-player
+            entity: media_player.echo_gross
+            artwork: cover
+            icon: fab:amazon
+            info: short
+            hide:
+              mute: true
+              icon: true
+              source: true
+              power_state: false
+          - type: custom:mini-media-player
+            entity: media_player.echo_kuche
+            artwork: cover
+            icon: fab:amazon
+            info: short
+            hide:
+              mute: true
+              icon: true
+              source: true
+              power_state: false
+          - type: custom:mini-media-player
+            entity: media_player.echo_schlafzimmer
+            artwork: cover
+            icon: fab:amazon
+            info: short
+            hide:
+              mute: true
+              icon: true
+              source: true
+              power_state: false
+          - type: custom:mini-media-player
+            entity: media_player.echo_show
+            artwork: cover
+            icon: fab:amazon
+            info: short
+            hide:
+              mute: true
+              icon: true
+              source: true
+              power_state: false
+          - type: custom:mini-media-player
+            entity: media_player.fernseher_im_wohnzimmer
+            artwork: full-cover
+            hide:
+              source: true
+              volume: true
+              power_state: false
+          - type: custom:mini-media-player
+            entity: media_player.gtv
+            artwork: full-cover
+            hide:
+              source: true
+              volume: true
+              power_state: false
+  - type: grid
+    cards: []
+  - type: grid
+    cards:
+      - type: custom:mushroom-template-card
+        primary: "{{ state_attr(entity, 'subject') }}"
+        secondary: >
+          Angefragt von {{ state_attr(entity, 'request').requested_by_username }}
+        icon: mdi:home
+        entity: event.overseerr_letztes_medienereignis
+        fill_container: true
+        multiline_secondary: true
+        layout: horizontal
+        badge_color: >
+          {% set eventType = state_attr(entity, 'event_type') %}
+          {% if eventType == 'pending' %}
+            orange
+          {% elsif eventType == 'failed' or eventType == 'declined'  %}
+            red
+          {% else %}
+            green
+          {% endif %}
+        badge_icon: >
+          {% set eventType = state_attr(entity, 'event_type') %}
+          {% if eventType == 'pending' %}
+            mdi:download
+          {% elsif eventType == 'failed' or eventType == 'declined'  %}
+            mdi:alert-octagon
+          {% endif %}
+        picture: "{{ state_attr(entity, 'entity_picture') }}"
+
+      - type: grid
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: sensor.radarr_filme
+          - type: custom:mushroom-entity-card
+            entity: sensor.sonarr_sendungen
+          - type: custom:mushroom-entity-card
+            entity: sensor.lidarr_alben
+
+      - type: grid
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: sensor.radarr_warteschlange
+          - type: custom:mushroom-entity-card
+            entity: sensor.sonarr_warteschlange
+          - type: custom:mushroom-entity-card
+            entity: sensor.lidarr_warteschlange
