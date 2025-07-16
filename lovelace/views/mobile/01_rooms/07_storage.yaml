@@ -84,10 +84,6 @@ cards:
       - type: custom:mushroom-entity-card
         entity: binary_sensor.abstellkammertursensor_contact
         layout: vertical
-      - type: custom:mushroom-entity-card
-        entity: switch.waschmaschine_program_drumclean
-        layout: vertical
-        name: Trommelreinigung
   - type: custom:decluttering-card
     template: area_battery_card_template
     variables:

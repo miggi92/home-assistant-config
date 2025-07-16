@@ -65,10 +65,6 @@ sections:
         layout: vertical
         tap_action:
           action: toggle
-      - type: custom:mushroom-entity-card
-        entity: switch.waschmaschine_program_drumclean
-        layout: vertical
-        name: Trommelreinigung
       - type: entities
         entities:
           - sensor.waschmaschine_tur
