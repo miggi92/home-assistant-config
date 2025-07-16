@@ -178,6 +178,12 @@ sections:
               - title: Flüge
               - icon: mdi:airplane
               - nav_path: flights
+          - type: custom:decluttering-card
+            template: navigation_card_template
+            variables:
+              - title: Kita
+              - icon: mdi:baby
+              - nav_path: kita
           - type: custom:state-switch
             entity: user
             states:

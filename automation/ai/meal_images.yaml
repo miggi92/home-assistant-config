@@ -1,6 +1,6 @@
 ---
 # work meal ai img
-alias: WorkMealImg
+alias: MealImg
 description: ""
 id: ffe67e29-366b-4661-a0b0-bfea95d4468e
 triggers:
@@ -19,10 +19,35 @@ triggers:
   - trigger: state
     entity_id: sensor.work_meal_five
     id: five
+  - trigger: state
+    entity_id: input_text.milo_kita_essen_mittwoch
+    id: mittwoch
+  - trigger: state
+    entity_id: input_text.milo_kita_essen_donnerstag
+    id: donnerstag
+  - trigger: state
+    entity_id: input_text.milo_kita_essen_freitag
+    id: freitag
 conditions:
   - condition: template
     value_template: "{{  states(trigger.entity_id) != 'unavailable' }}"
 actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['one', 'one_two', 'three', 'four', 'five'] }}"
+        sequence:
+          - variables:
+              directory: work_meals
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['mittwoch', 'donnerstag', 'freitag'] }}"
+        sequence:
+          - variables:
+              directory: kita_meals
+    default:
+      - variables:
+          directory: meals
   - action: openai_conversation.generate_image
     data:
       size: 1024x1024
@@ -34,10 +59,11 @@ actions:
         {{ states(trigger.entity_id) }}
         Der Fokus sollte auf dem Essen sein.
     response_variable: meal
+
   - action: downloader.download_file
     data:
       overwrite: true
       url: "{{ meal.url }}"
       filename: "{{ trigger.id }}.png"
-      subdir: work_meals
+      subdir: "{{ directory }}"
 mode: parallel

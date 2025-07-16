@@ -2,11 +2,12 @@
 # Work meal card
 work_meal_card_template:
   default:
-    - id: "one"
     - title: "Essensausgabe"
+    - entity: sensor.work_meal_one
+    - camera: camera.work_meal_one
   card:
     type: picture-entity
     show_state: true
     show_name: false
-    entity: "sensor.work_meal_[[id]]"
-    camera_image: "camera.work_meal_[[id]]"
+    entity: "[[entity]]"
+    camera_image: "[[camera]]"
