@@ -109,22 +109,31 @@ sections:
           {% elsif eventType == 'failed' or eventType == 'declined'  %}
             mdi:alert-octagon
           {% endif %}
+        tap_action:
+          action: more-info
         picture: "{{ state_attr(entity, 'entity_picture') }}"
-
-      - type: grid
-        cards:
-          - type: custom:mushroom-entity-card
-            entity: sensor.radarr_filme
-          - type: custom:mushroom-entity-card
-            entity: sensor.sonarr_sendungen
-          - type: custom:mushroom-entity-card
-            entity: sensor.lidarr_alben
-
-      - type: grid
-        cards:
-          - type: custom:mushroom-entity-card
-            entity: sensor.radarr_warteschlange
-          - type: custom:mushroom-entity-card
+      - type: custom:mushroom-entity-card
+        entity: sensor.radarr_filme
+      - type: custom:mushroom-entity-card
+        entity: sensor.sonarr_sendungen
+      - type: custom:mushroom-entity-card
+        entity: sensor.lidarr_alben
+      - type: custom:mushroom-entity-card
+        entity: sensor.radarr_warteschlange
+      - type: custom:mushroom-entity-card
+        entity: sensor.sonarr_warteschlange
+      - type: custom:mushroom-entity-card
+        entity: sensor.lidarr_warteschlange
+      - type: conditional
+        conditions:
+          - condition: state
             entity: sensor.sonarr_warteschlange
-          - type: custom:mushroom-entity-card
-            entity: sensor.lidarr_warteschlange
+            state_not: "0"
+        card:
+          type: markdown
+          content: >
+            {%- for attr, value in states.sensor.sonarr_warteschlange.attributes.items() %}
+              {%- if attr not in ['unit_of_measurement', 'friendly_name', 'icon'] %}
+                <ha-icon icon="mdi:television-classic"></ha-icon> **{{ attr }}**: {{ value }}
+              {%- endif %}
+            {%- endfor %}
