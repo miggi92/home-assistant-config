@@ -118,3 +118,6 @@ devices:
   '0x00158d000805aa96':
     friendly_name: Briefkasten
 version: 4
+groups:
+  '1':
+    friendly_name: wohnzimmer_lichter
