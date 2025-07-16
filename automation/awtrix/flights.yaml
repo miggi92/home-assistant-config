@@ -6,7 +6,10 @@ description: "Flights above home"
 trigger:
   - platform: event
     event_type: flightradar24_entry
-condition: []
+condition:
+  - condition: state
+    entity_id: group.parents
+    state: "home"
 action:
   - action: script.awtrix3notif
     data:

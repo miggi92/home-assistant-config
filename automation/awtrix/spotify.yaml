@@ -6,7 +6,10 @@ description: "Show spotify on the clock"
 trigger:
   - platform: state
     entity_id: media_player.spotify_miguel
-condition: []
+condition:
+  - condition: state
+    entity_id: group.parents
+    state: "home"
 action:
   - if:
       - condition: state
