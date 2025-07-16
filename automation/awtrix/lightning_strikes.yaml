@@ -1,0 +1,28 @@
+---
+# Display lightning strikes
+alias: Show lightning strikes on clock
+id: 6640ee8e-ea3d-4b86-be28-ab8702d5f96c
+description: "Show lightning strikes on clock"
+trigger:
+  - platform: state
+    entity_id: sensor.kohgeb_family_home_lightning_counter
+condition: []
+action:
+  - variables:
+      lightning_counter: "{{ states('sensor.kohgeb_family_home_lightning_counter') | int(0) }}"
+      lightning_distance: "{{ states('sensor.kohgeb_family_home_lightning_counter') | int(0) }}"
+  - if:
+      - condition: state
+        entity_id: sensor.kohgeb_family_home_lightning_counter
+        state: "0"
+    then:
+      - service: script.awtrix3delapp
+        data:
+          app_id: "lightning"
+    else:
+      - service: script.awtrix3customapp
+        data:
+          app_id: "lightning"
+          text: "{{ lightning_counter }} - {{ lightning_distance }} km"
+          icon: "6874"
+mode: single
