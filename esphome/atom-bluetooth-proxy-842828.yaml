@@ -28,8 +28,3 @@ wifi:
     subnet: !secret wifi_subnet
   ap:
     password: !secret wifi_fallback_password
-
-button:
-  - platform: safe_mode
-    name: Safe Mode Boot
-    entity_category: diagnostic

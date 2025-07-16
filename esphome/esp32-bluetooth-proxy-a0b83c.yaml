@@ -23,8 +23,3 @@ wifi:
     static_ip: 192.168.0.98
     gateway: !secret wifi_gateway
     subnet: !secret wifi_subnet
-
-button:
-  - platform: safe_mode
-    entity_category: diagnostic
-    name: Safe mode boot
