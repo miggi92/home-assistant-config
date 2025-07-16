@@ -10,7 +10,7 @@ condition: []
 action:
   - variables:
       lightning_counter: "{{ states('sensor.kohgeb_family_home_lightning_counter') | int(0) }}"
-      lightning_distance: "{{ states('sensor.kohgeb_family_home_lightning_counter') | int(0) }}"
+      lightning_distance: "{{ states('sensor.kohgeb_family_home_lightning_distance') | int(0) }}"
   - if:
       - condition: state
         entity_id: sensor.kohgeb_family_home_lightning_counter
