@@ -1,0 +1,23 @@
+---
+alias: LightningTVCounter
+id: e26e4603-0144-4492-abac-7a15f9355c40
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.kohgeb_family_home_lightning_counter
+condition:
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: sensor.kohgeb_family_home_lightning_counter
+        state: "0"
+action:
+  - service: notify.tvoverlaynotifyfixed
+    data:
+      data:
+        id: fixed_lightning
+        icon: mdi:weather-lightning-rainy
+        expiration: 30m
+        shape: rounded
+      message: "{{ states('sensor.kohgeb_family_home_lightning_counter')  | round }} {{ state_attr('sensor.kohgeb_family_home_lightning_counter', 'unit_of_measurement') }}"
+mode: single
