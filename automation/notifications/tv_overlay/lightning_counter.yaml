@@ -17,7 +17,7 @@ action:
       data:
         id: fixed_lightning
         icon: mdi:weather-lightning-rainy
-        expiration: 30m
+        expiration: 15m
         shape: rounded
       message: "{{ states('sensor.kohgeb_family_home_lightning_counter')  | round }} {{ state_attr('sensor.kohgeb_family_home_lightning_counter', 'unit_of_measurement') }}"
 mode: single
