@@ -23,6 +23,12 @@ sections:
         entity: weather.home
         forecast_type: daily
         forecast_slots: 7
+      - type: weather-forecast
+        show_current: false
+        show_forecast: true
+        entity: weather.home
+        forecast_type: hourly
+        forecast_slots: 10
 
   - type: grid
     cards: []
