@@ -40,7 +40,12 @@ badges:
       action: more-info
   - type: custom:mushroom-template-badge
     icon: mdi:lightbulb
-    color: yellow
+    color: >
+      {% if states(entity) == "0" %}
+        grey
+      {% else %}
+        yellow
+      {%endif%}
     entity: sensor.count_lights_on
     tap_action:
       action: navigate
@@ -109,6 +114,18 @@ sections:
             variables:
               - title: Haus
               - icon: mdi:home
+          - type: conditional
+            conditions:
+              - entity: binary_sensor.jemand_in_spanien
+                state: "on"
+            card:
+              type: custom:decluttering-card
+              template: navigation_card_template
+              variables:
+                - title: Spanien
+                - icon: mdi:beach
+                - nav_path: spain
+                - icon_color: red
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:

@@ -1,0 +1,41 @@
+---
+title: Spanien
+path: spain
+icon: mdi:beach
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: entity
+    entity: binary_sensor.jemand_in_spanien
+    show_name: true
+    show_state: true
+    show_icon: true
+    state_content:
+      - state
+      - last_changed
+sections:
+  - type: grid
+    cards:
+      - type: weather-forecast
+        show_current: true
+        show_forecast: true
+        entity: weather.forecast_spanien
+        forecast_type: daily
+        forecast_slots: 7
+      - type: weather-forecast
+        show_current: false
+        show_forecast: true
+        entity: weather.forecast_spanien
+        forecast_type: hourly
+        forecast_slots: 7
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []
