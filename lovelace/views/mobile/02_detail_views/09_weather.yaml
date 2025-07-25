@@ -14,6 +14,25 @@ badges:
       navigation_path: start
   - type: entity
     entity: sensor.kohgeb_family_home_lightning_counter
+  - type: custom:mushroom-template-badge
+    icon: mdi:cloud-alert
+    color: >
+      {% if states(entity) == "0" %}
+      grey
+      {% else %}
+      red
+      {% endif %}
+    entity: sensor.home_aktuelle_warnstufe
+    label: DWD
+    content: >
+      {% if states(entity) == "0" %}
+      Keine Warnungen
+      {% else %}
+      Warnungen: {{states(entity)}}
+      {% endif %}
+    tap_action:
+      action: navigate
+      navigation_path: dwd
 sections:
   - type: grid
     cards:
