@@ -9,7 +9,7 @@ trigger:
     to: "on"
 condition:
   - condition: state
-    entity_id: binary_sensor.jemand_in_santander
+    entity_id: binary_sensor.jemand_in_spanien
     state: "on"
 
 action:
