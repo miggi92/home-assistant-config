@@ -129,6 +129,12 @@ sections:
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:
+              - title: Wetter
+              - icon: mdi:weather-partly-snowy-rainy
+              - nav_path: weather
+          - type: custom:decluttering-card
+            template: navigation_card_template
+            variables:
               - title: Lichter
               - nav_path: lights
               - icon: mdi:lightbulb
@@ -174,19 +180,30 @@ sections:
               - title: Karten
               - icon: mdi:map-search
               - nav_path: maps
-          - type: custom:decluttering-card
-            template: navigation_card_template
-            variables:
-              - title: Wetter
-              - icon: mdi:weather-partly-snowy-rainy
-              - nav_path: weather
-          - type: custom:decluttering-card
-            template: navigation_card_template
-            variables:
-              - title: Arbeit
-              - nav_path: work
-              - icon: mdi:briefcase
-              - icon_color: green
+
+          - type: conditional
+            conditions:
+              - entity: binary_sensor.workday_sensor
+                state: "on"
+            card:
+              type: custom:decluttering-card
+              template: navigation_card_template
+              variables:
+                - title: Arbeit
+                - nav_path: work
+                - icon: mdi:briefcase
+                - icon_color: green
+          - type: conditional
+            conditions:
+              - entity: binary_sensor.milo_kita
+                state: "on"
+            card:
+              type: custom:decluttering-card
+              template: navigation_card_template
+              variables:
+                - title: Kita
+                - icon: mdi:baby
+                - nav_path: kita
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:
@@ -207,12 +224,6 @@ sections:
               - title: Flüge
               - icon: mdi:airplane
               - nav_path: flights
-          - type: custom:decluttering-card
-            template: navigation_card_template
-            variables:
-              - title: Kita
-              - icon: mdi:baby
-              - nav_path: kita
           - type: custom:state-switch
             entity: user
             states:
