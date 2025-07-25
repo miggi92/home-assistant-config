@@ -16,6 +16,19 @@ sections:
   - type: grid
     cards: []
   - type: grid
-    cards: []
+    cards:
+      - type: map
+        auto_fit: true
+        theme_mode: auto
+        title: Personen
+        entities:
+          - entity: person.ceci
+          - entity: person.lisa
+          - entity: person.thomas
+          - entity: person.milo_carlos
+          - entity: person.maja
+          - entity: person.silke
+          - entity: person.miguel
+
   - type: grid
     cards: []
