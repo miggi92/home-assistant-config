@@ -81,7 +81,11 @@ sections:
               volume: true
               power_state: false
   - type: grid
-    cards: []
+    cards:
+      - type: custom:upcoming-media-card
+        entity: sensor.sonarr_upcoming_media
+      - type: custom:upcoming-media-card
+        entity: sensor.radarr_upcoming_media
   - type: grid
     cards:
       - type: custom:mushroom-template-card
