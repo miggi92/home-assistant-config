@@ -4,23 +4,46 @@ send_cam_snaps:
   icon: mdi:camera
   alias: "Snapshots von Kameras senden"
   sequence:
+    - variables:
+        flur_timestamp: '{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
+        koerbchen_timestamp: '{{ state_attr("camera.koerbchen", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
+        start: "{{ now() }}"
+    - variables:
+        flur_pic_path: "{{ flur_timestamp }}.jpg"
+        koerbchen_pic_path: "{{ koerbchen_timestamp }}.jpg"
     - action: camera.snapshot
       target:
         entity_id: camera.flurcam
       data:
-        filename: /media/flur_snap.jpg
+        filename: "/config/www/cams/{{ flur_pic_path }}"
+    - event: cam_event
+      event_data:
+        event: Cam check
+        starts: "{{ start }}"
+        ends: "{{ now() }}"
+        summary: "Aktuelles Kamerabild"
+        key_frame: "/local/cams/{{ flur_pic_path }}"
+        camera: camera.flurcam
     - action: camera.snapshot
       target:
         entity_id: camera.korbchen
       data:
-        filename: /media/korbchen_snap.jpg
+        filename: "/config/www/cams/{{ koerbchen_pic_path }}"
+    - event: cam_event
+      event_data:
+        event: Cam check
+        starts: "{{ start }}"
+        ends: "{{ now() }}"
+        summary: "Aktuelles Kamerabild"
+        key_frame: "/local/cams/{{ koerbchen_pic_path }}"
+        camera: camera.korbchen
     - action: script.notify_engine
       data:
         title: "📷 Kamera 📹"
         value1: "Aktueller Kamerabilder"
         who: "home"
         photos:
-          - file: "/media/flur_snap.jpg"
+          - file: "/config/www/cams/{{ flur_pic_path }}"
             caption: "Flur_Snapshot"
-          - file: "/media/korbchen_snap.jpg"
+          - file: "/config/www/cams/{{ koerbchen_pic_path }}"
             caption: "Koerbchen_Snapshot"
