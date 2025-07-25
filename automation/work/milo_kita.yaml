@@ -18,10 +18,12 @@ action:
           entity_id: input_select.milo_person_sync
         data:
           option: alleine
-      - service: device_tracker.see
+      - action: device_tracker.see
         data:
-          location_name: "Kita"
           dev_id: milo_dummy_tracker
+          gps:
+            - !secret milo_kita_lat
+            - !secret milo_kita_long
     else:
       - action: input_select.select_option
         target:
