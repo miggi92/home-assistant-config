@@ -1,0 +1,113 @@
+---
+title: Einkaufen
+path: shopping
+icon: mdi:cart
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: entity
+    entity: sensor.grocy_stock
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: binary_sensor.grocy_missing_products
+    name: Fehlende Produkte
+    state_content: count
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: binary_sensor.grocy_expiring_products
+    name: Bald abgelaufene Produkte
+    state_content: count
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: binary_sensor.grocy_expired_products
+    name: Abgelaufene Produkte
+    state_content: count
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: binary_sensor.grocy_overdue_products
+    name: Lange abgelaufene Produkte
+    state_content: count
+sections:
+  - type: grid
+    cards:
+      - type: custom:tabbed-card
+        tabs:
+          - card:
+              type: todo-list
+              entity: todo.einkaufsliste
+            attributes:
+              label: Einkaufsliste
+              icon: mdi:cart
+          - card:
+              type: todo-list
+              entity: todo.dm_einkaufen
+            attributes:
+              label: DM Liste
+              icon: mdi:shopping
+          - card:
+              type: todo-list
+              entity: todo.getranke
+            attributes:
+              label: Getränke
+              icon: mdi:beer
+  - type: grid
+    cards:
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.grocy_missing_products
+            state: "on"
+        card:
+          type: markdown
+          title: Fehlende Produkte
+          content: >
+            {% set products = state_attr('binary_sensor.grocy_missing_products', 'missing_products') %}
+            {% if products %}
+              {{ products | map(attribute='name') | list | map('regex_replace', '(.*)', ' \\1') | join('\n') }}
+            {% else %}
+              Keine fehlenden Produkte.
+            {% endif %}
+
+  - type: grid
+    cards:
+      - type: entity
+        entity: counter.picnic_monats_kosten
+      - type: entity
+        entity: counter.picnic_jahres_kosten
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_status_der_letzten_bestellung
+      - type: conditional
+        conditions:
+          - entity: sensor.picnic_status_der_letzten_bestellung
+            state: "CURRENT"
+        card:
+          type: horizontal-stack
+          cards:
+            - type: custom:mushroom-entity-card
+              entity: sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung
+              name: Beginn nächste Lieferung
+            - type: custom:mushroom-entity-card
+              entity: sensor.picnic_voraussichtliches_ende_der_nachsten_lieferung
+              name: Ende nächste Lieferung
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_gesamtpreis_der_letzten_bestellung
+        name: Kosten der letzten Bestellung
+      - type: custom:mushroom-entity-card
+        entity: sensor.picnic_warenkorb_gesamtpreis
+        name: Preis Warenkorb
+      - type: todo-list
+        entity: todo.picnic_einkaufswagen
