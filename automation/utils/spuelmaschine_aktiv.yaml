@@ -1,7 +1,8 @@
 ---
 # input_boolean.spulmaschine_aktiv
 description: "Spülmaschine aktiv"
-id: 5adc2685-36ef-4319-8a00-5e8b6c89b304
+alias: SpuelmaschineActive
+id: a444c0eb-c032-4e9c-b923-6244fe1a24b8
 mode: single
 triggers:
   - type: power
