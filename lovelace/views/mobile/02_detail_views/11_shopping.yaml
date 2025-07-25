@@ -45,28 +45,6 @@ badges:
 sections:
   - type: grid
     cards:
-      - type: custom:tabbed-card
-        tabs:
-          - card:
-              type: todo-list
-              entity: todo.einkaufsliste
-            attributes:
-              label: Einkaufsliste
-              icon: mdi:cart
-          - card:
-              type: todo-list
-              entity: todo.dm_einkaufen
-            attributes:
-              label: DM Liste
-              icon: mdi:shopping
-          - card:
-              type: todo-list
-              entity: todo.getranke
-            attributes:
-              label: Getränke
-              icon: mdi:beer
-  - type: grid
-    cards:
       - type: conditional
         conditions:
           - entity: binary_sensor.grocy_missing_products
@@ -109,5 +87,25 @@ sections:
       - type: custom:mushroom-entity-card
         entity: sensor.picnic_warenkorb_gesamtpreis
         name: Preis Warenkorb
-      - type: todo-list
-        entity: todo.picnic_einkaufswagen
+  - type: grid
+    cards:
+      - type: custom:tabbed-card
+        tabs:
+          - card:
+              type: todo-list
+              entity: todo.picnic_einkaufswagen
+            attributes:
+              label: Einkaufsliste
+              icon: mdi:cart
+          - card:
+              type: todo-list
+              entity: todo.dm_einkaufen
+            attributes:
+              label: DM Liste
+              icon: mdi:shopping
+          - card:
+              type: todo-list
+              entity: todo.getranke
+            attributes:
+              label: Getränke
+              icon: mdi:beer
