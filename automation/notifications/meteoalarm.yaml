@@ -8,18 +8,9 @@ trigger:
     entity_id: binary_sensor.meteoalarm
     to: "on"
 condition:
-  - condition: or
-    conditions:
-      - condition: not
-        conditions:
-          - condition: state
-            entity_id: zone.eltern_haus_spanien
-            state: "0"
-      - condition: not
-        conditions:
-          - condition: state
-            entity_id: zone.heim_abu
-            state: "0"
+  - condition: state
+    entity_id: binary_sensor.jemand_in_santander
+    state: "on"
 
 action:
   - action: script.notify_engine
