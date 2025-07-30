@@ -47,7 +47,7 @@ sections:
         show_forecast: true
         entity: weather.home
         forecast_type: hourly
-        forecast_slots: 10
+        forecast_slots: 7
 
   - type: grid
     cards: []
