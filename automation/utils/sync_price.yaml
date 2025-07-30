@@ -1,0 +1,18 @@
+---
+# sensor.epex_spot_data_net_price
+alias: Sync electricity price
+id: 5b023ec5-2f0a-489d-8f00-efbba8af1a2b
+description: "Sync electricity price"
+trigger:
+  - platform: state
+    entity_id: sensor.epex_spot_data_net_price
+condition: []
+action:
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.strompreis
+    data:
+      value: >
+        {% set val = states('sensor.epex_spot_data_net_price') | float(0) %}
+        {{ ((val * 100) | round(0, 'ceil')) / 100 }}
+mode: single
