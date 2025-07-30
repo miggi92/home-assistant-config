@@ -12,6 +12,19 @@ condition:
     entity_id: switch.flur_cam_stecker
     state: "on"
 action:
+  - action: browser_mod.popup
+    data:
+      content:
+        type: picture-entity
+        entity: camera.flurcam
+        show_state: false
+        show_name: false
+        camera_view: live
+      autoclose: true
+      timeout: 30000
+      title: Haustüre wurde geöffnet
+      size: classic
+      allow_nested_more_info: false
   - variables:
       timestamp: '{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
   - variables:
