@@ -1,0 +1,30 @@
+---
+# sensor.anniversary_special_b_mini
+alias: Show mini countdown on clock
+id: 5ce560a2-c147-40f0-b02f-46ba328c5b84
+description: "Show mini countdown on clock"
+trigger:
+  - platform: time
+    at: "00:01:00"
+condition:
+  - condition: state
+    entity_id: group.parents
+    state: "home"
+action:
+  - variables:
+      triggered_entity: "sensor.anniversary_special_b_mini"
+      entity_name: "{{ state_attr(triggered_entity, 'friendly_name') }}"
+  - if:
+      - condition: template
+        value_template: "{{ triggered_entity != '' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: "mini"
+          text: "{{ states(triggered_entity) }} {{ state_attr(triggered_entity, 'unit_of_measurement')}}"
+          icon: "365"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: "mini"
+mode: single
