@@ -1,0 +1,27 @@
+---
+id: "1751635110755"
+name: Rolladen Sonnenschutz
+entities:
+  cover.rolladen_kinderzimmer:
+    current_position: 35
+    operation_state: STOPPED
+    device_class: shutter
+    friendly_name: Rolladen Kinderzimmer
+    supported_features: 15
+    state: open
+  cover.rollladen_schlafzimmer:
+    current_position: 28
+    operation_state: STOPPED
+    device_class: shutter
+    friendly_name: Rollladen Schlafzimmer
+    supported_features: 15
+    state: open
+  cover.wohnzimmerrolladen:
+    current_position: 31
+    operation_state: STOPPED
+    device_class: shutter
+    friendly_name: Wohnzimmerrolladen
+    supported_features: 15
+    state: open
+icon: mdi:shield-sun-outline
+metadata: {}
