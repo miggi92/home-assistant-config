@@ -11,39 +11,57 @@ send_cam_snaps:
     - variables:
         flur_pic_path: "{{ flur_timestamp }}.jpg"
         koerbchen_pic_path: "{{ koerbchen_timestamp }}.jpg"
-    - action: camera.snapshot
-      target:
-        entity_id: camera.flurcam
-      data:
-        filename: "/config/www/cams/{{ flur_pic_path }}"
-    - event: cam_event
-      event_data:
-        event: Cam check
-        starts: "{{ start }}"
-        ends: "{{ now() }}"
-        summary: "Aktuelles Kamerabild"
-        key_frame: "/local/cams/{{ flur_pic_path }}"
-        camera: camera.flurcam
-    - action: camera.snapshot
-      target:
-        entity_id: camera.korbchen
-      data:
-        filename: "/config/www/cams/{{ koerbchen_pic_path }}"
-    - event: cam_event
-      event_data:
-        event: Cam check
-        starts: "{{ start }}"
-        ends: "{{ now() }}"
-        summary: "Aktuelles Kamerabild"
-        key_frame: "/local/cams/{{ koerbchen_pic_path }}"
-        camera: camera.korbchen
-    - action: script.notify_engine
-      data:
-        title: "📷 Kamera 📹"
-        value1: "Aktueller Kamerabilder"
-        who: "home"
-        photos:
-          - file: "/config/www/cams/{{ flur_pic_path }}"
-            caption: "Flur_Snapshot"
-          - file: "/config/www/cams/{{ koerbchen_pic_path }}"
-            caption: "Koerbchen_Snapshot"
+    - if:
+        condition: state
+        entity_id: switch.flur_cam_stecker
+        state: "on"
+      then:
+        - action: camera.snapshot
+          target:
+            entity_id: camera.flurcam
+          data:
+            filename: "/config/www/cams/{{ flur_pic_path }}"
+        - event: cam_event
+          event_data:
+            event: Cam check
+            starts: "{{ start }}"
+            ends: "{{ now() }}"
+            summary: "Aktuelles Kamerabild"
+            key_frame: "/local/cams/{{ flur_pic_path }}"
+            camera: camera.flurcam
+        - action: script.notify_engine
+          data:
+            title: "📷 Flurkamera 📹"
+            value1: "Aktuelles Bild"
+            who: "home"
+            tag_id: "information"
+            photos:
+              - file: "/config/www/cams/{{ flur_pic_path }}"
+                caption: "Flur Kamera"
+    - if:
+        condition: state
+        entity_id: switch.kamera_steckdose_wz
+        state: "on"
+      then:
+        - action: camera.snapshot
+          target:
+            entity_id: camera.korbchen
+          data:
+            filename: "/config/www/cams/{{ koerbchen_pic_path }}"
+        - event: cam_event
+          event_data:
+            event: Cam check
+            starts: "{{ start }}"
+            ends: "{{ now() }}"
+            summary: "Aktuelles Kamerabild"
+            key_frame: "/local/cams/{{ koerbchen_pic_path }}"
+            camera: camera.korbchen
+        - action: script.notify_engine
+          data:
+            title: "📷 WZ Kamera 📹"
+            value1: "Aktuelles Bild"
+            who: "home"
+            tag_id: "information"
+            photos:
+              - file: "/config/www/cams/{{ koerbchen_pic_path }}"
+                caption: "WZ Kamera"
