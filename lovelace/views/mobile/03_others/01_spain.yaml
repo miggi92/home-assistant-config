@@ -21,6 +21,14 @@ badges:
       - state
       - last_changed
   - type: entity
+    entity: binary_sensor.parents_in_spain
+    show_name: true
+    show_state: true
+    show_icon: true
+    state_content:
+      - state
+      - last_changed
+  - type: entity
     entity: sensor.spanien_lightning_counter
 sections:
   - type: grid
