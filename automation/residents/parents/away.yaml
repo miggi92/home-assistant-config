@@ -2,7 +2,7 @@
 # Parents Away
 alias: parentsAway
 id: 03a20f50-86fa-4a6f-915d-325ae9f3b36f
-description: "Telegram msg when parents are away"
+description: "Automation when parents are away"
 trigger:
   - platform: state
     entity_id: group.parents
@@ -16,10 +16,4 @@ action:
   - action: switch.turn_on
     target:
       entity_id: switch.kamera_steckdose_wz
-  - action: script.notify_engine
-    data:
-      title: "Eltern abwesend"
-      value1: "Ich habe erkannt, dass beide Elternteile nicht mehr Zuhause sind.\nIst Maja noch daheim?"
-      inline_keyboard:
-        - "Ja:/maja_home, Nein:/maja_gone"
 mode: single

@@ -2,7 +2,7 @@
 # Parents
 alias: parentsHome
 id: 9fad1c85-4e6d-4864-91ee-54b0fc12c725
-description: "Telegram msg when parents are away"
+description: "Parents are at home again"
 trigger:
   - platform: state
     entity_id: group.parents
