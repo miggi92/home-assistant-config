@@ -60,6 +60,8 @@ sections:
                   - moisture
                   - conductivity
                   - temperature
+                  - dli
+                display_type: full
   - type: grid
     cards:
       - type: custom:state-switch
