@@ -13,7 +13,7 @@ badges:
       action: navigate
       navigation_path: start
   - type: entity
-    entity: binary_sensor.hausture_window
+    entity: binary_sensor.hausture
     tap_action:
       action: more-info
   - type: entity

@@ -5,7 +5,7 @@ alias: snapshotOnDoorChange
 description: ""
 trigger:
   - platform: state
-    entity_id: binary_sensor.hausture_window
+    entity_id: binary_sensor.hausture
     to: "on"
 condition:
   - condition: state
