@@ -16,6 +16,10 @@ badges:
     tap_action:
       action: navigate
       navigation_path: start
+  - type: entity
+    entity: input_number.strompreis
+  - type: entity
+    entity: input_number.wasserpreis_pro_m3
 sections:
   - type: grid
     cards:
