@@ -1,0 +1,46 @@
+---
+# System
+title: System
+path: system
+icon: mdi:cellphone-arrow-down
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: Proxmox
+          - icon: mdi:server-network
+          - nav_path: proxmox
+          - icon_color: orange
+  - type: grid
+    cards: []
+  - type: grid
+    cards:
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          show_header_toggle: false
+          title: "Verfügbare Updates"
+          type: entities
+        filter:
+          include:
+            - entity_id: update.*
+              options:
+                type: custom:mushroom-update-card
+              state: "on"
+          method: state
+          numeric: true

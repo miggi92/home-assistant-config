@@ -1,0 +1,16 @@
+---
+# Proxmox card
+proxmox_card_template:
+  defaults:
+    title: "Networkdevices"
+  card:
+    type: grid
+    title: "[[title]]"
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: "sensor.node_[[node]]_container_laufen"
+        name: LXC
+      - type: custom:mushroom-entity-card
+        entity: "sensor.node_[[node]]_virtual_machines_running"
+        name: VM
+        icon: mdi:desktop-classic
