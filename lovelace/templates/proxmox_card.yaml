@@ -2,10 +2,11 @@
 # Proxmox card
 proxmox_card_template:
   defaults:
-    title: "Networkdevices"
+    title: "Proxmox Server"
   card:
     type: grid
     title: "[[title]]"
+    square: false
     cards:
       - type: custom:mushroom-entity-card
         entity: "sensor.node_[[node]]_container_laufen"
@@ -14,3 +15,36 @@ proxmox_card_template:
         entity: "sensor.node_[[node]]_virtual_machines_running"
         name: VM
         icon: mdi:desktop-classic
+      - type: custom:mushroom-update-card
+        entity: "binary_sensor.node_[[node]]_pakete_aktualisieren"
+        name: Updates
+      - type: custom:entity-progress-card
+        entity: "sensor.node_[[node]]_cpu_auslastung"
+        name: CPU
+        min_value: 0
+        max_value: 100
+        theme: optimal_when_low
+      - type: custom:entity-progress-card
+        entity: "sensor.node_[[node]]_prozentsatz_genutzter_arbeitsspeicher"
+        name: RAM
+        min_value: 0
+        max_value: 100
+        theme: optimal_when_low
+      - type: custom:entity-progress-card
+        entity: "sensor.node_[[node]]_prozentsatz_belegter_speicherplatz"
+        name: Disk
+        min_value: 0
+        max_value: 100
+        theme: optimal_when_low
+      - type: custom:decluttering-card
+        template: proxmox_disk_card_template
+        variables:
+          - title: "Disk 01"
+          - node: "[[node]]"
+          - disk: "[[disk01]]"
+      - type: custom:decluttering-card
+        template: proxmox_disk_card_template
+        variables:
+          - title: "Disk 02"
+          - node: "[[node]]"
+          - disk: "[[disk02]]"

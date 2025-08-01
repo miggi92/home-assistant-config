@@ -24,6 +24,8 @@ sections:
         variables:
           - title: Proxmox
           - node: proxmox
+          - disk01: lexar_ssd_nm7a1_1tb
+          - disk02: sandisk_3_2gen1
   - type: grid
     cards:
       - type: custom:decluttering-card
@@ -31,6 +33,7 @@ sections:
         variables:
           - title: PVE
           - node: pve
+          - disk01: gofatoo_128gb_ssd
   - type: grid
     cards:
       - type: custom:decluttering-card
@@ -38,3 +41,4 @@ sections:
         variables:
           - title: PVE03
           - node: pve03
+          - disk01: hoge_ssd_1tb

@@ -1,0 +1,29 @@
+---
+# Proxmox card
+proxmox_disk_card_template:
+  defaults:
+    title: "Disk"
+  card:
+    type: conditional
+    conditions:
+      - condition: or
+        conditions:
+          - condition: state
+            entity: "binary_sensor.disk_[[node]]_[[disk]]_gesundheit"
+            state: "on"
+          - condition: state
+            entity: "binary_sensor.disk_[[node]]_[[disk]]_gesundheit"
+            state: "off"
+    card:
+      type: vertical-stack
+      title: "[[title]]"
+      cards:
+        - type: custom:mushroom-entity-card
+          entity: "binary_sensor.disk_[[node]]_[[disk]]_gesundheit"
+          name: Disk State
+        - type: custom:entity-progress-card
+          entity: "sensor.disk_[[node]]_[[disk]]_temperatur"
+          name: Temperature
+          unit: "°C"
+          decimal: 0
+          theme: temperature
