@@ -104,6 +104,8 @@ lovelace:
       type: module
     - url: /hacsfiles/Bubble-Card/bubble-card.js
       type: module
+    - url: /hacsfiles/lovelace-entity-progress-card/entity-progress-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
