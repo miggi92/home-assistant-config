@@ -1,7 +1,7 @@
 ---
 # Holiday automation
-alias: UrlaubsmodusAutom
-id: d671c363-5a0c-4f56-b8ff-857234b23b61
+alias: UrlaubsModus
+id: 5899d18e-e2f3-4575-be82-4d81effc7293
 description: "Schaltet das Smart Home System in den Urlaubsmodus."
 trigger:
   - platform: state
