@@ -36,6 +36,14 @@ action:
       entity_id: camera.flurcam
     data:
       filename: "/config/www/cams/{{ pic_path }}"
+  - action: script.notify_engine
+    data:
+      title: "Haustüre"
+      value1: "Haustüre wurde geöffnet!"
+      tag_id: "security"
+      who: tv_overlay
+      group: "Alarm"
+      photo: "http://{{states('input_text.server_ip')}}:8123/local/cams/{{ pic_path }}"
   - variables:
       end: "{{ now() }}"
   - event: cam_event
