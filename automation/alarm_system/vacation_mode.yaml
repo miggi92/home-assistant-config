@@ -14,37 +14,16 @@ action:
         entity_id: alarm_control_panel.alarmo
         state: "armed_vacation"
     then:
-      - service: script.notify_engine
-        data:
-          title: |
-            Urlaubsmodus eingeschaltet
-          value1: "🌴"
-          who: "home"
-          tag_id: "information"
-          group: "Urlaub"
       - service: input_boolean.turn_on
         entity_id: input_boolean.holiday_mode
-      - service: light.turn_off
-        data: {}
-        target:
-          entity_id: light.kameralichter
   - if:
+      - condition: state
+        entity_id: alarm_control_panel.alarmo
+        state: "disarmed"
       - condition: state
         entity_id: input_boolean.holiday_mode
         state: "on"
     then:
-      - service: script.notify_engine
-        data:
-          title: |
-            Urlaubsmodus ausgeschaltet
-          value1: "🌴"
-          who: "home"
-          tag_id: "information"
-          group: "Urlaub"
       - service: input_boolean.turn_off
         entity_id: input_boolean.holiday_mode
-      - service: light.turn_on
-        data: {}
-        target:
-          entity_id: light.kameralichter
 mode: single
