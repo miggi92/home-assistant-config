@@ -28,7 +28,16 @@ action:
           entity_id: light.kameralichter
       - action: script.awtrix3delapp
         data:
-          app_id: "mini"
+          app_id: mini
+      - action: script.awtrix3delapp
+        data:
+          app_id: miguel
+      - action: script.awtrix3delapp
+        data:
+          app_id: silke
+      - action: script.awtrix3delapp
+        data:
+          app_id: milo
     else:
       - action: script.notify_engine
         data:

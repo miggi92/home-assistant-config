@@ -6,7 +6,10 @@ description: "Show silkes state on clock"
 trigger:
   - platform: state
     entity_id: person.silke
-condition: []
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
 action:
   - if:
       - condition: state
