@@ -5,13 +5,7 @@ id: 33ea773e-67d2-4f5c-97ba-778d098b0ade
 description: "Show waste on clock"
 trigger:
   - platform: state
-    entity_id: sensor.restmull
-  - platform: state
-    entity_id: sensor.papier
-  - platform: state
-    entity_id: sensor.bio
-  - platform: state
-    entity_id: sensor.schadstoffe
+    entity_id: sensor.nachste_abfuhrtermine
 condition: []
 action:
   - if:
@@ -20,11 +14,11 @@ action:
     then:
       - action: script.awtrix3customapp
         data:
-          app_id: "waste_{{ trigger.from_state.friendly_name }}"
+          app_id: "waste"
           text: "{{ trigger.to_state.state }}"
           icon: "57283"
     else:
       - action: script.awtrix3delapp
         data:
-          app_id: "waste_{{ trigger.from_state.friendly_name }}"
+          app_id: "waste"
 mode: parallel
