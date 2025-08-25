@@ -1,0 +1,34 @@
+---
+# AI morning briefing
+alias: MorningBriefing
+description: ""
+id: ca2ea9b9-5ef6-4867-af35-4ce299c817ae
+triggers:
+  - platform: time
+    at: "00:01:00"
+conditions:
+  - condition: state
+    entity_id: input_boolean.ai_morning_briefing
+    state: "on"
+actions:
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.openai_ai_task
+      task_name: morning briefing
+      instructions: |
+        Generate a morning briefing. Answer in german. Keep the response to a maximum of 100 characters.
+        Make the answer a little bit funny.
+        With these information:
+
+        - Outdoor temperature: {{ states('sensor.daikinap90134_outside_temperature') }}°C
+        - Weather condition: {{ states('weather.home') }}
+        - Indoor temperature: {{ states('sensor.wohnungstemperatur') }}°C
+        - Indoor humidity: {{ states('sensor.wohnungsfeuchtigkeit') }}%
+        - Is today a work day?: {{ states('binary_sensor.workday_sensor') }}
+    response_variable: response
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.ai_morning_briefing
+    data:
+      value: "{{ response }}"
+mode: parallel
