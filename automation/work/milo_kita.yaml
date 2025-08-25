@@ -6,7 +6,10 @@ description: "Status aktualisieren, wenn Milo in der Kita ist."
 trigger:
   - platform: state
     entity_id: schedule.milo_kita_zeiten
-condition: []
+condition:
+  - condition: state
+    entity_id: binary_sensor.milo_kita
+    state: "on"
 action:
   - if:
       - condition: state
