@@ -132,3 +132,9 @@ lovelace:
       title: Floorplan
       icon: mdi:floor-plan
       show_in_sidebar: true
+    lovelace-responsive:
+      mode: yaml
+      filename: lovelace/dashboards/responsive.yaml
+      title: Responsive
+      icon: mdi:responsive
+      show_in_sidebar: true
