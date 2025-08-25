@@ -1,0 +1,59 @@
+---
+#
+footer_template:
+  default:
+    - color-1: var(--contrast20)
+    - color-2: var(--contrast20)
+    - color-3: var(--contrast20)
+    - color-4: var(--contrast20)
+    - color-5: var(--contrast20)
+    - bgcolor-1: var(--contrast4)
+    - bgcolor-2: var(--contrast4)
+    - bgcolor-3: var(--contrast4)
+    - bgcolor-4: var(--contrast4)
+    - bgcolor-5: var(--contrast4)
+  card:
+    type: vertical-stack
+    cards:
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: screen
+                media_query: "(min-width: 0px) and (max-width: 767px)"
+              - condition: state
+                entity: binary_sensor.alexa_timer_active
+                state: "on"
+        card:
+          type: custom:button-card
+          template: custom_card_timer_bottom
+      - type: conditional
+        conditions:
+          - condition: and
+            conditions:
+              - condition: screen
+                media_query: "(min-width: 0px) and (max-width: 767px)"
+              - condition: or
+                conditions:
+                  - condition: state
+                    entity: media_player.music_and_tv
+                    state: playing
+                  - condition: state
+                    entity: media_player.music_and_tv
+                    state: paused
+        card:
+          type: custom:button-card
+          template: custom_card_mediaplayer_bottom
+          entity: media_player.music_and_tv
+      - type: conditional
+        conditions:
+          - entity: input_boolean.sound_alarm_is_running
+            state: "on"
+          - condition: screen
+            media_query: "(min-width: 0px) and (max-width: 767px)"
+          - condition: user
+            users:
+              - ecc3dedec7ae42b69a6b8a82927dda74
+        card:
+          type: custom:button-card
+          template: custom_card_alarm_bottom

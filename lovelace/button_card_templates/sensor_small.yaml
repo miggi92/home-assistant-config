@@ -1,0 +1,38 @@
+---
+#
+custom_card_sensor_small:
+  template: setup
+  variables:
+    state: |
+      [[[
+        var st = states[entity.entity_id].state;
+        var uni = ' %';
+        return `
+        ${parseFloat(st).toFixed(0)}<span style="font-size:
+      0.5em;opacity:0.7">${uni}</span>
+        `
+      ]]]
+  show_label: true
+  show_icon: false
+  label: "[[[ return variables.state ]]]"
+  styles:
+    grid:
+      - grid-template-columns: 1fr
+      - grid-template-areas: '"l" "n"'
+    label:
+      - justify-self: start
+      - font-size: 20px
+      - padding-top: 4px
+      - font-weight: 500
+      - color: var(--contrast20)
+    card:
+      - height: 66px
+      - border-radius: 24px
+      - padding: 12px 10px 10px 14px
+      - background: var(--contrast2)
+    name:
+      - justify-self: start
+      - font-size: 11px
+      - color: var(--contrast20)
+      - opacity: 0.7
+      - padding-bottom: 7px

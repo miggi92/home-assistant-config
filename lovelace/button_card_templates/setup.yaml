@@ -1,0 +1,18 @@
+---
+#
+setup:
+  state:
+    - value: unavailable
+      icon: mdi:alert-circle-outline
+      styles:
+        state:
+          - text-decoration: line-through
+        label:
+          - text-decoration: line-through
+  styles:
+    name:
+      - font-family: null
+    label:
+      - font-family: null
+    state:
+      - font-family: null

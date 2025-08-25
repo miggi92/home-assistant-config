@@ -1,0 +1,75 @@
+---
+#
+custom_card_sensor_big:
+  template: setup
+  variables:
+    icon_on: "[[[ return entity.attributes.icon ]]]"
+    icon_off: "[[[ return entity.attributes.icon ]]]"
+    state_on: "on"
+    state_off: "off"
+    background_color_on: var(--red)
+    background_color_off: var(--green)
+    color_on: var(--black)
+    color_off: var(--black)
+    state: |
+      [[[
+        var st = states[entity.entity_id].state;
+        var uni = ' ';
+        return `
+        ${st}<span style="font-size:
+      0.5em;opacity:0.7">${uni}</span>
+        `
+      ]]]
+  label: |
+    [[[  return variables.state ]]]
+  show_label: true
+  state:
+    - value: "[[[ return variables.state_on ]]]"
+      icon: "[[[ return variables.icon_on ]]]"
+      styles:
+        card:
+          - background-color: "[[[ return variables.background_color_on ]]]"
+        name:
+          - color: "[[[ return variables.color_on ]]]"
+        label:
+          - color: "[[[ return variables.color_on ]]]"
+    - value: "[[[ return variables.state_off ]]]"
+      icon: "[[[ return variables.icon_off ]]]"
+      styles:
+        card:
+          - background-color: "[[[ return variables.background_color_off ]]]"
+        name:
+          - color: "[[[ return variables.color_off ]]]"
+        label:
+          - color: "[[[ return variables.color_off ]]]"
+  styles:
+    card:
+      - padding: 20px 20px 12px 14px
+      - height: 147px
+      - background: var(--contrast2)
+    grid:
+      - grid-template-areas: '"i" "l" "n"'
+    img_cell:
+      - justify-self: end
+      - align-self: start
+      - background: var(--contrast1)
+      - padding: 7px
+      - border-radius: 50%
+      - margin: "-16px -16px 0 0"
+      - width: 30px
+      - height: 30px
+    icon:
+      - width: 24px
+      - height: 24px
+      - color: var(--contrast20)
+    label:
+      - justify-self: start
+      - font-size: 1.4em
+      - font-weight: 300
+      - color: var(--contrast20)
+      - margin-top: 10px
+    name:
+      - justify-self: start
+      - font-size: 11px
+      - color: var(--contrast20)
+      - opacity: "0.7"

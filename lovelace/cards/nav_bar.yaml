@@ -1,0 +1,99 @@
+---
+# Navbar
+type: custom:navbar-card
+desktop:
+  position: left
+  min_width: 768
+  show_labels: true
+mobile:
+  show_labels: true
+routes:
+  - icon: mdi:home-outline
+    icon_selected: mdi:home-assistant
+    url: /lovelace-responsive/start
+    label: Home
+  - icon: mdi:sofa-outline
+    icon_selected: mdi:sofa
+    label: Rooms
+    selected: |
+      [[[
+        if (location.pathname.match('rooms')) return true;
+        else if (location.pathname.match('room-')) return true;
+        else if (location.pathname.match('room')) return true;
+        else return false;
+      ]]]
+    badge:
+      show: |
+        [[[ return states['light.lichter'].state === 'on' ]]]
+      color: var(--yellow-color)
+      count: |
+        [[[ return states['sensor.count_lights_on'].state ]]]
+    tap_action:
+      action: open-popup
+    popup:
+      - icon: mdi:sofa-outline
+        url: /lovelace-responsive/home#living-room
+        label: Living Room
+      - icon: mdi:bed-king-outline
+        url: /lovelace-responsive/home#bedroom
+        label: Bedroom
+      - icon: mdi:monitor
+        url: /lovelace-responsive/home#office
+        label: Office
+      - icon: mdi:silverware-variant
+        url: /lovelace-responsive/home#kitchen
+        label: Kitchen
+      - icon: mdi:paper-roll-outline
+        url: /lovelace-responsive/home#bathroom
+        label: Bathroom
+      - icon: mdi:desk
+        url: /lovelace-responsive/home#guest-room
+        label: Guest Room
+      - icon: mdi:door
+        url: /lovelace-responsive/home#corridor
+        label: Corridor
+  - icon: mdi:shield-outline
+    icon_selected: mdi:security
+    url: /lovelace-responsive/security
+    label: Security
+  - icon: mdi:face-agent
+    url: "#miguel"
+    label: Miguel
+    hidden: |
+      [[[ return user.name != "Miguel" ]]]
+    badge:
+      show: >
+        [[[ return states['input_boolean.debug_ui'].state ===
+        'on' ]]]
+      color: var(--red-color)
+  - icon: mdi:dots-horizontal
+    label: More
+    badge:
+      show: |
+        [[[
+          if (states['update.home_assistant_core_update'].state == "on") return true;
+          else return false;
+        ]]]
+      color: var(--red-color)
+    tap_action:
+      action: open-popup
+    popup:
+      - icon: mdi:server-outline
+        url: /lovelace-responsive/server
+        label: Server
+        hidden: |
+          [[[ return user.name != "Miguel" ]]]
+      - icon: mdi:cog
+        url: /config/dashboard
+        label: Settings
+        badge:
+          show: >
+            [[[ return
+            states['update.home_assistant_core_update'].state ===
+            'on' ]]]
+          color: var(--red-color)
+styles: |
+  .navbar {
+    --navbar-primary-color: var(--green-color);
+    background: var(--contrast2);
+  }

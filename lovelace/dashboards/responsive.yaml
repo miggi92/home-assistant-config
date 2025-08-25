@@ -2,11 +2,16 @@
 # Responsive dashboard
 title: Responsive Home Dashboard
 decluttering_templates: !include_dir_merge_named ../templates
+button_card_templates: !include_dir_merge_named ../button_card_templates
+kiosk_mode:
+  non_admin_settings:
+    hide_header: true
+    ignore_entity_settings: true
+  entity_settings:
+    - entity:
+        input_boolean.debug_ui: "on"
+      hide_header: false
+    - entity:
+        input_boolean.debug_ui: "off"
+      hide_header: true
 views: !include_dir_list ../views/responsive
-background:
-  opacity: 33
-  alignment: center
-  size: cover
-  repeat: repeat
-  attachment: fixed
-  image: /api/image/serve/84d654ede1260e8c72d7cdbaa06205cd/original

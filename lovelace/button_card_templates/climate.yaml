@@ -1,0 +1,171 @@
+---
+#
+custom_card_climate:
+  template: setup
+  variables:
+    name: |
+      [[[ return 'Living<br>room']]]
+    state: |
+      [[[
+        var temp = states[entity.entity_id].attributes.current_temperature;
+        var hum = states[entity.entity_id].attributes.current_humidity;
+        return `
+        ${parseFloat(temp).toFixed(0)}°<span style="font-size:
+      0.3em;opacity:0.7">${parseFloat(hum).toFixed(0)}%</span>
+        `
+      ]]]
+    open: |
+      [[[
+        var state = states[entity.entity_id].state;
+        var hum = states[entity.entity_id].attributes.current_humidity;
+        return `
+        ${state} <span style="font-size:
+      0.3em;opacity:0.7">${parseFloat(hum).toFixed(0)}%</span>
+        `
+      ]]]
+    radius: 24px 24px 6px 24px
+    sensor: binary_sensor.living_room_window_door_sensor
+  icon: |
+    [[[
+      if (states[variables.sensor].state == "on") return "mdi:window-open-variant";
+      else if (entity.attributes.current_humidity > "70") return "mdi:water-percent";
+      else if (entity.state == "auto") return "mdi:thermostat-auto";
+      else if (entity.state == "heat") return "mdi:fire";
+      else return "mdi:thermostat";
+    ]]]
+  name: "[[[ return variables.name ]]]"
+  tap_action:
+    action: more-info
+    haptic: success
+  double_tap_action:
+    action: call-service
+    service: climate.set_hvac_mode
+    data:
+      hvac_mode: auto
+    target:
+      entity_id: "[[[ return entity.entity_id ]]]"
+  hold_action:
+    action: more-info
+  custom_fields:
+    temp: |
+      [[[
+        if (states[variables.sensor].state == "on") return variables.open;
+        else return variables.state;
+      ]]]
+    slider:
+      card:
+        type: custom:button-card
+        entity: "[[[return entity.entity_id ]]]"
+        show_label: true
+        show_name: false
+        show_icon: false
+        label: "[[[return states[ entity.entity_id ].attributes.temperature ]]]"
+        custom_fields:
+          minus:
+            card:
+              type: custom:button-card
+              icon: mdi:minus
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - box-shadow: none
+                  - background: none
+              tap_action:
+                action: call-service
+                service: climate.set_temperature
+                data:
+                  temperature: |
+                    [[[
+                      return states[entity.entity_id].attributes.temperature - 0.5;
+                    ]]]
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+          plus:
+            card:
+              type: custom:button-card
+              icon: mdi:plus
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - box-shadow: none
+                  - background: none
+              tap_action:
+                action: call-service
+                service: climate.set_temperature
+                data:
+                  temperature: |
+                    [[[
+                      return states[entity.entity_id].attributes.temperature + 0.5;
+                    ]]]
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+        styles:
+          grid:
+            - grid-template-areas: |
+                'minus l plus'
+            - grid-template-columns: 50px 1fr 50px
+          card:
+            - background-color: var(--contrast4)
+            - padding: 5px
+            - border-radius: 12px
+            - height: 35px
+          label:
+            - font-weight: 500
+            - font-size: 14px
+  styles:
+    card:
+      - padding: 8px
+      - height: 194px
+      - border-radius: "[[[ return variables.radius ]]]"
+      - background: var(--contrast2)
+    grid:
+      - grid-template-areas: '"n i" "temp temp" "slider slider"'
+      - grid-template-rows: 1fr min-content
+      - grid-template-columns: min-content 1fr
+    icon:
+      - width: 24px
+      - color: |
+          [[[
+            if (states[variables.sensor].state == "on") return "var(--black)";
+            else if (entity.attributes.current_humidity > "70") return "var(--black)";
+            else if (entity.state == "auto") return "var(--black)";
+            else if (entity.state == "heat") return "var(--black)";
+            else if (entity.state == "off") return "var(--contrast10)";
+            else return "var(--contrast20)";
+          ]]]
+    img_cell:
+      - justify-self: end
+      - background: |
+          [[[
+            if (states[variables.sensor].state == "on") return "var(--red)";
+            else if (entity.attributes.current_humidity > "70") return "var(--red)";
+            else if (entity.state == "auto") return "var(--green)";
+            else if (entity.state == "heat") return "var(--red)";
+            else return "var(--contrast1)";
+          ]]]
+      - border-radius: 100%
+      - align-self: start
+      - width: 50px
+      - height: 50px
+    name:
+      - justify-self: start
+      - align-self: start
+      - text-align: left
+      - font-size: 1em
+      - font-weight: 500
+      - color: var(--contrast20)
+      - padding: 14px
+      - margin-bottom: 7px
+    custom_fields:
+      temp:
+        - justify-self: start
+        - font-size: 2.4em
+        - line-height: 1em
+        - font-weight: 300
+        - color: var(--contrast20)
+        - padding: 0 0 6px 14px
+        - margin-bottom: 10px
+      slider:
+        - margin-bottom: 10px

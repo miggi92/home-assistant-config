@@ -1,0 +1,32 @@
+---
+#
+type: markdown
+text_only: true
+content: |-
+  {% set time = states("sensor.time") %}
+  {% set temp = state_attr("weather.home","temperature")  %}
+  {% set weather = state_translated("weather.home") | lower %}
+  {% set lightCount = states("sensor.count_lights_on") %}
+  {% set alarmSystem = state_translated("alarm_control_panel.alarmo") %}
+  {% set houseDoor = state_translated("binary_sensor.hausture") %}
+
+  {% set defaultMsg = "Es ist " ~ time ~ " Uhr, das Wetter ist " ~ weather ~ " mit " ~ temp ~ "°C. Aktuell sind " ~ lightCount ~ " Lichter an. Die Alarmanlage ist derzeit " ~ alarmSystem ~ " und die Haustüre " ~ houseDoor ~ "." %}
+
+  {% if (states("binary_sensor.morgen") == "on" or states("binary_sensor.vormittag") == "on") %}
+    # Good Morning, {{user}}!
+    {{ states("input_text.ai_morning_brief") }}
+  {% elif (states("binary_sensor.mittag") == "on" or states("binary_sensor.nachmittag") == "on") %}
+    # Hey, {{user}}!
+    {{ defaultMsg }}
+  {% elif (states("binary_sensor.abend") == "on") %}
+    # Good Evening, {{user}}!
+    {{ defaultMsg }} {% if states("binary_sensor.is_alarm_on") == "on" %}Your alarm is set to {{ states("sensor.wake_time_1") }}.{% endif %}
+
+  {% elif (states("binary_sensor.nacht") == "on") %}
+    # Good Night, {{user}}!
+    {{ defaultMsg }} {% if states("binary_sensor.is_alarm_on") == "on" %}Your alarm is set to {{ states("sensor.wake_time_1") }}.{% endif %}
+
+  {% endif %}
+visibility:
+  - condition: screen
+    media_query: "(min-width: 768px)"

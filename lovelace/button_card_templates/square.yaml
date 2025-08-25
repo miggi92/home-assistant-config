@@ -1,0 +1,23 @@
+---
+#
+square:
+  template: setup
+  variables:
+    color: var(--purple)
+  type: custom:button-card
+  icon: "[[[ return entity.attributes.icon ]]]"
+  show_name: false
+  aspect_ratio: 1/1
+  tap_action:
+    action: toggle
+    haptic: medium
+  styles:
+    card:
+      - border-radius: 24px
+      - background-color: "[[[ return variables.color ]]]"
+    icon:
+      - color: |
+          [[[
+            if (entity.state == "on") return "var(--white)";
+            else return "var(--black)";
+          ]]]

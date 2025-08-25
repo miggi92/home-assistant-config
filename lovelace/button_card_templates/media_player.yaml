@@ -1,0 +1,331 @@
+---
+#
+media_player:
+  template: setup
+  variables:
+    room: Select Room
+    icon_1: <ha-icon icon="mdi:arrow-up"></ha-icon>
+  show_entity_picture: true
+  show_label: true
+  entity_picture: |
+    [[[
+      if (states[ entity.entity_id ].attributes.active_child == "media_player.bedroom_nest_music_assistant") {
+        return states["media_player.alarm_clock_2"].attributes.entity_picture
+      } else if (entity.attributes.media_title == undefined || entity.attributes.entity_picture == undefined){
+        return "/local/images/abstract-gif-colors.gif";
+      } else {
+        return states[entity.entity_id].attributes.entity_picture;
+      }
+    ]]]
+  name: "[[[ return entity.attributes.media_title ]]]"
+  label: "[[[ return entity.attributes.media_artist ]]]"
+  tap_action:
+    action: none
+  styles:
+    grid:
+      - grid-template-areas: >
+          'icon1 select_room play_state icon2' 'i i i i' 'n n n n' 'l l l l'
+          'album album album album' 'buttons buttons buttons buttons'
+      - grid-template-columns: min-content 1fr 1fr min-content
+    card:
+      - background: none
+      - box-shadow: none
+      - border-radius: 0px
+      - margin-top: "-10px"
+      - margin-bottom: "-10px"
+      - "--mdc-ripple-color": black
+      - "--mdc-ripple-press-opacity": 0
+    entity_picture:
+      - border-radius: 16px
+      - margin-bottom: 35px
+      - margin-top: 20px
+      - object-fit: cover
+      - width: 200px
+      - height: 200px
+    name:
+      - justify-self: center
+      - align-self: end
+      - font-weight: 600
+      - font-size: 15px
+      - padding-top: 10px
+      - width: 90%
+    label:
+      - justify-self: center
+      - align-self: start
+      - color: var(--contrast16)
+      - font-weight: 500
+      - font-size: 12px
+    custom_fields:
+      album:
+        - justify-self: center
+        - align-self: start
+        - color: var(--contrast16)
+        - font-weight: 400
+        - font-size: 10px
+        - margin-bottom: 5px
+      icon1:
+        - justify-self: start
+        - width: 24px
+        - color: var(--contrast20)
+      icon2:
+        - justify-self: end
+        - width: 24px
+        - color: var(--contrast20)
+      select_room:
+        - font-size: 10px
+        - justify-self: start
+        - align-self: center
+        - color: var(--contrast16)
+        - padding-left: 10px
+      play_state:
+        - font-size: 10px
+        - justify-self: end
+        - align-self: center
+        - color: var(--contrast16)
+        - padding-right: 10px
+      bar:
+        - background-color: var(--green)
+        - position: absolute
+        - bottom: 185px
+        - left: 20%
+        - top: unset
+        - height: 2px
+        - z-index: 1
+        - transition: 1s ease-out
+        - border-radius: 4px
+      progress:
+        - background-color: var(--contrast4)
+        - position: absolute
+        - top: unset
+        - bottom: 185px
+        - left: 20%
+        - height: 2px
+        - width: 60%
+        - border-radius: 4px
+  custom_fields:
+    progress: |
+      [[[
+        if (entity.attributes.media_position !== undefined) {
+        return ' ';}
+      ]]]
+    bar: |
+      [[[
+        if (entity.attributes.media_position !== undefined) {
+        setTimeout(() => {
+          let elt = this.shadowRoot,
+              card = elt.getElementById('card'),
+              container = elt.getElementById('container'),
+              bar = elt.getElementById('bar');
+          if (elt && card && container && bar) {
+              card.insertBefore(bar, container);
+                function update() {
+                  let mediaPositionUpdatedAt = entity.attributes.media_position_updated_at,
+                      mediaPosition = entity.attributes.media_position,
+                      mediaDuration = entity.attributes.media_duration,
+                      mediaContentType = entity.attributes.media_content_type;
+                  let percentage = entity.state === 'paused'
+                    ? (mediaPosition / mediaDuration * 60)
+                    : entity.state === 'playing'
+                      ? (((Date.now() / 1000) - (new Date(mediaPositionUpdatedAt).getTime() / 1000) + mediaPosition) / mediaDuration * 60)
+                      : 0;
+                  bar.style.width = percentage.toFixed(1) + '%';
+                  requestAnimationFrame(update);
+                }
+                requestAnimationFrame(update);
+          }
+        }, 0);
+        return ' ';}
+      ]]]
+    buttons:
+      card:
+        type: custom:button-card
+        styles:
+          grid:
+            - grid-template-areas: |
+                '. loop prev play_pause next shuffle .'
+            - grid-template-columns: 12px 1fr 1fr 1fr 1fr 1fr 12px
+          card:
+            - background: none
+            - box-shadow: none
+            - padding-left: 20px
+            - padding-right: 20px
+        custom_fields:
+          loop:
+            card:
+              type: custom:button-card
+              icon: |
+                [[[
+                  if (states[entity.entity_id].attributes.repeat == "off") {
+                    return "mdi:repeat-off"
+                  } else if (states[entity.entity_id].attributes.repeat == "all") {
+                    return "mdi:repeat"
+                  } else {
+                    return "mdi:repeat-once"
+                  }
+                ]]]
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - background: none
+                  - box-shadow: none
+              tap_action:
+                action: call-service
+                service: media_player.repeat_set
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+                data:
+                  repeat: |
+                    [[[
+                      if (states[entity.entity_id].attributes.repeat == "off") {
+                        return "all"
+                      } else if (states[entity.entity_id].attributes.repeat == "all") {
+                        return "one"
+                      } else {
+                        return "off"
+                      }
+                    ]]]
+          prev:
+            card:
+              type: custom:button-card
+              icon: mdi:skip-backward
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - background: none
+                  - box-shadow: none
+              tap_action:
+                action: call-service
+                service: media_player.media_previous_track
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+          play_pause:
+            card:
+              type: custom:button-card
+              icon: mdi:play
+              entity: "[[[ return entity.entity_id ]]]"
+              show_name: false
+              styles:
+                img_cell:
+                  - background: |
+                      [[[
+                        if (states[entity.entity_id].state == "playing") {
+                          return "var(--yellow)"
+                        } else {
+                          return "var(--green)"
+                        }
+                      ]]]
+                  - border-radius: 50%
+                  - width: 60px
+                  - height: 60px
+                icon:
+                  - width: 35px
+                  - color: var(--black)
+                card:
+                  - background: none
+                  - box-shadow: none
+              state:
+                - value: playing
+                  icon: mdi:pause
+              tap_action:
+                action: call-service
+                service: media_player.media_play_pause
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+          next:
+            card:
+              type: custom:button-card
+              icon: mdi:skip-forward
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - background: none
+                  - box-shadow: none
+              tap_action:
+                action: call-service
+                service: media_player.media_next_track
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+          shuffle:
+            card:
+              type: custom:button-card
+              icon: |
+                [[[
+                  if (states[entity.entity_id].attributes.shuffle == true) {
+                    return "mdi:shuffle"
+                  } else {
+                    return "mdi:shuffle-disabled"
+                  }
+                ]]]
+              styles:
+                icon:
+                  - width: 20px
+                card:
+                  - background: none
+                  - box-shadow: none
+              tap_action:
+                action: call-service
+                service: media_player.shuffle_set
+                target:
+                  entity_id: "[[[ return entity.entity_id ]]]"
+                data:
+                  shuffle: |
+                    [[[
+                      if (states[entity.entity_id].attributes.shuffle == true) {
+                        return "false"
+                      } else {
+                        return "true"
+                      }
+                    ]]]
+    album:
+      card:
+        type: custom:button-card
+        show_label: true
+        label: |
+          [[[
+              return states[entity.entity_id].attributes.media_album_name
+          ]]]
+        styles:
+          card:
+            - background: none
+            - box-shadow: none
+            - border-radius: 0
+            - padding: 0
+          label:
+            - justify-self: center
+            - align-self: start
+            - color: var(--contrast16)
+            - font-weight: 400
+            - font-size: 10px
+            - margin-bottom: 5px
+    play_state: |
+      [[[
+        if (entity.entity_id == "media_player.music") {
+          if (states[entity.entity_id].attributes.active_child == "media_player.spotify_junglemoney") {
+            return states[entity.entity_id].state + " - " + states[entity.entity_id].attributes.source
+          } else if (states[entity.entity_id].attributes.active_child == "media_player.playstation_5") {
+            return states[entity.entity_id].state + " - Playstation 5"
+          } else if (states[entity.entity_id].attributes.active_child == "media_player.audiobook") {
+            return states[entity.entity_id].state + " - Alarm Clock"
+          } else if (states[entity.entity_id].attributes.active_child == "media_player.plex_bedroom") {
+            return states[entity.entity_id].state + " - Bedroom TV"
+          } else if (states[entity.entity_id].attributes.active_child == "media_player.apple_tv_4k_2") {
+            return states[entity.entity_id].state + " - " + states[entity.entity_id].attributes.app_name
+          } else {
+            return states[entity.entity_id].state + " - " + states["sensor.music_room"].state
+          }
+        } else {
+          return states[entity.entity_id].state + " - " + states[entity.entity_id].attributes.friendly_name
+        }
+      ]]]
+    select_room: "[[[ return variables.room ]]]"
+    icon1: |
+      [[[
+        return variables.icon_1;
+      ]]]
+    icon2: |
+      [[[
+        return '<ha-icon icon="mdi:music"></ha-icon>';
+      ]]]

@@ -1,0 +1,145 @@
+---
+#
+custom_card_alarm_bottom:
+  template: setup
+  entity: sensor.wake_time_1
+  show_label: false
+  name: '[[[ return states["sensor.time"].state ]]]'
+  show_state: false
+  show_entity_picture: false
+  icon: mdi:alarm
+  styles:
+    grid:
+      - grid-template-areas: |
+          "i n snooze stop"
+      - grid-template-columns: min-content min-content 1fr 1fr
+      - grid-template-rows: min-content
+      - column-gap: 15px
+    icon:
+      - width: 60px
+      - color: var(--red)
+      - animation: alarm 0.8s ease infinite
+    card:
+      - padding: 15px 15px 15px 15px
+      - height: 180px
+      - width: 100vw
+      - overflow: hidden
+      - position: |
+          [[[
+            if (states["input_boolean.debug_ui"].state == "on") {
+              return 'static'
+            } else {
+              return 'fixed'
+            }
+          ]]]
+      - margin: 0
+      - bottom: 0
+      - left: 0
+      - z-index: 2
+      - border-radius: 20px 20px 0px 0px
+      - box-shadow: >-
+          rgba(14, 30, 37, 0.12) 0px 2px 4px 0px, rgba(14, 30, 37, 0.32) 0px
+          2px 16px 0px;
+    img_cell:
+      - background: none
+      - border-radius: 10px
+      - width: 50px
+      - height: 50px
+      - justify-self: start
+      - align-self: start
+      - left: 10px
+    name:
+      - font-size: 28px
+      - font-weight: 700
+      - justify-self: start
+      - align-self: center
+      - padding-left: 10px
+    custom_fields:
+      snooze:
+        - justify-self: end
+      stop:
+        - justify-self: end
+  extra_styles: |
+    @keyframes alarm {
+      0%, 80%, 100% { transform: translateY(0); }
+      10% { transform: translateY(-2px) rotate(-8deg); }
+      20% { transform: translateY(-2px) rotate(9deg); }
+      30% { transform: translateY(-2px) rotate(-5deg); }
+      40% { transform: translateY(-2px) rotate(4deg); }
+      50% { transform: translateY(0); }
+      60% { transform: translateY(-1.2px) }
+    }
+  custom_fields:
+    snooze:
+      card:
+        type: custom:button-card
+        icon: mdi:alarm-snooze
+        entity: input_boolean.alarm_snoozed
+        name: Snooze
+        show_name: true
+        show_icon: true
+        tap_action:
+          action: toggle
+        styles:
+          grid:
+            - grid-template-areas: '"i n"'
+            - grid-template-columns: min-content min-content
+          card:
+            - padding: 4px
+            - background: var(--orange)
+            - border-radius: 24px
+            - width: 90px
+          img_cell:
+            - justify-self: start
+            - width: 25px
+            - height: 25px
+            - background: var(--contrast1)
+            - border-radius: 100%
+          name:
+            - font-size: 12px
+            - color: var(--black)
+            - font-weight: 500
+            - justify-self: start
+            - align-self: center
+            - padding-left: 5px
+          icon:
+            - width: 14px
+            - color: var(--orange)
+            - align-self: center
+    stop:
+      card:
+        type: custom:button-card
+        icon: mdi:alarm-off
+        entity: input_boolean.sound_alarm_is_running
+        name: STOP
+        show_name: true
+        show_icon: true
+        tap_action:
+          action: toggle
+        styles:
+          grid:
+            - grid-template-areas: '"i n"'
+            - grid-template-columns: min-content min-content
+          card:
+            - padding: 4px
+            - background: var(--red)
+            - border-radius: 24px
+            - width: 90px
+            - margin-right: 5px
+          img_cell:
+            - justify-self: start
+            - width: 25px
+            - height: 25px
+            - background: var(--contrast1)
+            - border-radius: 100%
+          name:
+            - font-size: 12px
+            - color: var(--black)
+            - font-weight: 500
+            - justify-self: start
+            - align-self: center
+            - padding-left: 5px
+          icon:
+            - width: 14px
+            - color: var(--red)
+            - align-self: center

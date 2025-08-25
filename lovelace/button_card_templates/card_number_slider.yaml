@@ -1,0 +1,108 @@
+---
+#
+custom_card_number_slider:
+  variables:
+    icon: "[[[ return entity.attributes.icon ]]]"
+    label: false
+    state: false
+    color: var(--blue)
+  template: setup
+  icon: "[[[ return entity.attributes.icon ]]]"
+  label: "[[[ return variables.label ]]]"
+  show_label: |
+    [[[
+      if (variables.label == "false") return false;
+      else return true;
+    ]]]
+  show_icon: false
+  show_state: true
+  tap_action:
+    action: toggle
+    haptic: success
+  hold_action:
+    action: more-info
+  custom_fields:
+    icon2:
+      card:
+        type: custom:button-card
+        icon: "[[[ return variables.icon ]]]"
+        styles:
+          card:
+            - background-color: var(--contrast1)
+            - width: 27px
+            - height: 27px
+          icon:
+            - width: 15px
+            - color: var(--contrast20)
+    slider:
+      card:
+        type: custom:my-slider
+        entity: "[[[ return entity.entity_id ]]]"
+        radius: 100px
+        height: 12px
+        thumbColor: var(--black)
+        mainSliderColor: "[[[ return variables.color ]]]"
+  styles:
+    grid:
+      - grid-template-areas: |
+          [[[
+            if (variables.label == false) return "\"s icon2\" \" n n\" \"slider slider\"";
+            else return "\"l icon2\" \" n n\" \"slider slider\"";
+          ]]]
+      - grid-template-columns: 1fr 1fr
+      - grid-template-rows: 1fr min-content min-content
+    name:
+      - justify-self: start
+      - font-size: 11px
+      - margin-bottom: 6px
+      - color: |
+          [[[
+            if (entity.state == "on") return "var(--black)";
+            else return "var(--contrast20)";
+          ]]]
+      - opacity: 0.7
+    card:
+      - height: 75px
+      - background-color: |
+          [[[
+            if (entity.state == "on") return "var(--yellow)";
+            else return "var(--contrast2)";
+          ]]]
+      - box-shadow: none
+      - border-radius: 24px
+      - padding: 12px 0 12px 14px
+      - z-index: 1
+    state:
+      - justify-self: start
+      - font-size: 15px
+      - margin-top: 3px
+      - font-weight: 500
+      - color: |
+          [[[
+            if (entity.state == "on") return "var(--black)";
+            else return "var(--contrast20)";
+          ]]]
+    label:
+      - justify-self: start
+      - font-size: 15px
+      - margin-top: 3px
+      - font-weight: 500
+      - color: |
+          [[[
+            if (entity.state == "on") return "var(--black)";
+            else return "var(--contrast20)";
+          ]]]
+    custom_fields:
+      icon2:
+        - margin-top: "-6px"
+        - justify-self: end
+        - align-self: center
+        - width: 24px
+        - padding-right: 10px
+        - color: |
+            [[[
+              if (entity.state == "on") return "var(--black)";
+              else return "var(--contrast20)";
+            ]]]
+      slider:
+        - padding-right: 16px

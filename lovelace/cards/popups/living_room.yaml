@@ -1,0 +1,379 @@
+---
+#
+type: vertical-stack
+cards:
+  - type: custom:bubble-card
+    card_type: pop-up
+    name: Living room
+    icon: mdi:sofa-outline
+    hash: "#living-room"
+    button_type: name
+    card_layout: large
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: entity
+        entity: binary_sensor.sofabewegungssensor_occupancy
+        icon_color: yellow
+        content_info: last-changed
+        icon: mdi:motion-sensor
+      - type: entity
+        entity: binary_sensor.wohnzimmerbewegungssensor_occupancy
+        icon_color: yellow
+        content_info: last-changed
+        icon: mdi:motion-sensor
+    alignment: center
+  - type: heading
+    icon: mdi:thermostat
+    heading: Climate
+    heading_style: title
+    badges:
+      - type: entity
+        show_state: true
+        show_icon: true
+        entity: sensor.wohnzimmertemperatur
+        color: red
+        tap_action:
+          action: more-info
+      - type: entity
+        show_state: true
+        show_icon: true
+        entity: sensor.wohnzimmer_heizung_humidity
+        color: blue
+        tap_action:
+          action: more-info
+  - type: custom:bubble-card
+    card_type: climate
+    entity: climate.daikinap90134
+    sub_button:
+      - name: HVAC modes menu
+        select_attribute: hvac_modes
+        state_background: false
+        show_arrow: false
+    show_state: true
+  - type: heading
+    icon: mdi:devices
+    heading: Devices
+    heading_style: title
+    badges:
+      - type: entity
+        show_state: false
+        show_icon: true
+        entity: switch.kamera_steckdose_wz
+        icon: mdi:cctv
+        color: red
+        tap_action:
+          action: toggle
+      - type: entity
+        show_state: false
+        show_icon: true
+        entity: input_boolean.living_room_occupancy
+        icon: mdi:light-switch
+        color: red
+        tap_action:
+          action: toggle
+      - type: entity
+        show_state: false
+        show_icon: true
+        entity: input_boolean.living_room_night_mode
+        color: blue
+        tap_action:
+          action: toggle
+  - square: false
+    columns: 2
+    type: grid
+    cards:
+      - type: custom:button-card
+        entity: select.harmony_hub_activities
+        template: nav_button
+        name: TV Remote
+        label: >-
+          [[[return
+          states["remote.harmony_hub"].attributes.current_activity]]]
+        variables:
+          navigation_path: home#remote
+        state:
+          - value: power_off
+            label: "Off"
+            icon: mdi:television-off
+          - value: Smart TV
+            label: SmartTV
+            icon: mdi:television-guide
+            styles:
+              card:
+                - background-color: var(--green)
+              icon:
+                - color: var(--black)
+              name:
+                - color: var(--black)
+              label:
+                - color: var(--black)
+          - value: Netflix
+            label: Netflix
+            icon: mdi:netflix
+            styles:
+              card:
+                - background-color: var(--red)
+              icon:
+                - color: var(--black)
+              name:
+                - color: var(--black)
+              label:
+                - color: var(--black)
+          - value: Playstation
+            label: PS5
+            icon: mdi:sony-playstation
+            styles:
+              card:
+                - background-color: var(--blue)
+              icon:
+                - color: var(--black)
+              name:
+                - color: var(--black)
+              label:
+                - color: var(--black)
+          - value: Nintendo Switch
+            label: Switch
+            icon: mdi:nintendo-switch
+            styles:
+              card:
+                - background-color: var(--red)
+              icon:
+                - color: var(--black)
+              name:
+                - color: var(--black)
+              label:
+                - color: var(--black)
+          - value: Bluetooth
+            label: Bluetooth
+            icon: mdi:bluetooth
+            styles:
+              card:
+                - background-color: var(--blue)
+              icon:
+                - color: var(--black)
+              name:
+                - color: var(--black)
+              label:
+                - color: var(--black)
+  - square: false
+    type: grid
+    cards:
+      - type: heading
+        icon: mdi:lightbulb-group
+        heading: Lights
+        heading_style: subtitle
+        badges:
+          - type: entity
+            show_state: false
+            show_icon: true
+            entity: light.wohnzimmer
+            color: yellow
+            tap_action:
+              action: toggle
+          - type: entity
+            entity: switch.adaptive_lighting_living_room
+            show_state: false
+            show_icon: true
+            color: orange
+            tap_action:
+              action: toggle
+          - type: entity
+            entity: switch.adaptive_lighting_adapt_color_living_room
+            show_state: false
+            show_icon: true
+            color: pink
+            tap_action:
+              action: toggle
+          - type: entity
+            entity: switch.adaptive_lighting_adapt_brightness_living_room
+            show_state: false
+            show_icon: true
+            color: yellow
+            tap_action:
+              action: toggle
+          - type: entity
+            entity: switch.adaptive_lighting_sleep_mode_living_room
+            show_state: false
+            show_icon: true
+            color: blue
+            tap_action:
+              action: toggle
+      - square: false
+        columns: 2
+        type: grid
+        cards:
+          - type: custom:button-card
+            name: TV Licht
+            template: light_switch
+            entity: light.tv_licht
+          - type: custom:button-card
+            name: Esstischlicht
+            template: light_switch
+            entity: light.esstischlicht
+    columns: 1
+  - type: heading
+    icon: mdi:music
+    heading: Media
+    heading_style: title
+  - type: custom:swipe-card
+    card_width: calc(100% - 48px)
+    parameters:
+      centeredSlides: true
+      slidesPerView: auto
+      spaceBetween: 16
+      initialSlide: 0
+    cards:
+      - type: conditional
+        conditions:
+          - entity: media_player.1_1_tv_box_754_2
+            state_not: idle
+        card:
+          type: custom:button-card
+          entity: media_player.1_1_tv_box_754_2
+          template: custom_card_mediaplayer_tv
+      - type: conditional
+        conditions:
+          - entity: sensor.living_room_next_timer
+            state_not: unknown
+          - entity: sensor.living_room_next_timer
+            state_not: unavailable
+        card:
+          type: custom:button-card
+          entity: sensor.living_room_next_timer
+          name: Living Room Timer
+          icon: mdi:timer-outline
+          show_name: true
+          show_icon: true
+          show_label: false
+          show_state: false
+          tap_action:
+            action: more-info
+          hold_action:
+            action: more-info
+          custom_fields:
+            bar: |
+              [[[
+                var color = "var(--green)";
+                var state = 100 - states['sensor.living_room_timer'].attributes.remaining_perc;
+                if (state < 10) color = "var(--red)";
+                else if (state < 50) color = "var(--yellow)";
+                else if (state < 90) color = "var(--orange)";
+                return `
+                <div>
+                <div style="background:${color}; height: 12px; width:${state}%">
+                </div>
+                </div>`
+              ]]]
+            rem:
+              card:
+                type: conditional
+                conditions:
+                  - condition: state
+                    entity: sensor.living_room_next_timer
+                    state_not: unknown
+                card:
+                  type: custom:button-card
+                  entity: sensor.living_room_timer
+                  name: >
+                    [[[
+
+                    var remainingTime =
+                    states['sensor.living_room_timer'].attributes.remaining;
+
+                    return `${remainingTime}`;
+
+                    ]]]
+                  show_icon: false
+                  styles:
+                    card:
+                      - width: min
+                      - background: none
+                      - overflow: visible
+                    name:
+                      - font-size: 14px
+                      - margin-top: 6px
+                      - font-weight: 600
+                      - color: var(--contrast20)
+            icon1: |
+              [[[
+                return '<ha-icon icon="mdi:sofa-outline"></ha-icon>';
+              ]]]
+          styles:
+            grid:
+              - grid-template-areas: '"rem icon1" "n icon2" "bar bar"'
+              - grid-template-rows: 24px 1fr 24px min-content min-content min-content
+              - grid-template-columns: 60% 40%
+            card:
+              - height: 100%
+              - padding: 1rem
+              - background: var(--contrast2)
+            img_cell:
+              - position: absolute
+              - top: 20%
+              - left: 40%
+              - overflow: visible
+            icon:
+              - position: absolute
+              - width: 20em
+              - opacity: 20%
+              - color: var(--contrast20)
+              - transform: rotate(-20deg)
+            label:
+              - text-align: left
+              - font-size: 18px
+              - font-weight: 500
+              - justify-self: start
+              - align-self: end
+              - overflow: visible
+              - color: var(--contrast20)
+            name:
+              - text-align: left
+              - font-size: 12px
+              - justify-self: start
+              - align-self: center
+              - overflow: visible
+              - color: var(--contrast20)
+            custom_fields:
+              bar:
+                - justify-self: start
+                - width: 100%
+                - height: |
+                    [[[
+                      if (entity.state != 'unknown') {
+                        return '12px';
+                      } else {
+                        return '0px';
+                      }
+                    ]]]
+                - background: var(--contrast1)
+                - border-radius: 24px
+              rem:
+                - justify-self: start
+                - font-size: 14px
+                - font-weight: 600
+                - align-self: end
+                - height: |
+                    [[[
+                      if (entity.state != 'unknown') {
+                        return '27px';
+                      } else {
+                        return '0px';
+                      }
+                    ]]]
+              icon1:
+                - justify-self: end
+                - width: 24px
+                - color: var(--contrast20)
+            hold_action:
+              action: more-info
+      - type: conditional
+        conditions:
+          - entity: switch.kamera_steckdose_wz
+            state: "on"
+        card:
+          show_state: false
+          show_name: false
+          camera_view: live
+          type: picture-entity
+          camera_image: camera.korbchen
+          entity: camera.korbchen
