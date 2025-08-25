@@ -33,6 +33,11 @@ action:
           - condition: state
             entity_id: group.parents
             state: "home"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: group.guests
+            state: "home"
       - condition: state
         entity_id: timer.maja_check
         state: "idle"
