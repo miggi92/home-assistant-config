@@ -30,5 +30,5 @@ actions:
     target:
       entity_id: input_text.ai_morning_briefing
     data:
-      value: "{{ response }}"
+      value: "{{ response.data }}"
 mode: parallel
