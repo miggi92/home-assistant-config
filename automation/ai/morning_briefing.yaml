@@ -16,15 +16,23 @@ actions:
       entity_id: ai_task.openai_ai_task
       task_name: morning briefing
       instructions: |
-        Generate a morning briefing. Answer in german. Keep the response to a maximum of 100 characters.
-        Make the answer a little bit funny.
-        With these information:
+        Generate a morning briefing.
 
-        - Outdoor temperature: {{ states('sensor.daikinap90134_outside_temperature') }}°C
-        - Weather condition: {{ states('weather.home') }}
-        - Indoor temperature: {{ states('sensor.wohnungstemperatur') }}°C
-        - Indoor humidity: {{ states('sensor.wohnungsfeuchtigkeit') }}%
-        - Is today a work day?: {{ states('binary_sensor.workday_sensor') }}
+        Can you maybe add a information what happend today in the history? If yes please search for it.
+        I only want correct information about the history.
+        Please check online for sources that prove that the response is correct.
+        You can tell me details about it.
+
+        With these information:
+          - current date: {{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%A %B %-d, %I:%M %p') }}
+          - Outdoor temperature: {{ states('sensor.daikinap90134_outside_temperature') }}°C
+          - Weather condition: {{ states('weather.home') }}
+          - Indoor temperature: {{ states('sensor.wohnungstemperatur') }}°C
+          - Indoor humidity: {{ states('sensor.wohnungsfeuchtigkeit') }}%
+          - Is today a work day?: {{ states('binary_sensor.workday_sensor') }}
+
+        Answer in german. Make the answer a little bit funny.
+        Keep the response to a maximum of 150 characters, can't be any longer.
     response_variable: response
   - action: input_text.set_value
     target:
