@@ -106,6 +106,12 @@ lovelace:
       type: module
     - url: /hacsfiles/lovelace-entity-progress-card/entity-progress-card.js
       type: module
+    - url: /hacsfiles/lovelace-navbar-card/navbar-card.js
+      type: module
+    - url: /hacsfiles/my-cards/my-cards.js
+      type: module
+    - url: /hacsfiles/weather-card/weather-card.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
