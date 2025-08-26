@@ -9,9 +9,9 @@ trigger:
 condition: []
 action:
   - if:
-      - condition: state
+      - condition: numeric_state
         entity_id: number.count_lights_on
-        state: "0"
+        below: 1
     then:
       - action: script.awtrix3delapp
         data:

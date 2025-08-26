@@ -1,0 +1,24 @@
+---
+# Show doors open
+alias: Show doors open
+id: abde5a7b-b2a6-49e5-9a90-9ed21c9978b1
+description: "Show doors open"
+trigger:
+  - platform: state
+    entity_id: number.count_doors_open
+action:
+  - if:
+      - condition: numeric_state
+        entity_id: number.count_doors_open
+        below: 1
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: doors
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: doors
+          text: "{{ states('number.count_doors_open') | int }}"
+          icon: "9766"
+mode: single
