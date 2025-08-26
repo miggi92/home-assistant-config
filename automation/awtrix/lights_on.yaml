@@ -5,12 +5,12 @@ id: 05cac6cf-e6a1-45b4-88f0-28374ae45913
 description: "Show lights on"
 trigger:
   - platform: state
-    entity_id: sensor.count_lights_on
+    entity_id: number.count_lights_on
 condition: []
 action:
   - if:
       - condition: state
-        entity_id: sensor.count_lights_on
+        entity_id: number.count_lights_on
         state: "0"
     then:
       - action: script.awtrix3delapp
@@ -20,6 +20,6 @@ action:
       - action: script.awtrix3customapp
         data:
           app_id: lights
-          text: "{{ states('sensor.count_lights_on') | int }}"
+          text: "{{ states('number.count_lights_on') | int }}"
           icon: "1762"
 mode: single

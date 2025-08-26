@@ -27,7 +27,7 @@ routes:
         [[[ return states['light.lichter'].state === 'on' ]]]
       color: var(--yellow-color)
       count: |
-        [[[ return states['sensor.count_lights_on'].state ]]]
+        [[[ return states['number.count_lights_on'].state ]]]
     tap_action:
       action: open-popup
     popup:

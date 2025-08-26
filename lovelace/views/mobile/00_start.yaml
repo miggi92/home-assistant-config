@@ -46,7 +46,7 @@ badges:
       {% else %}
         yellow
       {%endif%}
-    entity: sensor.count_lights_on
+    entity: number.count_lights_on
     tap_action:
       action: navigate
       navigation_path: lights

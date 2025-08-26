@@ -6,7 +6,7 @@ content: |-
   {% set time = states("sensor.time") %}
   {% set temp = state_attr("weather.home","temperature")  %}
   {% set weather = state_translated("weather.home") | lower %}
-  {% set lightCount = states("sensor.count_lights_on") %}
+  {% set lightCount = states("number.count_lights_on") %}
   {% set alarmSystem = state_translated("alarm_control_panel.alarmo") %}
   {% set houseDoor = state_translated("binary_sensor.hausture") %}
 

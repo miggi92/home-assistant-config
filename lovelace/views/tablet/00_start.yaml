@@ -38,7 +38,7 @@ badges:
   - type: custom:mushroom-template-badge
     icon: mdi:lightbulb
     color: yellow
-    entity: sensor.count_lights_on
+    entity: number.count_lights_on
     tap_action:
       action: navigate
       navigation_path: lights
