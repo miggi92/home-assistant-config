@@ -31,8 +31,6 @@ cards:
             entity: sensor.moon
           - type: entity
             entity: sensor.zodiac
-          - type: entity
-            entity: sensor.u_s_air_pollution_level
       - type: weather-forecast
         entity: weather.home
         secondary_info_attribute: humidity
