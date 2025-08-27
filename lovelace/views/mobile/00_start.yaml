@@ -152,7 +152,12 @@ sections:
               - title: Kameras
               - nav_path: cams
               - icon: mdi:cctv
-              - icon_color: green
+              - icon_color: >-
+                  {% if states('switch.security_kameras') == 'on' %}
+                  green
+                  {% else %}
+                  grey
+                  {% endif %}
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:
