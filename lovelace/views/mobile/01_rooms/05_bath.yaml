@@ -56,12 +56,6 @@ cards:
     variables:
       - echo_id: echo_kuche
       - title: Echo Bad
-  - type: horizontal-stack
-    cards:
-      - type: custom:decluttering-card
-        template: air_quality_humidity_template
-        variables:
-          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_bad
   - type: custom:mushroom-title-card
     subtitle: Geräte
   - type: horizontal-stack

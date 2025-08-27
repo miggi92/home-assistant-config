@@ -77,18 +77,6 @@ cards:
         detail: 1
   - type: horizontal-stack
     cards:
-      # - hours_to_show: 24
-      #   graph: line
-      #   name: Luftqualität
-      #   type: sensor
-      #   entity: sensor.luftqualitatssensor_vocs
-      #   detail: 1
-      - type: custom:decluttering-card
-        template: air_quality_humidity_template
-        variables:
-          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_schlafzimmer
-  - type: horizontal-stack
-    cards:
       - type: custom:mushroom-fan-card
         entity: fan.luftfilter
         icon: mdi:fan

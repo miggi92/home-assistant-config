@@ -25,10 +25,6 @@ cards:
         detail: 1
   - type: horizontal-stack
     cards:
-      - type: custom:decluttering-card
-        template: air_quality_humidity_template
-        variables:
-          - entity: sensor.absolute_luftfeuchtigkeit_unterschied_kinderzimmer
       - type: custom:mushroom-light-card
         entity: light.kinderzimmerlicht
         layout: vertical
