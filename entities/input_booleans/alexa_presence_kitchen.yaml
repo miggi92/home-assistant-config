@@ -1,5 +1,0 @@
----
-# Alexa Kitchen presence helper
-alexa_presence_kitchen:
-  name: Alexa Küchen Anwesenheitserkennung
-  icon: mdi:motion-sensor

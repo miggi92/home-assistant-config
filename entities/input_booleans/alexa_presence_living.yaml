@@ -1,5 +1,0 @@
----
-# Alexa Living room presence helper
-alexa_presence_living:
-  name: Alexa Wohnzimmer Anwesenheitserkennung
-  icon: mdi:motion-sensor
