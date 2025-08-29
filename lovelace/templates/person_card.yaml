@@ -9,18 +9,18 @@ person_card_template:
     type: custom:mushroom-template-card
     entity_id: "[[entity]]"
     icon: mdi:account
-    layout: vertical
+    layout: horizontal
     primary: |-
       {{ state_attr("[[entity]]","friendly_name") }}
     secondary: |-
       {% set state =  states("[[entity]]")  | slugify %}
       {% set roomState =  states("[[beacon]]") %}
+      {% set lastChanged = states["[[entity]]"].last_changed %}
       {% if state == "home" %}
-        {% if roomState != "unknown" and roomState != "not_home" %}
+        {%- if roomState != "unknown" and roomState != "not_home" %}
         {{ roomState }}
-        {% else %}
-        Zu Hause
-        {% endif %}
+        {%- endif %}
+      Zu Hause seit {{ relative_time(lastChanged) }}
       {% elif state == "work_silke" or state == "work_miguel" %}
         Arbeiten
       {% elif state == "tsb_handball" %}
@@ -30,6 +30,7 @@ person_card_template:
       {% else %}
         {{ states("[[entity]]") }}
       {% endif %}
+    multiline_secondary: true
     picture: |-
       {% set driving = states("binary_sensor.[[phone]]_android_auto") %}
       {% set activity = states("sensor.[[phone]]_detected_activity") %}
