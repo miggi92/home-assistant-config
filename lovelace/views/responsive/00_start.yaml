@@ -201,7 +201,7 @@ sections:
           - type: entity
             show_state: true
             show_icon: true
-            entity: switch.security_cameras
+            entity: switch.security_kameras
             color: red
             tap_action:
               action: toggle
@@ -337,17 +337,13 @@ sections:
                   type: grid
                   cards:
                     - type: custom:button-card
-                      entity: media_player.living_room
+                      entity: media_player.tv_wztv_2
                       icon: mdi:sofa-outline
                       show_name: false
                       aspect_ratio: 1/1
                       state:
                         - value: playing
                           icon: mdi:play-circle-outline
-                      tap_action:
-                        action: call-service
-                        service: script.play_on_repeat_on_living_room_nest
-                        haptic: success
                       styles:
                         card:
                           - border-radius: 18px
@@ -734,7 +730,7 @@ sections:
             media_query: "(min-width: 0px) and (max-width: 767px)"
       - type: conditional
         conditions:
-          - entity: switch.security_cameras
+          - entity: switch.security_kameras
             state: "on"
           - condition: state
             entity: input_boolean.holiday_mode
