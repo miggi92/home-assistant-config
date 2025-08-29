@@ -22,13 +22,13 @@ person_card_template:
         {%- endif %}
       Zu Hause seit {{ relative_time(lastChanged) }}
       {% elif state == "work_silke" or state == "work_miguel" %}
-        Arbeiten
+        Arbeiten seit {{ relative_time(lastChanged) }}
       {% elif state == "tsb_handball" %}
-        Beim Handball
+        Beim Handball seit {{ relative_time(lastChanged) }}
       {% elif state == "not_home" %}
-        Abwesend
+        Abwesend seit {{ relative_time(lastChanged) }}
       {% else %}
-        {{ states("[[entity]]") }}
+        {{ states("[[entity]]") }} seit {{ relative_time(lastChanged) }}
       {% endif %}
     multiline_secondary: true
     picture: |-
