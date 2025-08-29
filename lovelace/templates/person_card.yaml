@@ -15,10 +15,11 @@ person_card_template:
     secondary: |-
       {% set state =  states("[[entity]]")  | slugify %}
       {% set roomState =  states("[[beacon]]") %}
+      {% set floor = state_attr("[[beacon]]", 'floor_name') %}
       {% set lastChanged = states["[[entity]]"].last_changed %}
       {% if state == "home" %}
         {%- if roomState != "unknown" and roomState != "not_home" %}
-        {{ roomState }}
+        {{ roomState }} - {{ floor }}
         {%- endif %}
       Zu Hause seit {{ relative_time(lastChanged) }}
       {% elif state == "work_silke" or state == "work_miguel" %}
