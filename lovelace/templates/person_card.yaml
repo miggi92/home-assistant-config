@@ -23,7 +23,7 @@ person_card_template:
       Zu Hause seit {{ relative_time(lastChanged) }}
       {% elif state == "work_silke" or state == "work_miguel" %}
         Arbeiten seit {{ relative_time(lastChanged) }}
-      {% elif state == "tsb_handball" %}
+      {% elif "handball" in state %}
         Beim Handball seit {{ relative_time(lastChanged) }}
       {% elif state == "not_home" %}
         Abwesend seit {{ relative_time(lastChanged) }}
