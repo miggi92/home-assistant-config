@@ -1,0 +1,26 @@
+---
+# Handball.net tournament card
+handball_net_tournament_card:
+  default:
+    - title: HBL
+    - entity_pattern: "daikin_hbl_platz_"
+  card:
+    type: markdown
+    content: |
+      {% set sensors = states.sensor
+        | selectattr('entity_id','search','^sensor\\.[[entity_pattern]]\\d+$')
+        | map(attribute='entity_id')
+        | map('regex_replace','^sensor\\.[[entity_pattern]](\\d+)$','\\1')
+        | map('int')
+        | list
+        | sort %}
+      | Platz | Logo | Verein | Punkte |
+      | --- |:---:|:---:| ---:|
+      {%- for p in sensors %}
+      {%- set eid = 'sensor.[[entity_pattern]]' ~ p %}
+      {%- set s = states(eid) %}
+      {%- set pic = state_attr(eid, 'entity_picture') %}
+      {%- set points = state_attr(eid, 'points') %}
+      | {{ p }}. | <img src="{{ pic }}" height="20"> | {{ s }} | {{ points }} |
+      {%- endfor %}
+    title: "[[title]]"

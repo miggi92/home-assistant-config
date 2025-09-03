@@ -4,10 +4,66 @@ title: Sport
 path: sport
 icon: mdi:basketball
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - !include ../../cards/sports.yaml
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.sg_heuchelberg_alle_spiele
+
+  - type: grid
+    cards:
+      - type: custom:tabbed-card
+        options: {}
+        tabs:
+          - card:
+              type: custom:decluttering-card
+              template: handball_net_tournament_card
+            attributes:
+              label: HBL
+          - card:
+              type: custom:decluttering-card
+              template: handball_net_tournament_card
+              variables:
+                - title: 2. HBL
+                - entity_pattern: 2_hbl_platz_
+            attributes:
+              label: 2. HBL
+
+  - type: grid
+    cards:
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.team_tracker_vfb
+            state_not: "NOT_FOUND"
+        card:
+          type: custom:teamtracker-card
+          entity: sensor.team_tracker_vfb
+          outline: true
+          outline_color: lightgray
+          show_timeouts: false
+          show_rank: true
+          home_side: left
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.team_tracker_min_vikings
+            state_not: "NOT_FOUND"
+        card:
+          type: custom:teamtracker-card
+          entity: sensor.team_tracker_min_vikings
+          outline: true
+          outline_color: lightgray
+          show_timeouts: false
+          show_rank: true
+          show_league: false
+          home_side: right
