@@ -36,6 +36,7 @@ node_modules
 !/custom_components
 /www/community
 /www/llmvision
+/media/llmvision
 /www/cams
 /www/images/screenshots
 /www/downloaded
