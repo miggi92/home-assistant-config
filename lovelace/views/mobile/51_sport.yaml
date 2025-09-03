@@ -16,8 +16,12 @@ badges:
 sections:
   - type: grid
     cards:
-      - type: custom:mushroom-entity-card
+      - type: custom:button-card
+        template: handballnet_next_game_card
         entity: sensor.sg_heuchelberg_alle_spiele
+      - type: custom:button-card
+        template: handballnet_next_game_card
+        entity: sensor.tv_1895_flein_2_alle_spiele
 
   - type: grid
     cards:

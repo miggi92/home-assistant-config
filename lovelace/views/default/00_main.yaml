@@ -52,12 +52,3 @@ cards:
         tap_action:
           action: navigate
           navigation_path: /lovelace-tablet
-      - type: custom:mushroom-template-card
-        icon: mdi:responsive
-        icon_color: green
-        layout: vertical
-        primary: Responsive Dashboard
-        fill_container: true
-        tap_action:
-          action: navigate
-          navigation_path: /lovelace-responsive
