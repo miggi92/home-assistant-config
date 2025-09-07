@@ -489,7 +489,7 @@ class PhilipsNew2GenericFan(PhilipsGenericFanBase):
         (
             FanAttributes.PREFERRED_INDEX,
             PhilipsApi.NEW2_GAS_PREFERRED_INDEX,
-            PhilipsApi.GAS_PREFERRED_INDEX_MAP,
+            PhilipsApi.NEW2_GAS_PREFERRED_INDEX_MAP,
         ),
         # device sensors
         (
@@ -1009,6 +1009,7 @@ class PhilipsAC303x(PhilipsGenericFan):
         },
     }
     AVAILABLE_SELECTS = [PhilipsApi.GAS_PREFERRED_INDEX]
+    AVAILABLE_SWITCHES = [PhilipsApi.CHILD_LOCK]
 
 
 class PhilipsAC3033(PhilipsAC303x):
@@ -1224,6 +1225,7 @@ class PhilipsAC3420(PhilipsAC0950):
 
     AVAILABLE_SELECTS = [PhilipsApi.NEW2_LAMP_MODE]
     AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
+    AVAILABLE_BINARY_SENSORS = [PhilipsApi.NEW2_ERROR_CODE]
 
 
 class PhilipsAC3421(PhilipsAC3420):
@@ -1441,6 +1443,8 @@ class PhilipsAC385450(PhilipsAC385x50):
 
 class PhilipsAC385850(PhilipsAC385x50):
     """AC3858/50."""
+
+    AVAILABLE_SWITCHES = [PhilipsApi.CHILD_LOCK]
 
 
 class PhilipsAC385x51(PhilipsGenericFan):
