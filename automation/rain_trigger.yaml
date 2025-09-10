@@ -5,12 +5,12 @@ id: 00f0df21-aa56-4fc4-8f8e-56b983c49e6f
 description: "Set boolean while raining"
 trigger:
   - platform: state
-    entity_id: weather.home_accu
+    entity_id: weather.home
 condition: []
 action:
   - if:
       - condition: state
-        entity_id: weather.home_accu
+        entity_id: weather.home
         state: "rainy"
     then:
       - service: input_boolean.turn_on

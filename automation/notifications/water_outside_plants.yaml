@@ -11,14 +11,9 @@ condition:
   - condition: not
     conditions:
       # currently raining
-      - condition: or
-        conditions:
-          - condition: state
-            entity_id: weather.home
-            state: "rainy"
-          - condition: state
-            entity_id: weather.home_accu
-            state: "rainy"
+      - condition: state
+        entity_id: weather.home
+        state: "rainy"
       # will it rain soon?
       - condition: template
         value_template: >

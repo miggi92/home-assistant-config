@@ -8,7 +8,7 @@ trigger:
     entity_id: sensor.daikinap90134_outside_temperature
     platform: numeric_state
   - above: "23"
-    entity_id: weather.home_accu
+    entity_id: weather.home
     attribute: temperature
     platform: numeric_state
 condition:
