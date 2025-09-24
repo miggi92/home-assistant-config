@@ -1,0 +1,14 @@
+---
+# Remove old snapshots
+description: "Remove old snapshots"
+alias: RemoveOldSnapshots
+id: 7e4dceda-e410-4827-8ae0-776c16ae1511
+mode: single
+triggers:
+  - trigger: time
+    at: "00:15:00"
+conditions: []
+actions:
+  - action: shell_command.removesnapshots
+    metadata: {}
+    data: {}
