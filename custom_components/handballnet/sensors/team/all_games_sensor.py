@@ -2,7 +2,7 @@ from typing import Any
 from .base_sensor import HandballBaseSensor
 from ...const import DOMAIN
 from ...api import HandballNetAPI
-from ...utils import get_next_match_info, get_last_match_info, normalize_logo_url
+from ...utils import HandballNetUtils
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -10,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 class HandballAllGamesSensor(HandballBaseSensor):
     def __init__(self, hass, entry, team_id, api: HandballNetAPI):
         super().__init__(hass, entry, team_id)
+        self.utils = HandballNetUtils()
         self._api = api
         self._team_id = team_id  # Explicitly set _team_id
         self._state = None
@@ -45,14 +46,12 @@ class HandballAllGamesSensor(HandballBaseSensor):
                 "homeTeam": {
                     "id": match.get("homeTeam", {}).get("id"),
                     "name": match.get("homeTeam", {}).get("name"),
-                    "logo": match.get("homeTeam", {}).get("logo"),
-                    "logo_url": normalize_logo_url(home_logo) if home_logo else None
+                    "logo": self.utils.normalize_logo_url(home_logo) if home_logo else None
                 },
                 "awayTeam": {
                     "id": match.get("awayTeam", {}).get("id"),
                     "name": match.get("awayTeam", {}).get("name"),
-                    "logo": match.get("awayTeam", {}).get("logo"),
-                    "logo_url": normalize_logo_url(away_logo) if away_logo else None
+                    "logo": self.utils.normalize_logo_url(away_logo) if away_logo else None
                 },
                 "field": {
                     "name": match.get("field", {}).get("name")
@@ -82,10 +81,10 @@ class HandballAllGamesSensor(HandballBaseSensor):
             # Extract only essential data
             essential_matches = self._extract_essential_match_data(matches)
 
-            next_match = get_next_match_info(essential_matches)
-            last_match = get_last_match_info(essential_matches)
+            next_match = self.utils.get_next_match_info(essential_matches)
+            last_match = self.utils.get_last_match_info(essential_matches)
 
-            self._state = f"Nächstes Spiel: {next_match['opponent']}" if next_match else "Kein nächstes Spiel"
+            self._state = f"Nächstes Spiel: {next_match['opponent']['name']}" if next_match else "Kein nächstes Spiel"
             self._attributes = {
                 "next_match": next_match,
                 "last_match": last_match,
