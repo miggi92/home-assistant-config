@@ -22,25 +22,25 @@ handballnet_next_game_card:
   custom_fields:
     home: |
       [[[
-        const m = states[entity.entity_id].attributes.upcoming_matches[0];
-        return `<img src="${m.homeTeam.logo}" height="50">`;
+        const m = states[entity.entity_id].attributes.next_match;
+        return `<img src="${m.home_team.logo}" height="50">`;
       ]]]
     away: |
       [[[
-        const m = states[entity.entity_id].attributes.upcoming_matches[0];
-        return `<img src="${m.awayTeam.logo}" height="50">`;
+        const m = states[entity.entity_id].attributes.next_match;
+        return `<img src="${m.away_team.logo}" height="50">`;
       ]]]
     vs: |
       🆚
     homeName: |
       [[[
-        const m = states[entity.entity_id].attributes.upcoming_matches[0];
-        return `<b>${m.homeTeam.name}</b>`;
+        const m = states[entity.entity_id].attributes.next_match;
+        return `<b>${m.home_team.name}</b>`;
       ]]]
     awayName: |
       [[[
-        const m = states[entity.entity_id].attributes.upcoming_matches[0];
-        return `<b>${m.awayTeam.name}</b>`;
+        const m = states[entity.entity_id].attributes.next_match;
+        return `<b>${m.away_team.name}</b>`;
       ]]]
     date: |
       [[[
