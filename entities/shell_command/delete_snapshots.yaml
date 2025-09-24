@@ -1,0 +1,3 @@
+---
+# Delete snapshots
+removesnapshots: 'find /config/www/cams/* -mtime +3 -exec rm {} \;'
