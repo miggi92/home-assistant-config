@@ -6,4 +6,5 @@
       event_type: new_weather_image
   image:
     - name: "AI generated weather image"
-      url: "{{ trigger.event.data.url }}"
+      unique_id: ai_generated_weather_image
+      url: "http://localhost:8123{{ trigger.event.data.url }}"
