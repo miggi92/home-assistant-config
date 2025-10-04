@@ -1,0 +1,57 @@
+---
+#
+alias: "Benachrichtigung vor Termin mit Fahrzeit"
+id: f8e94e38-4f30-40f3-9571-011bd66177c5
+mode: parallel
+trigger:
+  - platform: calendar
+    entity_id: calendar.familie
+    event: start
+    offset: "-00:45:00"
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.calendar_event.location is not none and trigger.calendar_event.location|length > 0 }}
+action:
+  - variables:
+      event_start: >
+        {{ as_datetime(trigger.calendar_event.start) }}
+      location: >
+        {{ trigger.calendar_event.location }}
+      buffer: 10
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.calendar_destination
+    data:
+      value: "{{ location }}"
+
+  - service: homeassistant.update_entity
+    target:
+      entity_id: sensor.calendar_location_time
+  - delay: "00:00:05" # kurz warten, bis Fahrzeit aktualisiert
+  - variables:
+      travel_time: >
+        {{ states('sensor.calendar_location_time')|int(0) }}
+  - variables:
+      departure_time: >
+        {{ as_datetime(trigger.calendar_event.start) - timedelta(minutes=(travel_time + buffer)) }}
+  - choose:
+      - conditions: "{{ now() >= as_datetime(departure_time) }}"
+        sequence:
+          - service: script.notify_engine
+            data:
+              title: "Abfahrt nötig!"
+              value1: >
+                Dein Termin **{{ trigger.calendar_event.summary }}** beginnt um {{ as_datetime(event_start).strftime('%H:%M') }}.
+                Fahrtzeit nach {{ location }}: {{ travel_time }} Minuten.
+                Du solltest jetzt losfahren!
+      - conditions: "{{ now() < as_datetime(departure_time) }}"
+        sequence:
+          - delay:
+              seconds: "{{ (as_datetime(departure_time) - now()).total_seconds() | int }}"
+          - service: script.notify_engine
+            data:
+              title: "Los geht's!"
+              value1: >
+                Dein Termin **{{ trigger.calendar_event.summary }}** beginnt um {{ as_datetime(event_start).strftime('%H:%M') }}.
+                Fahrtzeit nach {{ location }}: {{ travel_time }} Minuten (+{{ buffer }} min Puffer).
