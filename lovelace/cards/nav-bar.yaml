@@ -1,0 +1,43 @@
+---
+# navbar
+type: custom:navbar-card
+routes:
+  - url: /lovelace/home
+    icon: mdi:home
+    label: Home
+  - url: /lovelace/home/devices
+    icon: mdi:devices
+    label: Devices
+    hold_action:
+      action: navigate
+      navigation_path: /config/devices/dashboard
+  - url: /config/automation/dashboard
+    icon: mdi:air-filter
+    label: "{{ states('person.miguel') }}"
+  - url: /config/dashboard
+    icon: mdi:cog
+    label: Settings
+  - icon: mdi:dots-horizontal
+    label: More
+    tap_action:
+      action: open-popup
+    popup:
+      - icon: mdi:cog
+        url: /config/dashboard
+      - icon: mdi:hammer
+        url: /developer-tools/yaml
+      - icon: mdi:power
+        tap_action:
+          action: call-service
+          service: homeassistant.restart
+          service_data: {}
+          confirmation:
+            text: Are you sure you want to restart Home Assistant?
+desktop:
+  position: left
+  show_labels: true
+mobile:
+  show_labels: true
+media_player:
+  entity: media_player.spotify_miguel
+  album_cover_background: true

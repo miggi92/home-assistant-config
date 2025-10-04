@@ -57,8 +57,12 @@ badges:
       action: navigate
       navigation_path: medication
 sections:
+  - strategy:
+      type: common-controls
+      title: Common controls
   - type: grid
     cards:
+      - !include ../../cards/nav-bar.yaml
       - !include ../../cards/residents.yaml
       - type: conditional
         conditions:
