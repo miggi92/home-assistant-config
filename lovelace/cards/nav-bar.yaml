@@ -11,7 +11,9 @@ routes:
       [[[
         const path = window.location.pathname;
         return path.startsWith('/lovelace-mobile/') &&
-              path !== '/lovelace-mobile/start';
+              path !== '/lovelace-mobile/start' &&
+              path !== '/lovelace-mobile/miguel' &&
+              path !== '/lovelace-mobile/silke';
       ]]]
     badge:
       show: |

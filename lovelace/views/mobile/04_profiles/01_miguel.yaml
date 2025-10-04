@@ -1,0 +1,17 @@
+---
+title: Profil Miguel
+path: miguel
+icon: mdi:beach
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []
