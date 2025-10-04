@@ -1,0 +1,22 @@
+---
+alias: LivetickerSGH
+id: da7da451-5434-4399-b5bc-8d6e3a78782e
+description: "Liveticker SGH"
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.sg_heuchelberg_live_events
+
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        Liveticker
+      value1: |
+        {% set latest_event = trigger.to_state.attributes.events | sort(attribute='timestamp', reverse=true) | first %}
+        {{ latest_event.message }} - {{ latest_event.score }} ({{ latest_event.time }})
+      who: "home"
+      tag_id: "information"
+      group: "Sport"
+mode: parallel

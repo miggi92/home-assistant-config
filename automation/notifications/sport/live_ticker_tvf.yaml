@@ -1,0 +1,22 @@
+---
+alias: LivetickerTVF
+id: ee10bfa7-0a71-4722-8ec2-e0addbdaf912
+description: "Liveticker TVF"
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.tv_1895_flein_2_live_events
+
+condition: []
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        Liveticker
+      value1: |
+        {% set latest_event = trigger.to_state.attributes.events | sort(attribute='timestamp', reverse=true) | first %}
+        {{ latest_event.message }} - {{ latest_event.score }} ({{ latest_event.time }})
+      who: "home"
+      tag_id: "information"
+      group: "Sport"
+mode: parallel
