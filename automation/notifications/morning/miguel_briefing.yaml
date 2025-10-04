@@ -1,0 +1,19 @@
+---
+# morning briefing
+id: a8263c1b-2609-4f08-8421-6225c39ddc9c
+alias: Morning Briefing Benachrichtigung
+description: Sendet das KI-generierte Morning Briefing über Telegram.
+triggers:
+  - trigger: state
+    entity_id:
+      - input_text.ai_morning_briefing
+conditions: []
+actions:
+  - action: script.notify_engine
+    data:
+      title: "Morning briefing"
+      value1: "{{ states('input_text.ai_morning_briefing') }}"
+      who: "miguel"
+      tag_id: "information"
+      group: "Notifications"
+mode: single
