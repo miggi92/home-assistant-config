@@ -2,21 +2,41 @@
 # navbar
 type: custom:navbar-card
 routes:
-  - url: /lovelace/home
+  - url: /lovelace-mobile/start
     icon: mdi:home
-    label: Home
-  - url: /lovelace/home/devices
-    icon: mdi:devices
-    label: Devices
-    hold_action:
-      action: navigate
-      navigation_path: /config/devices/dashboard
-  - url: /config/automation/dashboard
-    icon: mdi:air-filter
-    label: "{{ states('person.miguel') }}"
-  - url: /config/dashboard
+    label: Startseite
+  - icon: mdi:sofa
+    label: Räume
+    selected: |
+      [[[
+        const path = window.location.pathname;
+        return path.startsWith('/lovelace-mobile/') &&
+              path !== '/lovelace-mobile/start';
+      ]]]
+    badge:
+      show: |
+        [[[ return states['number.count_lights_on'].state > 0; ]]]
+      count: |
+        [[[  return Math.ceil(states['number.count_lights_on'].state); ]]]
+    tap_action:
+      action: open-popup
+    popup:
+      - icon: mdi:coat-rack
+        url: /lovelace-mobile/hallway
+        label: Flur
+      - icon: mdi:sofa
+        url: /lovelace-mobile/living
+        label: Wohnzimmer
+      - icon: mdi:bed-double
+        url: /lovelace-mobile/sleep
+        label: Schlafzimmer
+  - url: /lovelace-mobile/miguel
     icon: mdi:cog
-    label: Settings
+    label: "Profil"
+    image: |
+      [[[ return hass.states['person.miguel'].attributes.entity_picture ]]]
+    hidden: |
+      [[[ return user.name != 'Miguel' ]]]
   - icon: mdi:dots-horizontal
     label: More
     tap_action:
@@ -27,6 +47,8 @@ routes:
       - icon: mdi:hammer
         url: /developer-tools/yaml
       - icon: mdi:power
+        hidden: |
+          [[[ return user.name != 'Miguel' ]]]
         tap_action:
           action: call-service
           service: homeassistant.restart
@@ -41,3 +63,10 @@ mobile:
 media_player:
   entity: media_player.spotify_miguel
   album_cover_background: true
+layout:
+  auto-padding:
+    enabled: true
+styles: |
+  .image {
+    border-radius: 16px !important;
+  }

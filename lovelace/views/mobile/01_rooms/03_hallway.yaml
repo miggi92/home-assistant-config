@@ -22,6 +22,7 @@ badges:
     tap_action:
       action: more-info
 sections:
+  - !include ../../../cards/nav-bar.yaml
   - type: grid
     cards:
       - type: custom:mushroom-lock-card
