@@ -16,6 +16,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../cards/nav-bar.yaml
       - type: custom:button-card
         template: handballnet_next_game_card
         entity: sensor.sg_heuchelberg_alle_spiele
