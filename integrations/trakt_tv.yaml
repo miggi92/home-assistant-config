@@ -6,7 +6,10 @@ trakt_tv:
   timezone: Europe/Berlin
   sensors:
     stats:
-      - all
+      - episodes_watched
+      - episodes_minutes
+      - movies_watched
+      - movies_minutes
     anticipated:
       movie:
         exclude_collected: true
@@ -14,26 +17,3 @@ trakt_tv:
       show:
         exclude_collected: true
         max_medias: 10
-    upcoming:
-      show:
-        days_to_fetch: 90
-        max_medias: 3
-      new_show:
-        days_to_fetch: 90
-        max_medias: 3
-      premiere:
-        days_to_fetch: 90
-        max_medias: 3
-      movie:
-        days_to_fetch: 90
-        max_medias: 3
-      dvd:
-        days_to_fetch: 90
-        max_medias: 3
-    next_to_watch:
-      all:
-        max_medias: 5
-      only_aired:
-        max_medias: 5
-      only_upcoming:
-        max_medias: 5
