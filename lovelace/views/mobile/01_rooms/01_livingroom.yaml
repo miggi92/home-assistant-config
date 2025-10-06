@@ -3,51 +3,29 @@ title: Wohnzimmer
 path: room-1og-wohnzimmer
 icon: mdi:sofa
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-      - type: action
-        icon: mdi:television-box
-        tap_action:
-          action: fire-dom-event
-          browser_mod:
-            service: browser_mod.popup
-            data:
-              title: "TV Programm"
-              content: !include ../../../cards/tv_prog.yaml
-
-      - type: conditional
-        conditions:
-          - entity: group.living_motion_sensors
-            state_not: "off"
-            condition: state
-        chip:
-          type: entity
-          entity: group.living_motion_sensors
-  - type: horizontal-stack
-    cards:
-      - hours_to_show: 24
-        graph: line
-        name: Temperatur
-        type: sensor
-        entity: sensor.wohnzimmertemperatur
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftfeuchtigkeit
-        type: sensor
-        entity: sensor.wohnzimmer_heizung_humidity
-        detail: 1
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
   - type: custom:decluttering-card
-    template: amazon_echo_template
+    template: temperature_badge_template
     variables:
-      - echo_id: milos_dot
-      - title: Kinder Echo Dot
-  - type: horizontal-stack
+      - entity: sensor.wohnzimmertemperatur
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.wohnzimmer_heizung_humidity
+  - type: entity
+    entity: group.living_motion_sensors
+sections:
+  - type: grid
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: custom:mushroom-light-card
         entity: light.tv_licht
         layout: vertical
@@ -62,25 +40,20 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-  - type: horizontal-stack
-    cards:
       - type: custom:mushroom-entity-card
         entity: scene.tv_gemutlich
         layout: vertical
         tap_action:
           action: toggle
-  - type: custom:mushroom-cover-card
-    entity: cover.wohnzimmerrolladen
-    name: Rollladen
-    fill_container: false
-    show_buttons_control: true
-    show_position_control: true
-    tap_action:
-      action: toggle
-
-  - type: custom:mushroom-title-card
-    subtitle: Geräte
-  - type: horizontal-stack
+      - type: custom:mushroom-cover-card
+        entity: cover.wohnzimmerrolladen
+        name: Rollladen
+        fill_container: false
+        show_buttons_control: true
+        show_position_control: true
+        tap_action:
+          action: toggle
+  - type: grid
     cards:
       - type: custom:mushroom-climate-card
         entity: climate.daikinap90134
@@ -100,31 +73,47 @@ cards:
           - auto
           - heat
           - "off"
-  - type: horizontal-stack
-    cards:
       - type: custom:timer-bar-card
         entity: timer.climate_auto_off
         mushroom:
           layout: vertical
+  - type: grid
+    cards:
+      - type: custom:mini-media-player
+        entity: media_player.wztv
+        artwork: cover
+        hide:
+          source: true
+          controls: true
+          power_state: false
 
-  - type: custom:mini-media-player
-    entity: media_player.wztv
-    artwork: cover
-    hide:
-      source: true
-      controls: true
-      power_state: false
+      - type: custom:decluttering-card
+        template: android_tv_remote_template
+        variables:
+          - name: 1&1 Box
+            entity: fernseher_im_wohnzimmer
+            media_player: media_player.fernseher_im_wohnzimmer
+            remote: remote.fernseher_im_wohnzimmer
+            active_app: sensor.active_app
 
-  - type: custom:decluttering-card
-    template: android_tv_remote_template
-    variables:
-      - name: 1&1 Box
-        entity: fernseher_im_wohnzimmer
-        media_player: media_player.fernseher_im_wohnzimmer
-        remote: remote.fernseher_im_wohnzimmer
-        active_app: sensor.active_app
-
-  - type: custom:decluttering-card
-    template: area_battery_card_template
-    variables:
-      - area: Wohnzimmer
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Wohnzimmer
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: milos_dot
+          - title: Kinder Echo Dot
+cards:
+  - type: custom:mushroom-chips-card
+    chips:
+      - type: action
+        icon: mdi:television-box
+        tap_action:
+          action: fire-dom-event
+          browser_mod:
+            service: browser_mod.popup
+            data:
+              title: "TV Programm"
+              content: !include ../../../cards/tv_prog.yaml

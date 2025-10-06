@@ -3,12 +3,19 @@ title: WC
 path: room-1og-klo
 icon: mdi:toilet
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
   - type: grid
     square: false
     cards:

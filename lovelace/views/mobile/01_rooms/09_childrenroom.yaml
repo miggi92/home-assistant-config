@@ -3,28 +3,27 @@ title: Kinderzimmer
 path: room-1og-kinderzimmer
 icon: mdi:teddy-bear
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: horizontal-stack
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.kinderzimmertempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.kinderzimmertempsensor_humidity
+sections:
+  - type: grid
     cards:
-      - hours_to_show: 24
-        graph: line
-        name: Temperatur
-        type: sensor
-        entity: sensor.kinderzimmertempsensor_temperature
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftfeuchtigkeit
-        type: sensor
-        entity: sensor.kinderzimmertempsensor_humidity
-        detail: 1
-  - type: horizontal-stack
-    cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: custom:mushroom-light-card
         entity: light.kinderzimmerlicht
         layout: vertical
@@ -32,20 +31,25 @@ cards:
         collapsible_controls: true
         tap_action:
           action: toggle
-  - type: custom:decluttering-card
-    template: amazon_echo_template
-    variables:
-      - echo_id: echo_buro
-      - title: Echo Büro
-  - type: custom:mushroom-cover-card
-    entity: cover.rolladen_kinderzimmer
-    name: Rollladen
-    fill_container: false
-    show_buttons_control: true
-    show_position_control: true
-    tap_action:
-      action: toggle
-  - type: custom:decluttering-card
-    template: area_battery_card_template
-    variables:
-      - area: Kinderzimmer
+  - type: grid
+    cards:
+      - type: custom:mushroom-cover-card
+        entity: cover.rolladen_kinderzimmer
+        name: Rollladen
+        fill_container: false
+        show_buttons_control: true
+        show_position_control: true
+        tap_action:
+          action: toggle
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: amazon_echo_template
+        variables:
+          - echo_id: echo_buro
+          - title: Echo Büro
+
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Kinderzimmer

@@ -3,69 +3,35 @@ title: Abstellkammer
 path: room-1og-abstellkammer
 icon: mdi:library-shelves
 subview: true
+type: sections
+max_columns: 3
 theme: ios-dark-mode-blue-red
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-      - type: entity
-        entity: input_boolean.wash_active
-      - type: entity
-        entity: input_boolean.dryer_active
-  - type: horizontal-stack
+badges:
+  - type: custom:mushroom-template-badge
+    icon: mdi:arrow-left
+    tap_action:
+      action: navigate
+      navigation_path: start
+  - type: custom:decluttering-card
+    template: temperature_badge_template
+    variables:
+      - entity: sensor.abstellkammertempsensor_temperature
+  - type: custom:decluttering-card
+    template: humidity_badge_template
+    variables:
+      - entity: sensor.abstellkammertempsensor_humidity
+  - type: entity
+    entity: binary_sensor.abstellkammertursensor_contact
+    tap_action:
+      action: more-info
+  - type: entity
+    entity: input_boolean.wash_active
+  - type: entity
+    entity: input_boolean.dryer_active
+sections:
+  - type: grid
     cards:
-      - hours_to_show: 24
-        graph: line
-        name: Temperatur
-        type: sensor
-        entity: sensor.abstellkammertempsensor_temperature
-        detail: 1
-      - hours_to_show: 24
-        graph: line
-        name: Luftfeuchtigkeit
-        type: sensor
-        entity: sensor.abstellkammertempsensor_humidity
-        detail: 1
-  - type: custom:mushroom-title-card
-    subtitle: Waschen und Trocknen
-  - type: horizontal-stack
-    cards:
-      - hours_to_show: 24
-        graph: line
-        name: Waschmaschinen Energieverbrauch insg.
-        type: sensor
-        entity: sensor.waschmaschinen_steckdose_energy
-        detail: 1
-      - name: Waschmaschinen Verbrauch
-        type: sensor
-        entity: sensor.waschmaschinen_steckdose_power
-        graph: line
-        detail: 2
-        hours_to_show: 4
-        limits:
-          max: 300
-  - type: entities
-    entities:
-      - sensor.waschmaschine_tur
-      - sensor.waschmaschine_operation_state
-      - sensor.waschmaschine_remaining_program_time
-  - type: horizontal-stack
-    cards:
-      - hours_to_show: 24
-        graph: line
-        name: Trockner Energieverbrauch insg.
-        type: sensor
-        entity: sensor.trockner_steckdose_energy
-        detail: 1
-      - hours_to_show: 4
-        graph: line
-        name: Trockner Verbrauch
-        type: sensor
-        entity: sensor.trockner_steckdose_power
-        detail: 2
-  - type: horizontal-stack
-    cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: custom:mushroom-light-card
         entity: light.abstellkammerlicht
         show_brightness_control: true
@@ -75,10 +41,16 @@ cards:
         layout: vertical
         tap_action:
           action: toggle
-      - type: custom:mushroom-entity-card
-        entity: binary_sensor.abstellkammertursensor_contact
-        layout: vertical
-  - type: custom:decluttering-card
-    template: area_battery_card_template
-    variables:
-      - area: Abstellkammer
+  - type: grid
+    cards:
+      - type: entities
+        entities:
+          - sensor.waschmaschine_tur
+          - sensor.waschmaschine_operation_state
+          - sensor.waschmaschine_remaining_program_time
+  - type: grid
+    cards:
+      - type: custom:decluttering-card
+        template: area_battery_card_template
+        variables:
+          - area: Abstellkammer
