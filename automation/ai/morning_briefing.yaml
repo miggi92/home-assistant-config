@@ -27,8 +27,6 @@ actions:
           - current date: {{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%A %B %-d, %I:%M %p') }}
           - Outdoor temperature: {{ states('sensor.daikinap90134_outside_temperature') }}°C
           - Weather condition: {{ states('weather.home') }}
-          - Indoor temperature: {{ states('sensor.wohnungstemperatur') }}°C
-          - Indoor humidity: {{ states('sensor.wohnungsfeuchtigkeit') }}%
           - Is today a work day?: {{ states('binary_sensor.workday_sensor') }}
 
         Answer in german. Make the answer a little bit funny.
