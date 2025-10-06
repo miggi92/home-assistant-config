@@ -27,6 +27,8 @@ sections:
           include:
             - domain: person
               group: group.residents
+  - type: grid
+    cards:
       - type: custom:auto-entities
         card:
           type: map
@@ -37,6 +39,3 @@ sections:
           include:
             - domain: person
               group: group.guests
-
-  - type: grid
-    cards: []
