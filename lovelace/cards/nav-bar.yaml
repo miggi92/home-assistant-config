@@ -3,7 +3,8 @@
 type: custom:navbar-card
 routes:
   - url: /lovelace-mobile/start
-    icon: mdi:home
+    icon_selected: mdi:home
+    icon: mdi:home-outline
     label: Startseite
   - icon: mdi:tree-outline
     icon_selected: mdi:tree
@@ -83,6 +84,7 @@ routes:
 desktop:
   position: left
   show_labels: true
+  min_width: 950
 mobile:
   show_labels: true
 media_player:
