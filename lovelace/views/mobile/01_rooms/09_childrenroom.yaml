@@ -1,6 +1,6 @@
 ---
 title: Kinderzimmer
-path: child
+path: room-1og-kinderzimmer
 icon: mdi:teddy-bear
 subview: true
 theme: ios-dark-mode-blue-red

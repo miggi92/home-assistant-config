@@ -5,33 +5,30 @@ routes:
   - url: /lovelace-mobile/start
     icon: mdi:home
     label: Startseite
-  - icon: mdi:sofa
+  - icon: mdi:sofa-outline
+    icon_selected: mdi:sofa
     label: Räume
+    tap_action: { action: open-popup }
+    popup: |
+      [[[
+        return Object.values(hass.areas)
+          .filter(area => area.floor_id === '1_og')
+          .map(area => ({
+            label: area.name,
+            url: "/lovelace-mobile/room-1og-" + area.area_id,
+            icon: area.icon
+          }));
+      ]]]
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/') &&
-              path !== '/lovelace-mobile/start' &&
-              path !== '/lovelace-mobile/miguel' &&
-              path !== '/lovelace-mobile/silke';
+        return path.startsWith('/lovelace-mobile/room-');
       ]]]
     badge:
       show: |
         [[[ return states['number.count_lights_on'].state > 0; ]]]
       count: |
         [[[  return Math.ceil(states['number.count_lights_on'].state); ]]]
-    tap_action:
-      action: open-popup
-    popup:
-      - icon: mdi:coat-rack
-        url: /lovelace-mobile/hallway
-        label: Flur
-      - icon: mdi:sofa
-        url: /lovelace-mobile/living
-        label: Wohnzimmer
-      - icon: mdi:bed-double
-        url: /lovelace-mobile/sleep
-        label: Schlafzimmer
   - url: /lovelace-mobile/miguel
     icon: mdi:cog
     label: "Profil"

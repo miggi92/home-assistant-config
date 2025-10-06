@@ -304,7 +304,7 @@ sections:
             variables:
               - title: Wohnzimmer
               - icon: mdi:sofa
-              - nav_path: living
+              - nav_path: room-1og-wohnzimmer
               - light: light.wohnzimmer
               - temperature: sensor.wohnzimmertemperatur
               - motion: group.living_motion_sensors
@@ -313,7 +313,7 @@ sections:
             variables:
               - title: Schlafzimmer
               - icon: mdi:bed-double
-              - nav_path: sleep
+              - nav_path: room-1og-schlafzimmer
               - light: light.schlafzimmerlicht
               - temperature: sensor.schlafzimmertemperatur
               - motion: group.sleep_motion_sensors
@@ -322,27 +322,27 @@ sections:
             variables:
               - title: Flur
               - icon: mdi:coat-rack
-              - nav_path: hallway
+              - nav_path: room-1og-flur
           - type: custom:decluttering-card
             template: room_card_template
             variables:
               - title: Küche
               - icon: mdi:countertop
-              - nav_path: kitchen
+              - nav_path: room-1og-kuche
               - temperature: sensor.kuchentempsensor_temperature
           - type: custom:decluttering-card
             template: room_card_template
             variables:
               - title: Bad
               - icon: mdi:shower
-              - nav_path: bath
+              - nav_path: room-1og-bad
               - temperature: sensor.badezimmertempsensor_temperature
           - type: custom:decluttering-card
             template: room_card_template
             variables:
               - title: Abstellkammer
               - icon: mdi:library-shelves
-              - nav_path: storage
+              - nav_path: room-1og-abstellkammer
               - light: light.abstellkammerlicht
               - temperature: sensor.abstellkammertempsensor_temperature
               - motion: binary_sensor.abstellkammertursensor_contact
@@ -351,7 +351,7 @@ sections:
             variables:
               - title: Arbeitszimmer
               - icon: mdi:chair-rolling
-              - nav_path: office
+              - nav_path: room-1og-arbeitszimmer
               - light: light.buro
               - temperature: sensor.luftqualitat_buro_temperature
               - motion: binary_sensor.kinderzimmerbewegungssensor_occupancy
@@ -360,7 +360,7 @@ sections:
             variables:
               - title: Kinderzimmer
               - icon: mdi:teddy-bear
-              - nav_path: child
+              - nav_path: room-1og-kinderzimmer
               - light: light.kinderzimmerlicht
               - temperature: sensor.kinderzimmertempsensor_temperature
               - motion: binary_sensor.kinderzimmerbewegungssensor_occupancy
@@ -369,13 +369,13 @@ sections:
             variables:
               - title: Klo
               - icon: mdi:toilet
-              - nav_path: toilet
+              - nav_path: room-1og-klo
           - type: custom:decluttering-card
             template: room_card_template
             variables:
               - title: Balkon
               - icon: mdi:balcony
-              - nav_path: balcony
+              - nav_path: room-1og-balkon
               - light: switch.lichterkette
               - temperature: sensor.daikinap90134_outside_temperature
           - type: custom:decluttering-card

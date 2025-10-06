@@ -1,6 +1,6 @@
 ---
 title: Abstellkammer
-path: storage
+path: room-1og-abstellkammer
 icon: mdi:library-shelves
 subview: true
 theme: ios-dark-mode-blue-red
