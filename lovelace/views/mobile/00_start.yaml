@@ -32,7 +32,7 @@ badges:
     entity: weather.home
     icon: >
       {% set state = states(entity) %}
-      {% set icon_name = state | replace('partlycloudy', 'partly-cloudy') %}
+      {% set icon_name = state | replace('partlycloudy', 'partly-cloudy') | replace('clear-night', 'night') %}
       mdi:weather-{{ icon_name }}
     label: "{{ state_attr(entity, 'friendly_name') }}"
     content: "{{ state_attr(entity, 'temperature') }} {{ state_attr(entity, 'temperature_unit') }}"
@@ -59,7 +59,8 @@ badges:
 sections:
   - strategy:
       type: common-controls
-      title: Common controls
+      title: Häufig genutzt
+      hide_empty: true
   - type: grid
     cards:
       - !include ../../cards/nav-bar.yaml
