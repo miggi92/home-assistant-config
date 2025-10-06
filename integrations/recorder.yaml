@@ -10,5 +10,3 @@ recorder:
       - sensor.sun*
       - weather.*
       - sensor.flightradar24*
-    event_types:
-      - call_service # Don't record service calls
