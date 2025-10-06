@@ -1,0 +1,13 @@
+---
+title: Garten
+path: room-eg-garten
+icon: mdi:tree
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml

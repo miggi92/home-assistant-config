@@ -5,6 +5,25 @@ routes:
   - url: /lovelace-mobile/start
     icon: mdi:home
     label: Startseite
+  - icon: mdi:tree-outline
+    icon_selected: mdi:tree
+    label: Außen
+    tap_action: { action: open-popup }
+    popup: |
+      [[[
+        return Object.values(hass.areas)
+          .filter(area => area.floor_id === 'eg')
+          .map(area => ({
+            label: area.name,
+            url: "/lovelace-mobile/room-eg-" + area.area_id,
+            icon: area.icon
+          }));
+      ]]]
+    selected: |
+      [[[
+        const path = window.location.pathname;
+        return path.startsWith('/lovelace-mobile/room-eg-');
+      ]]]
   - icon: mdi:sofa-outline
     icon_selected: mdi:sofa
     label: Räume
@@ -22,7 +41,7 @@ routes:
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/room-');
+        return path.startsWith('/lovelace-mobile/room-1og-');
       ]]]
     badge:
       show: |

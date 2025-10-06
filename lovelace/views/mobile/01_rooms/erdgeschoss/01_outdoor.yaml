@@ -1,0 +1,120 @@
+---
+title: Außen
+path: room-eg-aussen
+icon: mdi:tree
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges:
+  - type: entity
+    entity: sun.sun
+  - type: custom:mushroom-template-badge
+    content: >-
+      Aufgang  {% if states.sun.sun %} {{
+      (as_timestamp(states.sun.sun.attributes.next_rising)) |
+      timestamp_custom(('%H:%M') )}} {% endif %}
+    icon: mdi:weather-sunset-up
+  - type: custom:mushroom-template-badge
+    content: >-
+      Untergang  {% if states.sun.sun %} {{
+      (as_timestamp(states.sun.sun.attributes.next_setting)) |
+      timestamp_custom(('%H:%M') )}} {% endif %}
+    icon: mdi:weather-sunset-down
+  - type: entity
+    entity: sensor.moon
+  - type: entity
+    entity: sensor.zodiac
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml
+      - type: weather-forecast
+        entity: weather.home
+        secondary_info_attribute: humidity
+        show_current: true
+        show_forecast: true
+      - type: picture
+        image_entity: image.ai_generated_weather_image
+  - type: grid
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: custom:decluttering-card
+                template: waste_card_template
+                variables:
+                  - entity: sensor.restmull
+                  - title: Restmüll
+                  - max_days: 15
+              - type: custom:decluttering-card
+                template: waste_card_template
+                variables:
+                  - entity: sensor.papier
+                  - title: Papiertonne
+                  - icon_color: blue
+          - type: horizontal-stack
+            cards:
+              - type: custom:decluttering-card
+                template: waste_card_template
+                variables:
+                  - entity: sensor.schadstoffe
+                  - title: Schadstoffe
+                  - icon_color: yellow
+                  - max_days: 80
+              - type: custom:decluttering-card
+                template: waste_card_template
+                variables:
+                  - entity: sensor.bio
+                  - title: Biotonne
+                  - icon_color: brown
+                  - max_days: 15
+      - type: custom:decluttering-card
+        template: pollen_card_template
+      - type: vertical-stack
+        title: Flightradar24
+        cards:
+          - type: entities
+            entities:
+              - entity: sensor.flightradar24_current_in_area
+                name: In area
+              - entity: sensor.flightradar24_additional_tracked
+                name: Additional tracked
+          - type: conditional
+            conditions:
+              - condition: or
+                conditions:
+                  - condition: numeric_state
+                    entity: sensor.flightradar24_current_in_area
+                    above: 0
+                  - condition: numeric_state
+                    entity: sensor.flightradar24_additional_tracked
+                    above: 0
+            card:
+              type: markdown
+              content: >-
+                {% set currentData = state_attr('sensor.flightradar24_current_in_area', 'flights') %}
+                {% set additionalData = state_attr('sensor.flightradar24_additional_tracked', 'flights') %}
+                {% set flights = currentData | list + additionalData | list %}
+                {% for flight in flights %}
+                  <ha-icon icon="mdi:airplane"></ha-icon>{{ flight.flight_number }}({{ flight.aircraft_registration }}) - {{ flight.airline_short }} - {{ flight.aircraft_model }}
+                  {{ flight.airport_origin_city }}{%if flight.airport_origin_city %}<img src="https://flagsapi.com/{{ flight.airport_origin_country_code }}/shiny/16.png" title='{{ flight.airport_origin_country_name }}'/>{% endif %} -> {{ flight.airport_destination_city }}{%
+                  if flight.airport_destination_country_code %}<img src="https://flagsapi.com/{{ flight.airport_destination_country_code }}/shiny/16.png" title='{{ flight.airport_destination_country_name }}'/>{% endif %}
+                  {%if flight.time_scheduled_departure %}Departure - {{ flight.time_scheduled_departure | timestamp_custom('%H:%M') }}; {% endif %}{%if flight.time_scheduled_arrival%}Arrival - {{ flight.time_scheduled_arrival | timestamp_custom('%H:%M') }}{% endif %}
+                  Altitude - {{ flight.altitude }} ft{%if flight.altitude > 0 %} ({{(flight.altitude * 0.3048)| round(0)}} m){% endif%}; Gr. speed - {{ flight.ground_speed }} kts{%if flight.ground_speed > 0 %} ({{(flight.ground_speed * 1.852)| round(0)}} km/h){% endif%}
+                {% endfor %}
+  - type: grid
+    cards:
+      - type: picture-entity
+        entity: camera.rathaus
+        show_state: false
+        camera_image: camera.rathaus
+      - type: picture-entity
+        entity: camera.schleuse_oberwasser
+        show_state: false
+        camera_image: camera.schleuse_oberwasser
+      - type: picture-entity
+        entity: camera.schleuse_unterwasser
+        show_state: false
+        camera_image: camera.schleuse_unterwasser
