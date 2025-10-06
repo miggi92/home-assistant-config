@@ -76,6 +76,8 @@ sections:
       type: common-controls
       title: Häufig genutzt
       hide_empty: true
+      limit: 8
+      icon: mdi:gesture-double-tap
   - type: grid
     cards:
       - !include ../../cards/nav-bar.yaml
