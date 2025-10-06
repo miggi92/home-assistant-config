@@ -17,18 +17,26 @@ sections:
     cards: []
   - type: grid
     cards:
-      - type: map
-        auto_fit: true
-        theme_mode: auto
-        title: Personen
-        entities:
-          - entity: person.ceci
-          - entity: person.lisa
-          - entity: person.thomas
-          - entity: person.milo_carlos
-          - entity: person.maja
-          - entity: person.silke
-          - entity: person.miguel
+      - type: custom:auto-entities
+        card:
+          type: map
+          title: Bewohner
+          auto_fit: true
+          theme_mode: auto
+        filter:
+          include:
+            - domain: person
+              group: group.residents
+      - type: custom:auto-entities
+        card:
+          type: map
+          title: Gäste
+          auto_fit: true
+          theme_mode: auto
+        filter:
+          include:
+            - domain: person
+              group: group.guests
 
   - type: grid
     cards: []
