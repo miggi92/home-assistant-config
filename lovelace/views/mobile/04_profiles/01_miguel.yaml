@@ -11,7 +11,15 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.notifications_miguel
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.miguel_has_swatch
   - type: grid
-    cards: []
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: schedule.buro_tage
+      - type: custom:mushroom-entity-card
+        entity: input_datetime.miguel_wecker
   - type: grid
     cards: []
