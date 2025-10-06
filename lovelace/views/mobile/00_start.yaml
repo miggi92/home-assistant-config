@@ -8,6 +8,12 @@ theme: ios-dark-mode-blue-red
 header:
   layout: center
   badges_position: top
+  card:
+    type: markdown
+    text_only: true
+    content: |-
+      # Hallo {{ user }}
+      {{ states('input_text.ai_morning_briefing') }}
 badges:
   - type: custom:mushroom-template-badge
     entity: alarm_control_panel.alarmo
