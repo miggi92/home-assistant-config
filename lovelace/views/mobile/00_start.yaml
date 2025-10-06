@@ -351,7 +351,7 @@ sections:
             variables:
               - title: Arbeitszimmer
               - icon: mdi:chair-rolling
-              - nav_path: room-1og-arbeitszimmer
+              - nav_path: room-1og-buro
               - light: light.buro
               - temperature: sensor.luftqualitat_buro_temperature
               - motion: binary_sensor.kinderzimmerbewegungssensor_occupancy
