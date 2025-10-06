@@ -11,6 +11,10 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.notifications_silke
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.silke_has_swatch
   - type: grid
     cards: []
   - type: grid
