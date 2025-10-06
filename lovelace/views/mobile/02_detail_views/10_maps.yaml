@@ -14,7 +14,8 @@ badges:
       navigation_path: start
 sections:
   - type: grid
-    cards: []
+    cards:
+      - !include ../../../cards/nav-bar.yaml
   - type: grid
     cards:
       - type: custom:auto-entities
