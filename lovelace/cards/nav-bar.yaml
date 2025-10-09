@@ -64,7 +64,7 @@ routes:
     hidden: |
       [[[ return user.name != 'Silke' ]]]
   - icon: mdi:dots-horizontal
-    label: More
+    label: Mehr
     tap_action:
       action: open-popup
     popup:
