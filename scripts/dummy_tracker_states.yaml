@@ -11,6 +11,9 @@ dummy_tracker_states:
           data:
             dev_id: milo_dummy_tracker
             location_name: home
+            gps:
+              - !secret home_lat
+              - !secret home_long
       else:
         - action: device_tracker.see
           data:
@@ -25,6 +28,9 @@ dummy_tracker_states:
           data:
             dev_id: maja_dummy_tracker
             location_name: home
+            gps:
+              - !secret home_lat
+              - !secret home_long
       else:
         - action: device_tracker.see
           data:
