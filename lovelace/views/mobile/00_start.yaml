@@ -13,7 +13,10 @@ header:
     text_only: true
     content: |-
       # Hallo {{ user }}
+      {% if states('binary_sensor.morgen') == 'on' %}
       {{ states('input_text.ai_morning_briefing') }}
+      {% endif %}
+      {{ states('input_text.klima_analyse') }}
 badges:
   - type: custom:mushroom-template-badge
     entity: alarm_control_panel.alarmo
