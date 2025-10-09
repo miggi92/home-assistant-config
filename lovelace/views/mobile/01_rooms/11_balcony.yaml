@@ -6,12 +6,7 @@ subview: true
 type: sections
 max_columns: 3
 theme: ios-dark-mode-blue-red
-badges:
-  - type: custom:mushroom-template-badge
-    icon: mdi:arrow-left
-    tap_action:
-      action: navigate
-      navigation_path: start
+badges: []
 sections:
   - type: grid
     cards:
