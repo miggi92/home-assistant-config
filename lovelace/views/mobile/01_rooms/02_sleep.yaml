@@ -7,11 +7,6 @@ type: sections
 max_columns: 3
 theme: ios-dark-mode-blue-red
 badges:
-  - type: custom:mushroom-template-badge
-    icon: mdi:arrow-left
-    tap_action:
-      action: navigate
-      navigation_path: start
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
@@ -23,9 +18,7 @@ badges:
   - type: entity
     entity: group.sleep_motion_sensors
   - type: entity
-    entity: binary_sensor.withings_in_bed_miguel
-  - type: entity
-    entity: binary_sensor.withings_in_bed_silke
+    entity: binary_sensor.bett_tracker
 sections:
   - type: grid
     cards:
