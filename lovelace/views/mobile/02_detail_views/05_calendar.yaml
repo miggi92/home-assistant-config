@@ -37,12 +37,20 @@ sections:
             icon: mdi:doctor
           - entity: calendar.saragebhardt_googlemail_com
             name: Sara
-            color: yellow
+            color: purple
             icon: mdi:human-female-boy
           - entity: calendar.mcmcamp1965_googlemail_com
             name: Mama
             color: red
             icon: mdi:account
+          - entity: calendar.daikin_hbl_spielplan
+            color: blue
+            icon: mdi:handball
+            name: HBL
+          - entity: calendar.2_hbl_spielplan
+            color: yellow
+            icon: mdi:handball
+            name: 2. HBL
         days: 7
         startingDay: today
         startingDayOffset: 0
