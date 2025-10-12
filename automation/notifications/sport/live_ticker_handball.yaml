@@ -23,7 +23,7 @@ action:
   - service: script.notify_engine
     data:
       title: |
-        Liveticker
+        Liveticker - {{ trigger.from_state.attributes.friendly_name }}
       value1: |
         {% set latest_event = trigger.to_state.attributes.events | sort(attribute='timestamp', reverse=true) | first %}
         {{ latest_event.message }} - {{ latest_event.score }} ({{ latest_event.time }})
