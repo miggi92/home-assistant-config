@@ -1,7 +1,7 @@
 ---
-alias: LivetickerSGH
+alias: LivetickerHandball
 id: da7da451-5434-4399-b5bc-8d6e3a78782e
-description: "Liveticker SGH"
+description: "Liveticker Handball"
 trigger:
   - trigger: state
     entity_id:
