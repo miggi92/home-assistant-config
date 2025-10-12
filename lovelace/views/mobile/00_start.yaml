@@ -167,18 +167,6 @@ sections:
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:
-              - title: Lichter
-              - nav_path: lights
-              - icon: mdi:lightbulb
-              - icon_color: >-
-                  {% if states('number.count_lights_on') | int == 0 %}
-                  grey
-                  {% else %}
-                  amber
-                  {%endif%}
-          - type: custom:decluttering-card
-            template: navigation_card_template
-            variables:
               - title: Kameras
               - nav_path: cams
               - icon: mdi:cctv
