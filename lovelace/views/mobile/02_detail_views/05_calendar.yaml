@@ -28,9 +28,6 @@ sections:
             icon: mdi:human-male-female-child
             color: lightblue
             name: Familie
-          # - entity: calendar.daikin_hbl_spielplan
-          #   name: HBL
-          #   icon: mdi:handball
           - entity: calendar.lisa1_gebhardt_gmail_com
             name: Lisa
             color: green
