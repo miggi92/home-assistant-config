@@ -6,8 +6,19 @@ trigger:
   - trigger: state
     entity_id:
       - sensor.sg_heuchelberg_live_events
+      - sensor.tv_1895_flein_2_live_events
+      - sensor.sg_heuchelberg_wja_live_events
 
-condition: []
+condition:
+  - condition: template
+    value_template: >
+      {% set from = trigger.from_state %}
+      {% set to = trigger.to_state %}
+      {% if from is none or to is none %}
+        false
+      {% else %}
+        {{ to.attributes.total_events | int > from.attributes.total_events | int }}
+      {% endif %}
 action:
   - service: script.notify_engine
     data:
