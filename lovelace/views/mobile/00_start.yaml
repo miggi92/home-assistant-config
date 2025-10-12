@@ -79,7 +79,7 @@ sections:
       type: common-controls
       title: Häufig genutzt
       hide_empty: true
-      limit: 8
+      limit: 10
       icon: mdi:gesture-double-tap
   - type: grid
     cards:
