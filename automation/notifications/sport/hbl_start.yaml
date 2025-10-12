@@ -1,0 +1,24 @@
+---
+id: 417a3e23-ae5b-42ee-82df-49f6d288f952
+alias: HBL Spielstart
+description: Benachrichtigt 30 Minuten vor Beginn eines HBL-Spiels.
+triggers:
+  - trigger: calendar
+    entity_id: calendar.daikin_hbl_spielplan
+    event: start
+    offset: -0:30:0
+  - trigger: calendar
+    entity_id: calendar.2_hbl_spielplan
+    event: start
+    offset: -0:30:0
+conditions: []
+actions:
+  - action: script.notify_engine
+    metadata: {}
+    data:
+      who: home
+      tag_id: information
+      title: "Handball im TV \U0001F4FA"
+      value1: In 30 Minuten spielt {{ trigger.calendar_event.summary }}
+mode: parallel
+max: 10
