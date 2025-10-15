@@ -15,6 +15,9 @@ sections:
         entity: input_boolean.notifications_silke
       - type: custom:mushroom-entity-card
         entity: input_boolean.silke_has_swatch
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.medi_notification_silke
+        name: Medikamentenbenachrichtigung
   - type: grid
     cards: []
   - type: grid

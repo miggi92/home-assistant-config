@@ -21,5 +21,8 @@ sections:
         entity: schedule.buro_tage
       - type: custom:mushroom-entity-card
         entity: input_datetime.miguel_wecker
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.medi_notification_miguel
+        name: Medikamentenbenachrichtigung
   - type: grid
     cards: []

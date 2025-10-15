@@ -16,9 +16,11 @@ action:
         - key: miguel
           device: miguel
           name: Miguel
+          notification: input_boolean.medi_notification_miguel
         - key: silke
           device: silke
           name: Silke
+          notification: input_boolean.medi_notification_silke
         - key: milo
           device: "miguel, silke"
           name: Milo
@@ -88,9 +90,17 @@ action:
             person_key: "{{ repeat.item.key }}"
             person_info: "{{ repeat.item.name }}"
             person_device: "{{ repeat.item.device }}"
+            person_notification: >
+              {% if repeat.item.notification is defined %}
+                {{ states(repeat.item.pnotification) }}
+              {% else %} none {% endif %}
             medi_message: "{{ medis_by_person[person_key] }}"
         - choose:
-            - conditions: "{{ medi_message != '' }}"
+            - conditions:
+                - condition: template
+                  value_template: "{{ medi_message != '' }}"
+                - condition: template
+                  value_template: "{{ person_notification != undefined and person_notification == 'on' }}"
               sequence:
                 - service: script.notify_engine
                   data:
