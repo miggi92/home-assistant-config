@@ -1,0 +1,46 @@
+---
+# Weather
+
+alias: Show weather on clock
+id: 17582ba9-526e-418c-88f9-520d6b36adb8
+description: "Show weather on clock"
+trigger:
+  - platform: time_pattern
+    minutes: /5
+condition: []
+action:
+  - variables:
+      weather_icon: >-
+        {% if is_state('weather.home', 'clear-night') %}12181
+        {% elif is_state('weather.home', 'cloudy') %}53384
+        {% elif is_state('weather.home', 'exceptional') %}56705
+        {% elif is_state('weather.home', 'fog') %}17055
+        {% elif is_state('weather.home', 'hail') %}53288
+        {% elif is_state('weather.home', 'lightning') %}50231
+        {% elif is_state('weather.home', 'lightning-rainy') %}49299
+        {% elif is_state('weather.home', 'partlycloudy') %}53802
+        {% elif is_state('weather.home', 'pouring') %}49300
+        {% elif is_state('weather.home', 'rainy') %}2284
+        {% elif is_state('weather.home', 'snowy') %}2289
+        {% elif is_state('weather.home', 'snowy-rainy') %}49301
+        {% elif is_state('weather.home', 'sunny') %}2282
+        {% elif is_state('weather.home', 'windy') %}55032
+        {% else %}2422
+        {% endif %}
+
+  - action: script.awtrix3customapp
+    data:
+      app_id: weather_temp
+      text: "{{ state_attr('weather.home', 'temperature') }} {{ state_attr('weather.home', 'temperature_unit') }}"
+      icon: "{{ weather_icon }}"
+  - action: script.awtrix3customapp
+    data:
+      app_id: weather_humidity
+      text: "{{ state_attr('weather.home', 'humidity') }} %"
+      icon: "2423"
+  - action: script.awtrix3customapp
+    data:
+      app_id: weather_wind
+      text: "{{ state_attr('weather.home', 'wind_speed') }} {{ state_attr('weather.home', 'wind_speed_unit') }}"
+      icon: "55032"
+mode: single
