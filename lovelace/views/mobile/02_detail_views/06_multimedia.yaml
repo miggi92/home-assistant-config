@@ -26,46 +26,66 @@ sections:
           progress: true
       - type: grid
         cards:
-          - type: custom:mini-media-player
-            entity: media_player.echo_gross
-            artwork: cover
-            icon: fab:amazon
-            info: short
-            hide:
-              mute: true
-              icon: true
-              source: true
-              power_state: false
-          - type: custom:mini-media-player
-            entity: media_player.echo_kuche
-            artwork: cover
-            icon: fab:amazon
-            info: short
-            hide:
-              mute: true
-              icon: true
-              source: true
-              power_state: false
-          - type: custom:mini-media-player
-            entity: media_player.echo_schlafzimmer
-            artwork: cover
-            icon: fab:amazon
-            info: short
-            hide:
-              mute: true
-              icon: true
-              source: true
-              power_state: false
-          - type: custom:mini-media-player
-            entity: media_player.echo_show
-            artwork: cover
-            icon: fab:amazon
-            info: short
-            hide:
-              mute: true
-              icon: true
-              source: true
-              power_state: false
+          - type: conditional
+            conditions:
+              - entity: media_player.echo_gross
+                state_not: "unavailable"
+            card:
+              type: custom:mini-media-player
+              entity: media_player.echo_gross
+              artwork: cover
+              icon: fab:amazon
+              info: short
+              hide:
+                mute: true
+                icon: true
+                source: true
+                power_state: false
+          - type: conditional
+            conditions:
+              - entity: media_player.echo_kuche
+                state_not: "unavailable"
+            card:
+              type: custom:mini-media-player
+              entity: media_player.echo_kuche
+              artwork: cover
+              icon: fab:amazon
+              info: short
+              hide:
+                mute: true
+                icon: true
+                source: true
+                power_state: false
+          - type: conditional
+            conditions:
+              - entity: media_player.echo_schlafzimmer
+                state_not: "unavailable"
+            card:
+              type: custom:mini-media-player
+              entity: media_player.echo_schlafzimmer
+              artwork: cover
+              icon: fab:amazon
+              info: short
+              hide:
+                mute: true
+                icon: true
+                source: true
+                power_state: false
+          - type: conditional
+            conditions:
+              - entity: media_player.echo_show
+                state_not: "unavailable"
+            card:
+              type: custom:mini-media-player
+              entity: media_player.echo_show
+              artwork: cover
+              icon: fab:amazon
+              info: short
+              hide:
+                mute: true
+                icon: true
+                source: true
+                power_state: false
           - type: custom:mini-media-player
             entity: media_player.fernseher_im_wohnzimmer
             artwork: full-cover
