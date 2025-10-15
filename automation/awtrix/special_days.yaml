@@ -1,0 +1,58 @@
+---
+# 14397
+alias: Show special days on clock
+id: 10af4661-0fb0-4b0e-9b0d-e5ae7d251d93
+description: "Show special days on clock"
+trigger:
+  - platform: time
+    at: "00:01:00"
+condition: []
+action:
+  - variables:
+      today: "{{ '%02d.%02d' | format(now().day, now().month) }}"
+      special_day: >
+        {% if today == '31.10' %}
+          Halloween
+        {% elif today == '24.12' %}
+          Weihnachten
+        {% elif today == '31.12' %}
+          Silvester
+        {% elif today == '01.01' %}
+          Neues Jahr
+        {% elif today == '04.05' %}
+          Star Wars
+        {% elif today == '14.02' %}
+          Valentinstag
+        {% else %}
+          none
+        {% endif %}
+      icon: >
+        {% if ( special_day == 'Halloween') %}
+          14397
+        {% elif today == 'Weihnachten' %}
+          1782
+        {% elif today == 'Silvester' %}
+          5855
+        {% elif today == 'Neues Jahr' %}
+          25795
+        {% elif today == 'Star Wars' %}
+          5696
+        {% elif today == 'Valentinstag' %}
+          5080
+        {% else %}
+          none
+        {% endif %}
+  - if:
+      - condition: template
+        value_template: "{{ special_day != 'none' }}"
+    then:
+      - action: script.awtrix3customapp
+        data:
+          app_id: special_day
+          text: "{{ special_day }}"
+          icon: "{{ icon }}"
+    else:
+      - action: script.awtrix3delapp
+        data:
+          app_id: special_day
+mode: single
