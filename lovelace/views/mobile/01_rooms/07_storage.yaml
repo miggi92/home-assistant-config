@@ -21,8 +21,41 @@ badges:
       action: more-info
   - type: entity
     entity: input_boolean.wash_active
+    card_mod:
+      style: |
+        {% if states(config.entity) == 'on' %}
+          ha-state-icon {
+            animation: shake 400ms ease-in-out infinite, drum 2s ease infinite;
+            transform-origin: 50% 110%;
+          }
+          @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            20%  { transform: translate(0.4px, -0.4px) rotate(-4deg); }
+            40%  { transform: translate(-0.4px, 0.4px) rotate(4deg); }
+            60%  { transform: translate(0.4px, 0.4px) rotate(-4deg); }
+            80%  { transform: translate(-0.4px, -0.4px) rotate(4deg); }
+          }
+          @keyframes drum {
+            50%  { clip-path: polygon(0 0, 0 100%, 35% 100%, 34% 68%, 60% 41%, 71% 56%, 65% 74%, 47% 79%, 32% 69%, 35% 100%, 100% 100%, 100% 0); }
+          }
+        {% endif %}
   - type: entity
     entity: input_boolean.dryer_active
+    card_mod:
+      style: |
+        {% if states(config.entity) == 'on' %}
+          ha-state-icon {
+            animation: shake 400ms ease-in-out infinite, drum 1s infinite;
+            transform-origin: 50% 65%;
+          }
+          @keyframes shake {
+            0%, 100% { transform: rotate(4deg); }
+            50%  { transform: rotate(-4deg); }
+          }
+          @keyframes drum {
+            50%  { clip-path: polygon(0 0, 0 100%, 35% 100%, 36% 74%, 31% 43%, 61% 40%, 71% 69%, 62% 78%, 36% 73%, 35% 100%, 100% 100%, 100% 0); }
+          }
+        {% endif %}
 sections:
   - type: grid
     cards:
