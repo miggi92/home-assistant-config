@@ -8,7 +8,26 @@ routes:
     label: Startseite
   - icon: mdi:tree-outline
     icon_selected: mdi:tree
-    label: Außen
+    label: "UG"
+    tap_action: { action: open-popup }
+    popup: |
+      [[[
+        return Object.values(hass.areas)
+          .filter(area => area.floor_id === 'keller')
+          .map(area => ({
+            label: area.name,
+            url: "/lovelace-mobile/room-eg-" + area.area_id,
+            icon: area.icon
+          }));
+      ]]]
+    selected: |
+      [[[
+        const path = window.location.pathname;
+        return path.startsWith('/lovelace-mobile/room-eg-');
+      ]]]
+  - icon: mdi:tree-outline
+    icon_selected: mdi:tree
+    label: "EG"
     tap_action: { action: open-popup }
     popup: |
       [[[
@@ -27,7 +46,7 @@ routes:
       ]]]
   - icon: mdi:sofa-outline
     icon_selected: mdi:sofa
-    label: Räume
+    label: "1. OG"
     tap_action: { action: open-popup }
     popup: |
       [[[
