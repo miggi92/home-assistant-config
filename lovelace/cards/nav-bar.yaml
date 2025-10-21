@@ -24,6 +24,11 @@ routes:
         const path = window.location.pathname;
         return path.startsWith('/lovelace-mobile/room-ug-');
       ]]]
+    badge:
+      show: |
+        [[[ return states['number.count_lights_ug'].state > 0; ]]]
+      count: |
+        [[[  return Math.ceil(states['number.count_lights_ug'].state); ]]]
   - icon: mdi:home-floor-g
     label: "EG"
     tap_action: { action: open-popup }
@@ -42,6 +47,11 @@ routes:
         const path = window.location.pathname;
         return path.startsWith('/lovelace-mobile/room-eg-');
       ]]]
+    badge:
+      show: |
+        [[[ return states['number.count_lights_eg'].state > 0; ]]]
+      count: |
+        [[[  return Math.ceil(states['number.count_lights_eg'].state); ]]]
   - icon: mdi:home-floor-1
     label: "1. OG"
     tap_action: { action: open-popup }
@@ -62,9 +72,9 @@ routes:
       ]]]
     badge:
       show: |
-        [[[ return states['number.count_lights_on'].state > 0; ]]]
+        [[[ return states['number.count_lights_1_og'].state > 0; ]]]
       count: |
-        [[[  return Math.ceil(states['number.count_lights_on'].state); ]]]
+        [[[  return Math.ceil(states['number.count_lights_1_og'].state); ]]]
   - url: /lovelace-mobile/miguel
     icon: mdi:cog
     label: "Profil"
