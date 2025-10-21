@@ -6,8 +6,7 @@ routes:
     icon_selected: mdi:home
     icon: mdi:home-outline
     label: Startseite
-  - icon: mdi:tree-outline
-    icon_selected: mdi:tree
+  - icon: mdi:home-floor-negative-1
     label: "UG"
     tap_action: { action: open-popup }
     popup: |
@@ -16,17 +15,16 @@ routes:
           .filter(area => area.floor_id === 'keller')
           .map(area => ({
             label: area.name,
-            url: "/lovelace-mobile/room-eg-" + area.area_id,
+            url: "/lovelace-mobile/room-ug-" + area.area_id,
             icon: area.icon
           }));
       ]]]
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/room-eg-');
+        return path.startsWith('/lovelace-mobile/room-ug-');
       ]]]
-  - icon: mdi:tree-outline
-    icon_selected: mdi:tree
+  - icon: mdi:home-floor-g
     label: "EG"
     tap_action: { action: open-popup }
     popup: |
@@ -44,8 +42,7 @@ routes:
         const path = window.location.pathname;
         return path.startsWith('/lovelace-mobile/room-eg-');
       ]]]
-  - icon: mdi:sofa-outline
-    icon_selected: mdi:sofa
+  - icon: mdi:home-floor-1
     label: "1. OG"
     tap_action: { action: open-popup }
     popup: |

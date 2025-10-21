@@ -1,0 +1,13 @@
+---
+title: Hauswirtschaftsraum
+path: room-ug-hwr
+icon: mdi:home-lightning-bolt
+subview: true
+type: sections
+max_columns: 3
+theme: ios-dark-mode-blue-red
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml
