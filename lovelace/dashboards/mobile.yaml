@@ -2,6 +2,15 @@
 title: Mobile Dashboard
 decluttering_templates: !include_dir_merge_named ../templates
 button_card_templates: !include_dir_merge_named ../button_card_templates
+kiosk_mode:
+  hide_add_to_home_assistant: true
+  user_settings:
+    - users:
+        - "miguel"
+      hide_header: '{{ is_state("input_boolean.miguel_kopfleiste_anzeigen", "off") }}'
+    - users:
+        - "silke"
+      hide_header: true
 views: !include_dir_list ../views/mobile
 background:
   opacity: 33
