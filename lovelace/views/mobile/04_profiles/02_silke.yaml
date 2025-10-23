@@ -21,4 +21,12 @@ sections:
   - type: grid
     cards: []
   - type: grid
-    cards: []
+    cards:
+      - entity: input_select.milo_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical
+      - entity: input_select.maja_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+        layout: vertical

@@ -25,4 +25,10 @@ sections:
         entity: input_boolean.medi_notification_miguel
         name: Medikamentenbenachrichtigung
   - type: grid
-    cards: []
+    cards:
+      - entity: input_select.milo_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+      - entity: input_select.maja_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
