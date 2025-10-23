@@ -4,7 +4,8 @@ android_tv_remote_template:
   variables:
     name: Android TV Remote
   card:
-    type: vertical-stack
+    type: custom:stack-in-card
+    mode: vertical
     cards:
       - type: picture-entity
         entity: sensor.active_app
@@ -14,8 +15,10 @@ android_tv_remote_template:
           "Home": local/images/icons/tv/googletv.jpeg
           "Plex": local/images/icons/tv/plexlogo.png
           "YouTube": local/images/icons/tv/youtube.jpeg
+          "Prime Video": local/images/icons/tv/prime_video.jpg
         show_state: false
         show_name: false
+        aspect_ratio: 40%
       - type: custom:mini-media-player
         entity: media_player.fernseher_im_wohnzimmer
         artwork: full-cover
@@ -24,41 +27,41 @@ android_tv_remote_template:
           source: true
           volume: true
           power_state: false
-      - type: custom:android-tv-card
-        rows:
-          - - power
-            - search
-          - - home
-            - back
-            - menu
-            - settings
-          - - touchpad
-            - slider
-          - - youtube
-            - primevideo
-            - Dyn
-        remote_id: remote.fernseher_im_wohnzimmer
-        custom_actions:
-          - type: button
-            name: Dyn
-            icon: mdi:handball
-            tap_action:
-              action: source
-              source: sport.dyn.app.android.prod
-          - type: slider
-            name: slider
-            range:
-              - 0
-              - 1
-            step: 0.01
-            value_attribute: volume_level
-            tap_action:
-              action: perform-action
-              perform_action: media_player.volume_set
-              data:
-                volume_level: "{{ value | float }}"
-            vertical: true
-            icon: mdi:volume-high
-        keyboard_id: media_player.fernseher_im_wohnzimmer
-        media_player_id: media_player.fernseher_im_wohnzimmer
-        title: "[[name]]"
+# - type: custom:android-tv-card
+#   rows:
+#     - - power
+#       - search
+#     - - home
+#       - back
+#       - menu
+#       - settings
+#     - - touchpad
+#       - slider
+#     - - youtube
+#       - primevideo
+#       - Dyn
+#   remote_id: remote.fernseher_im_wohnzimmer
+#   custom_actions:
+#     - type: button
+#       name: Dyn
+#       icon: mdi:handball
+#       tap_action:
+#         action: source
+#         source: sport.dyn.app.android.prod
+#     - type: slider
+#       name: slider
+#       range:
+#         - 0
+#         - 1
+#       step: 0.01
+#       value_attribute: volume_level
+#       tap_action:
+#         action: perform-action
+#         perform_action: media_player.volume_set
+#         data:
+#           volume_level: "{{ value | float }}"
+#       vertical: true
+#       icon: mdi:volume-high
+#   keyboard_id: media_player.fernseher_im_wohnzimmer
+#   media_player_id: media_player.fernseher_im_wohnzimmer
+#   title: "[[name]]"

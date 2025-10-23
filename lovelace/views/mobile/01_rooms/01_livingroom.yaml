@@ -25,6 +25,19 @@ badges:
       - entity: sensor.wohnzimmer_heizung_humidity
   - type: entity
     entity: group.living_motion_sensors
+  - type: entity
+    entity: sensor.tv_prog_now
+    icon: mdi:television-box
+    show_name: false
+    show_state: false
+    show_icon: true
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: "TV Programm"
+          content: !include ../../../cards/tv_prog.yaml
 sections:
   - type: grid
     cards:
