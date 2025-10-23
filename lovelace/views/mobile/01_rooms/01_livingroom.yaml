@@ -89,10 +89,32 @@ sections:
           - auto
           - heat
           - "off"
-      - type: custom:timer-bar-card
-        entity: timer.climate_auto_off
-        mushroom:
-          layout: vertical
+      - type: conditional
+        conditions:
+          - condition: or
+            conditions:
+              - entity: sensor.season
+                state: "spring"
+              - entity: sensor.season
+                state: "summer"
+        card:
+          type: custom:timer-bar-card
+          entity: timer.climate_auto_off
+          mushroom:
+            layout: vertical
+      - type: conditional
+        conditions:
+          - condition: or
+            conditions:
+              - entity: sensor.season
+                state: "autumn"
+              - entity: sensor.season
+                state: "winter"
+        card:
+          type: custom:timer-bar-card
+          entity: timer.heating_auto_off
+          mushroom:
+            layout: vertical
   - type: grid
     cards:
       - type: custom:mini-media-player

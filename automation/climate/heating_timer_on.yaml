@@ -1,0 +1,17 @@
+---
+# climate auto on timer
+alias: heatingAutoOnTimer
+id: 4c08496c-bf52-45bc-bef5-a212b95b1cc6
+description: ""
+trigger:
+  - platform: event
+    event_type: timer.started
+    event_data:
+      entity_id: timer.heating_auto_off
+condition: []
+action:
+  - service: climate.turn_on
+    target:
+      entity_id:
+        - climate.room_climate_wohnzimmer
+mode: single
