@@ -6,7 +6,6 @@ icon: mdi:garage
 subview: true
 type: sections
 max_columns: 3
-theme: ios-dark-mode-blue-red
 badges: []
 sections:
   - type: grid

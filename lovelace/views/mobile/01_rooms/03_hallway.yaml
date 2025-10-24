@@ -5,7 +5,6 @@ icon: mdi:coat-rack
 subview: true
 type: sections
 max_columns: 3
-theme: ios-dark-mode-blue-red
 badges:
   - type: entity
     entity: binary_sensor.hausture

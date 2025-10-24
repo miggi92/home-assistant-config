@@ -6,7 +6,6 @@ icon: mdi:server-network
 subview: true
 type: sections
 max_columns: 3
-theme: ios-dark-mode-blue-red
 header:
   layout: center
   badges_position: top

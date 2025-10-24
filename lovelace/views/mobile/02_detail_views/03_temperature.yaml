@@ -4,7 +4,6 @@ title: Temperaturen
 path: temp
 icon: mdi:thermometer
 subview: true
-theme: ios-dark-mode-blue-red
 cards:
   - type: custom:mushroom-chips-card
     chips:

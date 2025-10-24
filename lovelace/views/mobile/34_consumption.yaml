@@ -6,7 +6,6 @@ icon: mdi:barrel
 type: sections
 max_columns: 3
 subview: true
-theme: ios-dark-mode-blue-red
 header:
   layout: center
   badges_position: top

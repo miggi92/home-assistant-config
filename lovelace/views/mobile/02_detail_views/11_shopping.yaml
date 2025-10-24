@@ -5,7 +5,6 @@ icon: mdi:cart
 subview: true
 type: sections
 max_columns: 3
-theme: ios-dark-mode-blue-red
 badges:
   - type: custom:mushroom-template-badge
     icon: mdi:arrow-left
