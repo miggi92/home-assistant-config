@@ -1,0 +1,33 @@
+---
+# Meeting info
+alias: MeetingInfo
+id: d1c10388-a5c9-4749-b035-76776b593a00
+description: "Show in meeting info"
+trigger:
+  - platform: state
+    entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
+condition: []
+action:
+  - if:
+      - condition: state
+        entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
+        state: "off"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: meeting
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: meeting
+          text: "In meeting"
+          icon: "9603"
+      - service: notify.tvoverlaynotifyfixed
+        data:
+          data:
+            id: meeting
+            icon: mdi:video-plus
+            expiration: 30m
+            shape: rounded
+          message: "In meeting"
+mode: single
