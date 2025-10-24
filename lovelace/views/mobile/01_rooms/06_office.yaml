@@ -67,6 +67,38 @@ sections:
           - webcam: binary_sensor.teams_video
           - powerline: sensor.bcwmc5cg4100cy0_batterie_powerline_status
           - camera: camera.bcwmc5cg4100cy0_bildschirmfoto
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.bcwmc5cg4100cy0_isinmeeting
+        name: In a meeting
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.bcwmc5cg4100cy0_canreact
+            state: "on"
+        card:
+          type: horizontal-stack
+          title: Teams Reactions
+          cards:
+            - type: custom:mushroom-entity-card
+              entity: button.bcwmc5cg4100cy0_applause
+              primary_info: none
+              secondary_info: none
+            - type: custom:mushroom-entity-card
+              entity: button.bcwmc5cg4100cy0_laugh
+              primary_info: none
+              secondary_info: none
+            - type: custom:mushroom-entity-card
+              entity: button.bcwmc5cg4100cy0_like
+              primary_info: none
+              secondary_info: none
+            - type: custom:mushroom-entity-card
+              entity: button.bcwmc5cg4100cy0_love
+              primary_info: none
+              secondary_info: none
+            - type: custom:mushroom-entity-card
+              entity: button.bcwmc5cg4100cy0_wow
+              primary_info: none
+              secondary_info: none
   - type: grid
     cards:
       - type: custom:decluttering-card
