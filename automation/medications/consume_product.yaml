@@ -14,6 +14,11 @@ trigger:
       - input_boolean.medis_silke_vitamind
     to: "on"
     id: vitamin_d
+conditions:
+  - condition: time
+    after: " 01:00:00"
+    before: " 23:59:00"
+    alias: "To not be triggered by the reset automation"
 action:
   - variables:
       product_id: ""
