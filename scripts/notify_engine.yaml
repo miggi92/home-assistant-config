@@ -209,8 +209,6 @@ notify_engine:
         sequence:
           - if:
               - condition: template
-                value_template: "{{ who != 'tv' and who != 'tv_overlay' and who != 'work'}}"
-              - condition: template
                 value_template: "{{ repeat.item.condition }}"
               - condition: template
                 value_template: "{{ states(repeat.item.device) == 'home' }}"
