@@ -125,7 +125,7 @@ notify_engine:
                       data: >
                         {% set data = {} %}
                         {% if photo %}
-                          {% set data = dict(data, **{'photo': [{'url': photo, 'caption': value1  ~ ' ' ~ value2  ~ ' ' ~ value3 | default}]}) %}
+                          {% set data = dict(data, **{'photo': [{'url': photo, 'caption': message }]}) %}
                         {% elif photos %}
                           {% set data = dict(data, **{'photo': photos}) %}
                         {% endif %}
