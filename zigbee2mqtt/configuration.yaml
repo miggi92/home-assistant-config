@@ -101,8 +101,6 @@ devices:
     friendly_name: Tabletsteckdose
   '0x54ef441000442eea':
     friendly_name: Luftqualitätssensor
-  '0x00178801001f2e28':
-    friendly_name: Discolicht
   '0x44e2f8fffebbf742':
     friendly_name: Kamera Steckdose WZ
   '0x8c65a3fffeaed4e5':
@@ -115,8 +113,6 @@ devices:
     friendly_name: Kaffemaschine
   '0x08ddebfffed02f2f':
     friendly_name: Flur Cam Stecker
-  '0x00158d000805aa96':
-    friendly_name: Briefkasten
 version: 4
 groups:
   '1':
