@@ -12,6 +12,8 @@ sections:
       - !include ../../../cards/nav-bar.yaml
       - type: custom:mushroom-entity-card
         entity: input_boolean.notifications_miguel
+      - type: custom:mushroom-select-card
+        entity: input_select.miguel_notification_channel
       - type: custom:mushroom-entity-card
         entity: input_boolean.miguel_has_swatch
   - type: grid

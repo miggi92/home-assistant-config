@@ -86,15 +86,20 @@ notify_engine:
       entity_id: input_boolean.text_notifications
       state: "on"
     - variables:
-        notifiers:
+        channel_services:
           home: notify.telegram_home_group
           sig_home: notify.signalhome
-          miguel: notify.mobile_app_pixel_9_pro
-          silke: notify.mobile_app_sm_s911b
+          mobile_app_miguel: notify.mobile_app_pixel_9_pro
+          telegram_miguel: notify.miguel_telegram
+          mobile_app_silke: notify.mobile_app_sm_s911b
+          telegram_silke: notify.silke_telegram
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify
           family: notify.signalfamily
+        user_channel_selectors:
+          miguel: input_select.miguel_notification_channel
+          silke: input_select.silke_notification_channel
         recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
     - parallel:
@@ -115,7 +120,16 @@ notify_engine:
                     true
                   {% endif %}
               - variables:
-                  notifier: "{{ notifiers.get(repeat.item, 'notify.miguel_telegram') }}"
+                  notifier: >
+                    {% set recipient = repeat.item %}
+                    {% set selector = user_channel_selectors.get(recipient) %}
+
+                    {% if selector %}
+                      {% set selected_channel = states(selector) %}
+                      {{ channel_services.get(selected_channel) | default('notify.miguel_telegram') }}
+                    {% else %}
+                      {{ channel_services.get(recipient) | default('notify.miguel_telegram') }}
+                    {% endif %}
               - choose:
                   - conditions:
                       - condition: template
