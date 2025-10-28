@@ -87,7 +87,7 @@ notify_engine:
           home: notify.telegram_home_group
           sig_home: notify.signalhome
           miguel: notify.mobile_app_pixel_9_pro
-          silke: notify.mobile_app_pixel_9_pro
+          silke: notify.mobile_app_sm_s911b
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify
