@@ -15,10 +15,10 @@ sections:
       - type: custom:mushroom-select-card
         entity: input_select.silke_notification_channel
       - type: custom:mushroom-entity-card
-        entity: input_boolean.silke_has_swatch
-      - type: custom:mushroom-entity-card
         entity: input_boolean.medi_notification_silke
         name: Medikamentenbenachrichtigung
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.silke_has_swatch
   - type: grid
     cards: []
   - type: grid
