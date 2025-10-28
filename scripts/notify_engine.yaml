@@ -4,6 +4,9 @@
 # Original Repo : https://github.com/CCOSTAN/Home-AssistantConfig
 #####
 notify_engine:
+  alias: "NotifyEngine"
+  icon: mdi:bell-ring
+  description: "Notification engine."
   fields:
     title:
       selector:
@@ -94,156 +97,159 @@ notify_engine:
           family: notify.signalfamily
         recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
-    - repeat:
-        for_each: "{{ recipient_list }}"
-        sequence:
-          - condition: template
-            alias: "Check if recipient's notifications are muted"
-            value_template: >
-              {% set recipient = repeat.item %}
-              {% set muteSwitch = 'input_boolean.notifications_' ~ recipient %}
+    - parallel:
+        - repeat:
+            for_each: "{{ recipient_list }}"
+            sequence:
+              - condition: template
+                alias: "Check if recipient's notifications are muted"
+                value_template: >
+                  {% set recipient = repeat.item %}
+                  {% set muteSwitch = 'input_boolean.notifications_' ~ recipient %}
 
-              {% if recipient in ['tv', 'tv_overlay', 'work', 'home', 'sig_home', 'family'] %}
-                true
-              {% elif states(muteSwitch) is not none %}
-                {{ is_state(muteSwitch, 'on') }}
-              {% else %}
-                true
-              {% endif %}
-          - variables:
-              notifier: "{{ notifiers.get(repeat.item, 'notify.miguel_telegram') }}"
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'telegram' in notifier }}"
-                sequence:
-                  - action: "{{ notifier }}"
-                    alias: "Send notification via telegram"
-                    data:
-                      title: "*{{ title }}*"
-                      message: "{{ message }}"
-                      data: >
-                        {% set data = {} %}
-                        {% if photo %}
-                          {% set data = dict(data, **{'photo': [{'url': photo, 'caption': message }]}) %}
-                        {% elif photos %}
-                          {% set data = dict(data, **{'photo': photos}) %}
-                        {% endif %}
-                        {% if tag_id %}
-                          {% set data = dict(data, **{'message_tag': tag_id}) %}
-                        {% endif %}
-                        {{ data }}
-              - conditions:
-                  - condition: template
-                    value_template: "{{ who == 'tv' }}"
-                sequence:
-                  - action: "{{ notifier }}"
-                    alias: "Send Notification to TV"
-                    data:
-                      title: "{{ title  }}"
-                      message: "{{ message }}"
-                      data:
-                        image:
-                          url: "{{ photo  }}"
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'signal' in notifier }}"
-                sequence:
-                  - action: "{{ notifier }}"
-                    alias: "Signal notification "
-                    data:
-                      message: >-
-                        **{{ title }}**
+                  {% if recipient in ['tv', 'tv_overlay', 'work', 'home', 'sig_home', 'family'] %}
+                    true
+                  {% elif states(muteSwitch) is not none %}
+                    {{ is_state(muteSwitch, 'on') }}
+                  {% else %}
+                    true
+                  {% endif %}
+              - variables:
+                  notifier: "{{ notifiers.get(repeat.item, 'notify.miguel_telegram') }}"
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ 'telegram' in notifier }}"
+                    sequence:
+                      - action: "{{ notifier }}"
+                        alias: "Send notification via telegram"
+                        data:
+                          title: "*{{ title }}*"
+                          message: "{{ message }}"
+                          data: >
+                            {% set data = {} %}
+                            {% if photo %}
+                              {% set data = dict(data, **{'photo': [{'url': photo, 'caption': message }]}) %}
+                            {% elif photos %}
+                              {% set data = dict(data, **{'photo': photos}) %}
+                            {% endif %}
+                            {% if tag_id %}
+                              {% set data = dict(data, **{'message_tag': tag_id}) %}
+                            {% endif %}
+                            {{ data }}
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ who == 'tv' }}"
+                    sequence:
+                      - action: "{{ notifier }}"
+                        alias: "Send Notification to TV"
+                        data:
+                          title: "{{ title  }}"
+                          message: "{{ message }}"
+                          data:
+                            image:
+                              url: "{{ photo  }}"
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ 'signal' in notifier }}"
+                    sequence:
+                      - action: "{{ notifier }}"
+                        alias: "Signal notification "
+                        data:
+                          message: >-
+                            **{{ title }}**
 
-                        {{ message }}
-                      data: >
-                        {% set data = {} %}
-                        {% set data = dict(data, **{'text_mode': 'styled'}) %}
-                        {% if photo %}
-                          {% set data = dict(data, **{'attachments': [photo]}) %}
-                        {% elif photos %}
-                          {% set data = dict(data, **{'attachments': photos}) %}
+                            {{ message }}
+                          data: >
+                            {% set data = {} %}
+                            {% set data = dict(data, **{'text_mode': 'styled'}) %}
+                            {% if photo %}
+                              {% set data = dict(data, **{'attachments': [photo]}) %}
+                            {% elif photos %}
+                              {% set data = dict(data, **{'attachments': photos}) %}
+                            {% endif %}
+                            {{ data }}
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ who == 'tv_overlay' }}"
+                    sequence:
+                      - action: notify.tvoverlaynotify
+                        data:
+                          title: "{{ title }}"
+                          message: "{{ message }}"
+                          data:
+                            appTitle: "{{ group }}"
+                            seconds: 15
+                            image: "{{ photo }}"
+                default:
+                  - variables:
+                      notification_payload: >
+                        {% set d = namespace(data={}) %}
+                        {% if group is defined and group %}
+                          {% set d.data = dict(d.data, group=group) %}
                         {% endif %}
-                        {{ data }}
-              - conditions:
-                  - condition: template
-                    value_template: "{{ who == 'tv_overlay' }}"
-                sequence:
-                  - action: notify.tvoverlaynotify
+                        {% if tag_id is defined and tag_id %}
+                          {% set d.data = dict(d.data, tag=tag_id) %}
+                        {% endif %}
+                        {% if icon is defined and icon %}
+                          {% set d.data = dict(d.data, notification_icon=icon) %}
+                        {% endif %}
+                        {% if photo is defined and photo %}
+                          {% set d.data = dict(d.data, image=photo) %}
+                        {% endif %}
+                        {% if actions is defined and actions %}
+                          {% set d.data = dict(d.data, actions=actions) %}
+                        {% endif %}
+                        {{ d.data }}
+
+                  - action: "{{ notifier }}"
+                    alias: "Default notification"
                     data:
                       title: "{{ title }}"
                       message: "{{ message }}"
-                      data:
-                        appTitle: "{{ group }}"
-                        seconds: 15
-                        image: "{{ photo }}"
-            default:
-              - variables:
-                  notification_payload: >
-                    {% set d = namespace(data={}) %}
-                    {% if group is defined and group %}
-                      {% set d.data = dict(d.data, group=group) %}
-                    {% endif %}
-                    {% if tag_id is defined and tag_id %}
-                      {% set d.data = dict(d.data, tag=tag_id) %}
-                    {% endif %}
-                    {% if icon is defined and icon %}
-                      {% set d.data = dict(d.data, notification_icon=icon) %}
-                    {% endif %}
-                    {% if photo is defined and photo %}
-                      {% set d.data = dict(d.data, image=photo) %}
-                    {% endif %}
-                    {% if actions is defined and actions %}
-                      {% set d.data = dict(d.data, actions=actions) %}
-                    {% endif %}
-                    {{ d.data }}
-
-              - action: "{{ notifier }}"
-                alias: "Default notification"
-                data:
-                  title: "{{ title }}"
-                  message: "{{ message }}"
-                  data: "{{ notification_payload }}"
-    - condition: template
-      value_template: "{{ who != 'tv' and who != 'work' and who != 'tv_overlay' }}"
-    - variables:
-        duplications:
-          - who: tv
-            condition: "{{ who != 'tv' }}"
-            device: device_tracker.gtv
-            media_check: media_player.gtv
-          - who: work
-            condition: "{{ who != 'work' }}"
-            device: device_tracker.bcwmc5cg4100cy0
-          - who: tv_overlay
-            condition: "{{ who != 'tv_overlay' }}"
-            device: device_tracker.1und1_box
-            media_check: media_player.fernseher_im_wohnzimmer
-    - repeat:
-        for_each: "{{ duplications }}"
-        sequence:
-          - if:
-              - condition: template
-                value_template: "{{ repeat.item.condition }}"
-              - condition: template
-                value_template: "{{ states(repeat.item.device) == 'home' }}"
-                alias: "Check if device is home"
-              - condition: or
-                conditions:
-                  - condition: template
-                    value_template: "{{ repeat.item.media_check != '' }}"
-                    alias: "Check if mediaplayer is defined"
-                  - condition: template
-                    value_template: "{{ states(repeat.item.media_check) != 'off' }}"
-                    alias: "Mediaplayer is not off"
-            then:
-              - action: script.notify_engine
-                data:
-                  title: "{{ title }}"
-                  value1: "{{ value1 }}"
-                  value2: "{{ value2 }}"
-                  value3: "{{ value3 }}"
-                  who: "{{ repeat.item.who }}"
-                  group: "{{ group }}"
-                  photo: "{{ photo }}"
-                  tag_id: "{{ tag_id }}"
+                      data: "{{ notification_payload }}"
+        - alias: "Duplicate notification logic"
+          sequence:
+            - condition: template
+              value_template: "{{ who != 'tv' and who != 'work' and who != 'tv_overlay' }}"
+            - variables:
+                duplications:
+                  - who: tv
+                    condition: "{{ who != 'tv' }}"
+                    device: device_tracker.gtv
+                    media_check: media_player.gtv
+                  - who: work
+                    condition: "{{ who != 'work' }}"
+                    device: device_tracker.bcwmc5cg4100cy0
+                  - who: tv_overlay
+                    condition: "{{ who != 'tv_overlay' }}"
+                    device: device_tracker.1und1_box
+                    media_check: media_player.fernseher_im_wohnzimmer
+            - repeat:
+                for_each: "{{ duplications }}"
+                sequence:
+                  - if:
+                      - condition: template
+                        value_template: "{{ repeat.item.condition }}"
+                      - condition: template
+                        value_template: "{{ states(repeat.item.device) == 'home' }}"
+                        alias: "Check if device is home"
+                      - condition: or
+                        conditions:
+                          - condition: template
+                            value_template: "{{ repeat.item.media_check != '' }}"
+                            alias: "Check if mediaplayer is defined"
+                          - condition: template
+                            value_template: "{{ states(repeat.item.media_check) != 'off' }}"
+                            alias: "Mediaplayer is not off"
+                    then:
+                      - action: script.notify_engine
+                        data:
+                          title: "{{ title }}"
+                          value1: "{{ value1 }}"
+                          value2: "{{ value2 }}"
+                          value3: "{{ value3 }}"
+                          who: "{{ repeat.item.who }}"
+                          group: "{{ group }}"
+                          photo: "{{ photo }}"
+                          tag_id: "{{ tag_id }}"
