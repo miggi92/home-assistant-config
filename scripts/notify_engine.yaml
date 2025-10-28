@@ -9,44 +9,44 @@ notify_engine:
       selector:
         text: null
       name: Title
-      description: Titel der Benachrichtigung
+      description: Title of the notification
       required: true
     value1:
       selector:
         text:
           multiline: true
       name: Message part 1
-      description: Benachrichtigungsinhalt Teil 1
+      description: Notification content part 1
       required: true
     value2:
       selector:
         text:
           multiline: true
       name: Message part 2
-      description: Benachrichtigungsinhalt Teil 2
+      description: Notification content part 2
     value3:
       selector:
         text:
           multiline: true
       name: Message part 3
-      description: Benachrichtigungsinhalt Teil 3
+      description: Notification content part 3
     who:
       selector:
         text:
           multiline: true
       default: home
       name: Who
-      description: An wen soll die Benachrichtigung gehen? (Kommagetrennt für mehrere Empfänger)
+      description: Who should the notification go to? (Comma-separated for multiple recipients)
     photo:
       selector:
         text: null
       name: Foto
-      description: Foto URL
+      description: Photo URL
     group:
       selector:
         text: null
-      name: Gruppe
-      description: Gruppe
+      name: Group
+      description: Group
     tag_id:
       selector:
         select:
@@ -59,13 +59,13 @@ notify_engine:
     photos:
       selector:
         object: null
-      name: Fotos
-      description: Fotos
+      name: Photos
+      description: Photos
     inline_keyboard:
       selector:
         object: null
       name: Inline keyboard
-      description: Möglichkeit auf Nachrichten direkt zu antworten
+      description: Option to reply directly to messages
     actions:
       selector:
         object: null
