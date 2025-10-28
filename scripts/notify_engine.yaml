@@ -212,14 +212,15 @@ notify_engine:
                 value_template: "{{ repeat.item.condition }}"
               - condition: template
                 value_template: "{{ states(repeat.item.device) == 'home' }}"
+                alias: "Check if device is home"
               - condition: or
                 conditions:
                   - condition: template
                     value_template: "{{ repeat.item.media_check != '' }}"
-                  - condition: not
-                    conditions:
-                      - condition: template
-                        value_template: "{{ states(repeat.item.media_check) == 'off' }}"
+                    alias: "Check if mediaplayer is defined"
+                  - condition: template
+                    value_template: "{{ states(repeat.item.media_check) != 'off' }}"
+                    alias: "Mediaplayer is not off"
             then:
               - action: script.notify_engine
                 data:
