@@ -25,6 +25,10 @@ sections:
         collapsible_controls: true
         tap_action:
           action: toggle
+      - type: custom:timer-bar-card
+        entity: timer.children_light_on
+        mushroom:
+          layout: vertical
   - type: grid
     cards:
       - type: custom:mushroom-cover-card
