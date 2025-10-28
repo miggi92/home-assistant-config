@@ -94,22 +94,22 @@ notify_engine:
           family: notify.signalfamily
         recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
-    - variables:
-        duplications:
-          - who: tv
-            condition: "{{ who != 'tv' }}"
-            device: device_tracker.gtv
-            media_check: media_player.gtv
-          - who: work
-            condition: "{{ who != 'work' }}"
-            device: device_tracker.bcwmc5cg4100cy0
-          - who: tv_overlay
-            condition: "{{ who != 'tv_overlay' }}"
-            device: device_tracker.1und1_box
-            media_check: media_player.fernseher_im_wohnzimmer
     - repeat:
         for_each: "{{ recipient_list }}"
         sequence:
+          - condition: template
+            alias: "Check if recipient's notifications are muted"
+            value_template: >
+              {% set recipient = repeat.item %}
+              {% set muteSwitch = 'input_boolean.notifications_' ~ recipient %}
+
+              {% if recipient in ['tv', 'tv_overlay', 'work', 'home', 'sig_home', 'family'] %}
+                true
+              {% elif states(muteSwitch) is not none %}
+                {{ is_state(muteSwitch, 'on') }}
+              {% else %}
+                true
+              {% endif %}
           - variables:
               notifier: "{{ notifiers.get(repeat.item, 'notify.miguel_telegram') }}"
           - choose:
@@ -204,6 +204,21 @@ notify_engine:
                   title: "{{ title }}"
                   message: "{{ message }}"
                   data: "{{ notification_payload }}"
+    - condition: template
+      value_template: "{{ who != 'tv' and who != 'work' and who != 'tv_overlay' }}"
+    - variables:
+        duplications:
+          - who: tv
+            condition: "{{ who != 'tv' }}"
+            device: device_tracker.gtv
+            media_check: media_player.gtv
+          - who: work
+            condition: "{{ who != 'work' }}"
+            device: device_tracker.bcwmc5cg4100cy0
+          - who: tv_overlay
+            condition: "{{ who != 'tv_overlay' }}"
+            device: device_tracker.1und1_box
+            media_check: media_player.fernseher_im_wohnzimmer
     - repeat:
         for_each: "{{ duplications }}"
         sequence:
