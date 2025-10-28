@@ -1,0 +1,49 @@
+---
+title: Benachrichtigungen
+path: notification
+icon: mdi:message-badge-outline
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+      - type: custom:mushroom-entity-card
+        entity: automation.foodreadynotif
+        layout: vertical
+  - type: grid
+    cards:
+      - entity: input_boolean.audible_notifications
+        type: custom:mushroom-entity-card
+        name: Sound
+        layout: vertical
+        tap_action:
+          action: toggle
+      - entity: input_boolean.text_notifications
+        type: custom:mushroom-entity-card
+        name: Text
+        layout: vertical
+        tap_action:
+          action: toggle
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.medi_notification_silke
+        layout: vertical
+        name: Benachrichtigung Silke
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.medi_notification_miguel
+        name: Benachrichtigung Miguel
+        layout: vertical
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.medi_notification_milo
+        name: Benachrichtigung Milo
+        layout: vertical
+        tap_action:
+          action: more-info
