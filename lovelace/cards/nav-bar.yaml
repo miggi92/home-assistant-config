@@ -13,11 +13,28 @@ routes:
       [[[
         return Object.values(hass.areas)
           .filter(area => area.floor_id === 'keller')
-          .map(area => ({
-            label: area.name,
-            url: "/lovelace-mobile/room-ug-" + area.area_id,
-            icon: area.icon
-          }));
+          .map(area => {
+            const lightCountEntityId = 'number.count_lights_' + area.area_id;
+
+            const lightCountState = states[lightCountEntityId];
+            let badgeCount = 0;
+            let showBadge = false;
+
+            if (lightCountState && lightCountState.state > 0) {
+              badgeCount = Math.ceil(lightCountState.state);
+              showBadge = true;
+            }
+
+            return {
+              label: area.name,
+              url: "/lovelace-mobile/room-ug-" + area.area_id,
+              icon: area.icon,
+              badge: {
+                show: showBadge,
+                count: badgeCount
+              }
+            }
+          });
       ]]]
     selected: |
       [[[
@@ -36,11 +53,28 @@ routes:
       [[[
         return Object.values(hass.areas)
           .filter(area => area.floor_id === 'eg')
-          .map(area => ({
-            label: area.name,
-            url: "/lovelace-mobile/room-eg-" + area.area_id,
-            icon: area.icon
-          }));
+          .map(area => {
+            const lightCountEntityId = 'number.count_lights_' + area.area_id;
+
+            const lightCountState = states[lightCountEntityId];
+            let badgeCount = 0;
+            let showBadge = false;
+
+            if (lightCountState && lightCountState.state > 0) {
+              badgeCount = Math.ceil(lightCountState.state);
+              showBadge = true;
+            }
+
+            return {
+              label: area.name,
+              url: "/lovelace-mobile/room-eg-" + area.area_id,
+              icon: area.icon,
+              badge: {
+                show: showBadge,
+                count: badgeCount
+              }
+            }
+          });
       ]]]
     selected: |
       [[[
@@ -59,11 +93,28 @@ routes:
       [[[
         return Object.values(hass.areas)
           .filter(area => area.floor_id === '1_og')
-          .map(area => ({
-            label: area.name,
-            url: "/lovelace-mobile/room-1og-" + area.area_id,
-            icon: area.icon
-          }));
+          .map(area => {
+            const lightCountEntityId = 'number.count_lights_' + area.area_id;
+
+            const lightCountState = states[lightCountEntityId];
+            let badgeCount = 0;
+            let showBadge = false;
+
+            if (lightCountState && lightCountState.state > 0) {
+              badgeCount = Math.ceil(lightCountState.state);
+              showBadge = true;
+            }
+
+            return {
+              label: area.name,
+              url: "/lovelace-mobile/room-1og-" + area.area_id,
+              icon: area.icon,
+              badge: {
+                show: showBadge,
+                count: badgeCount
+              }
+            }
+          });
       ]]]
     selected: |
       [[[
