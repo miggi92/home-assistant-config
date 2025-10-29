@@ -17,6 +17,7 @@ badges:
       navigation_path: start
   - type: entity
     entity: input_number.strompreis
+    color: yellow
   - type: entity
     entity: input_number.wasserpreis_pro_m3
 sections:
