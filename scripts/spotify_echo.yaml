@@ -9,11 +9,6 @@ spotify_echo:
         entity_id: media_player.spotify_miguel
         source: >
           {{ source }}
-    - action: media_player.volume_set
-      data:
-        entity_id: media_player.spotify_miguel
-        volume_level: >
-          {{ volume }}
     - action: media_player.play_media
       data:
         entity_id: media_player.spotify_miguel
@@ -21,3 +16,10 @@ spotify_echo:
           {{ type }}
         media_content_id: >
           {{ media_id }}
+    - delay:
+        seconds: 1
+    - action: media_player.volume_set
+      data:
+        entity_id: media_player.spotify_miguel
+        volume_level: >
+          {{ volume }}
