@@ -55,6 +55,15 @@ sections:
         layout: vertical
         tap_action:
           action: toggle
+      - type: custom:mushroom-light-card
+        entity: light.hue_go
+        show_brightness_control: true
+        show_color_control: true
+        use_light_color: true
+        collapsible_controls: true
+        layout: vertical
+        tap_action:
+          action: toggle
       - type: custom:mushroom-entity-card
         entity: scene.tv_gemutlich
         layout: vertical
