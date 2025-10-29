@@ -12,10 +12,13 @@ sections:
       - !include ../../../cards/nav-bar.yaml
       - type: custom:mushroom-entity-card
         entity: automation.foodreadynotif
+        name: "Essen fertig"
+        secondary_info: last-updated
         layout: vertical
         tap_action:
           action: perform-action
-          confirmation: true
+          confirmation:
+            text: Willst du zum Essen rufen?
           perform_action: automation.trigger
           data:
             skip_condition: false
