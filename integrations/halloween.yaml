@@ -69,10 +69,10 @@ automation:
       - platform: time
         at: input_datetime.halloween_show
     action:
-      - service: input_boolean.turn_on
+      - action: input_boolean.turn_on
         entity_id: input_boolean.this_is_halloween
       - delay: "01:00:00"
-      - service: input_boolean.turn_off
+      - action: input_boolean.turn_off
         entity_id: input_boolean.this_is_halloween
 
   - id: operation haunted house
@@ -98,7 +98,7 @@ automation:
               - condition: trigger
                 id: start
             sequence:
-              - service: script.turn_on
+              - action: script.turn_on
                 target:
                   entity_id: script.haunted_house
           # Stop the show
@@ -107,10 +107,10 @@ automation:
                 id: stop
             sequence:
               # And finally we turn off the haunted house script so no more sounds play.
-              - service: script.turn_off
+              - action: script.turn_off
                 target:
                   entity_id: script.haunted_house
-              - service: scene.turn_on
+              - action: scene.turn_on
                 target:
                   entity_id: scene.before_haunting
         default: []
@@ -129,30 +129,31 @@ script:
               state: "on"
           sequence:
             # Take a snap shot of current state
-            - service: scene.create
+            - action: scene.create
               data:
                 scene_id: before_haunting
                 snapshot_entities:
                   - light.bett
                   - light.schreibtischlicht
             # Change a random Random Light
-            - service: light.toggle
+            - action: light.toggle
               data:
                 entity_id: >
                   {{['light.bett',
-                     'light.schreibtischlicht']
-                     | random}}
+                      'light.schreibtischlicht',
+                      'light.hue_go']
+                      | random}}
                 effect: random
             # Start playing a random selection from our haunted sounds.
-            - service: script.haunted_sounds
+            - action: script.haunted_sounds
             # Then another delay. This one is a random delay between 2 and 5 minutes. A delay of at least 2 minutes ensures the previous effect is done before the next one.
             - delay: "00:0{{ range(2,5) | random | int }}:00"
             # After the delay, change the state of the lights back to what they were
-            - service: scene.turn_on
+            - action: scene.turn_on
               target:
                 entity_id: scene.before_haunting
             # play more random haunted sounds. This time though, if we have scary sounds on we play one from there, if not, back to haunted sounds.
-            - service: script.haunted_sounds
+            - action: script.haunted_sounds
             # Then delay again, and when that is done start over.
             - delay: "00:0{{ range(2,5) | random | int }}:00"
 
@@ -164,12 +165,14 @@ script:
         entity_id: input_boolean.haunted_sounds
         state: "on"
       # This script is in the audio.yaml in the packages folder.
-      - service: script.spotify_audio
+      - action: script.spotify_audio
         data:
           source: >
-            {{ ['Bad',
-                'Schlafzimmer',
-                'Wohnzimmer'
+            {{ ['Echo_Büro',
+                'Echo_Show',
+                'Echo_Schlafzimmer',
+                'Milos Dot',
+                'Echo_Dot_weiss'
                 ] | random }}
           volume: .5
           type: "music"
