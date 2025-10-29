@@ -3,12 +3,11 @@ title: Lichter
 path: lights
 icon: mdi:lightbulb
 subview: true
-cards:
-  - type: custom:mushroom-chips-card
-    chips:
-      - type: back
-      - type: spacer
-  - type: horizontal-stack
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
     cards:
       - type: custom:mushroom-light-card
         entity: light.schlafzimmerlicht
@@ -23,10 +22,6 @@ cards:
         use_light_color: true
         show_color_control: true
         collapsible_controls: true
-        tap_action:
-          action: toggle
-  - type: horizontal-stack
-    cards:
       - type: custom:mushroom-light-card
         entity: light.tv_licht
         layout: vertical
@@ -39,8 +34,13 @@ cards:
         show_brightness_control: true
         collapsible_controls: true
         use_light_color: true
-  - type: horizontal-stack
-    cards:
+      - type: custom:mushroom-light-card
+        entity: light.hue_go
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
       - type: custom:mushroom-light-card
         entity: light.thekenlicht
         layout: vertical
@@ -53,8 +53,6 @@ cards:
         show_brightness_control: true
         collapsible_controls: true
         use_light_color: true
-  - type: horizontal-stack
-    cards:
       - type: custom:mushroom-light-card
         entity: light.schreibtischlicht
         layout: vertical
@@ -69,3 +67,41 @@ cards:
         show_brightness_control: true
         collapsible_controls: true
         use_light_color: true
+  - type: grid
+    cards:
+      - type: custom:mushroom-light-card
+        entity: light.wohnzimmer
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-light-card
+        entity: light.schlafzimmer
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-light-card
+        entity: light.kinderzimmer
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-light-card
+        entity: light.buro
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info

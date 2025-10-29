@@ -113,6 +113,8 @@ devices:
     friendly_name: Kaffemaschine
   '0x08ddebfffed02f2f':
     friendly_name: Flur Cam Stecker
+  '0x00178801085af267':
+    friendly_name: Hue Go
 version: 4
 groups:
   '1':
