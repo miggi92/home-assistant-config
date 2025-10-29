@@ -20,7 +20,11 @@ sections:
       - type: custom:mushroom-entity-card
         entity: input_boolean.silke_has_swatch
   - type: grid
-    cards: []
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.silke_kopfleiste_anzeigen
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.silke_seitenleiste_anzeigen
   - type: grid
     cards:
       - entity: input_select.milo_person_sync

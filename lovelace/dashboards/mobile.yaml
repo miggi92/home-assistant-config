@@ -8,9 +8,11 @@ kiosk_mode:
     - users:
         - "miguel"
       hide_header: '{{ is_state("input_boolean.miguel_kopfleiste_anzeigen", "off") }}'
+      hide_sidebar: '{{ is_state("input_boolean.miguel_seitenleiste_anzeigen", "off") }}'
     - users:
         - "silke"
-      hide_header: true
+      hide_header: '{{ is_state("input_boolean.silke_kopfleiste_anzeigen", "off") }}'
+      hide_sidebar: '{{ is_state("input_boolean.silke_seitenleiste_anzeigen", "off") }}'
 views: !include_dir_list ../views/mobile
 background:
   opacity: 33

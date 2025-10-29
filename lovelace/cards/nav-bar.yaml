@@ -94,10 +94,16 @@ routes:
     tap_action:
       action: open-popup
     popup:
+      - icon: mdi:account
+        url: /profile/general
       - icon: mdi:cog
         url: /config/dashboard
+        hidden: |
+          [[[ return user.name != 'Miguel' ]]]
       - icon: mdi:hammer
         url: /developer-tools/yaml
+        hidden: |
+          [[[ return user.name != 'Miguel' ]]]
       - icon: mdi:power
         hidden: |
           [[[ return user.name != 'Miguel' ]]]

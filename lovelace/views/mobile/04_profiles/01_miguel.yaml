@@ -25,6 +25,10 @@ sections:
       - type: custom:mushroom-entity-card
         entity: input_boolean.medi_notification_miguel
         name: Medikamentenbenachrichtigung
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.miguel_kopfleiste_anzeigen
+      - type: custom:mushroom-entity-card
+        entity: input_boolean.miguel_seitenleiste_anzeigen
   - type: grid
     cards:
       - entity: input_select.milo_person_sync
