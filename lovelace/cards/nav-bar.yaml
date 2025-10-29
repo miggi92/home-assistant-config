@@ -116,7 +116,7 @@ routes:
 desktop:
   position: left
   show_labels: true
-  min_width: 950
+  min_width: 768
 mobile:
   show_labels: true
 media_player:
