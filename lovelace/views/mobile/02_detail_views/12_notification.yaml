@@ -13,6 +13,14 @@ sections:
       - type: custom:mushroom-entity-card
         entity: automation.foodreadynotif
         layout: vertical
+        tap_action:
+          action: perform-action
+          confirmation: true
+          perform_action: automation.trigger
+          data:
+            skip_condition: false
+          target:
+            entity_id: automation.foodreadynotif
   - type: grid
     cards:
       - entity: input_boolean.audible_notifications
