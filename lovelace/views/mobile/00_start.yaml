@@ -83,12 +83,13 @@ sections:
       type: common-controls
       title: Häufig genutzt
       hide_empty: true
-      limit: 10
+      limit: 6
       icon: mdi:gesture-double-tap
   - type: grid
     cards:
       - !include ../../cards/nav-bar.yaml
       - !include ../../cards/residents.yaml
+      - !include ../../cards/floorplan.yaml
       - type: conditional
         conditions:
           - entity: sensor.home_aktuelle_warnstufe
