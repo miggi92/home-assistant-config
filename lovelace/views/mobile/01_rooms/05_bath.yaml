@@ -23,7 +23,7 @@ badges:
     variables:
       - entity: sensor.badezimmertempsensor_humidity
   - type: entity
-    entity: binary_sensor.dusche
+    entity: binary_sensor.duschsensor_water_leak
 sections:
   - type: grid
     cards:

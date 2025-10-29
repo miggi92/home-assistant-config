@@ -24,7 +24,7 @@ badges:
     variables:
       - entity: sensor.badezimmertempsensor_humidity
   - type: custom:mushroom-template-badge
-    entity: binary_sensor.dusche
+    entity: binary_sensor.duschsensor_water_leak
     icon: |-
       {% set active = states(entity) %}
       {% if active == 'on' %}

@@ -1,12 +1,11 @@
 ---
 # Shower automation
-# binary_sensor.dusche
 alias: Shower
 id: 2e10ac5d-5d52-4006-9b95-b46e4d241b99
 description: "Shower automation"
 trigger:
   - platform: state
-    entity_id: binary_sensor.dusche
+    entity_id: binary_sensor.duschsensor_water_leak
     to: "on"
 condition: []
 action:
