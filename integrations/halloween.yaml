@@ -66,7 +66,7 @@ automation:
     initial_state: true
     trigger:
       # When the current time matches input_datetime.halloween_show, light this candle
-      - platform: time
+      - trigger: time
         at: input_datetime.halloween_show
     action:
       - action: input_boolean.turn_on
@@ -79,13 +79,13 @@ automation:
     alias: Operation Haunted House
     trigger:
       # If this_is_halloween switch is turned on then we start the show.
-      - platform: state
+      - trigger: state
         entity_id: input_boolean.this_is_halloween
         to: "on"
         from: "off"
         id: start
       # If this_is_halloween switch is turned off then we stop the show.
-      - platform: state
+      - trigger: state
         entity_id: input_boolean.this_is_halloween
         id: stop
         from: "on"
