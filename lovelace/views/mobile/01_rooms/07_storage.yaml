@@ -14,10 +14,10 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.abstellkammertempsensor_humidity
-  - type: entity
-    entity: binary_sensor.abstellkammertursensor_contact
-    tap_action:
-      action: more-info
+  - type: custom:decluttering-card
+    template: door_badge_template
+    variables:
+      - entity: binary_sensor.abstellkammertursensor_contact
   - type: entity
     entity: input_boolean.wash_active
     card_mod:

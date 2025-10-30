@@ -1,0 +1,19 @@
+---
+door_badge_template:
+  card:
+    type: custom:mushroom-template-badge
+    entity: "[[entity]]"
+    icon: |-
+      {% set motion = states(entity) %}
+      {% if motion == 'on' %}
+        mdi:door-open
+      {% else %}
+        mdi:door-closed
+      {% endif %}
+    color: |-
+      {% set motion = states(entity) %}
+      {% if motion == 'on' %}
+        red
+      {% endif %}
+    tap_action:
+      action: more-info
