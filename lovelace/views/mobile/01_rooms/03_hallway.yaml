@@ -6,10 +6,10 @@ subview: true
 type: sections
 max_columns: 3
 badges:
-  - type: entity
-    entity: binary_sensor.hausture
-    tap_action:
-      action: more-info
+  - type: custom:decluttering-card
+    template: door_badge_template
+    variables:
+      - entity: binary_sensor.hausture
   - type: entity
     entity: switch.pi_hole
     icon: mdi:pi-hole
