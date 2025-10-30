@@ -3,6 +3,7 @@ door_badge_template:
   card:
     type: custom:mushroom-template-badge
     entity: "[[entity]]"
+    content: "{{ state_translated(entity) }}"
     icon: |-
       {% set motion = states(entity) %}
       {% if motion == 'on' %}
