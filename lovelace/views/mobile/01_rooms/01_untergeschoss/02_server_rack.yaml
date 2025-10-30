@@ -1,0 +1,13 @@
+---
+#
+title: Serverschrank
+path: room-ug-serverschrank
+icon: mdi:home-lightning-bolt
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml
