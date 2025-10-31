@@ -11,7 +11,8 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ trigger.calendar_event.location is not none and trigger.calendar_event.location|length > 0 }}
+      {% set location = state_attr('calendar.familie', 'location') %}
+      {{ location is not none and location|length > 0 }}
 action:
   - variables:
       title: "{{ state_attr('calendar.familie', 'message') }}"
