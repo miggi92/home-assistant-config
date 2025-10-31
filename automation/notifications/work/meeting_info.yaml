@@ -24,7 +24,7 @@ action:
             expiration: 30m
             shape: rounded
             visible: false
-          message: "In meeting"
+          message: "null"
     else:
       - action: script.awtrix3customapp
         data:
@@ -38,6 +38,7 @@ action:
             icon: mdi:video-plus
             expiration: 30m
             shape: rounded
-          message: "In meeting"
+            iconColor: "#880808"
+          message: "null"
 mode: queued
 max: 5
