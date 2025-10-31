@@ -41,12 +41,22 @@ sections:
         entity: switch.flur_cam_stecker
       - type: custom:mushroom-entity-card
         entity: switch.kamera_steckdose_wz
-      - type: custom:mushroom-light-card
-        entity: light.flurcam_indicator_light
-        layout: vertical
-      - type: custom:mushroom-light-card
-        entity: light.korbchen_indicator_light
-        layout: vertical
+      - type: conditional
+        conditions:
+          - entity: switch.flur_cam_stecker
+            state: "on"
+        card:
+          type: custom:mushroom-light-card
+          entity: light.flurcam_indicator_light
+          layout: vertical
+      - type: conditional
+        conditions:
+          - entity: switch.kamera_steckdose_wz
+            state: "on"
+        card:
+          type: custom:mushroom-light-card
+          entity: light.korbchen_indicator_light
+          layout: vertical
   - type: grid
     cards:
       - type: custom:llmvision-card
