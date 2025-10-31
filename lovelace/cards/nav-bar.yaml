@@ -126,6 +126,13 @@ routes:
         [[[ return states['number.count_lights_1_og'].state > 0; ]]]
       count: |
         [[[  return Math.ceil(states['number.count_lights_1_og'].state); ]]]
+  - url: /lovelace-mobile/cams
+    icon: mdi:cctv
+    label: Kameras
+    hidden: |
+      [[[
+        return window.innerWidth <= 768;
+      ]]]
   - url: /lovelace-mobile/miguel
     icon: mdi:cog
     label: "Profil"
