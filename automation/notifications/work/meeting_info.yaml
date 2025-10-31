@@ -30,4 +30,5 @@ action:
             expiration: 30m
             shape: rounded
           message: "In meeting"
-mode: single
+mode: queued
+max: 5
