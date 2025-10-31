@@ -9,8 +9,10 @@ trigger:
 condition: []
 action:
   - variables:
-      today: "{{ '%02d.%02d' | format(now().day, now().month) }}"
+      today_safe: >
+        {{ 'D' ~ now().strftime('%d.%m') | string | trim | replace('D', '') }}
       special_day: >
+        {% set today = today_safe | replace('D', '') %}
         {% if today == '31.10' %}
           Halloween
         {% elif today == '24.12' %}
