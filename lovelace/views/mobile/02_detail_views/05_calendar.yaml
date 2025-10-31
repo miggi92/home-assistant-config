@@ -12,6 +12,12 @@ badges:
     tap_action:
       action: navigate
       navigation_path: start
+  - type: entity
+    entity: sensor.calendar_location_time
+  - type: entity
+    entity: sensor.calendar_depature_info_time
+  - type: entity
+    entity: input_number.fahrzeit_puffer
 sections:
   - type: grid
     column_span: 4
