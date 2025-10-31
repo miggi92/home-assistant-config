@@ -16,6 +16,15 @@ action:
       - action: script.awtrix3delapp
         data:
           app_id: meeting
+      - service: notify.tvoverlaynotifyfixed
+        data:
+          data:
+            id: meeting
+            icon: mdi:video-plus
+            expiration: 30m
+            shape: rounded
+            visible: false
+          message: "In meeting"
     else:
       - action: script.awtrix3customapp
         data:
