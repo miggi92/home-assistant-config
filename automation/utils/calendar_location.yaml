@@ -1,0 +1,15 @@
+---
+# sensor.calendar_destination_location
+alias: "Anpassen des Ortes für die Fahrzeit"
+id: d7ed602b-7a28-4936-9186-f2da48741679
+mode: single
+trigger:
+  - platform: state
+    entity_id: sensor.calendar_destination_location
+condition: []
+action:
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.calendar_destination
+    data:
+      value: "{{ trigger.to_state.state }}"
