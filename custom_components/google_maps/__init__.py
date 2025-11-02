@@ -21,7 +21,7 @@ from .helpers import CFG_UNIQUE_IDS, ConfigID, ConfigUniqueIDs, cookies_file_pat
 _LOGGER = logging.getLogger(__name__)
 _PLATFORMS = [Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER]
 
-CONFIG_SCHEMA = cv.platform_only_config_schema(DOMAIN)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, _: ConfigType) -> bool:
