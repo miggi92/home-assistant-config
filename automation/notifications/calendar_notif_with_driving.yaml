@@ -6,7 +6,7 @@ trigger:
   - trigger: calendar
     entity_id: calendar.familie
     event: start
-    offset: "-0:30:0"
+    offset: "-00:30:00"
 condition:
   - condition: template
     value_template: "{{ trigger.calendar_event.location != '' }}"
