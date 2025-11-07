@@ -16,21 +16,28 @@ actions:
       entity_id: ai_task.openai_ai_task
       task_name: morning briefing
       instructions: |
-        Generate a morning briefing.
+        Task: Generate a short morning briefing in German.
 
-        Can you maybe add a information what happend today in the history? If yes please search for it.
-        I only want correct information about the history.
-        Please check online for sources that prove that the response is correct.
-        You can tell me details about it.
-
-        With these information:
+        Include following data:
           - current date: {{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%A %B %-d, %I:%M %p') }}
           - Outdoor temperature: {{ states('sensor.daikinap90134_outside_temperature') }}°C
           - Weather condition: {{ states('weather.home') }}
           - Is today a work day?: {{ states('binary_sensor.workday_sensor') }}
 
-        Answer in german. Make the answer a little bit funny.
-        Keep the response to a maximum of 150 characters, can't be any longer.
+        Also include ONE verified historical fact that happened on this date.
+          - Search online for it.
+          - Use only reliable, factual sources.
+
+        Style:
+          - Language: German
+          - Tone: friendly, slightly funny, natural
+          - Keep it concise and readable.
+
+        ⚠️ Output rule:
+        - The entire response must be **under 200 characters total**.
+        - If it would exceed this, shorten or omit details.
+        - No extra explanations or notes.
+
     response_variable: response
   - action: input_text.set_value
     target:
