@@ -1,0 +1,102 @@
+---
+# Room analysis
+alias: Climate analysis
+id: 7954ce4c-46ba-4224-8f18-e1b470550b92
+description: ""
+triggers:
+  - trigger: time_pattern
+    minutes: /30
+conditions:
+  - condition: state
+    entity_id: group.residents
+    state: "home"
+actions:
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.openai_ai_task
+      task_name: climate_analysis
+      instructions: |
+        Aufgabe:
+          Erstelle eine kurze, natürlich klingende Zusammenfassung des aktuellen Raumklimas
+          auf Deutsch. Verwende die bereitgestellten Sensordaten.
+
+        Kontext:
+          - Gesamtwohnung:
+            Temperatur: {{ states('sensor.wohnungstemperatur') | float(0) }} °C
+            Luftfeuchtigkeit: {{ states('sensor.wohnungsfeuchtigkeit') | float(0) }} %
+          - Außenbereich:
+            Temperatur: {{ states('sensor.temperatur') | float(0) }} °C
+            Luftfeuchtigkeit: {{ states('sensor.luftfeuchtigkeit') | float(0) }} %
+          - Büro:
+            Temperatur: {{ states('sensor.luftqualitat_buro_temperature') | float(0) }} °C
+            Luftfeuchtigkeit: {{ states('sensor.luftqualitat_buro_humidity') | float(0) }} %
+            VOC Index: {{ states('sensor.luftqualitat_buro_voc_index') | int(0) }}
+            PM2.5: {{ states('sensor.luftqualitat_buro_pm25') | float(0) }} µg/m³
+          - Wohnzimmer:
+            Temperatur: {{ states('sensor.wohnzimmertemperatur') | float(0) }} °C
+            Luftfeuchtigkeit: {{ states('sensor.wohnzimmerluftfeuchtigkeit') | float(0) }} %
+          - Schlafzimmer:
+            Temperatur: {{ states('sensor.schlafzimmertemperatur') | float(0) }} °C
+            Luftfeuchtigkeit: {{ states('sensor.schlafzimmerluftfeuchtigkeit') | float(0) }} %
+
+        Anweisungen:
+          1. Bewerte, wie angenehm das Klima ist (z. B. zu warm, kühl, ideal, trocken, feucht).
+          2. Beurteile, ob Lüften sinnvoll wäre:
+            - Wenn die Außenluft deutlich trockener ist → "Lüften empfohlen".
+            - Wenn die Außenluft feuchter oder deutlich kälter ist → "Lüften aktuell nicht empfohlen".
+          3. Gib eine klare Empfehlung mit "Empfehlung:" am Ende.
+          4. Wenn Werte fehlen, schreibe: "Keine ausreichenden Daten verfügbar."
+          5. Beziehe die Luftqualität mit ein:
+            - Wenn VOC > 300 oder PM2.5 > 25 → "Lüften empfohlen wegen schlechter Luftqualität".
+            - Wenn beide Werte gut sind → "Luftqualität einwandfrei".
+
+        Stil:
+          - Sprache: Deutsch
+          - Ton: freundlich, sachlich
+          - Länge: max. 200 Zeichen pro Raum
+          - Kein Smalltalk, keine Meta-Erklärungen
+          - Verwende kurze, klare Sätze
+      structure:
+        house:
+          description: "Kurze Klima-Analyse der Wohnung"
+          required: true
+          selector:
+            text:
+        office:
+          description: "Kurze Klima-Analyse des Büros"
+          required: true
+          selector:
+            text:
+        living:
+          description: "Kurze Klima-Analyse des Wohnzimmers"
+          required: true
+          selector:
+            text:
+        sleep:
+          description: "Kurze Klima-Analyse des Schlafzimmers"
+          required: true
+          selector:
+            text:
+    response_variable: response
+  - parallel:
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.klima_analyse
+        data:
+          value: "{{ response.data.house }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.arbeitszimmer_klima_analyse
+        data:
+          value: "{{ response.data.office }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.wohnzimmer_klima_analyse
+        data:
+          value: "{{ response.data.living }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.schlafzimmer_klima_analyse
+        data:
+          value: "{{ response.data.sleep }}"
+mode: single
