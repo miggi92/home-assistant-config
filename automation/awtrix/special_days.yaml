@@ -15,6 +15,8 @@ action:
         {% set today = today_safe | replace('D', '') %}
         {% if today == '31.10' %}
           Halloween
+        {% elif today == '01.11' %}
+          Dia de los muertos
         {% elif today == '24.12' %}
           Weihnachten
         {% elif today == '31.12' %}
@@ -31,15 +33,17 @@ action:
       icon: >
         {% if ( special_day == 'Halloween') %}
           14397
-        {% elif today == 'Weihnachten' %}
+        {% elif special_day == 'Dia de los muertos' %}
+          4383
+        {% elif special_day == 'Weihnachten' %}
           1782
-        {% elif today == 'Silvester' %}
+        {% elif special_day == 'Silvester' %}
           5855
-        {% elif today == 'Neues Jahr' %}
+        {% elif special_day == 'Neues Jahr' %}
           25795
-        {% elif today == 'Star Wars' %}
+        {% elif special_day == 'Star Wars' %}
           5696
-        {% elif today == 'Valentinstag' %}
+        {% elif special_day == 'Valentinstag' %}
           5080
         {% else %}
           none
