@@ -7,6 +7,7 @@ timer_badge_template:
     type: custom:entity-progress-badge-template
     entity: "[[entity]]"
     icon: "[[icon]]"
+    bar_effect: shimmer
     percent: >
       {% set end = states(entity) | as_datetime(default=None) %}
       {% set start = states[entity].last_changed | as_datetime(default=None) %}
