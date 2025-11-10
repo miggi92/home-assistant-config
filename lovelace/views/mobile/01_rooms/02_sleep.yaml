@@ -23,7 +23,7 @@ badges:
     variables:
       - entity: sensor.schlafzimmerluftfeuchtigkeit
   - type: entity
-    entity: group.sleep_motion_sensors
+    entity: binary_sensor.schlafzimmerbewegungssensoren
   - type: entity
     entity: binary_sensor.bett_tracker
 sections:
