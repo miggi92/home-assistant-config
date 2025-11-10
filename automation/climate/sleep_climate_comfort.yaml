@@ -1,0 +1,63 @@
+---
+# Sleep comfort
+id: 195766a8-001d-42b7-8719-69f265bceaec
+alias: SleepClimateComfort
+description: "Schlafzimmer nicht im Komfortbereich"
+triggers:
+  - trigger: numeric_state
+    entity_id:
+      - sensor.schlafzimmertemperatur
+    below: input_number.schlafzimmer_komfort_min_temp
+    id: cold
+  - trigger: numeric_state
+    entity_id:
+      - sensor.schlafzimmertemperatur
+    above: input_number.schlafzimmer_komfort_max_temp
+    id: hot
+conditions: []
+actions:
+  - variables:
+      sleep_temp: "{{ states(trigger.entity_id) | float(0) }}"
+      outdoor_temp: "{{ states('sensor.temperatur') | float(0) }}"
+  - choose:
+      - alias: "Zu kalt innen und Außen auch kalt -> Kälteschutz"
+        conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'cold' }}"
+          - condition: template
+            value_template: "{{ outdoor_temp < sleep_temp }}"
+        sequence:
+          - action: cover.set_cover_position
+            data:
+              position: 50
+            target:
+              area_id: schlafzimmer
+      - alias: "Zu kalt innen und Außen wärmer -> Lüften"
+        conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'cold' }}"
+        sequence:
+          - action: cover.open_cover
+            target:
+              area_id: schlafzimmer
+      - alias: "Zu warm innen und Außen kälter -> Lüften"
+        conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'hot' }}"
+          - condition: template
+            value_template: "{{ outdoor_temp < sleep_temp - 2 }}"
+        sequence:
+          - action: cover.open_cover
+            target:
+              area_id: schlafzimmer
+      - alias: "Zu warm innen und Außen auch warm -> Sonnenschutz"
+        conditions:
+          - condition: template
+            value_template: "{{ trigger.id == 'hot' }}"
+        sequence:
+          - action: cover.set_cover_position
+            data:
+              position: 50
+            target:
+              area_id: schlafzimmer
+mode: single

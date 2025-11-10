@@ -28,6 +28,12 @@ badges:
       - entity: binary_sensor.schlafzimmerbewegungssensoren
   - type: entity
     entity: binary_sensor.bett_tracker
+  - type: entity
+    entity: input_number.schlafzimmer_komfort_min_temp
+    color: blue
+  - type: entity
+    entity: input_number.schlafzimmer_komfort_max_temp
+    color: red
 sections:
   - type: grid
     cards:
