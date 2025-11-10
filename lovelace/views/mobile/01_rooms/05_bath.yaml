@@ -24,6 +24,10 @@ badges:
       - entity: sensor.badezimmertempsensor_humidity
   - type: entity
     entity: binary_sensor.duschsensor_water_leak
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: binary_sensor.badbewegungssensoren
 sections:
   - type: grid
     cards:

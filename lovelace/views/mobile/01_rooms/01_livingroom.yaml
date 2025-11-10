@@ -22,8 +22,10 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.wohnzimmerluftfeuchtigkeit
-  - type: entity
-    entity: binary_sensor.wohnzimmerbewegungssensoren
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: binary_sensor.wohnzimmerbewegungssensoren
   - type: entity
     entity: sensor.tv_prog_now
     icon: mdi:television-box
