@@ -1,7 +1,0 @@
----
-# Sleep motion sensors
-sleep_motion_sensors:
-  name: Bewegungsmelder Schlafzimnmer
-  icon: mdi:motion-sensor
-  entities:
-    - binary_sensor.schlafzimmerbewegungssensor_occupancy
