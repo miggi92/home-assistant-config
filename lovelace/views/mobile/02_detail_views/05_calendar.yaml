@@ -14,10 +14,25 @@ badges:
       navigation_path: start
   - type: entity
     entity: sensor.calendar_location_time
-  - type: entity
+    name: Fahrzeit
+    show_name: true
+  - type: custom:mushroom-template-badge
+    content: |
+      {% if states(entity) == 'unknown' %}
+        {{ states(entity) }}
+      {% else %}
+        {{ relative_time(as_datetime(states(entity))) }}
+      {% endif %}
+    icon: "{{ state_attr(entity, 'icon') }}"
     entity: sensor.calendar_depature_info_time
+    label: Abfahrt in
+    color: primary
+    tap_action:
+      action: more-info
   - type: entity
     entity: input_number.fahrzeit_puffer
+    name: Puffer
+    show_name: true
 sections:
   - type: grid
     column_span: 4
