@@ -77,6 +77,10 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.wohnungsfeuchtigkeit
+  - type: custom:decluttering-card
+    template: motion_badge_template
+    variables:
+      - entity: binary_sensor.bewegungssensoren
 
 sections:
   - strategy:
