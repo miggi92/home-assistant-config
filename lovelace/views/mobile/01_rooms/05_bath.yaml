@@ -17,7 +17,7 @@ badges:
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
-      - entity: sensor.badezimmertempsensor_temperature
+      - entity: sensor.badezimmertemperatur
   - type: custom:decluttering-card
     template: humidity_badge_template
     variables:
