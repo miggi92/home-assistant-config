@@ -5,5 +5,5 @@ motion_sensors:
   icon: mdi:motion-sensor
   entities:
     - binary_sensor.schlafzimmerbewegungssensoren
-    - group.living_motion_sensors
+    - binary_sensor.wohnzimmerbewegungssensoren
     - binary_sensor.kinderzimmerbewegungssensor_occupancy

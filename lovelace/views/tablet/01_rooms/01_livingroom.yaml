@@ -26,7 +26,7 @@ badges:
   - type: custom:decluttering-card
     template: motion_badge_template
     variables:
-      - entity: group.living_motion_sensors
+      - entity: binary_sensor.wohnzimmerbewegungssensoren
   - type: custom:mushroom-chips-card
     chips:
       - type: action

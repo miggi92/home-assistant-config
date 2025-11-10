@@ -1,8 +1,0 @@
----
-# Living motion sensors
-living_motion_sensors:
-  name: Bewegungsmelder Wohnzimmer
-  icon: mdi:motion-sensor
-  entities:
-    - binary_sensor.wohnzimmerbewegungssensor_occupancy
-    - binary_sensor.sofabewegungssensor_occupancy

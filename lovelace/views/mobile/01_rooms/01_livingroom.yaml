@@ -23,7 +23,7 @@ badges:
     variables:
       - entity: sensor.wohnzimmerluftfeuchtigkeit
   - type: entity
-    entity: group.living_motion_sensors
+    entity: binary_sensor.wohnzimmerbewegungssensoren
   - type: entity
     entity: sensor.tv_prog_now
     icon: mdi:television-box
