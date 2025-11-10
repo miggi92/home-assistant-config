@@ -50,10 +50,10 @@ check_cal4flights:
             - condition: template
               value_template: "{{ results | length > 0 }}"
           sequence:
-            - action: notify.miguel_telegram
+            - action: script.notify_engine
               data:
                 title: Gefundene Flüge
-                message: >
+                value1: >
                   In den nächsten 7 Tagen wurden folgende Flugnummern erkannt:
                   {% set flugnummern = results | map('regex_findall', '([A-Z]{2,3}\\d{2,4})') | sum(start=[]) | unique | list %}
                   {% for nr in flugnummern %}
