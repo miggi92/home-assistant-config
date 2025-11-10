@@ -1,0 +1,55 @@
+---
+#
+timer_badge_template:
+  default:
+    icon: mdi:timer-sand
+  card:
+    type: custom:entity-progress-badge-template
+    entity: "[[entity]]"
+    icon: "[[icon]]"
+    percent: >
+      {% set end = states(entity) | as_datetime(default=None) %}
+      {% set start = states[entity].last_changed | as_datetime(default=None) %}
+      {% if end and start %}
+        {% set total = (end - start).total_seconds() %}
+        {% set elapsed = (now() - start).total_seconds() %}
+        {% if total > 0 %}
+          {% set progress = (elapsed / total * 100) | round(1) %}
+          {{ [0, [progress, 100] | min] | max }}
+        {% else %}
+          0
+        {% endif %}
+      {% else %}
+        0
+      {% endif %}
+    min_value: 0
+    max_value: 100
+    unit: "%"
+    name: >
+      {% set end = states(entity) | as_datetime(default=None) %}
+      {% if end %}
+        {% set remaining = (end - now()).total_seconds() %}
+        {% if remaining <= 0 %}
+          🟢 Fertig
+        {% elif remaining < 60 %}
+          ⏱️ Noch {{ remaining | round(0) }} s
+        {% elif remaining < 3600 %}
+          ⏱️ Noch {{ (remaining // 60) | int }} min {{ (remaining % 60) | int }} s
+        {% else %}
+          ⏱️ Noch {{ (remaining // 3600) | int }} h {{ ((remaining % 3600) // 60) | int }} min
+        {% endif %}
+      {% else %}
+        Kein Timer aktiv
+      {% endif %}
+    visibility:
+      - condition: not
+        conditions:
+          - condition: state
+            entity: "[[entity]]"
+            state: unavailable
+          - condition: state
+            entity: "[[entity]]"
+            state: unknown
+          - condition: state
+            entity: "[[entity]]"
+            state: ""

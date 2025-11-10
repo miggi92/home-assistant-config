@@ -28,6 +28,10 @@ badges:
         value: "0"
     entities:
       - entity: input_number.heissgetranke_zahler
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: sensor.echo_show_nachster_timer
   - type: custom:mushroom-template-badge
     entity: input_boolean.spulmaschine_aktiv
     icon: |-

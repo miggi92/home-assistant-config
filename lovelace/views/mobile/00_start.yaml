@@ -81,7 +81,21 @@ badges:
     template: motion_badge_template
     variables:
       - entity: binary_sensor.bewegungssensoren
-
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: sensor.echo_show_nachster_timer
+      - icon: mdi:fridge
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: sensor.milos_dot_nachster_timer
+      - icon: mdi:sofa
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: sensor.echo_buro_nachster_timer
+      - icon: mdi:office-building
 sections:
   - strategy:
       type: common-controls

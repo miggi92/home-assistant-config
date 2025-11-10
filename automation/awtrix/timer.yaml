@@ -1,0 +1,78 @@
+---
+alias: Show timer on clock
+id: 2c96d793-ea37-49cb-89c2-972a4518789b
+description: "Show timer on clock"
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.echo_buro_nachster_timer
+      - sensor.echo_show_nachster_timer
+      - sensor.milos_dot_nachster_timer
+    id: changed
+  - platform: time_pattern
+    seconds: "/5"
+
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ states('sensor.echo_buro_nachster_timer') not in ['unavailable','unknown','none',''] }}"
+      - condition: template
+        value_template: "{{ states('sensor.echo_show_nachster_timer') not in ['unavailable','unknown','none',''] }}"
+      - condition: template
+        value_template: "{{ states('sensor.milos_dot_nachster_timer') not in ['unavailable','unknown','none',''] }}"
+
+action:
+  - repeat:
+      for_each:
+        - entity_id: sensor.echo_buro_nachster_timer
+          text: Büro
+          id: office
+          icon: 8135
+        - entity_id: sensor.echo_show_nachster_timer
+          id: kitchen
+          text: Küche
+          icon: 57796
+        - entity_id: sensor.milos_dot_nachster_timer
+          id: living
+          text: Wohnzimmer
+          icon: 63810
+      sequence:
+        - variables:
+            timer_end: >-
+              {% set val = states(repeat.item.entity_id) %}
+              {% if val not in ['unavailable', 'unknown', 'none', ''] %}
+                {{ val | as_datetime }}
+              {% else %}
+                {{ none }}
+              {% endif %}
+
+        - if:
+            - condition: template
+              value_template: "{{ timer_end is not none }}"
+          then:
+            - variables:
+                progress_bar: >-
+                  {% set end = timer_end | as_datetime %}
+                  {% set start = states[repeat.item.entity_id].last_changed | as_datetime %}
+                  {% set now_local = now() %}
+                  {% set total = (end - start).total_seconds() %}
+                  {% set elapsed = (now_local - start).total_seconds() %}
+                  {% if total > 0 %}
+                    {% set progress = (elapsed / total * 100) | round(2) %}
+                    {{ [0, [progress, 100] | min] | max }}
+                  {% else %}
+                    0
+                  {% endif %}
+
+            - action: script.awtrix3customapp
+              data:
+                app_id: "timer_{{ repeat.item.id }}"
+                text: "{{ repeat.item.text }}"
+                icon: "{{ repeat.item.icon }}"
+                progress: "{{ progress_bar }}"
+          else:
+            - action: script.awtrix3delapp
+              data:
+                app_id: "timer_{{ repeat.item.id }}"
+mode: single

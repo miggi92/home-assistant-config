@@ -26,6 +26,10 @@ badges:
     template: motion_badge_template
     variables:
       - entity: binary_sensor.wohnzimmerbewegungssensoren
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: sensor.milos_dot_nachster_timer
   - type: entity
     entity: sensor.tv_prog_now
     icon: mdi:television-box
