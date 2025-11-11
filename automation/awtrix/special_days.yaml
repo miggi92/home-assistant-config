@@ -4,8 +4,11 @@ alias: Show special days on clock
 id: 10af4661-0fb0-4b0e-9b0d-e5ae7d251d93
 description: "Show special days on clock"
 trigger:
-  - platform: time
+  - trigger: time
     at: "00:01:00"
+  - trigger: time
+    at: "11:11:00"
+    id: "fasnacht"
 condition: []
 action:
   - variables:
@@ -17,6 +20,8 @@ action:
           Halloween
         {% elif today == '01.11' %}
           Dia de los muertos
+        {% elif today == '11.11' and trigger.id == 'fasnacht' %}
+          Fasnachtszeit
         {% elif today == '24.12' %}
           Weihnachten
         {% elif today == '31.12' %}
@@ -45,6 +50,8 @@ action:
           5696
         {% elif special_day == 'Valentinstag' %}
           5080
+        {% elif special_day == 'Fasnachtszeit' %}
+          65078
         {% else %}
           none
         {% endif %}
@@ -61,4 +68,15 @@ action:
       - action: script.awtrix3delapp
         data:
           app_id: special_day
+  - if:
+      - condition: template
+        value_template: "{{ special_day == 'Fasnachtszeit'}}"
+    then:
+      - action: script.spotify_audio
+        data:
+          volume: 0.6
+          type: playlist
+          media_id: >-
+            https://open.spotify.com/intl-de/track/1PnokXw6l4LGNaxl68ESRJ
+          source: Echo_Show
 mode: single
