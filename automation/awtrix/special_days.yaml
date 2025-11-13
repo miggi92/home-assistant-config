@@ -75,7 +75,7 @@ action:
       - action: script.spotify_audio
         data:
           volume: 0.6
-          type: playlist
+          type: song
           media_id: >-
             https://open.spotify.com/intl-de/track/1PnokXw6l4LGNaxl68ESRJ
           source: Echo_Show
