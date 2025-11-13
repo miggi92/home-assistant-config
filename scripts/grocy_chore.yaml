@@ -1,0 +1,43 @@
+---
+# Grocy chore helper
+grocy_chore:
+  alias: "GrocyChore"
+  icon: mdi:checkbox-marked-circle-minus-outline
+  description: "Grocy chore excecution helper"
+  fields:
+    id:
+      selector:
+        text: null
+      default: "14"
+    user:
+      selector:
+        text: null
+      default: admin
+
+  sequence:
+    - variables:
+        user_name: "{{ user | string | lower }}"
+    - if:
+        - condition: template
+          value_template: "{{ user | string | length >= 3 and user not in ['admin', 'miguel', 'silke'] }}"
+      then:
+        - variables:
+            user_object: >
+              {{states.person|selectattr("attributes.user_id",
+                  "==",user
+                  )|map(attribute="attributes.friendly_name")|first }}
+            user_name: "{{ user_object | default('admin') | lower }}"
+    - variables:
+        user_id: |
+          {% set ID_MAP = {
+            'admin': 1,
+            'miguel': 2,
+            'silke': 3  }
+          %}
+          {{ ID_MAP.get(user_name, 1) | string }}
+    - action: grocy.execute_chore
+      metadata: {}
+      data:
+        track_execution_now: true
+        chore_id: "{{ id }}"
+        done_by: "{{ user_id }}"

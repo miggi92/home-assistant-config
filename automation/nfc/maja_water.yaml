@@ -1,0 +1,15 @@
+---
+#
+alias: majaWaterTagScanned
+id: f0cc0628-4cc8-4c7b-b6cd-1ff56d6a59cb
+description: "Water nfc tag scanned"
+trigger:
+  - trigger: tag
+    tag_id: c3e97bf7-e095-49b3-9618-87204ab4eaa1
+condition: []
+action:
+  - action: script.grocy_chore
+    data:
+      id: "13"
+      user: "{{ trigger.context.user_id }}"
+mode: single
