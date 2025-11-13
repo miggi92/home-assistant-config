@@ -20,4 +20,15 @@ background:
   size: cover
   repeat: repeat
   attachment: fixed
-  image: /api/image/serve/84d654ede1260e8c72d7cdbaa06205cd/original
+  image:
+    media_content_id: media-source://image/image.random_picsum_image
+    media_content_type: image/jpeg
+    metadata:
+      title: Picsum Background Picture
+      thumbnail: /api/image_proxy/image.random_picsum_image
+      media_class: video
+      children_media_class: null
+      navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://image
