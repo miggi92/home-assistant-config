@@ -20,21 +20,6 @@
           channel: Auto
           importance: high
   mode: single
-- id: "1691433091247"
-  alias: "Roomba Behälter "
-  description: "Roomba Behälter "
-  trigger:
-    - trigger: state
-      entity_id:
-        - binary_sensor.roomba_bin_full
-      to: "on"
-  condition: []
-  action:
-    - action: notify.telegram_home_group
-      data:
-        title: "Roomba "
-        message: Behälter ist voll. Bitte leeren l.
-  mode: single
 - id: "1708473160035"
   alias: "Battery replacement "
   description: ""
@@ -65,45 +50,4 @@
       data: {}
       target:
         entity_id: switch.tabletsteckdose
-  mode: single
-- id: "1736551020218"
-  alias: SZ zu warm
-  description: ""
-  triggers:
-    - trigger: numeric_state
-      entity_id:
-        - sensor.schlafzimmertemperatur
-      above: 18
-  conditions:
-    - condition: sun
-      after: sunset
-      before: sunrise
-      before_offset: 01:00:00
-  actions:
-    - action: cover.open_cover
-      metadata: {}
-      data: {}
-      target:
-        area_id: schlafzimmer
-  mode: single
-- id: "1736807752549"
-  alias: SZ zu kalt
-  description: ""
-  triggers:
-    - trigger: numeric_state
-      entity_id:
-        - sensor.schlafzimmertemperatur
-      below: 15
-  conditions:
-    - condition: sun
-      before: sunrise
-      before_offset: 01:00:00
-      after: sunset
-  actions:
-    - action: cover.set_cover_position
-      metadata: {}
-      data:
-        position: 50
-      target:
-        entity_id: cover.rollladen_schlafzimmer
   mode: single
