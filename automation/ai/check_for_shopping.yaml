@@ -40,4 +40,4 @@ actions:
           entity_id: todo.picnic_einkaufswagen
         data:
           item: "{{ response.data.grocery  }}"
-mode: single
+mode: parallel
