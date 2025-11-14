@@ -19,8 +19,8 @@ action:
       group: "Dishes"
   - service: input_boolean.turn_off
     entity_id: input_boolean.dishwasher_ready
-  - action: grocy.execute_chore
+  - action: script.grocy_chore
     data:
-      chore_id: "7"
-      done_by: "1"
+      id: "7"
+      user: "admin"
 mode: single

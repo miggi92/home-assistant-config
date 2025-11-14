@@ -32,8 +32,8 @@ action:
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.wash_active
-  - action: grocy.execute_chore
+  - action: script.grocy_chore
     data:
-      chore_id: "1"
-      done_by: "1"
+      id: "1"
+      user: "admin"
 mode: single

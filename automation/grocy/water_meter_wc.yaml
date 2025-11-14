@@ -8,8 +8,8 @@ trigger:
       - sensor.wasser_klo_warm
 condition: []
 action:
-  - action: grocy.execute_chore
+  - action: script.grocy_chore
     data:
-      chore_id: "9"
-      done_by: "2"
+      id: "9"
+      user: "admin"
 mode: single

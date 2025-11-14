@@ -9,7 +9,7 @@ trigger:
     from: cleaning
     to: docked
 action:
-  - action: grocy.execute_chore
+  - action: script.grocy_chore
     data:
-      chore_id: "2"
-      done_by: "1"
+      id: "2"
+      user: "admin"
