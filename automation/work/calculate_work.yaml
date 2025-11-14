@@ -21,10 +21,16 @@ trigger:
 condition: []
 action:
   - variables:
+      pause_hours: >
+        {% if states('sensor.miguel_buro_daily') | int(0) == 0 %}
+          0.5
+        {% else %}
+          1
+        {% endif %}
       daily_target_hours: "{{ ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) | float(2) }}"
       weekly_hours: "{{ states('input_number.miguel_arbeit_woche') | float(2) }}"
       weekly_difference: "{{ ( weekly_hours - ( states('input_number.wochenarbeitszeit_miguel') | float(2) ) ) | float(2) }}"
-      daily_hours: "{{ states('sensor.miguel_arbeit_daily') | int(0) - 1 }}"
+      daily_hours: "{{ states('sensor.miguel_arbeit_daily') | int(0) - pause_hours | float(2) }}"
   - if:
       - condition: template
         value_template: "{{  trigger.id == 'workdays' }}"

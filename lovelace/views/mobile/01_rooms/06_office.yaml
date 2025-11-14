@@ -35,8 +35,13 @@ badges:
       {% set hours = total_hours | int %}
       {% set minutes = ((total_hours % 1) * 60) | round(0) %}
 
-      {{ hours }} Std. {{ minutes }} min
-    icon: "{{ state_attr(entity, 'icon') }}"
+      {{ hours }} Std. {% if minutes != 0 %}{{ minutes }} min{% endif %}
+    icon: >
+      {% if states(entity) | float(0) < 0 %}
+        mdi:clock-minus
+      {% else %}
+        mdi:clock-plus
+      {% endif %}
     color: >
       {% if states(entity) | float(0) < 0 %}
         red
@@ -66,6 +71,12 @@ badges:
 
       {{ hours }} Std. {{ minutes }} min
     icon: "{{ state_attr(entity,'icon')}}"
+    color: >
+      {% if states(entity) | float(0) <= ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) %}
+        red
+      {% else %}
+        green
+      {% endif %}
     visibility:
       - condition: numeric_state
         entity: sensor.miguel_arbeit_daily
