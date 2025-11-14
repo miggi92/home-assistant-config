@@ -1,0 +1,43 @@
+---
+# check for shopping list items in alexa
+# sensor.alexa_last_call_command
+alias: CheckAlexa4ShoppinglistItems
+id: ec5476f5-ecd5-4c4c-86f2-cf052679bb9d
+description: ""
+triggers:
+  - trigger: state
+    entity_id: sensor.alexa_last_call_command
+conditions: []
+actions:
+  - variables:
+      last_call: "{{ trigger.to_state.state }}"
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.openai_ai_task
+      task_name: check for shopping list items
+      instructions: |
+        check if there is a shopping list item on this text.
+        and extract the item.
+        Text: {{ last_call }}
+      structure:
+        shop:
+          description: Soll was eingekauft werden?
+          required: true
+          selector:
+            boolean: null
+        grocery:
+          description: Das was eingekauft werden soll
+          required: true
+          selector:
+            text: null
+    response_variable: response
+  - if:
+      - condition: template
+        value_template: "{{  response.data.shop == true }}"
+    then:
+      - action: todo.add_item
+        target:
+          entity_id: todo.picnic_einkaufswagen
+        data:
+          item: "{{ response.data.grocery  }}"
+mode: single
