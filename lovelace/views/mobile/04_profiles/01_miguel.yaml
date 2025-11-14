@@ -29,6 +29,9 @@ sections:
         entity: input_boolean.miguel_kopfleiste_anzeigen
       - type: custom:mushroom-entity-card
         entity: input_boolean.miguel_seitenleiste_anzeigen
+      - type: custom:mushroom-number-card
+        entity: input_number.wochenarbeitszeit_miguel
+        display_mode: buttons
   - type: grid
     cards:
       - entity: input_select.milo_person_sync

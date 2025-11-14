@@ -1,0 +1,59 @@
+---
+# calculate worktimes
+alias: calculateWorkTimes
+id: fbb333c2-757c-414a-8d34-5fe6fc995029
+description: "Calculate worktimes"
+trigger:
+  - trigger: time
+    weekday:
+      - mon
+      - tue
+      - wed
+      - thu
+      - fri
+    at: "23:59:00"
+    id: workdays
+  - trigger: time
+    weekday:
+      - sun
+    at: "23:59:00"
+    id: week_end
+condition: []
+action:
+  - variables:
+      daily_target_hours: "{{ ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) | float(2) }}"
+      weekly_hours: "{{ states('input_number.miguel_arbeit_woche') | float(2) }}"
+      weekly_difference: "{{ ( weekly_hours - ( states('input_number.wochenarbeitszeit_miguel') | float(2) ) ) | float(2) }}"
+      daily_hours: "{{ states('sensor.miguel_arbeit_daily') | int(0) - 1 }}"
+  - if:
+      - condition: template
+        value_template: "{{  trigger.id == 'workdays' }}"
+    then:
+      - if:
+          - condition: state
+            entity_id: binary_sensor.workday_sensor
+            state: "on"
+        then:
+          - action: input_number.increment
+            target:
+              entity_id: input_number.miguel_arbeit_woche
+            data:
+              amount: "{{ daily_hours }}"
+        else:
+          - action: input_number.increment
+            target:
+              entity_id: input_number.miguel_arbeit_woche
+            data:
+              amount: "{{ daily_target_hours }}"
+    else:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.miguel_arbeit_stundenkonto
+        data:
+          value: "{{ ( states('input_number.miguel_arbeit_stundenkonto') | float(2) + weekly_difference ) | float(2) }}"
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.miguel_arbeit_woche
+        data:
+          value: 0
+mode: single
