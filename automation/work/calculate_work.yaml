@@ -21,12 +21,7 @@ trigger:
 condition: []
 action:
   - variables:
-      pause_hours: >
-        {% if states('sensor.miguel_buro_daily') | int(0) == 0 %}
-          0.5
-        {% else %}
-          1
-        {% endif %}
+      pause_hours: " {{ states('number.miguel_calc_pause') | float(2) }}"
       daily_target_hours: "{{ ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) | float(2) }}"
       weekly_hours: "{{ states('input_number.miguel_arbeit_woche') | float(2) }}"
       weekly_difference: "{{ ( weekly_hours - ( states('input_number.wochenarbeitszeit_miguel') | float(2) ) ) | float(2) }}"

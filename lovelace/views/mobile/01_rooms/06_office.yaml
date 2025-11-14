@@ -22,8 +22,25 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.luftqualitat_buro_humidity
-  - type: entity
+  - type: custom:mushroom-template-badge
     entity: input_number.miguel_arbeit_woche
+    icon: "{{ state_attr(entity, 'icon') }}"
+    content: |-
+      {% set total_hours = states(entity) | float(2) %}
+      {% set hours = total_hours | int %}
+      {% set minutes = ((total_hours % 1) * 60) | round(0) %}
+
+      {{ hours }} Std. {% if minutes != 0 %}{{ minutes }} min{% endif %}
+    color: >
+      {% set days_passed = now().weekday() + 1 %}
+      {% set daily_goal = states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 %}
+      {% set required_hours_cumulative = daily_goal * days_passed %}
+
+      {% if ( states(entity) | float(2) + states('sensor.miguel_arbeit_daily') | float(2) - states('number.miguel_calc_pause') | float(2) ) <= required_hours_cumulative %}
+        red
+      {% else %}
+        green
+      {% endif %}
     visibility:
       - condition: numeric_state
         entity: input_number.miguel_arbeit_woche
@@ -72,7 +89,7 @@ badges:
       {{ hours }} Std. {{ minutes }} min
     icon: "{{ state_attr(entity,'icon')}}"
     color: >
-      {% if states(entity) | float(0) <= ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) %}
+      {% if states(entity) | float(2) <= ( ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) + states('number.miguel_calc_pause') | float(2) )  %}
         red
       {% else %}
         green
