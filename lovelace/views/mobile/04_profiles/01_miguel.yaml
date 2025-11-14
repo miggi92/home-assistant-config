@@ -29,12 +29,6 @@ sections:
         entity: input_boolean.miguel_kopfleiste_anzeigen
       - type: custom:mushroom-entity-card
         entity: input_boolean.miguel_seitenleiste_anzeigen
-      - type: custom:mushroom-number-card
-        entity: input_number.wochenarbeitszeit_miguel
-        display_mode: buttons
-      - type: custom:mushroom-number-card
-        entity: input_number.miguel_arbeit_stundenkonto
-        display_mode: buttons
   - type: grid
     cards:
       - entity: input_select.milo_person_sync
@@ -43,3 +37,9 @@ sections:
       - entity: input_select.maja_person_sync
         type: custom:mushroom-select-card
         secondary_info: last-changed
+      - type: custom:mushroom-number-card
+        entity: input_number.wochenarbeitszeit_miguel
+        display_mode: buttons
+      - type: custom:mushroom-number-card
+        entity: input_number.miguel_arbeit_stundenkonto
+        display_mode: buttons
