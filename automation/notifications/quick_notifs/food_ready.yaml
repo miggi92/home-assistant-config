@@ -2,7 +2,13 @@
 alias: FoodReadyNotif
 id: 58d4291a-9465-4620-934d-bbc5ca94f7bc
 description: "Benachrichtigt wenn das Essen fertig ist."
-trigger: []
+trigger:
+  - domain: mqtt
+    device_id: ee1b9de2827cfce71d276bf85218e92f
+    type: action
+    subtype: "on"
+    metadata: {}
+    trigger: device
 condition: []
 action:
   - variables:
