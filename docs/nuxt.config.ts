@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     '@nuxt/content',
     '@nuxt/ui',
     '@nuxt/image',
+    'nuxt-studio'
   ],
   i18n: {
     defaultLocale: 'en',
