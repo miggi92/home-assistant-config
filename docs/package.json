@@ -9,10 +9,10 @@
     "@nuxt/eslint": "1.10.0",
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "4.1.0",
-    "better-sqlite3": "^12.2.0",
     "docus": "latest",
+    "better-sqlite3": "^12.4.1",
     "eslint": "^9.39.1",
-    "nuxt": "^4.1.2",
+    "nuxt": "^4.2.1",
     "typescript": "^5.9.3"
   }
 }
