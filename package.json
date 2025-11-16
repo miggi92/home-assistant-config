@@ -13,11 +13,12 @@
 		"name": "miggi92",
 		"url": "https://github.com/miggi92"
 	},
-	"devDependencies": {
-	},
 	"scripts": {
 		"docs:dev": "cd docs && pnpm dev",
 		"docs:build": "cd docs && pnpm build"
 	},
-	"packageManager": "pnpm@10.22.0"
+	"packageManager": "pnpm@10.22.0",
+	"dependencies": {
+		"@antfu/ni": "^27.0.1"
+	}
 }
