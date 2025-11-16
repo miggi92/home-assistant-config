@@ -1,0 +1,54 @@
+---
+# check if barking
+alias: Barking
+id: b8ce8d80-40e3-413f-a960-975bd7e97c7e
+description: "Barking"
+trigger:
+  - trigger: state
+    entity_id:
+      - input_boolean.bellen_bad
+      - input_boolean.bellen_kuche
+      - input_boolean.bellen_buro
+      - input_boolean.bellen_schlafzimmer
+      - input_boolean.bellen_wohnzimmer
+    to:
+      - "on"
+    id: barking
+  - trigger: state
+    entity_id:
+      - input_boolean.bellen_bad
+      - input_boolean.bellen_kuche
+      - input_boolean.bellen_buro
+      - input_boolean.bellen_schlafzimmer
+      - input_boolean.bellen_wohnzimmer
+    to:
+      - "on"
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    id: reset
+
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{  trigger.id == 'barking' }}"
+        sequence:
+          - action: script.notify_engine
+            data:
+              title: |
+                Bellen
+              value1: "Bellen registriert"
+              who: "home"
+              tag_id: "information"
+              group: "Dog"
+      - conditions:
+          - condition: template
+            value_template: "{{  trigger.id == 'reset' }}"
+        sequence:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: "{{ trigger.entity_id }}"
+mode: parallel
