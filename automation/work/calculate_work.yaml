@@ -35,17 +35,17 @@ action:
             entity_id: binary_sensor.workday_sensor
             state: "on"
         then:
-          - action: input_number.increment
+          - action: input_number.set_value
             target:
               entity_id: input_number.miguel_arbeit_woche
             data:
-              amount: "{{ daily_hours }}"
+              value: "{{ states('input_number.miguel_arbeit_woche') | float(2) + daily_hours | float(2) }}"
         else:
-          - action: input_number.increment
+          - action: input_number.set_value
             target:
               entity_id: input_number.miguel_arbeit_woche
             data:
-              amount: "{{ daily_target_hours }}"
+              amount: "{{ states('input_number.miguel_arbeit_woche') | float(2) + daily_target_hours | float(2) }}"
     else:
       - action: input_number.set_value
         target:
