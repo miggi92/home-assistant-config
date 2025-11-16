@@ -1,26 +1,22 @@
 ---
 seo:
-  title: Write beautiful docs with Markdown
-  description: Ship fast, flexible, and SEO-optimized documentation with beautiful
-    design out of the box. Docus brings together the best of the Nuxt ecosystem.
-    Powered by Nuxt UI.
+  title: migg92 Home Assistant Config
+  description: Home assistant configuration for migg92's smart home.
 ---
 
 ::u-page-hero
 #title
-Write beautiful docs with Markdown
+migg92 Home Assistant Config
 
 #description
-Ship fast, flexible, and SEO-optimized documentation with beautiful design out of the box.
-
-Docus brings the best of the Nuxt ecosystem into one CLI.
+Personal Home Assistant configuration for my smart home, including automations, scripts, and Lovelace dashboards to enhance home automation experience.
 
 #links
   :::u-button
   ---
   color: neutral
   size: xl
-  to: /en/getting-started/installation
+  to: /en/automations/notifications/call
   trailing-icon: i-lucide-arrow-right
   ---
   Get started
