@@ -140,12 +140,6 @@ badges:
             state: unavailable
 
 sections:
-  - strategy:
-      type: common-controls
-      title: Häufig genutzt
-      hide_empty: true
-      limit: 6
-      icon: mdi:gesture-double-tap
   - type: grid
     cards:
       - !include ../../cards/nav-bar.yaml
