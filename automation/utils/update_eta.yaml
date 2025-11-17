@@ -4,7 +4,8 @@ alias: "UpdateTravelTimeSensor"
 id: d7ed602b-7a28-4936-9186-f2da48741679
 mode: parallel
 trigger:
-  - platform: state
+  - alias: "Calendar location changed"
+    trigger: state
     entity_id: sensor.calendar_destination_location
     id: location_change
   - trigger: time
@@ -66,7 +67,8 @@ action:
           - condition: template
             value_template: "{{ trigger.id == 'periodic' }}"
         sequence:
-          - if:
+          - alias: "Check if travel time to work should be updated"
+            if:
               - condition: time
                 after: "08:00:00"
                 before: "11:00:00"
@@ -91,7 +93,8 @@ action:
               - service: homeassistant.update_entity
                 target:
                   entity_id: sensor.miguel_eta_work
-          - if:
+          - alias: "Check if travel time from work to home should be updated"
+            if:
               - condition: time
                 after: "15:00:00"
                 before: "20:00:00"
