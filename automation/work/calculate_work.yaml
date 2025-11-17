@@ -21,11 +21,13 @@ trigger:
 condition: []
 action:
   - variables:
-      pause_hours: " {{ states('number.miguel_calc_pause') | float(2) }}"
-      daily_target_hours: "{{ ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) | float(2) }}"
+      pause_hours: "{{ states('number.miguel_calc_pause') | float(2) }}"
+      daily_worked: "{{ states('sensor.miguel_arbeit_daily') | float(2) }}"
+      weekly_worked: "{{ states('input_number.wochenarbeitszeit_miguel') | float(2) }}"
       weekly_hours: "{{ states('input_number.miguel_arbeit_woche') | float(2) }}"
-      weekly_difference: "{{ ( weekly_hours - ( states('input_number.wochenarbeitszeit_miguel') | float(2) ) ) | float(2) }}"
-      daily_hours: "{{ states('sensor.miguel_arbeit_daily') | int(0) - pause_hours | float(2) }}"
+      daily_target_hours: "{{ ( states('input_number.wochenarbeitszeit_miguel') | float(2) / 5 ) | float(2) }}"
+      weekly_difference: "{{ ( weekly_hours - weekly_worked ) | float(2) }}"
+      daily_hours: "{{ ( daily_worked - pause_hours ) | float(2) }}"
   - if:
       - condition: template
         value_template: "{{  trigger.id == 'workdays' }}"
@@ -39,13 +41,13 @@ action:
             target:
               entity_id: input_number.miguel_arbeit_woche
             data:
-              value: "{{ states('input_number.miguel_arbeit_woche') | float(2) + daily_hours | float(2) }}"
+              value: "{{ weekly_hours | float(2) + daily_hours | float(2) }}"
         else:
           - action: input_number.set_value
             target:
               entity_id: input_number.miguel_arbeit_woche
             data:
-              amount: "{{ states('input_number.miguel_arbeit_woche') | float(2) + daily_target_hours | float(2) }}"
+              amount: "{{ weekly_hours | float(2) + daily_target_hours | float(2) }}"
     else:
       - action: input_number.set_value
         target:
