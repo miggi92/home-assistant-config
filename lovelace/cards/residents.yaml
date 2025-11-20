@@ -42,6 +42,13 @@ cards:
       - type: custom:decluttering-card
         template: person_card_template
         variables:
+          - title: Finn Info
+          - entity: person.finn_manuel
+          - id: finn_manuel
+          - work_zone: zone.kita
+      - type: custom:decluttering-card
+        template: person_card_template
+        variables:
           - title: Maja Info
           - entity: person.maja
           - id: maja

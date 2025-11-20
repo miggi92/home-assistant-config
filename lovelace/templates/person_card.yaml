@@ -45,7 +45,7 @@ person_card_template:
       {% elif state == "rewe" or "dm" in state  or "getranke" in state %}
         /local/images/persons/{{"[[id]]"}}/shopping.png
       {% else %}
-        /local/images/persons/{{"[[id]]"}}.png
+        /local/images/persons/{{"[[id]]"}}.jpg
       {% endif %}
     badge_icon: |-
       {% set state = states("[[entity]]") | slugify %}

@@ -8,6 +8,7 @@ trigger:
     entity_id:
       - input_boolean.maja_home
       - input_boolean.milo_home
+      - input_boolean.finn_home
 action:
   - service: script.dummy_tracker_states
     data: {}
