@@ -78,13 +78,9 @@ sections:
       - type: custom:mushroom-entity-card
         entity: sensor.sonarr_sendungen
       - type: custom:mushroom-entity-card
-        entity: sensor.lidarr_alben
-      - type: custom:mushroom-entity-card
         entity: sensor.radarr_warteschlange
       - type: custom:mushroom-entity-card
         entity: sensor.sonarr_warteschlange
-      - type: custom:mushroom-entity-card
-        entity: sensor.lidarr_warteschlange
       - type: conditional
         conditions:
           - condition: state
