@@ -15,5 +15,4 @@ night_mode_on:
       data: {}
       target:
         entity_id:
-          - switch.adaptive_lighting_sleep_mode_automatische_lichter
           - switch.adaptive_lighting_sleep_mode_wohnzimmer
