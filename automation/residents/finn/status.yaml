@@ -11,13 +11,13 @@ trigger:
 condition:
   - condition: template
     value_template: |-
-      {% set personName = "person." ~ states("input_select.finn_person_sync") %}
+      {% set personName = "person." ~ states("input_select.finn_unterwegs") %}
       {{ trigger.entity_id == personName }}
 action:
   - if:
       - condition: template
         value_template: |-
-          {% set personName = "person." ~ states("input_select.finn_person_sync") %}
+          {% set personName = "person." ~ states("input_select.finn_unterwegs") %}
           {{ states(personName) == "home" }}
     then:
       - service: input_boolean.turn_on
@@ -28,14 +28,14 @@ action:
   - service: device_tracker.see
     data:
       location_name: |-
-        {% set personName = "person." ~ states("input_select.finn_person_sync") %}
+        {% set personName = "person." ~ states("input_select.finn_unterwegs") %}
         {{ states(personName) }}
       dev_id: finn_dummy_tracker
       gps:
-        - "{{ state_attr('person.' ~ states('input_select.finn_person_sync'), 'latitude') }}"
-        - "{{ state_attr('person.' ~ states('input_select.finn_person_sync'), 'longitude') }}"
+        - "{{ state_attr('person.' ~ states('input_select.finn_unterwegs'), 'latitude') }}"
+        - "{{ state_attr('person.' ~ states('input_select.finn_unterwegs'), 'longitude') }}"
       gps_accuracy: |-
-        {% set personName = "person." ~ states("input_select.finn_person_sync") %}
+        {% set personName = "person." ~ states("input_select.finn_unterwegs") %}
         {{ state_attr(personName, "gps_accuracy") }}
 mode: queued
 max: 10
