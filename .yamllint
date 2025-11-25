@@ -13,6 +13,7 @@ ignore: |
   zigbee2mqtt/*
   dwains-dashboard/*
   esphome/*
+  docs/*
 rules:
   braces:
     level: error
