@@ -1,4 +1,0 @@
----
----
-
-# Lovelace examples
