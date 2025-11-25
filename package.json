@@ -17,7 +17,7 @@
 		"docs:dev": "cd docs && pnpm dev",
 		"docs:build": "cd docs && pnpm build"
 	},
-	"packageManager": "pnpm@10.22.0",
+	"packageManager": "pnpm@10.23.0",
 	"dependencies": {
 		"@antfu/ni": "^27.0.1"
 	}
