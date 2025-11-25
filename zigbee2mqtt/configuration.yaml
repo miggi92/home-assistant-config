@@ -40,9 +40,10 @@ frontend:
   port: 8099
   package: zigbee2mqtt-windfront
 serial:
-  port: >-
-    /dev/serial/by-id/usb-Nabu_Casa_SkyConnect_v1.0_08ab766346edec11b6444540ad51a8b2-if00-port0
+  port: /dev/serial/by-id/usb-Nabu_Casa_ZBT-2_9C139EAC1E50-if00
   adapter: ember
+  baudrate: 460800
+  rtscts: true
 device_options: {}
 availability:
   enabled: true
