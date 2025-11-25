@@ -13,6 +13,9 @@ ignore: |
   zigbee2mqtt/*
   dwains-dashboard/*
   esphome/*
+  docs/*
+  .github/*
+  pnpm-lock.yaml
 rules:
   braces:
     level: error

@@ -27,6 +27,7 @@
 !.gitkeep
 !.HA_VERSION
 !bun.lockb
+!.npmrc
 
 # Ignore folders.
 .storage
