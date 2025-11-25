@@ -46,6 +46,8 @@ cards:
           - entity: person.finn_manuel
           - id: finn_manuel
           - work_zone: zone.kita
+  - type: horizontal-stack
+    cards:
       - type: custom:decluttering-card
         template: person_card_template
         variables:
