@@ -13,6 +13,7 @@
 		"name": "miggi92",
 		"url": "https://github.com/miggi92"
 	},
+	"private": true,
 	"scripts": {
 		"docs:dev": "cd docs && pnpm dev",
 		"docs:build": "cd docs && pnpm build"
