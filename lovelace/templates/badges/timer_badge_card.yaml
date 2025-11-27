@@ -9,7 +9,11 @@ timer_badge_template:
     icon: "[[icon]]"
     bar_effect: shimmer
     percent: >
-      {% set end = states(entity) | as_datetime(default=None) %}
+      {% if states(entity) == 'active' %}
+        {% set end = state_attr(entity, 'finishes_at') | as_datetime(default=None) %}
+      {% else %}
+        {% set end = states(entity) | as_datetime(default=None) %}
+      {% endif %}
       {% set start = states[entity].last_changed | as_datetime(default=None) %}
       {% if end and start %}
         {% set total = (end - start).total_seconds() %}
@@ -27,7 +31,11 @@ timer_badge_template:
     max_value: 100
     unit: "%"
     name: >
-      {% set end = states(entity) | as_datetime(default=None) %}
+      {% if states(entity) == 'active' %}
+        {% set end = state_attr(entity, 'finishes_at') | as_datetime(default=None) %}
+      {% else %}
+        {% set end = states(entity) | as_datetime(default=None) %}
+      {% endif %}
       {% if end %}
         {% set remaining = (end - now()).total_seconds() %}
         {% if remaining <= 0 %}
@@ -42,15 +50,3 @@ timer_badge_template:
       {% else %}
         Kein Timer aktiv
       {% endif %}
-    visibility:
-      - condition: not
-        conditions:
-          - condition: state
-            entity: "[[entity]]"
-            state: unavailable
-          - condition: state
-            entity: "[[entity]]"
-            state: unknown
-          - condition: state
-            entity: "[[entity]]"
-            state: ""
