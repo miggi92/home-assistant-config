@@ -1,0 +1,45 @@
+---
+id: 19512d0c-3cd8-431c-8ef5-be33875c3387
+alias: Nachtlicht
+description: ""
+triggers:
+  - event_type: timer.started
+    event_data:
+      entity_id: timer.nachtlicht
+    trigger: event
+    id: an
+  - event_type: timer.finished
+    event_data:
+      entity_id: timer.nachtlicht
+    trigger: event
+    id: aus
+conditions: []
+actions:
+  - if:
+      - condition: trigger
+        id:
+          - an
+    then:
+      - action: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.abstellkammerlicht
+      - action: light.turn_on
+        metadata: {}
+        data:
+          brightness_pct: 5
+          color_name: red
+        target:
+          entity_id: light.hue_go
+    else:
+      - action: light.turn_off
+        metadata: {}
+        target:
+          entity_id:
+            - light.abstellkammerlicht
+            - light.hue_go
+        data: {}
+        alias: "Lichter ausschalten "
+mode: single
