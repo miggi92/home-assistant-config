@@ -13,7 +13,10 @@ triggers:
       entity_id: timer.nachtlicht
     trigger: event
     id: aus
-conditions: []
+conditions:
+  - condition: state
+    entity_id: input_boolean.automatic_lights
+    state: "on"
 actions:
   - if:
       - condition: trigger
