@@ -3,7 +3,6 @@
 alias: Barking
 id: b8ce8d80-40e3-413f-a960-975bd7e97c7e
 description: "Barking"
-icon: mdi:dog
 trigger:
   - trigger: state
     entity_id:
