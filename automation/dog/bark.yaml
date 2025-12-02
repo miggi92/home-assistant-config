@@ -3,6 +3,7 @@
 alias: Barking
 id: b8ce8d80-40e3-413f-a960-975bd7e97c7e
 description: "Barking"
+icon: mdi:dog
 trigger:
   - trigger: state
     entity_id:
@@ -40,7 +41,7 @@ action:
             data:
               title: |
                 Bellen
-              value1: "Bellen registriert"
+              value1: "Bellen registriert im {{ area_id(trigger.entity_id) | capitalize }}"
               who: "home"
               tag_id: "information"
               group: "Dog"
