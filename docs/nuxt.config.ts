@@ -12,14 +12,4 @@ export default defineNuxtConfig({
     baseURL: '/home-assistant-config/',
     buildAssetsDir: '/_nuxt/',
   },
-  i18n: {
-    defaultLocale: 'en',
-    locales: [{
-      code: 'en',
-      name: 'English',
-    }, {
-      code: 'de',
-      name: 'Deutsch',
-    }],
-  },
 })
