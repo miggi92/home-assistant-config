@@ -8,6 +8,10 @@ export default defineNuxtConfig({
     'nuxt-studio'
   ],
   css: ['~/assets/css/main.css'],
+  app: {
+    baseURL: '/home-assistant-config/',
+    buildAssetsDir: '/_nuxt/',
+  },
   i18n: {
     defaultLocale: 'en',
     locales: [{
