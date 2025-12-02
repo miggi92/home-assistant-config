@@ -27,7 +27,7 @@ Personal Home Assistant configuration for my smart home, including automations, 
   color: neutral
   icon: simple-icons-github
   size: xl
-  to: https://github.com/nuxt-content/docus
+  to: https://github.com/miggi92/home-assistant-config
   variant: outline
   ---
   Star on GitHub
