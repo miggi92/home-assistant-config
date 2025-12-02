@@ -16,6 +16,7 @@ ignore: |
   docs/*
   .github/*
   pnpm-lock.yaml
+  pnpm-workspace.yaml
 rules:
   braces:
     level: error
