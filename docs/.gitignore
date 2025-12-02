@@ -24,6 +24,8 @@ logs
 .env.*
 !.env.example
 
+!*.css
+
 # npm pack
 *.tgz
 
