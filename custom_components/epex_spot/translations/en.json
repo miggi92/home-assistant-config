@@ -13,12 +13,13 @@
       "market_area": {
         "data": {
           "market_area": "Select market area",
+          "duration": "Slot duration",
           "token": "API Token"
         }
       },
       "options": {
-        "title": "Net Price Options",
-        "description": "Configure surcharges and tax to calculate net price per kWh.",
+        "title": "Total Price Options",
+        "description": "Configure surcharges and tax to calculate total price per kWh.",
         "data": {
           "percentage_surcharge": "Percentage Surcharge (%)",
           "absolute_surcharge": "Absolute Surcharge (€/£ per kWh)",
@@ -33,9 +34,10 @@
   "options": {
     "step": {
       "init": {
-        "title": "Net Price Options",
-        "description": "Configure surcharges and tax to calculate net price per kWh.",
+        "title": "Total Price Options",
+        "description": "Configure surcharges and tax to calculate total price per kWh.",
         "data": {
+          "duration": "Slot duration",
           "percentage_surcharge": "Percentage Surcharge (%)",
           "absolute_surcharge": "Absolute Surcharge (€/£ per kWh)",
           "tax": "Tax (%)"
