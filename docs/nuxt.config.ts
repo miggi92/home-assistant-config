@@ -22,4 +22,12 @@ export default defineNuxtConfig({
       name: 'Deutsch',
     }],
   },
+  studio: {
+    repository: {
+      provider: 'github',
+      owner: 'miggi92',
+      repo: 'home-assistant-config',
+      branch: 'master',
+    }
+  }
 })
