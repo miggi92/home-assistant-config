@@ -39,8 +39,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.2(@parcel/watcher@2.5.1)(@types/node@24.10.1)(@vue/compiler-sfc@3.5.25)(better-sqlite3@12.5.0)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.5.0))(eslint@9.39.1(jiti@2.6.1))(ioredis@5.8.2)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rollup@4.53.3)(terser@5.44.1)(typescript@5.9.3)(vite@7.2.7(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.2))(yaml@2.8.2)
       nuxt-studio:
-        specifier: 1.0.0-alpha.3
-        version: 1.0.0-alpha.3(db0@0.3.4(better-sqlite3@12.5.0))(ioredis@5.8.2)(magicast@0.5.1)(vue@3.5.25(typescript@5.9.3))
+        specifier: 1.0.0-alpha.4
+        version: 1.0.0-alpha.4(db0@0.3.4(better-sqlite3@12.5.0))(ioredis@5.8.2)(magicast@0.5.1)(vue@3.5.25(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -4777,8 +4777,8 @@ packages:
     peerDependencies:
       h3: ^1
 
-  nuxt-studio@1.0.0-alpha.3:
-    resolution: {integrity: sha512-2lxLU5BHl3y1WcS2FsJJdjPE/QAT6DOOmwOUtWwmUbk2WTxZty5hJWOsPC4kvvdL7MR7Joe9b8SDxogjT7S0fw==}
+  nuxt-studio@1.0.0-alpha.4:
+    resolution: {integrity: sha512-ggAXJaolRmRCU8lRO4wcxwZDFTHivw8YAhKDcAVr6YdmBL8HLplceNd/sAOlnqUDAPSy6YJNjDhG7wP9Kdaqvw==}
 
   nuxt@4.2.2:
     resolution: {integrity: sha512-n6oYFikgLEb70J4+K19jAzfx4exZcRSRX7yZn09P5qlf2Z59VNOBqNmaZO5ObzvyGUZ308SZfL629/Q2v2FVjw==}
@@ -12098,7 +12098,7 @@ snapshots:
       - magicast
       - vue
 
-  nuxt-studio@1.0.0-alpha.3(db0@0.3.4(better-sqlite3@12.5.0))(ioredis@5.8.2)(magicast@0.5.1)(vue@3.5.25(typescript@5.9.3)):
+  nuxt-studio@1.0.0-alpha.4(db0@0.3.4(better-sqlite3@12.5.0))(ioredis@5.8.2)(magicast@0.5.1)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
       '@iconify-json/lucide': 1.2.79
       '@nuxtjs/mdc': 0.18.4(magicast@0.5.1)
@@ -12106,7 +12106,9 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
       js-yaml: 4.1.1
+      minimatch: 10.1.1
       nuxt-component-meta: 0.15.0(magicast@0.5.1)
+      shiki: 3.19.0
       unstorage: 1.17.1(db0@0.3.4(better-sqlite3@12.5.0))(ioredis@5.8.2)
     transitivePeerDependencies:
       - '@azure/app-configuration'
