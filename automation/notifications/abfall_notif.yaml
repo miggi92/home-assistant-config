@@ -8,6 +8,8 @@ trigger:
       - sensor.restmull
       - sensor.papier
       - sensor.schadstoffe
+      - sensor.gelbe_tonne
+      - sensor.bio
     attribute: "daysTo"
     to: 0
     id: heute
@@ -16,6 +18,8 @@ trigger:
       - sensor.restmull
       - sensor.papier
       - sensor.schadstoffe
+      - sensor.gelbe_tonne
+      - sensor.bio
     attribute: "daysTo"
     to: 1
     id: morgen
