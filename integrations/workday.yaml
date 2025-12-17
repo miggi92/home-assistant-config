@@ -27,14 +27,6 @@ binary_sensor:
     before: sunrise
 
 sensor:
-  - platform: template
-    sensors:
-      day_of_week:
-        value_template: "{{ now().isoweekday() }}"
-        icon_template: mdi:calendar-today
-      weekday:
-        value_template: "{{ now().strftime('%A') }}"
-        icon_template: mdi:calendar-today
   - platform: time_date
     display_options:
       - "time"
