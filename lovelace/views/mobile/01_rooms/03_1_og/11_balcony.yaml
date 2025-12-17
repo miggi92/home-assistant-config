@@ -9,7 +9,7 @@ badges: []
 sections:
   - type: grid
     cards:
-      - !include ../../../cards/nav-bar.yaml
+      - !include ../../../../cards/nav-bar.yaml
       - type: custom:mushroom-entity-card
         entity: switch.lichterkette
         layout: vertical

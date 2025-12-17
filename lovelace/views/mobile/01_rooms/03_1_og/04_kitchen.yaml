@@ -49,7 +49,7 @@ badges:
 sections:
   - type: grid
     cards:
-      - !include ../../../cards/nav-bar.yaml
+      - !include ../../../../cards/nav-bar.yaml
       - type: custom:mushroom-light-card
         entity: light.thekenlicht
         layout: vertical

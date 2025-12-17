@@ -183,6 +183,8 @@ sections:
           tap_action:
             action: navigate
             navigation_path: dwd
+  - type: grid
+    cards:
       - type: custom:decluttering-card
         template: anniversary_template
         variables:
@@ -345,5 +347,3 @@ sections:
                   - nav_path: system
                   - icon: mdi:cellphone-arrow-down
                   - icon_color: teal
-  - type: grid
-    cards: []

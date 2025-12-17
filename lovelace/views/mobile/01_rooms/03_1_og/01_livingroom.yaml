@@ -42,11 +42,11 @@ badges:
         service: browser_mod.popup
         data:
           title: "TV Programm"
-          content: !include ../../../cards/tv_prog.yaml
+          content: !include ../../../../cards/tv_prog.yaml
 sections:
   - type: grid
     cards:
-      - !include ../../../cards/nav-bar.yaml
+      - !include ../../../../cards/nav-bar.yaml
       - type: custom:mushroom-light-card
         entity: light.tv_licht
         layout: vertical
@@ -168,4 +168,4 @@ cards:
             service: browser_mod.popup
             data:
               title: "TV Programm"
-              content: !include ../../../cards/tv_prog.yaml
+              content: !include ../../../../cards/tv_prog.yaml
