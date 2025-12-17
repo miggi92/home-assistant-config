@@ -5,7 +5,7 @@ id: 33ea773e-67d2-4f5c-97ba-778d098b0ade
 description: "Show waste on clock"
 trigger:
   - platform: state
-    entity_id: sensor.nachste_abfuhrtermine
+    entity_id: sensor.nachste_abholung
 condition: []
 action:
   - if:
