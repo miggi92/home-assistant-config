@@ -116,6 +116,8 @@ devices:
     friendly_name: Flur Cam Stecker
   '0x00178801085af267':
     friendly_name: Hue Go
+  '0x58e6c5fffe36fc60':
+    friendly_name: Wohnzimmerecksteckdose
 version: 4
 groups:
   '1':
