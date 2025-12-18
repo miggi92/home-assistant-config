@@ -13,6 +13,7 @@ ignore: |
   zigbee2mqtt/*
   dwains-dashboard/*
   esphome/*
+  blueprints/*
   docs/*
   .github/*
   pnpm-lock.yaml
