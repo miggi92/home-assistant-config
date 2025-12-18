@@ -1,5 +1,0 @@
----
-# https://github.com/DJS91/HAMusicAssistantJukebox
-songrequestaccess:
-  name: Song Request Access
-  initial: false
