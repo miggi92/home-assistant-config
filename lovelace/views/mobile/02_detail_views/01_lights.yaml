@@ -48,6 +48,14 @@ sections:
         collapsible_controls: true
         use_light_color: true
       - type: custom:mushroom-light-card
+        entity: light.h70c4_2
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        icon: mdi:pine-tree
+      - type: custom:mushroom-light-card
         entity: light.abstellkammerlicht
         layout: vertical
         show_brightness_control: true
