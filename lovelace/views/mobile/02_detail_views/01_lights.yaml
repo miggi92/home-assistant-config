@@ -116,3 +116,22 @@ sections:
         collapsible_controls: true
         tap_action:
           action: more-info
+      - type: custom:mushroom-light-card
+        entity: light.balkon
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info
+      - type: custom:mushroom-light-card
+        entity: light.weihnachtslichter
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
+        icon: mdi:pine-tree
+        tap_action:
+          action: more-info
