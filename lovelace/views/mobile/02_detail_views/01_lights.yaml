@@ -5,7 +5,34 @@ icon: mdi:lightbulb
 subview: true
 type: sections
 max_columns: 3
-badges: []
+badges:
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: timer.nachtlicht
+      - icon: mdi:lightbulb-night
+    visibility:
+      - condition: state
+        entity: timer.nachtlicht
+        state: "active"
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: timer.children_light_on
+      - icon: mdi:teddy-bear
+    visibility:
+      - condition: state
+        entity: timer.children_light_on
+        state: "active"
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: timer.lichterkette
+      - icon: mdi:string-lights
+    visibility:
+      - condition: state
+        entity: timer.lichterkette
+        state: "active"
 sections:
   - type: grid
     cards:
