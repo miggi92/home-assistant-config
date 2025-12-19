@@ -16,7 +16,7 @@
     "nuxt-studio": "1.0.0-beta.0",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.26.0",
+  "packageManager": "pnpm@10.26.1",
   "devDependencies": {
     "zod": "^4.1.13",
     "zod-to-json-schema": "^3.25.0"
