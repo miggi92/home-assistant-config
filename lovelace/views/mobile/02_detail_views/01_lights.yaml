@@ -78,6 +78,13 @@ sections:
         show_color_control: true
         collapsible_controls: true
         icon: mdi:pine-tree
+      - type: custom:mushroom-light-card
+        entity: light.lichterkette
+        layout: vertical
+        show_brightness_control: true
+        use_light_color: true
+        show_color_control: true
+        collapsible_controls: true
   - type: grid
     cards:
       - type: custom:mushroom-light-card
