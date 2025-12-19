@@ -1,16 +1,18 @@
 """Communication with Grocy API."""
+
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import List
 
 from aiohttp import hdrs, web
-from homeassistant.components.http import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.http import HomeAssistantView
 from pygrocy2.data_models.battery import Battery
+from pygrocy2.data_models.chore import Chore
+from pygrocy2.grocy import Grocy
 
 from .const import (
     ATTR_BATTERIES,
@@ -30,7 +32,7 @@ from .const import (
     CONF_PORT,
     CONF_URL,
 )
-from .helpers import ProductWrapper, MealPlanItemWrapper, extract_base_url_and_path
+from .helpers import MealPlanItemWrapper, ProductWrapper, extract_base_url_and_path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ _LOGGER = logging.getLogger(__name__)
 class GrocyData:
     """Handles communication and gets the data."""
 
-    def __init__(self, hass, api):
+    def __init__(self, hass: HomeAssistant, api: Grocy) -> None:
         """Initialize Grocy data."""
         self.hass = hass
         self.api = api
@@ -67,21 +69,23 @@ class GrocyData:
         """Update stock data."""
 
         def wrapper():
-            return [ProductWrapper(item, self.hass) for item in self.api._api_client.get_stock()]
-        
+            return [
+                ProductWrapper(item, self.hass)
+                for item in self.api._api_client.get_stock()
+            ]
+
         return await self.hass.async_add_executor_job(wrapper)
 
     async def async_update_chores(self):
         """Update chores data."""
 
-        def wrapper():
+        def wrapper() -> list[Chore]:
             return self.api.chores(True)
 
         return await self.hass.async_add_executor_job(wrapper)
 
     async def async_update_overdue_chores(self):
         """Update overdue chores data."""
-
         query_filter = [f"next_estimated_execution_time<{datetime.now()}"]
 
         def wrapper():
@@ -99,15 +103,15 @@ class GrocyData:
 
     async def async_update_tasks(self):
         """Update tasks data."""
-
         return await self.hass.async_add_executor_job(self.api.tasks)
 
     async def async_update_overdue_tasks(self):
         """Update overdue tasks data."""
-
         and_query_filter = [
             f"due_date<{datetime.now().date()}",
-            # It's not possible to pass an empty value to Grocy, so use a regex that matches non-empty values to exclude empty str due_date.
+            # It's not possible to pass an empty value to Grocy
+            # so use a regex that matches non-empty values
+            # to exclude empty str due_date.
             r"due_date§.*\S.*",
         ]
 
@@ -158,8 +162,8 @@ class GrocyData:
 
     async def async_update_meal_plan(self):
         """Update meal plan data."""
-
-        # The >= condition is broken before Grocy 3.3.1. So use > to maintain backward compatibility.
+        # The >= condition is broken before Grocy 3.3.1.
+        # So use > to maintain backward compatibility.
         yesterday = datetime.now() - timedelta(1)
         query_filter = [f"day>{yesterday.date()}"]
 
@@ -170,7 +174,7 @@ class GrocyData:
 
         return await self.hass.async_add_executor_job(wrapper)
 
-    async def async_update_batteries(self) -> List[Battery]:
+    async def async_update_batteries(self) -> list[Battery]:
         """Update batteries."""
 
         def wrapper():
@@ -178,7 +182,7 @@ class GrocyData:
 
         return await self.hass.async_add_executor_job(wrapper)
 
-    async def async_update_overdue_batteries(self) -> List[Battery]:
+    async def async_update_overdue_batteries(self) -> list[Battery]:
         """Update overdue batteries."""
 
         def wrapper():
@@ -191,10 +195,10 @@ class GrocyData:
 async def async_setup_endpoint_for_image_proxy(
     hass: HomeAssistant, config_entry: ConfigEntry
 ):
-    """Setup and register the image api for grocy images with HA."""
+    """Do setup and register the image api for grocy images with HA."""
     session = async_get_clientsession(hass)
 
-    url = config_entry.get(CONF_URL)
+    url = config_entry.get(CONF_URL) or ""
     (grocy_base_url, grocy_path) = extract_base_url_and_path(url)
     api_key = config_entry.get(CONF_API_KEY)
     port_number = config_entry.get(CONF_PORT)
@@ -214,7 +218,7 @@ class GrocyPictureView(HomeAssistantView):
     url = "/api/grocy/{picture_type}/{filename}"
     name = "api:grocy:picture"
 
-    def __init__(self, session, base_url, api_key):
+    def __init__(self, session, base_url, api_key) -> None:
         self._session = session
         self._base_url = base_url
         self._api_key = api_key

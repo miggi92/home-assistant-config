@@ -1,4 +1,5 @@
 """Adds config flow for Grocy."""
+
 import logging
 from collections import OrderedDict
 

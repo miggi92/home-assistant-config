@@ -2,18 +2,17 @@
   "domain": "grocy",
   "name": "Grocy",
   "codeowners": [
-    "@SebRut",
-    "@isabellaalstrom"
+    "@iamkarlson"
   ],
   "config_flow": true,
   "dependencies": [
     "http"
   ],
-  "documentation": "https://github.com/custom-components/grocy",
+  "documentation": "https://github.com/iamkarlson/grocy",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/custom-components/grocy/issues",
+  "issue_tracker": "https://github.com/iamkarlson/grocy/issues",
   "requirements": [
     "pygrocy2==2.5.0"
   ],
-  "version": "2025.7.0"
+  "version": "v1.3.2"
 }

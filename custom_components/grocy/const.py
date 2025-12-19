@@ -1,14 +1,15 @@
 """Constants for Grocy."""
+
 from datetime import timedelta
 from typing import Final
 
 NAME: Final = "Grocy"
 DOMAIN: Final = "grocy"
-VERSION = "2025.7.0"
+VERSION = "v1.3.2"
 
-ISSUE_URL: Final = "https://github.com/custom-components/grocy/issues"
+ISSUE_URL: Final = "https://github.com/iamkarlson/grocy/issues"
 
-PLATFORMS: Final = ["binary_sensor", "sensor"]
+PLATFORMS: Final = ["binary_sensor", "sensor", "todo"]
 
 SCAN_INTERVAL = timedelta(seconds=30)
 
