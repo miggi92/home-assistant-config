@@ -1,0 +1,10 @@
+{
+    "entity": {
+        "sensor": {
+            "first_prize": { "name": "Hauptpreis (El Gordo)" },
+            "second_prize": { "name": "Zweiter Preis" },
+            "third_prize": { "name": "Dritter Preis" },
+            "ticket_prize": { "name": "Gewinn Ticket {ticket}" }
+        }
+    }
+}
