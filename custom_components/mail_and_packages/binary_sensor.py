@@ -3,6 +3,7 @@
 import logging
 
 from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
     BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -12,20 +13,43 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import BINARY_SENSORS, COORDINATOR, DOMAIN, VERSION
+from .const import COORDINATOR, DOMAIN, VERSION
 from .entity import MailandPackagesBinarySensorEntityDescription
 
 _LOGGER = logging.getLogger(__name__)
+
+BINARY_SENSORS = {
+    "usps_update": MailandPackagesBinarySensorEntityDescription(
+        name="USPS Image Updated",
+        key="usps_update",
+        device_class=BinarySensorDeviceClass.UPDATE,
+        selectable=False,
+        entity_registry_enabled_default=False,
+    ),
+    "amazon_update": MailandPackagesBinarySensorEntityDescription(
+        name="Amazon Image Updated",
+        key="amazon_update",
+        device_class=BinarySensorDeviceClass.UPDATE,
+        selectable=False,
+        entity_registry_enabled_default=False,
+    ),
+    "usps_mail_delivered": MailandPackagesBinarySensorEntityDescription(
+        name="USPS Mail Delivered",
+        key="usps_mail_delivered",
+        entity_registry_enabled_default=False,
+        selectable=True,
+    ),
+}
 
 
 async def async_setup_entry(hass, entry, async_add_devices):
     """Initialize binary_sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
 
-    binary_sensors = []
-    # pylint: disable=unused-variable
-    for variable, value in BINARY_SENSORS.items():
-        binary_sensors.append(PackagesBinarySensor(value, coordinator, entry))
+    binary_sensors = [
+        PackagesBinarySensor(value, coordinator, entry)
+        for value in BINARY_SENSORS.values()
+    ]
     async_add_devices(binary_sensors, False)
 
 
@@ -69,7 +93,7 @@ class PackagesBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return True if the image is updated."""
-        if self._type in self.coordinator.data.keys():
+        if self._type in self.coordinator.data:
             _LOGGER.debug(
                 "binary_sensor: %s value: %s",
                 self._type,

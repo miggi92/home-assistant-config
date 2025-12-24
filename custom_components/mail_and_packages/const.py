@@ -4,15 +4,12 @@ from __future__ import annotations
 
 from typing import Final
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription
 from homeassistant.helpers.entity import EntityCategory
 
-from .entity import MailandPackagesBinarySensorEntityDescription
-
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.4.3-b13"
+VERSION = "0.4.3"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -21,7 +18,7 @@ COORDINATOR = "coordinator_mail"
 OVERLAY = ["overlay.png", "vignette.png", "white.png"]
 SERVICE_UPDATE_FILE_PATH = "update_file_path"
 CAMERA = "cameras"
-CONFIG_VER = 10
+CONFIG_VER = 14
 
 # Attributes
 ATTR_AMAZON_IMAGE = "amazon_image"
@@ -41,12 +38,26 @@ ATTR_BODY = "body"
 ATTR_BODY_COUNT = "body_count"
 ATTR_PATTERN = "pattern"
 ATTR_USPS_MAIL = "usps_mail"
+ATTR_UPS_IMAGE = "ups_image"
+ATTR_WALMART_IMAGE = "walmart_image"
+ATTR_FEDEX_IMAGE = "fedex_image"
+ATTR_GENERIC_IMAGE = "generic_image"
 
 # Configuration Properties
 CONF_ALLOW_EXTERNAL = "allow_external"
 CONF_CAMERA_NAME = "camera_name"
 CONF_CUSTOM_IMG = "custom_img"
 CONF_CUSTOM_IMG_FILE = "custom_img_file"
+CONF_AMAZON_CUSTOM_IMG = "amazon_custom_img"
+CONF_AMAZON_CUSTOM_IMG_FILE = "amazon_custom_img_file"
+CONF_UPS_CUSTOM_IMG = "ups_custom_img"
+CONF_UPS_CUSTOM_IMG_FILE = "ups_custom_img_file"
+CONF_WALMART_CUSTOM_IMG = "walmart_custom_img"
+CONF_WALMART_CUSTOM_IMG_FILE = "walmart_custom_img_file"
+CONF_FEDEX_CUSTOM_IMG = "fedex_custom_img"
+CONF_FEDEX_CUSTOM_IMG_FILE = "fedex_custom_img_file"
+CONF_GENERIC_CUSTOM_IMG = "generic_custom_img"
+CONF_GENERIC_CUSTOM_IMG_FILE = "generic_custom_img_file"
 CONF_STORAGE = "storage"
 CONF_FOLDER = "folder"
 CONF_PATH = "image_path"
@@ -61,6 +72,8 @@ CONF_AMAZON_DAYS = "amazon_days"
 CONF_VERIFY_SSL = "verify_ssl"
 CONF_IMAP_SECURITY = "imap_security"
 CONF_AMAZON_DOMAIN = "amazon_domain"
+CONF_ALLOW_FORWARDED_EMAILS = "allow_forwarded_emails"
+CONF_FORWARDED_EMAILS = "forwarded_emails"
 
 # Defaults
 DEFAULT_CAMERA_NAME = "Mail USPS Camera"
@@ -77,9 +90,32 @@ DEFAULT_AMAZON_FWDS = "(none)"
 DEFAULT_ALLOW_EXTERNAL = False
 DEFAULT_CUSTOM_IMG = False
 DEFAULT_CUSTOM_IMG_FILE = "custom_components/mail_and_packages/images/mail_none.gif"
+DEFAULT_AMAZON_CUSTOM_IMG = False
+DEFAULT_AMAZON_CUSTOM_IMG_FILE = (
+    "custom_components/mail_and_packages/no_deliveries_amazon.jpg"
+)
+DEFAULT_UPS_CUSTOM_IMG = False
+DEFAULT_UPS_CUSTOM_IMG_FILE = (
+    "custom_components/mail_and_packages/no_deliveries_ups.jpg"
+)
+DEFAULT_WALMART_CUSTOM_IMG = False
+DEFAULT_WALMART_CUSTOM_IMG_FILE = (
+    "custom_components/mail_and_packages/no_deliveries_walmart.jpg"
+)
+DEFAULT_FEDEX_CUSTOM_IMG = False
+DEFAULT_FEDEX_CUSTOM_IMG_FILE = (
+    "custom_components/mail_and_packages/no_deliveries_fedex.jpg"
+)
+DEFAULT_GENERIC_CUSTOM_IMG = False
+DEFAULT_GENERIC_CUSTOM_IMG_FILE = (
+    "custom_components/mail_and_packages/no_deliveries_generic.jpg"
+)
 DEFAULT_AMAZON_DAYS = 3
 DEFAULT_AMAZON_DOMAIN = "amazon.com"
 DEFAULT_STORAGE = "custom_components/mail_and_packages/images/"
+
+DEFAULT_ALLOW_FORWARDED_EMAILS = False
+DEFAULT_FORWARDED_EMAILS = "(none)"
 
 # Amazon
 AMAZON_DOMAINS = [
@@ -97,7 +133,8 @@ AMAZON_DOMAINS = [
     "amazon.nl",
 ]
 AMAZON_DELIVERED_SUBJECT = [
-    "Delivered: Your",
+    "Delivered: ",
+    "Your Amazon order has arrived!",
     "Consegna effettuata:",
     "Dostarczono:",
     "Geliefert:",
@@ -105,7 +142,7 @@ AMAZON_DELIVERED_SUBJECT = [
     "Entregado:",
     "Bezorgd:",
     "Livraison : Votre",
-    "Zugestellt: deine",
+    "Zugestellt:",
 ]
 AMAZON_SHIPMENT_TRACKING = [
     "auto-confirm",
@@ -118,10 +155,19 @@ AMAZON_SHIPMENT_TRACKING = [
     "verzending-volgen",
     "update-bestelling",
 ]
+AMAZON_SHIPMENT_SUBJECT = [
+    "Shipped:",
+    "Enviado:",
+]
+AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:"]
 AMAZON_EMAIL = ["order-update@", "update-bestelling@", "versandbestaetigung@"]
 AMAZON_PACKAGES = "amazon_packages"
 AMAZON_ORDER = "amazon_order"
 AMAZON_DELIVERED = "amazon_delivered"
+AMAZON_IMG_LIST = [
+    "us-prod-temp.s3.amazonaws.com",
+    "gb-prod-temp.s3.eu-west-1.amazonaws.com",
+]
 AMAZON_IMG_PATTERN = (
     "(https://)([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-;]*[\\w@?^=%&/~+#-;])?"
 )
@@ -143,14 +189,14 @@ AMAZON_TIME_PATTERN = [
     "Arriving:",
     "Arriverà:",
     "arriving:",
+    "Arriving ",
     "Dostawa:",
-    "Zustellung:",
     "Entrega:",
     "A chegar:",
     "Arrivée :",
+    "Chega ",
     "Verwachte bezorgdatum:",
     "Votre date de livraison prévue est :",
-    "Arriving",
 ]
 AMAZON_TIME_PATTERN_END = [
     "Previously expected:",
@@ -170,6 +216,18 @@ AMAZON_TIME_PATTERN_END = [
 AMAZON_TIME_PATTERN_REGEX = [
     "Arriving (\\w+ \\d+) - (\\w+ \\d+)",
     "Arriving (\\w+ \\d+)",
+    "Arriving (\\w+ ?\\d*)",
+    "Arriving (\\w+)",
+    "Zustellung (\\w+ \\d+) - (\\w+ \\d+)",
+    "Zustellung (\\w+ \\d+)",
+    "Zustellung (\\w+ \\d*)",
+    "Arriverà (\\w+ \\d+) - (\\w+ \\d+)",
+    "Arriverà (\\w+ \\d+)",
+    "Arriverà (\\w+ \\d*)",
+    "Arrivée (\\w+ \\d+) - (\\w+ \\d+)",
+    "Arrivée (\\w+ \\d+)",
+    "Arrivée (\\w+ \\d*)",
+    "Chega ((\\w+(-\\w+)?))",
 ]
 AMAZON_EXCEPTION_SUBJECT = "Delivery update:"
 AMAZON_EXCEPTION_BODY = "running late"
@@ -196,6 +254,8 @@ AMAZON_LANGS = [
 AMAZON_OTP = "amazon_otp"
 AMAZON_OTP_REGEX = "(\n)(\\d{6})(\n)"
 AMAZON_OTP_SUBJECT = "A one-time password is required for your Amazon delivery"
+
+AMAZON_DELIEVERED_BY_OTHERS_SEARCH_TEXT = ["AMAZON"]
 
 # Sensor Data
 SENSOR_DATA = {
@@ -314,7 +374,7 @@ SENSOR_DATA = {
     "capost_mail": {
         "email": ["donotreply-nepasrepondre@communications.canadapost-postescanada.ca"],
         "subject": ["You have mail on the way"],
-        "body": ["\\sYou have (\\d) pieces of mail\\s"],
+        "body": ["\\sYou have (\\d) piece|pieces of mail\\s"],
         "body_count": True,
     },
     # DHL
@@ -655,7 +715,7 @@ SENSOR_DATA = {
     # Walmart
     "walmart_delivering": {
         "email": ["help@walmart.com"],
-        "subject": ["Out for delivery"],
+        "subject": ["Out for delivery", "Your package should arrive by"],
     },
     "walmart_delivered": {
         "email": ["help@walmart.com"],
@@ -670,7 +730,7 @@ SENSOR_DATA = {
         "email": ["help@walmart.com"],
         "subject": ["delivery is delayed"],
     },
-    "walmart_tracking": {"pattern": ["#[0-9]{7}-[0-9]{7,8}"]},
+    "walmart_tracking": {"pattern": [r"\b#?[0-9]{7}-[0-9]{7,8}\b"]},
     # BuildingLink
     "buildinglink_delivered": {
         "email": ["notify@buildinglink.com"],
@@ -1290,33 +1350,31 @@ IMAGE_SENSORS: Final[dict[str, SensorEntityDescription]] = {
     ),
 }
 
-BINARY_SENSORS: Final[dict[str, MailandPackagesBinarySensorEntityDescription]] = {
-    "usps_update": MailandPackagesBinarySensorEntityDescription(
-        name="USPS Image Updated",
-        key="usps_update",
-        device_class=BinarySensorDeviceClass.UPDATE,
-        selectable=False,
-        entity_registry_enabled_default=False,
-    ),
-    "amazon_update": MailandPackagesBinarySensorEntityDescription(
-        name="Amazon Image Updated",
-        key="amazon_update",
-        device_class=BinarySensorDeviceClass.UPDATE,
-        selectable=False,
-        entity_registry_enabled_default=False,
-    ),
-    "usps_mail_delivered": MailandPackagesBinarySensorEntityDescription(
-        name="USPS Mail Delivered",
-        key="usps_mail_delivered",
-        entity_registry_enabled_default=False,
-        selectable=True,
-    ),
-}
-
 # Name
 CAMERA_DATA = {
     "usps_camera": ["Mail USPS Camera"],
+    "ups_camera": ["Mail UPS Camera"],
     "amazon_camera": ["Mail Amazon Delivery Camera"],
+    "walmart_camera": ["Mail Walmart Delivery Camera"],
+    "fedex_camera": ["Mail FedEx Delivery Camera"],
+    "generic_camera": ["Mail Generic Delivery Camera"],
+}
+
+# Configuration for shipper-specific image extraction parameters
+# Only contains values that cannot be derived from shipper_name
+CAMERA_EXTRACTION_CONFIG = {
+    "ups": {
+        "image_type": "jpeg",
+        "cid_name": "deliveryPhoto",
+    },
+    "walmart": {
+        "image_type": "png",
+        "cid_name": "deliveryProofLabel",
+    },
+    "fedex": {
+        "image_type": "jpeg",
+        "attachment_filename_pattern": "delivery",
+    },
 }
 
 # Sensor Index
@@ -1326,11 +1384,13 @@ SENSOR_ICON = 2
 
 # For sensors with delivering and delivered statuses
 SHIPPERS = [
+    "amazon",
     "capost",
     "dhl",
     "fedex",
     "ups",
     "usps",
+    "walmart",
     "hermes",
     "royal",
     "auspost",
