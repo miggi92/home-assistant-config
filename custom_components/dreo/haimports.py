@@ -25,6 +25,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
@@ -114,6 +115,7 @@ from homeassistant.const import (
     PRECISION_WHOLE,
     STATE_OFF,
     STATE_ON,
-    UnitOfTemperature)
+    UnitOfTemperature,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER)
 
 from homeassistant.helpers import entity_platform

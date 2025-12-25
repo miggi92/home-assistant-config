@@ -66,7 +66,7 @@ class DreoSensorEntityDescription(SensorEntityDescription):
 
 SENSORS: tuple[DreoSensorEntityDescription, ...] = (
     DreoSensorEntityDescription(
-        key="temperature",
+        key="Temperature",
         translation_key="temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -75,13 +75,13 @@ SENSORS: tuple[DreoSensorEntityDescription, ...] = (
         exists_fn=lambda device: (not device.type in { DreoDeviceType.HEATER, DreoDeviceType.AIR_CONDITIONER }) and device.is_feature_supported("temperature"),
     ),
     DreoSensorEntityDescription(
-        key="humidity",
+        key="Humidity",
         translation_key="humidity",
         device_class=SensorDeviceClass.HUMIDITY,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement_fn=lambda device: "%",
         value_fn=lambda device: device.humidity,
-        exists_fn=lambda device:  (not device.type in { DreoDeviceType.HEATER, DreoDeviceType.AIR_CONDITIONER, DreoDeviceType.HUMIDIFIER }) and device.is_feature_supported("humidity"),
+        exists_fn=lambda device:  device.is_feature_supported("humidity"),
     ),
     DreoSensorEntityDescription(
         key="Use since cleaning",
@@ -113,7 +113,7 @@ SENSORS: tuple[DreoSensorEntityDescription, ...] = (
         translation_key="pm25",
         device_class=SensorDeviceClass.PM25,
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement_fn=lambda device: "%",
+        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
         value_fn=lambda device: device.pm25,
         exists_fn=lambda device: device.is_feature_supported(PM25_KEY),
     ),
@@ -123,14 +123,6 @@ SENSORS: tuple[DreoSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[WATER_LEVEL_OK, WATER_LEVEL_EMPTY],
         value_fn=lambda device: device.water_level,
-        exists_fn=lambda device: (not device.type in { DreoDeviceType.HUMIDIFIER }) and device.is_feature_supported(WATER_LEVEL_STATUS_KEY),
-    ),
-        DreoSensorEntityDescription(
-        key="Water Level",
-        translation_key="water_hm",
-        device_class=SensorDeviceClass.ENUM,
-        options=[WATER_LEVEL_OK, WATER_LEVEL_EMPTY],
-        value_fn=lambda device: device.wrong,
         exists_fn=lambda device: device.is_feature_supported(WATER_LEVEL_STATUS_KEY),
     ),
     DreoSensorEntityDescription(

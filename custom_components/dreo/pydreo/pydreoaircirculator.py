@@ -7,6 +7,7 @@ from .constant import (
     LOGGER_NAME,
     HORIZONTAL_OSCILLATION_KEY,
     HORIZONTAL_OSCILLATION_ANGLE_KEY,
+    HORIZONTAL_ANGLE_ADJ_KEY,
     VERTICAL_OSCILLATION_KEY,
     VERTICAL_OSCILLATION_ANGLE_KEY,
     CRUISECONF_KEY,
@@ -56,6 +57,21 @@ class PyDreoAirCirculator(PyDreoFanBase):
 
         self._horizontally_oscillating = None
         self._vertically_oscillating = None
+        
+        # Oscillation angle for older firmware (single angle value, not min/max range)
+        self._horizontal_oscillation_angle = None
+        self._vertical_oscillation_angle = None
+        
+        # Horizontal angle adjustment (simpler angle control, similar to Tower Fan)
+        self._horizontal_angle_adj = None
+
+    def _uses_hangleadj_for_horizontal(self) -> bool:
+        """Check if device uses hangleadj (simpler angle control) instead of hoscangle."""
+        return self._horizontal_angle_adj is not None
+
+    def _has_vertical_osc_angle_disabled(self) -> bool:
+        """Check if vertical oscillation angle should be disabled (voscangle is 0 and device uses hangleadj)."""
+        return self._horizontal_angle_adj is not None and self._vertical_oscillation_angle == 0
 
     @staticmethod
     def parse_swing_angle_range(details: Dict[str, list], direction: str) -> tuple[int, int] | None:
@@ -240,7 +256,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def vertical_osc_angle_top(self) -> int:
         """Get the current top vertical oscillation angle."""
         if self._cruise_conf is not None:
-            return self._cruise_conf.split(",")[0]
+            return int(self._cruise_conf.split(",")[0])
+        return None
 
     @vertical_osc_angle_top.setter
     def vertical_osc_angle_top(self, value: int) -> None:
@@ -260,7 +277,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def vertical_osc_angle_bottom(self) -> int:
         """Get the current bottom vertical oscillation angle."""
         if self._cruise_conf is not None:
-            return self._cruise_conf.split(",")[2]
+            return int(self._cruise_conf.split(",")[2])
+        return None
 
     @vertical_osc_angle_bottom.setter
     def vertical_osc_angle_bottom(self, value: int) -> None:
@@ -280,7 +298,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def horizontal_osc_angle_right(self) -> int:
         """Get the current right horizontal oscillation angle."""
         if self._cruise_conf is not None:
-            return self._cruise_conf.split(",")[1]
+            return int(self._cruise_conf.split(",")[1])
+        return None
 
     @horizontal_osc_angle_right.setter
     def horizontal_osc_angle_right(self, value: int) -> None:
@@ -300,7 +319,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def horizontal_osc_angle_left(self) -> int:
         """Get the current left horizontal oscillation angle."""
         if self._cruise_conf is not None:
-            return self._cruise_conf.split(",")[3]
+            return int(self._cruise_conf.split(",")[3])
+        return None
 
     @horizontal_osc_angle_left.setter
     def horizontal_osc_angle_left(self, value: int) -> None:
@@ -319,14 +339,24 @@ class PyDreoAirCirculator(PyDreoFanBase):
     @property
     def horizontal_angle(self) -> int:
         """Get the current fixed horizontal angle."""
+        # First check if hangleadj is available (simpler angle control)
+        if self._horizontal_angle_adj is not None:
+            return self._horizontal_angle_adj
+        # Otherwise use fixedconf (more complex angle control)
         if (self._fixed_conf is not None):
-            return self._fixed_conf.split(",")[1]
+            return int(self._fixed_conf.split(",")[1])
+        return None
 
     @horizontal_angle.setter
     def horizontal_angle(self, value: int) -> None:
         """Set the horizontal angle."""
         _LOGGER.debug("PyDreoAirCirculator:horizontal_angle.setter")
-        if (self._fixed_conf is not None):
+        # First check if hangleadj is available (simpler angle control)
+        if self._horizontal_angle_adj is not None:
+            # Note that HA seems to send this in as a float, so we need to convert to int just in case
+            self._send_command(HORIZONTAL_ANGLE_ADJ_KEY, int(value))
+        # Otherwise use fixedconf (more complex angle control)
+        elif (self._fixed_conf is not None):
             # Note that HA seems to send this in as a float, so we need to convert to int just in case
             self._send_command(FIXEDCONF_KEY, f"{self._fixed_conf.split(',')[0]},{int(value)}")
 
@@ -334,7 +364,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def vertical_angle(self) -> int:
         """Get the current fixed vertical angle."""
         if self._fixed_conf is not None:
-            return self._fixed_conf.split(",")[0]
+            return int(self._fixed_conf.split(",")[0])
+        return None
 
     @vertical_angle.setter
     def vertical_angle(self, value: int) -> None:
@@ -343,6 +374,76 @@ class PyDreoAirCirculator(PyDreoFanBase):
         if self._fixed_conf is not None:
             # Note that HA seems to send this in as a float, we need to convert to int just in case
             self._send_command(FIXEDCONF_KEY, f"{int(value)},{self._fixed_conf.split(',')[1]}")
+
+    @property
+    def horizontal_oscillation_angle(self) -> int:
+        """Get the current horizontal oscillation angle (for older firmware).
+        
+        Note: This is only used for devices that have hoscangle as an integer value
+        and do NOT have hangleadj (newer simpler angle control).
+        """
+        # If hangleadj is available, this device doesn't use horizontal_oscillation_angle
+        if self._uses_hangleadj_for_horizontal():
+            return None
+        
+        if self._horizontal_oscillation_angle is not None:
+            return self._horizontal_oscillation_angle
+        return None
+
+    @horizontal_oscillation_angle.setter
+    def horizontal_oscillation_angle(self, value: int) -> None:
+        """Set the horizontal oscillation angle (for older firmware)."""
+        _LOGGER.debug("PyDreoAirCirculator:horizontal_oscillation_angle.setter")
+        # If hangleadj is available, this device doesn't use horizontal_oscillation_angle
+        if self._uses_hangleadj_for_horizontal():
+            raise NotImplementedError("This device uses horizontal_angle instead")
+        
+        if self._horizontal_oscillation_angle is not None:
+            # Note that HA seems to send this in as a float, so we need to convert to int just in case
+            self._send_command(HORIZONTAL_OSCILLATION_ANGLE_KEY, int(value))
+
+    @property
+    def horizontal_oscillation_angle_range(self):
+        """Get the horizontal oscillation angle range (for older firmware)."""
+        # If hangleadj is available, this device doesn't use horizontal_oscillation_angle
+        if self._uses_hangleadj_for_horizontal():
+            return None
+        return self.horizontal_angle_range
+
+    @property
+    def vertical_oscillation_angle(self) -> int:
+        """Get the current vertical oscillation angle (for older firmware).
+        
+        Note: This is only used for devices that have voscangle as a non-zero integer value.
+        If the device has hangleadj and voscangle is 0, it likely doesn't support vertical angle.
+        """
+        # If voscangle is 0 and hangleadj is present, the device likely doesn't support vertical angle
+        if self._has_vertical_osc_angle_disabled():
+            return None
+        
+        if self._vertical_oscillation_angle is not None:
+            return self._vertical_oscillation_angle
+        return None
+
+    @vertical_oscillation_angle.setter
+    def vertical_oscillation_angle(self, value: int) -> None:
+        """Set the vertical oscillation angle (for older firmware)."""
+        _LOGGER.debug("PyDreoAirCirculator:vertical_oscillation_angle.setter")
+        # If voscangle is 0 and hangleadj is present, the device likely doesn't support vertical angle
+        if self._has_vertical_osc_angle_disabled():
+            raise NotImplementedError("This device does not support vertical oscillation angle")
+        
+        if self._vertical_oscillation_angle is not None:
+            # Note that HA seems to send this in as a float, so we need to convert to int just in case
+            self._send_command(VERTICAL_OSCILLATION_ANGLE_KEY, int(value))
+
+    @property
+    def vertical_oscillation_angle_range(self):
+        """Get the vertical oscillation angle range (for older firmware)."""
+        # If voscangle is 0 and hangleadj is present, the device likely doesn't support vertical angle
+        if self._has_vertical_osc_angle_disabled():
+            return None
+        return self.vertical_angle_range
 
     def update_state(self, state: dict):
         """Process the state dictionary from the REST API."""
@@ -354,6 +455,18 @@ class PyDreoAirCirculator(PyDreoFanBase):
         self._osc_mode = self.get_state_update_value(state, OSCMODE_KEY)
         self._cruise_conf = self.get_state_update_value(state, CRUISECONF_KEY)
         self._fixed_conf = self.get_state_update_value(state, FIXEDCONF_KEY)
+        
+        # Parse hoscangle - only use if it's an integer, not a string like "0,0"
+        hoscangle_val = self.get_state_update_value(state, HORIZONTAL_OSCILLATION_ANGLE_KEY)
+        if isinstance(hoscangle_val, int):
+            self._horizontal_oscillation_angle = hoscangle_val
+        
+        # Parse voscangle - only use if it's an integer
+        voscangle_val = self.get_state_update_value(state, VERTICAL_OSCILLATION_ANGLE_KEY)
+        if isinstance(voscangle_val, int):
+            self._vertical_oscillation_angle = voscangle_val
+        
+        self._horizontal_angle_adj = self.get_state_update_value(state, HORIZONTAL_ANGLE_ADJ_KEY)
 
     def handle_server_update(self, message):
         """Process a websocket update"""
@@ -379,3 +492,15 @@ class PyDreoAirCirculator(PyDreoFanBase):
         val_fixed_conf = self.get_server_update_key_value(message, FIXEDCONF_KEY)
         if isinstance(val_fixed_conf, str):
             self._fixed_conf = val_fixed_conf
+
+        val_horiz_osc_angle = self.get_server_update_key_value(message, HORIZONTAL_OSCILLATION_ANGLE_KEY)
+        if isinstance(val_horiz_osc_angle, int):
+            self._horizontal_oscillation_angle = val_horiz_osc_angle
+
+        val_vert_osc_angle = self.get_server_update_key_value(message, VERTICAL_OSCILLATION_ANGLE_KEY)
+        if isinstance(val_vert_osc_angle, int):
+            self._vertical_oscillation_angle = val_vert_osc_angle
+
+        val_horiz_angle_adj = self.get_server_update_key_value(message, HORIZONTAL_ANGLE_ADJ_KEY)
+        if isinstance(val_horiz_angle_adj, int):
+            self._horizontal_angle_adj = val_horiz_angle_adj

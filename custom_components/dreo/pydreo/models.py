@@ -124,6 +124,15 @@ SUPPORTED_DEVICES = {
     "DR-HPF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     "DR-HPF008S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
+        # Note: Fan preset_modes use tuple format (name, value) despite type annotation.
+        # This is required for fans that map preset names to numeric mode values.
+        preset_modes=[
+            ("normal", 1),
+            ("auto", 2),
+            ("sleep", 3),
+            ("natural", 4),
+            ("turbo", 5)
+        ],
         device_ranges={
             SPEED_RANGE: (1, 9), 
             VERTICAL_ANGLE_RANGE: (-30, 90)
@@ -136,9 +145,22 @@ SUPPORTED_DEVICES = {
             HORIZONTAL_ANGLE_RANGE: (-75,75),
             VERTICAL_ANGLE_RANGE: (-30,90)
         }),
+    
+    "DR-HPF005S": DreoDeviceDetails(
+        device_type=DreoDeviceType.AIR_CIRCULATOR,
+        device_ranges={
+            SPEED_RANGE: (1, 10),
+            HORIZONTAL_ANGLE_RANGE: (-60, 60)
+        }),
 
     # Ceiling Fans
     "DR-HCF": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN),
+    
+    "DR-HCF002S": DreoDeviceDetails(
+        device_type=DreoDeviceType.CEILING_FAN,
+        device_ranges={
+            SPEED_RANGE: (1, 12)
+        }),
 
     # Air Purifiers
     "DR-HAP": DreoDeviceDetails(device_type=DreoDeviceType.AIR_PURIFIER),
@@ -247,7 +269,7 @@ SUPPORTED_DEVICES = {
     "DR-HSH034S": DreoDeviceDetails(
         device_type=DreoDeviceType.HEATER,
         device_ranges={
-            HEAT_RANGE: (1, 5), 
+            HEAT_RANGE: (1, 3), 
             ECOLEVEL_RANGE: (41, 95)},
         hvac_modes=[
             HEATER_MODE_COOLAIR,
@@ -255,9 +277,44 @@ SUPPORTED_DEVICES = {
             HEATER_MODE_ECO,
             HEATER_MODE_OFF,
         ],
-        swing_modes=[SWING_OFF, SWING_ON]
+        swing_modes=[
+            HeaterOscillationAngles.OSC,
+            HeaterOscillationAngles.SIXTY,
+            HeaterOscillationAngles.NINETY,
+            HeaterOscillationAngles.ONE_TWENTY,
+        ],
+    ),
+    "DR-HSH010S": DreoDeviceDetails(
+        device_type=DreoDeviceType.HEATER,
+        device_ranges={
+            HEAT_RANGE: (1, 3),
+            ECOLEVEL_RANGE: (41, 95)},
+        hvac_modes=[
+            HEATER_MODE_COOLAIR,
+            HEATER_MODE_HOTAIR,
+            HEATER_MODE_ECO,
+            HEATER_MODE_OFF,
+        ],
     ),
     # Are these even used?  They don't show up as model numbers.  Should they be a DR prefix?
+    "WH714S": DreoDeviceDetails(
+        device_type=DreoDeviceType.HEATER,
+        device_ranges={
+            HEAT_RANGE: (1, 3), 
+            ECOLEVEL_RANGE: (41, 95)},
+        hvac_modes=[
+            HEATER_MODE_COOLAIR,
+            HEATER_MODE_HOTAIR,
+            HEATER_MODE_ECO,
+            HEATER_MODE_OFF,
+        ],
+        swing_modes=[
+            HeaterOscillationAngles.OSC,
+            HeaterOscillationAngles.SIXTY,
+            HeaterOscillationAngles.NINETY,
+            HeaterOscillationAngles.ONE_TWENTY,
+        ],
+    ),
     "WH719S": DreoDeviceDetails(
         device_type=DreoDeviceType.HEATER,
         device_ranges={

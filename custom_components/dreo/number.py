@@ -91,13 +91,36 @@ NUMBERS: tuple[DreoNumberEntityDescription, ...] = (
         step = 30
     ),
     DreoNumberEntityDescription(
+        key="Horizontal Oscillation Angle",
+        translation_key="horizontal_oscillation_angle",
+        attr_name="horizontal_oscillation_angle",
+        icon="mdi:angle-acute",
+        min_value=-60,
+        max_value=60,
+    ),
+    DreoNumberEntityDescription(
+        key="Vertical Oscillation Angle",
+        translation_key="vertical_oscillation_angle",
+        attr_name="vertical_oscillation_angle",
+        icon="mdi:angle-acute",
+        min_value=0,
+        max_value=90,
+    ),
+    DreoNumberEntityDescription(
         key="Heat Level",
         translation_key="htalevel",
         attr_name="htalevel",
         icon="mdi:heat-wave"
-    )    
+    ),
+    DreoNumberEntityDescription(
+        key="Target Humidity",
+        translation_key="target_humidity",
+        attr_name="target_humidity",
+        icon="mdi:water-percent",
+        min_value=40,
+        max_value=90,
+    )
 )
-
 
 def get_entries(pydreo_devices : list[PyDreoBaseDevice]) -> list[DreoNumberHA]:
     """Add Number entries for Dreo devices."""

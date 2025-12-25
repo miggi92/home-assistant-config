@@ -55,11 +55,11 @@
                 "timestamp": 1724564509
             },
             "lighton": {
-                "state": true,
+                "state": false,
                 "timestamp": 1724882948
             },
             "wifi_ssid": {
-                "wifi_ssid": "**REDACTED**",
+                "state": "connected_1",
                 "timestamp": 1721672047
             },
             "mcu_hardware_model": {
@@ -106,7 +106,7 @@
                 "timestamp": 1724564509
             },
             "fanon": {
-                "state": true,
+                "state": false,
                 "timestamp": 1724923407
             }
         },
