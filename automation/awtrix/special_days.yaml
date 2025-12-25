@@ -12,49 +12,8 @@ trigger:
 condition: []
 action:
   - variables:
-      today_safe: >
-        {{ 'D' ~ now().strftime('%d.%m') | string | trim | replace('D', '') }}
-      special_day: >
-        {% set today = today_safe | replace('D', '') %}
-        {% if today == '31.10' %}
-          Halloween
-        {% elif today == '01.11' %}
-          Dia de los muertos
-        {% elif today == '11.11' and trigger.id == 'fasnacht' %}
-          Fasnachtszeit
-        {% elif today == '24.12' %}
-          Weihnachten
-        {% elif today == '31.12' %}
-          Silvester
-        {% elif today == '01.01' %}
-          Neues Jahr
-        {% elif today == '04.05' %}
-          Star Wars
-        {% elif today == '14.02' %}
-          Valentinstag
-        {% else %}
-          none
-        {% endif %}
-      icon: >
-        {% if ( special_day == 'Halloween') %}
-          14397
-        {% elif special_day == 'Dia de los muertos' %}
-          4383
-        {% elif special_day == 'Weihnachten' %}
-          1782
-        {% elif special_day == 'Silvester' %}
-          5855
-        {% elif special_day == 'Neues Jahr' %}
-          25795
-        {% elif special_day == 'Star Wars' %}
-          5696
-        {% elif special_day == 'Valentinstag' %}
-          5080
-        {% elif special_day == 'Fasnachtszeit' %}
-          65078
-        {% else %}
-          none
-        {% endif %}
+      special_day: "{{ states('sensor.special_day') }}"
+      icon: "{{ states('sensor.special_day_icon_awtrix') }}"
   - if:
       - condition: template
         value_template: "{{ special_day != 'none' }}"
