@@ -50,7 +50,7 @@ importers:
         version: 4.2.1
       zod-to-json-schema:
         specifier: ^3.25.0
-        version: 3.25.0(zod@4.2.1)
+        version: 3.25.1(zod@4.2.1)
 
 packages:
 
@@ -4514,8 +4514,8 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lib0@0.2.115:
-    resolution: {integrity: sha512-noaW4yNp6hCjOgDnWWxW0vGXE3kZQI5Kqiwz+jIWXavI9J9WyfJ9zjsbQlQlgjIbHBrvlA/x3TSIXBUJj+0L6g==}
+  lib0@0.2.116:
+    resolution: {integrity: sha512-4zsosjzmt33rx5XjmFVYUAeLNh+BTeDTiwGdLt4muxiir2btsc60Nal0EvkvDRizg+pnlK1q+BtYi7M+d4eStw==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -6768,8 +6768,8 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod-to-json-schema@3.25.0:
-    resolution: {integrity: sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==}
+  zod-to-json-schema@3.25.1:
+    resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
     peerDependencies:
       zod: ^3.25 || ^4
 
@@ -7611,7 +7611,7 @@ snapshots:
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
       zod: 4.2.1
-      zod-to-json-schema: 3.25.0(zod@4.2.1)
+      zod-to-json-schema: 3.25.1(zod@4.2.1)
     transitivePeerDependencies:
       - hono
       - supports-color
@@ -7726,7 +7726,7 @@ snapshots:
       unist-util-visit: 5.0.0
       unplugin: 2.3.11
       zod: 3.25.76
-      zod-to-json-schema: 3.25.0(zod@3.25.76)
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
     optionalDependencies:
       better-sqlite3: 12.5.0
     transitivePeerDependencies:
@@ -9387,7 +9387,7 @@ snapshots:
 
   '@tiptap/y-tiptap@3.0.1(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.4)(y-protocols@1.0.7(yjs@13.6.28))(yjs@13.6.28)':
     dependencies:
-      lib0: 0.2.115
+      lib0: 0.2.116
       prosemirror-model: 1.25.4
       prosemirror-state: 1.4.4
       prosemirror-view: 1.41.4
@@ -10528,7 +10528,7 @@ snapshots:
       tailwindcss: 4.1.18
       ufo: 1.6.1
       zod: 4.2.1
-      zod-to-json-schema: 3.25.0(zod@4.2.1)
+      zod-to-json-schema: 3.25.1(zod@4.2.1)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -11871,7 +11871,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  lib0@0.2.115:
+  lib0@0.2.116:
     dependencies:
       isomorphic.js: 0.2.5
 
@@ -14830,7 +14830,7 @@ snapshots:
 
   y-protocols@1.0.7(yjs@13.6.28):
     dependencies:
-      lib0: 0.2.115
+      lib0: 0.2.116
       yjs: 13.6.28
 
   y18n@5.0.8: {}
@@ -14860,7 +14860,7 @@ snapshots:
 
   yjs@13.6.28:
     dependencies:
-      lib0: 0.2.115
+      lib0: 0.2.116
 
   yocto-queue@0.1.0: {}
 
@@ -14891,11 +14891,11 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-to-json-schema@3.25.0(zod@3.25.76):
+  zod-to-json-schema@3.25.1(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-to-json-schema@3.25.0(zod@4.2.1):
+  zod-to-json-schema@3.25.1(zod@4.2.1):
     dependencies:
       zod: 4.2.1
 
