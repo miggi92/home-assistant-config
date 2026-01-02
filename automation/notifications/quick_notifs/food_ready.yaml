@@ -21,7 +21,7 @@ action:
     then:
       - action: notify.send_message
         target:
-          entity_id: notify.wohnung_durchsagen
+          floor_id: 1_og
         data:
           message: "{{ message }}"
     else:
