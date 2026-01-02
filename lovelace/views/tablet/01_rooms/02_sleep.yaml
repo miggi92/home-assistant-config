@@ -78,7 +78,7 @@ sections:
         tap_action:
           action: none
       - type: custom:mushroom-entity-card
-        entity: binary_sensor.withings_in_bed_miguel
+        entity: binary_sensor.miguel_im_bett
         tap_action:
           action: none
       - type: custom:mushroom-entity-card
