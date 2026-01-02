@@ -72,9 +72,9 @@ sections:
     cards:
       - type: entities
         entities:
-          - sensor.waschmaschine_tur
-          - sensor.waschmaschine_operation_state
-          - sensor.waschmaschine_remaining_program_time
+          - sensor.siemens_washer_door
+          - sensor.siemens_washer_betriebszustand
+          - sensor.siemens_washer_verbleibende_programmlaufzeit
   - type: grid
     cards:
       - type: custom:decluttering-card
