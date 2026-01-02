@@ -32,6 +32,22 @@ badges:
     template: timer_badge_template
     variables:
       - entity: sensor.echo_show_nachster_timer
+    visibility:
+      - condition: not
+        conditions:
+          - condition: state
+            entity: sensor.echo_show_nachster_timer
+            state: unavailable
+  - type: custom:decluttering-card
+    template: timer_badge_template
+    variables:
+      - entity: timer.kaffeemaschine_auto_aus
+    visibility:
+      - condition: not
+        conditions:
+          - condition: state
+            entity: timer.kaffeemaschine_auto_aus
+            state: idle
   - type: custom:mushroom-template-badge
     entity: input_boolean.spulmaschine_aktiv
     icon: |-
@@ -55,10 +71,6 @@ sections:
         layout: vertical
         tap_action:
           action: toggle
-      - type: custom:timer-bar-card
-        entity: timer.kaffeemaschine_auto_aus
-        mushroom:
-          layout: vertical
   - type: grid
     cards:
       - type: custom:mushroom-entity-card
