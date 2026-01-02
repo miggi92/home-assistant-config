@@ -15,6 +15,40 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
+      - type: custom:auto-entities
+        card:
+          type: vertical-stack
+          title: Aktive Zonen (Belegt)
+        card_param: cards
+        filter:
+          template: >
+            {% set ns = namespace(zones=[]) %}
+            {% for zone in states.zone %}
+              {% set zone_match_string = 'home' if zone.entity_id == 'zone.home' else zone.attributes.friendly_name %}
+              {% set persons_in_zone = states.person
+                | selectattr('state', 'eq', zone_match_string)
+                | list %}
+              {% set count = persons_in_zone | count %}
+              {% set last_change = relative_time(zone.last_changed) %}
+
+              {% if count > 0 %}
+                {% set person_names = persons_in_zone
+                  | map(attribute='attributes.friendly_name')
+                  | join(', ') %}
+                {% set ns.zones = ns.zones + [{
+                  "type": "custom:mushroom-template-card",
+                  "entity": zone.entity_id,
+                  "primary": zone.attributes.friendly_name ~ " (" ~ count ~ ")",
+                  "secondary": person_names ~ "\nSeit: " ~ last_change,
+                  "icon": zone.attributes.icon | default('mdi:map-marker'),
+                  "icon_color": "primary",
+                  "multiline_secondary": true,
+                }] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.zones }}
+        sort:
+          method: friendly_name
   - type: grid
     cards:
       - type: custom:auto-entities
