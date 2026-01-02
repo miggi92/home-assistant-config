@@ -43,6 +43,28 @@ sections:
         forecast_type: hourly
         forecast_slots: 7
   - type: grid
-    cards: []
+    cards:
+      - type: custom:auto-entities
+        card:
+          type: entities
+          title: Personen in Spanien
+        filter:
+          include:
+            - entity_id: "zone.*spanien*"
+              options:
+                type: custom:template-entity-row
+                state: >
+                  {% set persons = states.person
+                    | selectattr('state', 'eq', state_attr(config.entity, 'friendly_name'))
+                    | list %}
+                  {{ persons | count }} Personen
+                secondary: >
+                  {% set persons = states.person
+                    | selectattr('state', 'eq', state_attr(config.entity, 'friendly_name'))
+                    | map(attribute='attributes.friendly_name')
+                    | join(', ') %}
+                  {{ persons if persons | length > 0 else 'Niemand vor Ort' }}
+        sort:
+          method: friendly_name
   - type: grid
     cards: []
