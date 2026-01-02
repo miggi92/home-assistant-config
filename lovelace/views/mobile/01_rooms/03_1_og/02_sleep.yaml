@@ -66,6 +66,10 @@ sections:
         collapsible_controls: true
         tap_action:
           action: toggle
+      - type: custom:mushroom-entity-card
+        entity: switch.babyphone
+        tap_action:
+          action: toggle
       - type: custom:mushroom-fan-card
         entity: fan.luftfilter
         icon: mdi:fan

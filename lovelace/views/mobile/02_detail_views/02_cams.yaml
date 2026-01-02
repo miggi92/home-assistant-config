@@ -41,6 +41,9 @@ sections:
         entity: switch.flur_cam_stecker
       - type: custom:mushroom-entity-card
         entity: switch.kamera_steckdose_wz
+      - type: custom:mushroom-entity-card
+        entity: switch.babyphone
+        icon: mdi:cradle
       - type: conditional
         conditions:
           - entity: switch.flur_cam_stecker
