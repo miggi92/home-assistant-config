@@ -6,7 +6,7 @@
 exclude: ^(custom_components|www/community|themes|zigbee2mqtt)/
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v6.0.0
     hooks:
       - id: check-json
       - id: check-case-conflict
@@ -19,6 +19,6 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.26.3
+    rev: v1.37.1
     hooks:
       - id: yamllint
