@@ -87,12 +87,12 @@ notify_engine:
       state: "on"
     - variables:
         channel_services:
-          home: notify.telegram_home_group
+          home: notify.telegram_bot_home
           sig_home: notify.signalhome
           mobile_app_miguel: notify.mobile_app_pixel_9_pro
-          telegram_miguel: notify.miguel_telegram
+          telegram_miguel: notify.telegram_bot_miguel
           mobile_app_silke: notify.mobile_app_sm_s911b
-          telegram_silke: notify.silke_telegram
+          telegram_silke: notify.telegram_bot_silke
           work: notify.html5_work_laptop_hp
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify

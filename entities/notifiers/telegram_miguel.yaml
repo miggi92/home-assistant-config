@@ -1,4 +1,0 @@
----
-platform: telegram
-name: miguel_telegram
-chat_id: !secret telegram_miguel

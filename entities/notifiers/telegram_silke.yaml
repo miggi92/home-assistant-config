@@ -1,4 +1,0 @@
----
-platform: telegram
-name: silke_telegram
-chat_id: !secret telegram_silke

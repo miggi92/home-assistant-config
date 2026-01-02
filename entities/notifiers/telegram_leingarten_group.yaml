@@ -1,4 +1,0 @@
----
-platform: telegram
-name: telegram_home_group
-chat_id: !secret telegram_home_group
