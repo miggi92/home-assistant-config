@@ -1,0 +1,41 @@
+---
+# health
+title: Health
+path: health
+icon: mdi:bottle-tonic-plus
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.blutdruck_miguel
+      - type: custom:mushroom-template-card
+        icon_color: primary
+        primary: "Blutdruck Silke"
+        icon: mdi:gauge
+        secondary: >
+          {{ states('sensor.withings_systolic_blood_pressure_mmhg_silke') }} / {{ states('sensor.withings_diastolic_blood_pressure_mmhg_silke') }} ({{ states('sensor.silke_herzschlag') }})
+      - type: custom:mushroom-entity-card
+        entity: sensor.miguel_herzschlag
+      - type: custom:mushroom-entity-card
+        entity: sensor.silke_herzschlag
+      - type: custom:mushroom-entity-card
+        entity: sensor.miguel_korpertemperatur
+      - type: custom:mushroom-entity-card
+        entity: sensor.silke_korpertemperatur
+      - type: custom:mushroom-entity-card
+        entity: sensor.milo_korpertemperatur
+      - type: custom:mushroom-entity-card
+        entity: sensor.finn_korpertemperatur
+      - type: custom:mushroom-entity-card
+        entity: sensor.miguel_gewicht
+      - type: custom:mushroom-entity-card
+        entity: sensor.silke_gewicht
+      - type: custom:mushroom-entity-card
+        entity: sensor.milo_gewicht
