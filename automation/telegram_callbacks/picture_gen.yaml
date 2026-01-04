@@ -20,7 +20,8 @@ actions:
     response_variable: generated
   - data:
       value1: "{{ generated.revised_prompt }}"
-      photo: "{{ generated.url }}"
+      photo:
+        path: "{{ generated.url }}"
       who: home
       tag_id: information
       group: Family

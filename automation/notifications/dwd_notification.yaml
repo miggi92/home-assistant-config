@@ -77,5 +77,6 @@ action:
       value1: "{{ message }}"
       tag_id: "information"
       group: "Wetter"
-      photo: "https://www.dwd.de/DWD/warnungen/warnstatus/SchilderSU.jpg"
+      photo:
+        path: "https://www.dwd.de/DWD/warnungen/warnstatus/SchilderSU.jpg"
 mode: parallel

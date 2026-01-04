@@ -35,9 +35,9 @@ send_cam_snaps:
             value1: "Aktuelles Bild"
             who: "home"
             tag_id: "information"
-            photos:
-              - file: "/config/www/cams/{{ flur_pic_path }}"
-                caption: "Flur Kamera"
+            photo:
+              path: "/config/www/cams/{{ flur_pic_path }}"
+              caption: "Flur Kamera"
     - if:
         condition: state
         entity_id: switch.kamera_steckdose_wz
@@ -62,6 +62,6 @@ send_cam_snaps:
             value1: "Aktuelles Bild"
             who: "home"
             tag_id: "information"
-            photos:
-              - file: "/config/www/cams/{{ koerbchen_pic_path }}"
-                caption: "WZ Kamera"
+            photo:
+              path: "/config/www/cams/{{ koerbchen_pic_path }}"
+              caption: "WZ Kamera"

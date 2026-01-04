@@ -43,7 +43,8 @@ action:
       tag_id: "security"
       who: tv_overlay
       group: "Alarm"
-      photo: "http://{{states('input_text.server_ip')}}:8123/local/cams/{{ pic_path }}"
+      photo:
+        path: "http://{{states('input_text.server_ip')}}:8123/local/cams/{{ pic_path }}"
   - variables:
       end: "{{ now() }}"
   - event: cam_event

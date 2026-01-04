@@ -59,11 +59,6 @@ notify_engine:
       default: information
       name: Tag
       description: Tag ID
-    photos:
-      selector:
-        object: null
-      name: Photos
-      description: Photos
     inline_keyboard:
       selector:
         object: null
@@ -102,6 +97,10 @@ notify_engine:
           silke: input_select.silke_notification_channel
         recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
         message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+        telegram_chatids:
+          home: !secret telegram_home_group
+          telegram_miguel: !secret telegram_miguel
+          telegram_silke: !secret telegram_silke
     - parallel:
         - repeat:
             for_each: "{{ recipient_list }}"
@@ -120,8 +119,8 @@ notify_engine:
                     true
                   {% endif %}
               - variables:
+                  recipient: "{{ repeat.item }}"
                   notifier: >
-                    {% set recipient = repeat.item %}
                     {% set selector = user_channel_selectors.get(recipient) %}
 
                     {% if selector %}
@@ -130,27 +129,31 @@ notify_engine:
                     {% else %}
                       {{ channel_services.get(recipient) | default('notify.miguel_telegram') }}
                     {% endif %}
+                  chatid: "{{ telegram_chatids.get(recipient) }}"
               - choose:
                   - conditions:
                       - condition: template
                         value_template: "{{ 'telegram' in notifier }}"
                     sequence:
-                      - action: "{{ notifier }}"
-                        alias: "Send notification via telegram"
-                        data:
-                          title: "*{{ title }}*"
-                          message: "{{ message }}"
-                          data: >
-                            {% set data = {} %}
-                            {% if photo %}
-                              {% set data = dict(data, **{'photo': [{'url': photo, 'caption': message }]}) %}
-                            {% elif photos %}
-                              {% set data = dict(data, **{'photo': photos}) %}
-                            {% endif %}
-                            {% if tag_id %}
-                              {% set data = dict(data, **{'message_tag': tag_id}) %}
-                            {% endif %}
-                            {{ data }}
+                      - if:
+                          - condition: template
+                            value_template: "{{ photo is defined }}"
+                        then:
+                          - action: telegram_bot.send_photo
+                            data:
+                              verify_ssl: false
+                              config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
+                              caption: "{{ photo.caption }}"
+                              file: "{{ photos.path }}"
+                              target:
+                                - "{{ chatid }}"
+                        else:
+                          - action: notify.send_message
+                            target:
+                              entity_id: "{{ notifier }}"
+                            data:
+                              message: "{{ message | replace('.', '\\.') }}"
+                              title: "{{ title }}"
                   - conditions:
                       - condition: template
                         value_template: "{{ who == 'tv' }}"
@@ -162,7 +165,7 @@ notify_engine:
                           message: "{{ message }}"
                           data:
                             image:
-                              url: "{{ photo  }}"
+                              url: "{{ photo.path }}"
                   - conditions:
                       - condition: template
                         value_template: "{{ 'signal' in notifier }}"
@@ -179,8 +182,6 @@ notify_engine:
                             {% set data = dict(data, **{'text_mode': 'styled'}) %}
                             {% if photo %}
                               {% set data = dict(data, **{'attachments': [photo]}) %}
-                            {% elif photos %}
-                              {% set data = dict(data, **{'attachments': photos}) %}
                             {% endif %}
                             {{ data }}
                   - conditions:
@@ -194,7 +195,7 @@ notify_engine:
                           data:
                             appTitle: "{{ group }}"
                             seconds: 15
-                            image: "{{ photo }}"
+                            image: "{{ photo.path }}"
                 default:
                   - variables:
                       notification_payload: >
@@ -209,7 +210,7 @@ notify_engine:
                           {% set d.data = dict(d.data, notification_icon=icon) %}
                         {% endif %}
                         {% if photo is defined and photo %}
-                          {% set d.data = dict(d.data, image=photo) %}
+                          {% set d.data = dict(d.data, image=photo.path) %}
                         {% endif %}
                         {% if actions is defined and actions %}
                           {% set d.data = dict(d.data, actions=actions) %}
