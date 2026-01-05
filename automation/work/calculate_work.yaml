@@ -15,12 +15,17 @@ action:
       weekly_target: "{{ states('input_number.wochenarbeitszeit_miguel') | float(0) }}"
       weekly_hours_so_far: "{{ states('input_number.miguel_arbeit_woche') | float(0) }}"
       daily_target_hours: "{{ (weekly_target / 5) | round(2) }}"
+      is_workday: "{{ is_state('binary_sensor.workday_sensor', 'on') }}"
+      is_mon_fri: "{{ now().weekday() < 5 }}"
+      is_holiday: "{{ is_mon_fri and not is_workday }}"
+      actual_net: "{{ ([0, (daily_worked - pause_hours)] | max) | round(2) }}"
       hours_to_add: >
-        {% set is_weekend = now().weekday() >= 5 %}
-        {% if not is_weekend and daily_worked == 0 %}
+        {% if is_workday and daily_worked == 0 %}
           {{ daily_target_hours }}
+        {% elif is_holiday %}
+          {{ (daily_target_hours + actual_net) | round(2) }}
         {% else %}
-          {{ (daily_worked - pause_hours) | map('float', 0) | max(0) | round(2) }}
+          {{ actual_net }}
         {% endif %}
   - action: input_number.set_value
     target:
