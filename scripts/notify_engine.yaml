@@ -42,7 +42,7 @@ notify_engine:
       description: Who should the notification go to? (Comma-separated for multiple recipients)
     photo:
       selector:
-        text: null
+        object: null
       name: Foto
       description: Photo URL
     group:
@@ -101,6 +101,7 @@ notify_engine:
           home: !secret telegram_home_group
           telegram_miguel: !secret telegram_miguel
           telegram_silke: !secret telegram_silke
+        server_url: "{{ states('input_text.serverurl') }}"
     - parallel:
         - repeat:
             for_each: "{{ recipient_list }}"
@@ -144,7 +145,7 @@ notify_engine:
                               verify_ssl: false
                               config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
                               caption: "{{ photo.caption }}"
-                              file: "{{ photos.path }}"
+                              file: "{{ photo.path }}"
                               target:
                                 - "{{ chatid }}"
                         else:
