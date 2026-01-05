@@ -140,14 +140,27 @@ notify_engine:
                           - condition: template
                             value_template: "{{ photo is defined }}"
                         then:
-                          - action: telegram_bot.send_photo
-                            data:
-                              verify_ssl: false
-                              config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
-                              caption: "{{ photo.caption }}"
-                              file: "{{ photo.path }}"
-                              target:
-                                - "{{ chatid }}"
+                          - if:
+                              - condition: template
+                                value_template: "{{ photo.path.startswith(('http://', 'https://')) }}"
+                            then:
+                              - action: telegram_bot.send_photo
+                                data:
+                                  verify_ssl: false
+                                  config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
+                                  caption: "{{ photo.caption }}"
+                                  url: "{{ photo.path }}"
+                                  target:
+                                    - "{{ chatid }}"
+                            else:
+                              - action: telegram_bot.send_photo
+                                data:
+                                  verify_ssl: false
+                                  config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
+                                  caption: "{{ photo.caption }}"
+                                  file: "{{ photo.path }}"
+                                  target:
+                                    - "{{ chatid }}"
                         else:
                           - action: notify.send_message
                             target:
