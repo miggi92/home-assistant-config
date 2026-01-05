@@ -5,63 +5,48 @@ send_cam_snaps:
   alias: "Snapshots von Kameras senden"
   sequence:
     - variables:
-        flur_timestamp: '{{ state_attr("camera.flurcam", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
-        koerbchen_timestamp: '{{ state_attr("camera.koerbchen", "friendly_name") }}_{{ now().strftime("%Y%m%d-%H%M%S") }}'
-        start: "{{ now() }}"
-    - variables:
-        flur_pic_path: "{{ flur_timestamp }}.jpg"
-        koerbchen_pic_path: "{{ koerbchen_timestamp }}.jpg"
-    - if:
-        condition: state
-        entity_id: switch.flur_cam_stecker
-        state: "on"
-      then:
-        - action: camera.snapshot
-          target:
-            entity_id: camera.flurcam
-          data:
-            filename: "/config/www/cams/{{ flur_pic_path }}"
-        - event: cam_event
-          event_data:
-            event: Cam check
-            starts: "{{ start }}"
-            ends: "{{ now() }}"
-            summary: "Aktuelles Kamerabild"
-            key_frame: "/local/cams/{{ flur_pic_path }}"
-            camera: camera.flurcam
-        - action: script.notify_engine
-          data:
-            title: "📷 Flurkamera 📹"
-            value1: "Aktuelles Bild"
-            who: "home"
-            tag_id: "information"
-            photo:
-              path: "/config/www/cams/{{ flur_pic_path }}"
-              caption: "Flur Kamera"
-    - if:
-        condition: state
-        entity_id: switch.kamera_steckdose_wz
-        state: "on"
-      then:
-        - action: camera.snapshot
-          target:
-            entity_id: camera.korbchen
-          data:
-            filename: "/config/www/cams/{{ koerbchen_pic_path }}"
-        - event: cam_event
-          event_data:
-            event: Cam check
-            starts: "{{ start }}"
-            ends: "{{ now() }}"
-            summary: "Aktuelles Kamerabild"
-            key_frame: "/local/cams/{{ koerbchen_pic_path }}"
-            camera: camera.korbchen
-        - action: script.notify_engine
-          data:
-            title: "📷 WZ Kamera 📹"
-            value1: "Aktuelles Bild"
-            who: "home"
-            tag_id: "information"
-            photo:
-              path: "/config/www/cams/{{ koerbchen_pic_path }}"
-              caption: "WZ Kamera"
+        camera_configs:
+          - camera: "camera.flurcam"
+            switch: "switch.flur_cam_stecker"
+          - camera: "camera.korbchen"
+            switch: "switch.kamera_steckdose_wz"
+        start_time: "{{ now() }}"
+    - repeat:
+        for_each: "{{ camera_configs }}"
+        item: "cam"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ is_state(cam.switch, 'on') }}"
+            then:
+              - variables:
+                  friendly_name: "{{ state_attr(cam.camera, 'friendly_name') }}"
+                  file_name: >
+                    {{ friendly_name | replace(' ', '_') }}_{{ now().strftime('%Y%m%d-%H%M%S') }}.jpg
+                  full_path: "/config/www/cams/{{ file_name }}"
+                  web_path: "/local/cams/{{ file_name }}"
+
+              - action: camera.snapshot
+                target:
+                  entity_id: "{{ cam.camera }}"
+                data:
+                  filename: "{{ full_path }}"
+
+              - event: cam_event
+                event_data:
+                  event: "Cam check"
+                  starts: "{{ start_time }}"
+                  ends: "{{ now() }}"
+                  summary: "Aktuelles Kamerabild"
+                  key_frame: "{{ web_path }}"
+                  camera: "{{ cam.camera }}"
+
+              - action: script.notify_engine
+                data:
+                  title: "📹 {{ friendly_name }} 📹"
+                  value1: "Aktuelles Bild"
+                  who: "home"
+                  tag_id: "information"
+                  photo:
+                    path: "{{ full_path }}"
+                    caption: "{{ friendly_name }}"
