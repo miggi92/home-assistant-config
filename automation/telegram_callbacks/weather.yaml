@@ -14,7 +14,7 @@ action:
     data:
       value1: "Wetter Bild"
       photo:
-        path: "{{ states('input_text.serverurl') }}{{ state_attr('image.ai_generated_weather_image', 'entity_picture') }}"
+        path: "{{ state_attr('image.ai_generated_weather_image', 'entity_picture') }}"
       who: "home"
       tag_id: "information"
       group: "Outdoor"
