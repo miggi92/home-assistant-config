@@ -18,9 +18,7 @@ action:
           title: |
             📞 Verpasster Anruf 📞
           value1: |
-            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat am {{
-            states.var.callmon_date.state }} um {{ states.var.callmon_time.state
-            }} Uhr angerufen.
+            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat angerufen.
           who: "home"
           tag_id: "information"
           group: "Telephone"
@@ -35,9 +33,7 @@ action:
           title: |
             📞 Verpasster Anruf - Weiterleitung AB 📞
           value1: |
-            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat am {{
-            states.var.callmon_date.state }} um {{ states.var.callmon_time.state
-            }} Uhr angerufen und wird jetzt auf den AB umgeleitet.
+            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat angerufen und wird jetzt auf den AB umgeleitet.
           who: "home"
           tag_id: "information"
           group: "Telephone"
