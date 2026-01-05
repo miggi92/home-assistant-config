@@ -13,8 +13,9 @@ send_cam_snaps:
         start_time: "{{ now() }}"
     - repeat:
         for_each: "{{ camera_configs }}"
-        item: "cam"
         sequence:
+          - variables:
+              cam: "{{ repeat.item }}"
           - if:
               - condition: template
                 value_template: "{{ is_state(cam.switch, 'on') }}"
