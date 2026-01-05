@@ -1,0 +1,22 @@
+---
+# Unsplash
+resource: "https://api.unsplash.com/photos/random"
+method: GET
+params:
+  client_id: !secret unsplash_client
+  query: "nature,landscape,cityscape,technology"
+sensor:
+  - name: "Unsplash Pool"
+    value_template: "{{ now().strftime('%d.%m.%Y, %H:%M:%S') }}"
+    json_attributes:
+      - description
+      - alt_description
+      - asset_type
+      - views
+      - downloads
+      - urls
+      - user
+      - location
+      - tags
+      - topics
+scan_interval: 3600
