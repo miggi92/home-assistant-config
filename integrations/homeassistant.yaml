@@ -14,3 +14,6 @@ homeassistant:
   media_dirs:
     haunted_sounds: /media/haunted_sounds
     music: /media/music
+  allowlist_external_dirs:
+    - /config/www
+    - /media
