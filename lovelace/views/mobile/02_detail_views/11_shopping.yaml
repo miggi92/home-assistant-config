@@ -62,9 +62,9 @@ sections:
   - type: grid
     cards:
       - type: entity
-        entity: counter.picnic_monats_kosten
+        entity: sensor.picnic_monats_kosten
       - type: entity
-        entity: counter.picnic_jahres_kosten
+        entity: sensor.picnic_jahres_kosten
       - type: custom:mushroom-entity-card
         entity: sensor.picnic_status_der_letzten_bestellung
       - type: conditional
