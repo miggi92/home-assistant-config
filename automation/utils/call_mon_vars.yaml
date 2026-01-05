@@ -9,13 +9,6 @@ trigger:
     to: ringing
 condition: []
 action:
-  - service: var.update
-    data:
-      entity_id:
-        - var.callmon_name
-        - var.callmon_number
-        - var.callmon_time
-        - var.callmon_date
   - service: input_text.set_value
     target:
       entity_id: input_text.callmon_lastcaller

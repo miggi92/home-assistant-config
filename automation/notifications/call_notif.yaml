@@ -11,16 +11,15 @@ condition: []
 action:
   - if:
       - condition: template
-        value_template: "{{  trigger.to_state.state == 'idle' }}"
+        value_template: "{{ trigger.to_state.state == 'idle' }}"
     then:
       - service: script.notify_engine
         data:
           title: |
             📞 Verpasster Anruf 📞
           value1: |
-            {{ states.var.callmon_name.state }} ({{
-            states.var.callmon_number.state     }}) hat am {{
-            states.var.callmon_date.state }} um {{     states.var.callmon_time.state
+            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat am {{
+            states.var.callmon_date.state }} um {{ states.var.callmon_time.state
             }} Uhr angerufen.
           who: "home"
           tag_id: "information"
@@ -36,9 +35,8 @@ action:
           title: |
             📞 Verpasster Anruf - Weiterleitung AB 📞
           value1: |
-            {{ states.var.callmon_name.state }} ({{
-            states.var.callmon_number.state     }}) hat am {{
-            states.var.callmon_date.state }} um {{     states.var.callmon_time.state
+            {{ states('sensor.callmon_name') }} ({{ states('sensor.callmon_number') }}) hat am {{
+            states.var.callmon_date.state }} um {{ states.var.callmon_time.state
             }} Uhr angerufen und wird jetzt auf den AB umgeleitet.
           who: "home"
           tag_id: "information"
