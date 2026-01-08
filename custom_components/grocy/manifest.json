@@ -14,5 +14,5 @@
   "requirements": [
     "pygrocy2==2.5.0"
   ],
-  "version": "v1.3.2"
+  "version": "v1.4.0"
 }
