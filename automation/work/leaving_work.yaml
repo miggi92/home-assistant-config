@@ -23,7 +23,7 @@ action:
         🚗 Miguel ist unterwegs heim 🚗
       value1: |
         Miguel hat gerade das Geschäft verlassen und kommt vermutlich bald heim.
-        Geschätzte Zeit: {{ states('sensor.miguel_eta_home') }} {{ state_attr('sensor.miguel_eta_home', 'unit_of_measurement') }}.
+        Geschätzte Zeit: {{ states('sensor.miguel_eta_home') | int(0) }} {{ state_attr('sensor.miguel_eta_home', 'unit_of_measurement') }}.
       who: "home"
       tag_id: "information"
       group: "Moving"
