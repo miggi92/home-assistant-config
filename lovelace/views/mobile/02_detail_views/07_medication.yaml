@@ -54,6 +54,27 @@ sections:
           count: 5
   - type: grid
     cards:
+      - type: markdown
+        title: Medikamentenvorrat
+        content: |
+          | Produkt | Menge | Status |
+          | :--- | :--- | :--- |
+          {%- set items = state_attr('sensor.grocy_stock', 'products') %}
+          {%- set med_list = items | selectattr('product_group_id', 'eq', 14) | sort(attribute='name') %}
+          {%- for item in med_list -%}
+            {%- set expire_date = as_timestamp(item.best_before_date) %}
+            {%- set now_ts = as_timestamp(now()) %}
+            {%- set soon_ts = as_timestamp(now() + timedelta(days=90)) %}
+
+            {%- set is_expired = expire_date < now_ts %}
+            {%- set expires_soon = expire_date < soon_ts %}
+
+            {%- if item.is_aggregated_amount == true %}
+          | **{{ item.name | trim }}** | {{ item.amount_aggregated | int(0) }} | {{ '❌' if is_expired else ('⚠️' if expires_soon else '✅') }} |
+            {%- elif items | selectattr('name', 'contains', item.name) | selectattr('is_aggregated_amount', 'eq', true) | list | count == 0 %}
+          | {{ item.name | trim }} | {{ item.available_amount | int(0) }} | {{ '❌' if is_expired else ('⚠️' if expires_soon else '✅') }} |
+            {%- endif -%}
+          {%- endfor %}
       - type: custom:mushroom-entity-card
         entity: input_datetime.medis_reminder_time_morning
         layout: vertical

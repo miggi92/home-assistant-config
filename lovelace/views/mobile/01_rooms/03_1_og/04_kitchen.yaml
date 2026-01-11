@@ -73,6 +73,9 @@ sections:
           action: toggle
   - type: grid
     cards:
+      - type: entities
+        entities:
+          - sensor.spulmaschinen_tabs
       - type: custom:mushroom-entity-card
         entity: device_tracker.thermomix_eeafb9
         layout: vertical

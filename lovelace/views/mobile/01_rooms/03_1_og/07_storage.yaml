@@ -72,6 +72,7 @@ sections:
     cards:
       - type: entities
         entities:
+          - sensor.waschmittel
           - sensor.siemens_washer_door
           - sensor.siemens_washer_betriebszustand
           - sensor.siemens_washer_verbleibende_programmlaufzeit
