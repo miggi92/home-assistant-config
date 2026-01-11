@@ -188,6 +188,7 @@ notify_engine:
                           title: "{{ title  }}"
                           message: "{{ message }}"
                           data:
+                            position: "top-right"
                             image:
                               url: "{{ photo.path }}"
                   - conditions:
