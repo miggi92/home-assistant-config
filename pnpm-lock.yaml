@@ -39,8 +39,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.2(@parcel/watcher@2.5.4)(@types/node@25.0.6)(@vue/compiler-sfc@3.5.26)(better-sqlite3@12.6.0)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.6.0))(eslint@9.39.2(jiti@2.6.1))(ioredis@5.9.1)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rollup@4.55.1)(terser@5.44.1)(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.6)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.2))(yaml@2.8.2)
       nuxt-studio:
-        specifier: 1.0.0
-        version: 1.0.0(db0@0.3.4(better-sqlite3@12.6.0))(ioredis@5.9.1)(magicast@0.5.1)(vue@3.5.26(typescript@5.9.3))
+        specifier: 1.1.0
+        version: 1.1.0(db0@0.3.4(better-sqlite3@12.6.0))(ioredis@5.9.1)(magicast@0.5.1)(vue@3.5.26(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -5059,8 +5059,8 @@ packages:
   nuxt-site-config@3.2.17:
     resolution: {integrity: sha512-gmQkBWesVsEt0r10Jo16awufLpQYV4Ql2sOcmDz6CPdk0msZG/pDN6mzFVtMMorEtqixjqPVSIcFK++AueTKFw==}
 
-  nuxt-studio@1.0.0:
-    resolution: {integrity: sha512-6tlO2jzZZ5xvSari4155lh1blV+jUC/JxQGY+437vUrVdFZPH1bALfwtHzWosEY1vbMpb2chr3I+OTUdnkTKxw==}
+  nuxt-studio@1.1.0:
+    resolution: {integrity: sha512-oy0P1GJZRDQLlOu8o/UJUE4yxGW+COwTs1ND7Q27DUobpUYm3M7RkSS0AZpsTePj8fY1m5wCKs4S5oBqc8z6tA==}
 
   nuxt@4.2.2:
     resolution: {integrity: sha512-n6oYFikgLEb70J4+K19jAzfx4exZcRSRX7yZn09P5qlf2Z59VNOBqNmaZO5ObzvyGUZ308SZfL629/Q2v2FVjw==}
@@ -12667,7 +12667,7 @@ snapshots:
       - magicast
       - vue
 
-  nuxt-studio@1.0.0(db0@0.3.4(better-sqlite3@12.6.0))(ioredis@5.9.1)(magicast@0.5.1)(vue@3.5.26(typescript@5.9.3)):
+  nuxt-studio@1.1.0(db0@0.3.4(better-sqlite3@12.6.0))(ioredis@5.9.1)(magicast@0.5.1)(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       '@iconify-json/lucide': 1.2.84
       '@nuxtjs/mdc': 0.19.2(magicast@0.5.1)
