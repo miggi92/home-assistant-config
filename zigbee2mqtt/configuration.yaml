@@ -119,6 +119,4 @@ devices:
   '0x58e6c5fffe36fc60':
     friendly_name: Wohnzimmerecksteckdose
 version: 4
-groups:
-  '1':
-    friendly_name: wohnzimmer_lichter
+groups: {}
