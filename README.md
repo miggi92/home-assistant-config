@@ -9,6 +9,7 @@
 ## 📋 Table of Contents
 
 - [ℹ️ About](#about)
+- [📊 Statistics](#statistics)
 - [🎛️ Devices](#devices)
 - [🔧 Development](#development)
 - [📜 License](#license)
@@ -22,6 +23,16 @@ This Repository contains my Home Assistant Configuration. It is a collection of 
 Description of the different components and how they are used can be found in the [Docs](https://miggi92.github.io/home-assistant-config/).
 
 For more information about Home Assistant, visit the [Home Assistant Website](https://www.home-assistant.io/).
+
+## 📊 Statistics
+
+### Entities
+
+<!-- Entities Stats - Start -->
+<!-- Entities Stats - End -->
+
+## 🎛️ Devices
+
 
 ## 👤 Author
 
