@@ -1,0 +1,192 @@
+/**
+ * Shared constants and default configuration for the M.A.C.S. Lovelace card.
+ */
+
+const resolveVersion = () => {
+    const existing = (window.__MACS_VERSION__ || "").toString().trim();
+    if (existing) return existing;
+    try {
+        const scripts = Array.from(document.scripts || []);
+        for (const script of scripts) {
+            const src = script && script.getAttribute ? script.getAttribute("src") : "";
+            if (!src || src.indexOf("macs.js") === -1) continue;
+            const v = new URL(src, window.location.origin).searchParams.get("v");
+            if (v) {
+                window.__MACS_VERSION__ = v;
+                return v.toString().trim();
+            }
+        }
+    } catch (_) {}
+    return "Unknown";
+};
+export const VERSION = resolveVersion();
+
+// get URL for macs.html
+const selfUrl = new URL(import.meta.url);
+export const rootUrl = new URL("../", selfUrl);
+export const htmlUrl = new URL("macs.html", rootUrl);
+htmlUrl.search = selfUrl.search; // query params, including manifest version (macs.html?hacstag=n)
+
+// default config values
+export const DEFAULTS = {
+    url: htmlUrl.toString(),        // URL to Macs HTML file (auto adds version from manifest.json)
+    assist_pipeline_enabled: false, // show discussion text output in iframe
+    assist_pipeline_entity: "",     // assistant pipeline ID to use for discussion text output
+    assist_pipeline_custom: false,  // whether the pipeline ID is custom (true) or selected from HA assistant pipelines (false)
+    assist_satellite_enabled: false, // automatically change mood based on assistant state (listening, idle, processing etc)
+    assist_satellite_entity: "",    // entity_id of a satellite device to monitor assistant state from
+    assist_satellite_custom: false, // whether the satellite entity is custom (true) or selected from HA assistant satellites (false)
+    max_turns: 2,                   // number of turns (voice requests) to show in the iframe
+    preview_image: new URL("shared/images/loading.jpg", rootUrl).toString(),
+    assist_outcome_duration_ms: 1000,
+    // Weather sensor inputs (frontend UI defaults)
+    temperature_sensor_enabled: false,
+    temperature_sensor_entity: "",
+    temperature_sensor_custom: false,
+    temperature_sensor_unit: "",
+    temperature_sensor_min: "",
+    temperature_sensor_max: "",
+    wind_sensor_enabled: false,
+    wind_sensor_entity: "",
+    wind_sensor_custom: false,
+    wind_sensor_unit: "",
+    wind_sensor_min: "",
+    wind_sensor_max: "",
+    precipitation_sensor_enabled: false,
+    precipitation_sensor_entity: "",
+    precipitation_sensor_custom: false,
+    precipitation_sensor_unit: "",
+    precipitation_sensor_min: "",
+    precipitation_sensor_max: "",
+    battery_charge_sensor_enabled: false,
+    battery_charge_sensor_entity: "",
+    battery_charge_sensor_custom: false,
+    battery_charge_sensor_unit: "%",
+    battery_charge_sensor_min: "",
+    battery_charge_sensor_max: "",
+    battery_state_sensor_enabled: false,
+    battery_state_sensor_entity: "",
+    battery_state_sensor_custom: false,
+    weather_conditions_enabled: false,
+    weather_conditions_entity: "",
+    weather_conditions_custom: false,
+    auto_brightness_enabled: false,
+    auto_brightness_timeout_minutes: 5,
+    auto_brightness_min: 0,
+    auto_brightness_max: 100,
+    auto_brightness_pause_animations: true,
+};
+
+// change autoBrightness defaults to ""?
+
+export const DEFAULT_MAX_TEMP_C = 30;
+export const DEFAULT_MIN_TEMP_C = 5;
+export const DEFAULT_MAX_WIND_MPH = 50;
+export const DEFAULT_MIN_WIND_MPH = 10;
+export const DEFAULT_MAX_RAIN_MM = 10;
+export const DEFAULT_MIN_RAIN_MM = 0;
+export const MACS_MESSAGE_EVENT = "macs_message";
+
+// Unit options used by the card editor.
+export const TEMPERATURE_UNIT_ITEMS = [
+    { id: "", name: "Auto", aliases: [] },
+    { id: "c", name: "Celsius (°C)", aliases: ["c", "°c", "celsius", "degc", "degree c", "degrees c", "degree celsius", "degrees celsius"] },
+    { id: "f", name: "Fahrenheit (°F)", aliases: ["f", "°f", "fahrenheit", "degf", "degree f", "degrees f", "degree fahrenheit", "degrees fahrenheit"] },
+];
+
+export const WIND_UNIT_ITEMS = [
+    { id: "", name: "Auto", aliases: [] },
+    { id: "mph", name: "Miles per hour (mph)", aliases: ["mph", "mi/h", "mile per hour", "miles per hour", "m/h"] },
+    { id: "kph", name: "Kilometres per hour (kph)", aliases: ["kph", "km/h", "kmh", "kilometre per hour", "kilometres per hour", "kilometer per hour", "kilometers per hour"] },
+    { id: "mps", name: "Metres per second (m/s)", aliases: ["mps", "m/s", "meter per second", "meters per second", "metre per second", "metres per second"] },
+    { id: "knots", name: "Knots", aliases: ["knots", "knot", "kn", "kt", "kt/h", "kts"] },
+];
+
+export const PRECIPITATION_UNIT_ITEMS = [
+    { id: "", name: "Auto", aliases: [] },
+    { id: "%", name: "Chance of rain (%)", aliases: ["%", "percent", "percentage", "chance", "chance of rain", "chance of precipitation", "probability", "probability of precipitation"] },
+    { id: "mm", name: "Millimetres (mm)", aliases: ["mm", "millimeter", "millimeters", "millimetre", "millimetres"] },
+    { id: "in", name: "Inches (in)", aliases: ["in", "inch", "inches", "in."] },
+];
+
+export const BATTERY_CHARGE_UNIT_ITEMS = [
+    { id: "%", name: "Percent (%)", aliases: ["%", "percent", "percentage"] },
+    { id: "v", name: "Volts (V)", aliases: ["v", "volt", "volts"] },
+];
+
+
+// HA entity IDs this card listens to
+export const MOOD_ENTITY_ID = "select.macs_mood";
+export const BRIGHTNESS_ENTITY_ID = "number.macs_brightness";
+export const TEMPERATURE_ENTITY_ID = "number.macs_temperature";
+export const WIND_ENTITY_ID = "number.macs_windspeed";
+export const PRECIPITATION_ENTITY_ID = "number.macs_precipitation";
+export const BATTERY_CHARGE_ENTITY_ID = "number.macs_battery_charge";
+export const BATTERY_STATE_ENTITY_ID = "switch.macs_charging";
+export const ANIMATIONS_ENTITY_ID = "switch.macs_animations_enabled";
+export const DEBUG_ENTITY_ID = "select.macs_debug";
+export const CONVERSATION_ENTITY_ID = "conversation.home_assistant";
+
+
+
+
+export const CARD_EDITOR_INFO = `
+	<!-- Show dialogue -->
+		<div class="group">
+			<div class="row">
+				<label>Custom Integrations</label>
+                <div>
+                    <p>For custom integrations, like making him look surprised when a motion sensor is triggered, Macs works like any other device and exposes entities which allow full control over his behavior.
+                    <br>Some examples are given below:</p>
+                    <div class="entity-grid">
+                        <div class="header">Entity</div>
+                        <div class="header">Action</div>
+
+                        <div>select.macs_mood</div>
+                        <div>macs.set_mood</div>
+
+						<div>number.macs_temperature</div>
+						<div>macs.set_temperature</div>
+
+						<div>number.macs_windspeed</div>
+						<div>macs.set_windspeed</div>
+
+						<div>number.macs_battery_charge</div>
+						<div>macs.set_battery_charge</div>
+
+						<div>number.macs_brightness</div>
+						<div>macs.set_brightness</div>
+
+						<div>switch.macs_animations_enabled</div>
+						<div>macs.set_animations_enabled</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	`;
+
+export const CARD_EDITOR_ABOUT = `
+	<!-- About -->
+		<div class="group">
+			<div class="row about">
+				<div class="about-toggle" tabindex="0" role="button">
+					About M.A.C.S. 
+					<span class="about-arrow">&gt;</span>
+				</div>
+			</div>
+			<div class="about-content" hidden>
+				<p>
+					M.A.C.S. is being developed by <strong>Glyn Davidson</strong> (Developer, climber, and chronic tinkerer of occasionally useful tools) in his free time.
+				</p>
+
+				<p class="support">
+					If you find M.A.C.S. useful and would like to encourage its ongoing development with new features and bug fixes, please consider 
+					<br>
+					<ha-icon icon="mdi:coffee"></ha-icon>
+					<a href="https://buymeacoffee.com/glyndavidson" target="_blank" rel="noopener">
+						buying me a coffee
+					</a>.
+				</p>
+			</div>
+		</div>
+	`;

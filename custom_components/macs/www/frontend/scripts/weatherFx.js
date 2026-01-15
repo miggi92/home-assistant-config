@@ -1,0 +1,397 @@
+/**
+ * Weather FX
+ * ----------
+ * Drives rain, snow, and leaf effects plus related CSS state.
+ */
+
+import { importWithVersion } from "./importHandler.js";
+
+const { Particle, SVG_NS } = await importWithVersion("./particleFx.js");
+const FX_CONFIG = await importWithVersion("./animationSettings.js");
+const { getQueryParamOrDefault, getWeatherConditionKeys } = await importWithVersion("./helpers.js");
+const { createDebugger } = await importWithVersion("../../shared/debugger.js");
+const debug = createDebugger(import.meta.url);
+
+const clampPercent = (value, fallback = 0) => {
+	const num = Number(value);
+	if (!Number.isFinite(num)) return fallback;
+	if (num < 0) return 0;
+	if (num > 100) return 100;
+	return num;
+};
+
+const toIntensity = (value, fallback = 0) => clampPercent(value, fallback) / 100;
+
+const getPrecipitationParam = () => getQueryParamOrDefault("precipitation");
+const getTemperatureParam = () => getQueryParamOrDefault("temperature");
+const getWindSpeedParam = () => getQueryParamOrDefault("windspeed");
+
+const parseWeatherConditionFlag = (value) => {
+	const normalized = (value ?? "").toString().trim().toLowerCase();
+	if (!normalized) return true;
+	if (["1", "true", "yes", "on"].includes(normalized)) return true;
+	if (["0", "false", "no", "off"].includes(normalized)) return false;
+	return true;
+};
+
+const getWeatherConditionsFromQuery = () => {
+	const conditions = {};
+	getWeatherConditionKeys().forEach((key) => {
+		conditions[key] = parseWeatherConditionFlag(getQueryParamOrDefault(key));
+	});
+	return conditions;
+};
+
+export function createWeatherFx({getIsPaused, onWindChange } = {}) {
+	const isPaused = typeof getIsPaused === "function" ? getIsPaused : () => false;
+	let notifyWind = typeof onWindChange === "function" ? onWindChange : null;
+
+	let rainIntensity = -1;
+	let rainViewWidth = 1000;
+	let rainViewHeight = 1000;
+	let windIntensity = 0;
+	let snowIntensity = -1;
+	let basePrecipIntensity = 0;
+	let weatherConditions = {};
+
+	let rainParticles = null;
+	let snowParticles = null;
+	let leafParticles = null;
+
+	const getConditionFlag = (key) => {
+		return !!(weatherConditions && weatherConditions[key]);
+	};
+
+	const applyPrecipitation = () => {
+		const rainy = getConditionFlag("rainy") || getConditionFlag("pouring");
+		const snowy = getConditionFlag("snowy");
+		rainIntensity = rainy ? basePrecipIntensity : 0;
+		snowIntensity = snowy ? basePrecipIntensity : 0;
+		document.documentElement.style.setProperty('--precipitation-intensity', rainIntensity.toString());
+		document.documentElement.style.setProperty('--snowfall-intensity', snowIntensity.toString());
+		updateRainDrops(rainIntensity);
+		updateSnowFlakes(snowIntensity);
+		updateLeaves();
+	};
+
+	const initParticles = () => {
+		if (!rainParticles) {
+			rainParticles = new Particle("rain", {
+				container: document.getElementById("rain-drops"),
+				maxCount: FX_CONFIG.RAIN_MAX_DROPS,
+				countExponent: FX_CONFIG.RAIN_COUNT_EXPONENT,
+				element: {
+					namespace: SVG_NS,
+					tag: "ellipse",
+					className: "drop"
+				},
+				size: {
+					min: FX_CONFIG.RAIN_DROP_SIZE_MIN,
+					max: FX_CONFIG.RAIN_DROP_SIZE_MAX,
+					variation: FX_CONFIG.RAIN_SIZE_VARIATION
+				},
+				opacity: {
+					min: FX_CONFIG.RAIN_OPACITY_MIN,
+					max: FX_CONFIG.RAIN_OPACITY_MAX,
+					variation: FX_CONFIG.RAIN_OPACITY_VARIATION
+				},
+				speed: {
+					min: FX_CONFIG.RAIN_MIN_SPEED,
+					max: FX_CONFIG.RAIN_MAX_SPEED,
+					jitterMin: FX_CONFIG.RAIN_SPEED_JITTER_MIN,
+					jitterMax: FX_CONFIG.RAIN_SPEED_JITTER_MAX,
+					sizeRange: FX_CONFIG.RAIN_SIZE_SPEED_RANGE,
+					windMultiplier: FX_CONFIG.RAIN_WIND_SPEED_MULTIPLIER
+				},
+				wind: {
+					tiltMax: FX_CONFIG.RAIN_WIND_TILT_MAX,
+					tiltVariation: FX_CONFIG.RAIN_TILT_VARIATION
+				},
+				path: {
+					padding: FX_CONFIG.RAIN_PATH_PADDING,
+					spawnOffset: FX_CONFIG.RAIN_SPAWN_OFFSET,
+					spawnVariation: FX_CONFIG.RAIN_SPAWN_VARIATION
+				},
+				delay: {
+					startDelayMax: FX_CONFIG.RAIN_START_DELAY_MAX
+				}
+			});
+		}
+
+		if (!snowParticles) {
+			snowParticles = new Particle("snow", {
+				container: document.getElementById("snow-flakes"),
+				maxCount: FX_CONFIG.SNOW_MAX_FLAKES,
+				element: {
+					namespace: SVG_NS,
+					tag: "circle",
+					className: "flake"
+				},
+				size: {
+					min: FX_CONFIG.SNOW_SIZE_MIN,
+					max: FX_CONFIG.SNOW_SIZE_MAX,
+					variation: FX_CONFIG.SNOW_SIZE_VARIATION
+				},
+				opacity: {
+					min: FX_CONFIG.SNOW_OPACITY_MIN,
+					max: FX_CONFIG.SNOW_OPACITY_MAX,
+					variation: FX_CONFIG.SNOW_OPACITY_VARIATION
+				},
+				speed: {
+					min: FX_CONFIG.SNOW_MIN_SPEED,
+					max: FX_CONFIG.SNOW_MAX_SPEED,
+					jitterMin: FX_CONFIG.SNOW_SPEED_JITTER_MIN,
+					jitterMax: FX_CONFIG.SNOW_SPEED_JITTER_MAX,
+					minDuration: FX_CONFIG.SNOW_MIN_DURATION,
+					windMultiplier: FX_CONFIG.SNOW_WIND_SPEED_MULTIPLIER
+				},
+				wind: {
+					tiltMax: FX_CONFIG.SNOW_WIND_TILT_MAX,
+					tiltVariation: FX_CONFIG.SNOW_TILT_VARIATION
+				},
+				path: {
+					padding: FX_CONFIG.SNOW_PATH_PADDING
+				},
+				delay: {
+					startDelayRatio: FX_CONFIG.SNOW_START_DELAY_RATIO
+				}
+			});
+		}
+
+		if (!leafParticles) {
+			leafParticles = new Particle("leaf", {
+				container: document.getElementById("leaf-layer"),
+				maxCount: FX_CONFIG.LEAF_MAX_COUNT,
+				element: {
+					tag: "img",
+					className: "leaf",
+					props: {
+						alt: "",
+						decoding: "async",
+						draggable: false
+					}
+				},
+				size: {
+					min: FX_CONFIG.LEAF_SIZE_MIN,
+					max: FX_CONFIG.LEAF_SIZE_MAX,
+					variation: FX_CONFIG.LEAF_SIZE_VARIATION
+				},
+				opacity: {
+					min: FX_CONFIG.LEAF_OPACITY_MIN,
+					max: FX_CONFIG.LEAF_OPACITY_MAX,
+					variation: FX_CONFIG.LEAF_OPACITY_VARIATION
+				},
+				speed: {
+					min: FX_CONFIG.LEAF_MIN_SPEED,
+					max: FX_CONFIG.LEAF_MAX_SPEED,
+					jitterMin: FX_CONFIG.LEAF_SPEED_JITTER_MIN,
+					jitterMax: FX_CONFIG.LEAF_SPEED_JITTER_MAX,
+					minDuration: FX_CONFIG.LEAF_MIN_DURATION,
+					sizeBase: 0.85,
+					sizeScale: 0.4
+				},
+				wind: {
+					tiltMax: FX_CONFIG.LEAF_WIND_TILT_MAX,
+					tiltVariation: FX_CONFIG.LEAF_TILT_VARIATION,
+					exponent: FX_CONFIG.LEAF_WIND_EXPONENT
+				},
+				path: {
+					padding: FX_CONFIG.LEAF_PATH_PADDING,
+					spawnOffset: FX_CONFIG.LEAF_SPAWN_OFFSET,
+					spawnVariation: FX_CONFIG.LEAF_SPAWN_VARIATION
+				},
+				spin: {
+					min: FX_CONFIG.LEAF_SPIN_MIN,
+					max: FX_CONFIG.LEAF_SPIN_MAX
+				},
+				images: {
+					basePath: FX_CONFIG.LEAF_IMAGE_BASE,
+					variants: FX_CONFIG.LEAF_VARIANTS
+				},
+				delay: {
+					startStagger: FX_CONFIG.LEAF_START_STAGGER,
+					startJitter: FX_CONFIG.LEAF_START_JITTER,
+					respawnMin: FX_CONFIG.LEAF_RESPAWN_DELAY_MIN,
+					respawnJitter: FX_CONFIG.LEAF_RESPAWN_DELAY_JITTER
+				},
+				thresholds: {
+					windMin: 0.1,
+					precipMax: 0.1
+				},
+				setIntensityVar: (value) => {
+					document.documentElement.style.setProperty('--leaf-intensity', value.toString());
+				}
+			});
+		}
+
+		if (rainParticles) rainParticles.setWindIntensity(windIntensity);
+		if (snowParticles) snowParticles.setWindIntensity(windIntensity);
+		if (leafParticles) leafParticles.setWindIntensity(windIntensity);
+	};
+
+	const setRainViewBoxFromSvg = () => {
+		initParticles();
+		const svg = document.querySelector(".fx-rain");
+		if (!svg) return;
+
+		const rect = svg.getBoundingClientRect();
+		const width = Math.max(1, Math.round(rect.width));
+		const height = Math.max(1, Math.round(rect.height));
+
+		if (width === rainViewWidth && height === rainViewHeight) return;
+		rainViewWidth = width;
+		rainViewHeight = height;
+		svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+		const snowSvg = document.querySelector(".fx-snow");
+		if (snowSvg) {
+			snowSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+		}
+		if (rainParticles) {
+			rainParticles.setViewSize(width, height);
+			rainParticles.reset();
+		}
+		if (snowParticles) {
+			snowParticles.setViewSize(width, height);
+			snowParticles.reset();
+		}
+		if (leafParticles) {
+			leafParticles.setViewSize(width, height);
+			leafParticles.reset();
+		}
+	};
+
+	const updateRainDrops = (intensity, forceUpdate = false) => {
+		if (isPaused()) return;
+		setRainViewBoxFromSvg();
+		if (!rainParticles) return;
+		rainParticles.update(intensity, forceUpdate);
+	};
+
+	const updateSnowFlakes = (intensity, forceUpdate = false) => {
+		if (isPaused()) return;
+		setRainViewBoxFromSvg();
+		if (!snowParticles) return;
+		snowParticles.update(intensity, forceUpdate);
+	};
+
+	const updateLeaves = (forceUpdate = false) => {
+		if (isPaused()) return;
+		setRainViewBoxFromSvg();
+		if (!leafParticles) return;
+		const leafWindIntensity = getConditionFlag("windy") ? windIntensity : 0;
+		leafParticles.updateFromEnvironment({
+			windIntensity: leafWindIntensity,
+			rainIntensity,
+			snowIntensity,
+			forceUpdate
+		});
+	};
+
+	const setTemperature = (value) => {
+		const percent = clampPercent(value, 0);
+		const intensity = percent / 100;
+		document.documentElement.style.setProperty('--temperature-intensity', intensity.toString());
+		const body = document.body;
+		if (body) {
+			body.classList.toggle("temp-icicles", percent >= 0 && percent <= 10);
+			body.classList.toggle("temp-scarf", percent >= 0 && percent <= 20);
+			body.classList.toggle("temp-handkerchief", percent >= 80);
+			const bezelRectL = document.querySelector('#eyeBezelL rect:nth-child(2)');
+			const bezelRectR = document.querySelector('#eyeBezelR rect:nth-child(2)');
+			if(percent >= 90){
+				bezelRectL.setAttribute('fill', 'url(#bezelMetalHot)'); 
+				bezelRectR.setAttribute('fill', 'url(#bezelMetalHot)'); 
+			}
+			else{
+				bezelRectL.setAttribute('fill', 'url(#bezelMetal)'); 
+				bezelRectR.setAttribute('fill', 'url(#bezelMetal)'); 
+			}
+		}
+	};
+
+	const setTemperatureFromQuery = () => {
+		setTemperature(getTemperatureParam());
+	};
+
+	const setWindSpeed = (value) => {
+		const intensity = toIntensity(value);
+		document.documentElement.style.setProperty('--windspeed-intensity', intensity.toString());
+		windIntensity = intensity;
+		if (rainParticles) rainParticles.setWindIntensity(intensity);
+		if (snowParticles) snowParticles.setWindIntensity(intensity);
+		if (leafParticles) leafParticles.setWindIntensity(intensity);
+		const tilt = Math.pow(intensity, FX_CONFIG.WIND_TILT_EXPONENT) * -FX_CONFIG.WIND_TILT_MAX;
+		document.documentElement.style.setProperty('--wind-tilt', `${tilt.toFixed(1)}deg`);
+		if (notifyWind) notifyWind(intensity);
+		updateRainDrops(rainIntensity < 0 ? 0 : rainIntensity, true);
+		updateSnowFlakes(snowIntensity < 0 ? 0 : snowIntensity, true);
+		updateLeaves(true);
+	};
+
+	const setWindSpeedFromQuery = () => {
+		setWindSpeed(getWindSpeedParam());
+	};
+
+	const setPrecipitation = (value) => {
+		basePrecipIntensity = toIntensity(value);
+		applyPrecipitation();
+	};
+
+	const setPrecipitationFromQuery = () => {
+		setPrecipitation(getPrecipitationParam());
+	};
+
+	const setWeatherConditions = (conditions) => {
+		weatherConditions = (conditions && typeof conditions === "object") ? conditions : {};
+		const body = document.body;
+		if (!body) return;
+		[...body.classList].forEach(c => {
+			if (c.indexOf("weather-") === 0) body.classList.remove(c);
+		});
+		Object.keys(weatherConditions).forEach(key => {
+			if (weatherConditions[key]) body.classList.add(`weather-${key}`);
+		});
+		debug(`Setting weather conditions to:\n${JSON.stringify(weatherConditions, null, 2)}`);
+		applyPrecipitation();
+	};
+
+	const setWeatherConditionsFromQuery = () => {
+		const conditions = getWeatherConditionsFromQuery();
+		setWeatherConditions(conditions);
+	};
+
+	const refresh = (forceUpdate = false) => {
+		updateRainDrops(rainIntensity < 0 ? 0 : rainIntensity, forceUpdate);
+		updateSnowFlakes(snowIntensity < 0 ? 0 : snowIntensity, forceUpdate);
+		updateLeaves(forceUpdate);
+	};
+
+	const reset = () => {
+		if (rainParticles) rainParticles.reset();
+		if (snowParticles) snowParticles.reset();
+		if (leafParticles) leafParticles.reset();
+	};
+
+	const handleResize = () => {
+		refresh(true);
+	};
+
+	return {
+		setTemperature,
+		setTemperatureFromQuery,
+		setWindSpeed,
+		setWindSpeedFromQuery,
+		setOnWindChange: (handler) => {
+			notifyWind = typeof handler === "function" ? handler : null;
+		},
+		setPrecipitation,
+		setPrecipitationFromQuery,
+		setWeatherConditions,
+		setWeatherConditionsFromQuery,
+		refresh,
+		reset,
+		handleResize,
+	};
+}
+
+debug("Weather Effects Ready");

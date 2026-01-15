@@ -1,0 +1,288 @@
+set_mood:
+  name: Set mood
+  description: Set Macs mood (updates select.macs_mood).
+  fields:
+    mood:
+      name: Mood
+      description: One of bored, confused, happy, idle, listening, sad, sleeping, surprised, thinking
+      required: true
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - bored
+            - confused
+            - happy
+            - idle
+            - listening
+            - sad
+            - sleeping
+            - surprised
+            - thinking
+
+set_brightness:
+  name: Set brightness
+  description: Set MACS brightness (0–100).
+  fields:
+    brightness:
+      name: Brightness
+      description: 0 (dim) to 100 (bright)
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: "%"
+
+set_temperature:
+  name: Set temperature intensity
+  description: Set MACS temperature intensity (0-100).
+  fields:
+    temperature:
+      name: Temperature
+      description: 0 (none) to 100 (max)
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: "%"
+
+set_windspeed:
+  name: Set wind speed intensity
+  description: Set MACS wind speed intensity (0-100).
+  fields:
+    windspeed:
+      name: Wind speed
+      description: 0 (none) to 100 (max)
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: "%"
+
+set_precipitation:
+  name: Set precipitation intensity
+  description: Set MACS precipitation intensity (0-100).
+  fields:
+    precipitation:
+      name: Precipitation
+      description: 0 (none) to 100 (max)
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: "%"
+
+set_battery_charge:
+  name: Set battery charge
+  description: Set MACS battery charge (0-100).
+  fields:
+    battery_charge:
+      name: Battery charge
+      description: 0 (empty) to 100 (full)
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: "%"
+
+set_animations_enabled:
+  name: Set animations enabled
+  description: Toggle MACS animations on/off.
+  fields:
+    animations_enabled:
+      name: Animations enabled
+      description: true to enable animations, false to pause
+      required: true
+      selector:
+        boolean:
+
+set_charging:
+  name: Set charging
+  description: Toggle MACS charging state on/off.
+  fields:
+    charging:
+      name: Charging
+      description: true when charging, false when not charging
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_snowy:
+  name: Set weather conditions snowy
+  description: Toggle MACS snowy effect on/off.
+  fields:
+    weather_conditions_snowy:
+      name: Weather conditions snowy
+      description: true to enable snowy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_cloudy:
+  name: Set weather conditions cloudy
+  description: Toggle MACS cloudy effect on/off.
+  fields:
+    weather_conditions_cloudy:
+      name: Weather conditions cloudy
+      description: true to enable cloudy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_rainy:
+  name: Set weather conditions rainy
+  description: Toggle MACS rainy effect on/off.
+  fields:
+    weather_conditions_rainy:
+      name: Weather conditions rainy
+      description: true to enable rainy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_windy:
+  name: Set weather conditions windy
+  description: Toggle MACS windy effect on/off.
+  fields:
+    weather_conditions_windy:
+      name: Weather conditions windy
+      description: true to enable windy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_sunny:
+  name: Set weather conditions sunny
+  description: Toggle MACS sunny effect on/off.
+  fields:
+    weather_conditions_sunny:
+      name: Weather conditions sunny
+      description: true to enable sunny effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_stormy:
+  name: Set weather conditions stormy
+  description: Toggle MACS stormy effect on/off.
+  fields:
+    weather_conditions_stormy:
+      name: Weather conditions stormy
+      description: true to enable stormy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_foggy:
+  name: Set weather conditions foggy
+  description: Toggle MACS foggy effect on/off.
+  fields:
+    weather_conditions_foggy:
+      name: Weather conditions foggy
+      description: true to enable foggy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_hail:
+  name: Set weather conditions hail
+  description: Toggle MACS hail effect on/off.
+  fields:
+    weather_conditions_hail:
+      name: Weather conditions hail
+      description: true to enable hail effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_lightning:
+  name: Set weather conditions lightning
+  description: Toggle MACS lightning effect on/off.
+  fields:
+    weather_conditions_lightning:
+      name: Weather conditions lightning
+      description: true to enable lightning effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_partlycloudy:
+  name: Set weather conditions partly cloudy
+  description: Toggle MACS partly cloudy effect on/off.
+  fields:
+    weather_conditions_partlycloudy:
+      name: Weather conditions partly cloudy
+      description: true to enable partly cloudy effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_pouring:
+  name: Set weather conditions pouring
+  description: Toggle MACS pouring effect on/off.
+  fields:
+    weather_conditions_pouring:
+      name: Weather conditions pouring
+      description: true to enable pouring effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_clear_night:
+  name: Set weather conditions clear night
+  description: Toggle MACS clear night effect on/off.
+  fields:
+    weather_conditions_clear_night:
+      name: Weather conditions clear night
+      description: true to enable clear night effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+set_weather_conditions_exceptional:
+  name: Set weather conditions exceptional
+  description: Toggle MACS exceptional effect on/off.
+  fields:
+    weather_conditions_exceptional:
+      name: Weather conditions exceptional
+      description: true to enable exceptional effect, false to disable
+      required: true
+      selector:
+        boolean:
+
+send_user_message:
+  name: Send user message
+  description: Add a user message bubble to the M.A.C.S. pipeline display.
+  fields:
+    message:
+      name: Message
+      description: Message text to show as a user bubble.
+      required: true
+      selector:
+        text:
+
+send_assistant_message:
+  name: Send assistant message
+  description: Add an assistant message bubble to the M.A.C.S. pipeline display.
+  fields:
+    message:
+      name: Message
+      description: Message text to show as an assistant bubble.
+      required: true
+      selector:
+        text:

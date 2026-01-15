@@ -1,0 +1,76 @@
+{
+  "entity": {
+    "select": {
+      "mood": {
+        "name": "Mood"
+      },
+      "debug": {
+        "name": "Debug"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Brightness"
+      },
+      "battery_charge": {
+        "name": "Battery Charge"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "windspeed": {
+        "name": "Wind Speed"
+      },
+      "precipitation": {
+        "name": "Precipitation"
+      }
+    },
+    "switch": {
+      "animations_enabled": {
+        "name": "Animations Enabled"
+      },
+      "charging": {
+        "name": "Charging"
+      },
+      "weather_conditions_snowy": {
+        "name": "Snowy"
+      },
+      "weather_conditions_cloudy": {
+        "name": "Cloudy"
+      },
+      "weather_conditions_rainy": {
+        "name": "Rainy"
+      },
+      "weather_conditions_windy": {
+        "name": "Windy"
+      },
+      "weather_conditions_sunny": {
+        "name": "Sunny"
+      },
+      "weather_conditions_stormy": {
+        "name": "Stormy"
+      },
+      "weather_conditions_foggy": {
+        "name": "Foggy"
+      },
+      "weather_conditions_hail": {
+        "name": "Hail"
+      },
+      "weather_conditions_lightning": {
+        "name": "Lightning"
+      },
+      "weather_conditions_partlycloudy": {
+        "name": "Partly Cloudy"
+      },
+      "weather_conditions_pouring": {
+        "name": "Pouring"
+      },
+      "weather_conditions_clear_night": {
+        "name": "Clear Night"
+      },
+      "weather_conditions_exceptional": {
+        "name": "Exceptional"
+      }
+    }
+  }
+}
