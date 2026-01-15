@@ -21,6 +21,9 @@ action:
           entity_id: input_select.milo_person_sync
         data:
           option: alleine
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.milo_home
       - action: device_tracker.see
         data:
           dev_id: milo_dummy_tracker
