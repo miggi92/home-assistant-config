@@ -37,8 +37,7 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
-  - type: grid
-    cards:
+
       - type: custom:mushroom-light-card
         entity: light.schlafzimmerlicht
         layout: vertical
@@ -177,3 +176,5 @@ sections:
           - condition: state
             entity: binary_sensor.weihnachtszeit
             state: "on"
+  - type: grid
+    cards: []
