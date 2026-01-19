@@ -1,0 +1,54 @@
+---
+# Person state
+alias: "Awtrix - Person State Display"
+description: "Combined automation to show family status on Awtrix clock"
+mode: parallel
+id: 5b390c50-4a81-42b7-b628-1cd4a3acd55f
+trigger:
+  - platform: state
+    entity_id:
+      - person.milo_carlos
+      - person.miguel
+      - person.finn_manuel
+      - person.silke
+      - person.maja
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
+action:
+  - variables:
+      person_config:
+        person.milo_carlos:
+          app_name: "milo"
+          icon_id: "41425"
+        person.miguel:
+          app_name: "miguel"
+          icon_id: "28759"
+        person.finn_manuel:
+          app_name: "finn"
+          icon_id: "48342"
+        person.silke:
+          app_name: "silke"
+          icon_id: "19702"
+        person.maja:
+          app_name: "maja"
+          icon_id: "76"
+      current_person: "{{ person_config.get(trigger.entity_id) }}"
+
+  - condition: template
+    value_template: "{{ current_person is not none }}"
+
+  - if:
+      - condition: template
+        value_template: "{{ trigger.to_state.state == 'home' }}"
+    then:
+      - action: script.awtrix3delapp
+        data:
+          app_id: "{{ current_person.app_name }}"
+    else:
+      - action: script.awtrix3customapp
+        data:
+          app_id: "{{ current_person.app_name }}"
+          text: "{{ state_translated(trigger.entity_id) }}"
+          icon: "{{ current_person.icon_id }}"
