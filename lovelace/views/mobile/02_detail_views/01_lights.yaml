@@ -105,6 +105,10 @@ sections:
         show_color_control: true
         collapsible_controls: true
         icon: mdi:pine-tree
+        visibility:
+          - condition: state
+            entity: binary_sensor.weihnachtszeit
+            state: "on"
       - type: custom:mushroom-light-card
         entity: light.lichterkette
         layout: vertical
@@ -169,3 +173,7 @@ sections:
         icon: mdi:pine-tree
         tap_action:
           action: more-info
+        visibility:
+          - condition: state
+            entity: binary_sensor.weihnachtszeit
+            state: "on"
