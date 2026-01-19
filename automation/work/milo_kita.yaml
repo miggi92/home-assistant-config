@@ -24,6 +24,11 @@ action:
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.milo_home
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 5
+          milliseconds: 0
       - action: device_tracker.see
         data:
           dev_id: milo_dummy_tracker
