@@ -114,6 +114,8 @@ lovelace:
       type: module
     - url: /hacsfiles/better-thermostat-ui-card/better-thermostat-ui-card.js
       type: module
+    - url: /hacsfiles/Prism-Dashboard/prism-dashboard.js
+      type: module
   dashboards:
     lovelace-mobile:
       mode: yaml
