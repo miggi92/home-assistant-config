@@ -48,22 +48,20 @@ actions:
     default:
       - variables:
           directory: meals
-  - action: openai_conversation.generate_image
+  - action: ai_task.generate_image
     data:
-      size: 1024x1024
-      quality: standard
-      style: vivid
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
+      task_name: "Meal {{ trigger.id }}"
+      instructions: |-
         Generiere ein realistisches Bild von folgendem Essen:
         {{ states(trigger.entity_id) }}
         Der Fokus sollte auf dem Essen sein.
+      entity_id: ai_task.google_ai_task
     response_variable: meal
 
   - action: downloader.download_file
     data:
       overwrite: true
-      url: "{{ meal.url }}"
+      url: "http://localhost:8123{{ meal.url }}"
       filename: "{{ trigger.id }}.png"
       subdir: "{{ directory }}"
 mode: parallel
