@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⤵️ Check out configuration from GitHub
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
       - name: 🚀 Run yamllint
         uses: frenck/action-yamllint@34b4bbcaeabedcfefad6adea8c5bbc42af0e2d47 # v1.5.0
 
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⤵️ Check out configuration from GitHub
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
       - name: Running Remark lint
         uses: "docker://pipelinecomponents/remark-lint:latest"
         continue-on-error: true
@@ -45,7 +45,7 @@ jobs:
         version: ["stable", "beta", "dev"]
     steps:
       - name: ⤵️ Check out configuration from GitHub
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
       - name: 📝 Copy fake secrets file
         run: cp ./secrets.fake.yaml ./secrets.yaml
       - name: 🚀 Run Home Assistant Configuration Check
