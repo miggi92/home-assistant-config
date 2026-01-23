@@ -17,6 +17,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../cards/nav-bar.yaml
       - type: custom:meteoalarm-card
         integration: dwd
         hide_when_no_warning: true
