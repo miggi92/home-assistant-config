@@ -52,9 +52,12 @@ actions:
     data:
       task_name: "Meal {{ trigger.id }}"
       instructions: |-
-        Generiere ein realistisches Bild von folgendem Essen:
-        {{ states(trigger.entity_id) }}
-        Der Fokus sollte auf dem Essen sein.
+        Eine Nahaufnahme (Close-Up shot) in hoher Qualität von:
+        {{ trigger.to_state.state }}
+        Der Stil ist moderne Food-Fotografie.
+        Die Beleuchtung ist warm und natürlich, um die Texturen des Essens hervorzuheben.
+        Der Fokus liegt knackig scharf auf dem Hauptgericht, mit einem schönen, unscharfen Hintergrund (Bokeh).
+        Es sieht köstlich und frisch zubereitet aus.
       entity_id: ai_task.google_ai_task
     response_variable: meal
 
