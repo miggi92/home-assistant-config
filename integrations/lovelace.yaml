@@ -92,7 +92,7 @@ lovelace:
       type: module
     - url: /hacsfiles/slider-button-card/slider-button-card.js
       type: module
-    - url: /hacsfiles/Ultra-Vehicle-Card/ultra-vehicle-card.js
+    - url: /hacsfiles/Ultra-Card/ultra-card.js
       type: module
     - url: /hacsfiles/timer-bar-card/timer-bar-card.js
       type: module
