@@ -22,6 +22,9 @@ export default defineNuxtConfig({
       name: 'Deutsch',
     }],
   },
+  robots: {
+    robotsTxt: false
+  },
   studio: {
     repository: {
       provider: 'github',
