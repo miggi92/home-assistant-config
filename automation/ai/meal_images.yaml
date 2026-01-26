@@ -57,6 +57,7 @@ actions:
         Der Stil ist moderne Food-Fotografie.
         Die Beleuchtung ist warm und natürlich, um die Texturen des Essens hervorzuheben.
         Der Fokus liegt knackig scharf auf dem Hauptgericht, mit einem schönen, unscharfen Hintergrund (Bokeh).
+        Bitte keine Texte auf die Bilder generieren.
         Es sieht köstlich und frisch zubereitet aus.
       entity_id: ai_task.google_ai_task
     response_variable: meal
