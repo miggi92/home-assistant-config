@@ -15,17 +15,23 @@ actions:
       entity_id: ai_task.openai_ai_task
       task_name: check for shopping list items
       instructions: |
-        check if there is a shopping list item on this text.
-        and extract the item.
-        Text: {{ last_call }}
+        You are an intelligent assistant analyzing voice commands.
+        Your goal is to extract shopping list items ONLY if the user explicitly wants to add something to a shopping list.
+
+        CRITICAL RULES:
+        1. Ignore Smart Home commands (e.g., "turn on lights", "close blinds", "set temperature", "play music"). These are NOT shopping requests.
+        2. Only return true if the intent is to buy, purchase, or add an item (e.g., "add milk", "we need butter", "put apples on the list").
+        3. If the input is ambiguous or purely a command like "light off", assume it is NOT a shopping item.
+
+        Text to analyze:: {{ last_call }}
       structure:
         shop:
-          description: Soll was eingekauft werden?
+          description: Is this strictly a request to add an item to a shopping list? (False for device controls like lights/switches)
           required: true
           selector:
             boolean: null
         grocery:
-          description: Das was eingekauft werden soll
+          description: The specific item to buy (e.g., 'milk'). Extract the noun only.
           required: true
           selector:
             text: null
