@@ -30,7 +30,7 @@ action:
       group: "Work"
       photo:
         file: "/config/www/downloaded/work_meals/one.png"
-        caption: "{{ states('sensor.work_meal_one') }}"
+        caption: "{{ states('input_text.work_meal_one') }}"
   - action: script.notify_engine
     data:
       title: |
@@ -42,7 +42,7 @@ action:
       group: "Work"
       photo:
         file: "/config/www/downloaded/work_meals/one_two.png"
-        caption: "{{ states('sensor.work_meal_one_two') }}"
+        caption: "{{ states('input_text.work_meal_one_two') }}"
   - action: script.notify_engine
     data:
       title: |
@@ -54,7 +54,7 @@ action:
       group: "Work"
       photo:
         file: "/config/www/downloaded/work_meals/three.png"
-        caption: "{{ states('sensor.work_meal_three') }}"
+        caption: "{{ states('input_text.work_meal_three') }}"
   - action: script.notify_engine
     data:
       title: |
@@ -66,7 +66,7 @@ action:
       group: "Work"
       photo:
         file: "/config/www/downloaded/work_meals/four.png"
-        caption: "{{ states('sensor.work_meal_four') }}"
+        caption: "{{ states('input_text.work_meal_four') }}"
   - action: script.notify_engine
     data:
       title: |
@@ -78,5 +78,5 @@ action:
       group: "Work"
       photo:
         file: "/config/www/downloaded/work_meals/five.png"
-        caption: "{{ states('sensor.work_meal_five') }}"
+        caption: "{{ states('input_text.work_meal_five') }}"
 mode: single

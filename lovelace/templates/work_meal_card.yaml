@@ -3,7 +3,7 @@
 work_meal_card_template:
   default:
     - title: "Essensausgabe"
-    - entity: sensor.work_meal_one
+    - entity: input_text.work_meal_one
     - camera: camera.work_meal_one
   card:
     type: picture-entity

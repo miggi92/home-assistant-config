@@ -5,19 +5,19 @@ description: ""
 id: ffe67e29-366b-4661-a0b0-bfea95d4468e
 triggers:
   - trigger: state
-    entity_id: sensor.work_meal_one
+    entity_id: input_text.work_meal_one_two
     id: one
   - trigger: state
-    entity_id: sensor.work_meal_one_two
+    entity_id: input_text.work_meal_one_two
     id: one_two
   - trigger: state
-    entity_id: sensor.work_meal_three
+    entity_id: input_text.work_meal_three
     id: three
   - trigger: state
-    entity_id: sensor.work_meal_four
+    entity_id: input_text.work_meal_four
     id: four
   - trigger: state
-    entity_id: sensor.work_meal_five
+    entity_id: input_text.work_meal_five
     id: five
   - trigger: state
     entity_id: input_text.milo_kita_essen_mittwoch
