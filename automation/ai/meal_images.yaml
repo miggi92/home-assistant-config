@@ -5,7 +5,7 @@ description: ""
 id: ffe67e29-366b-4661-a0b0-bfea95d4468e
 triggers:
   - trigger: state
-    entity_id: input_text.work_meal_one_two
+    entity_id: input_text.work_meal_one
     id: one
   - trigger: state
     entity_id: input_text.work_meal_one_two
