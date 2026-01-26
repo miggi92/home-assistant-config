@@ -6,8 +6,15 @@ work_meal_card_template:
     - entity: input_text.work_meal_one
     - camera: camera.work_meal_one
   card:
-    type: picture-entity
-    show_state: true
-    show_name: false
-    entity: "[[entity]]"
-    camera_image: "[[camera]]"
+    type: custom:config-template-card
+    entities:
+      - "[[entity]]"
+    card:
+      type: picture-glance
+      camera_view: auto
+      fit_mode: cover
+      entities:
+        - entity: "[[entity]]"
+          show_state: false
+      camera_image: "[[camera]]"
+      title: "${states['[[entity]]'].state}"
