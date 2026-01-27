@@ -135,5 +135,6 @@ sections:
       - type: map
         entities:
           - entity: device_tracker.fordpass_tourneo_tracker
+          - entity: zone.home
         theme_mode: auto
         hours_to_show: 12
