@@ -36,3 +36,4 @@ sections:
       - entity: input_select.maja_person_sync
         type: custom:mushroom-select-card
         secondary_info: last-changed
+      - !include ../../../cards/milo_locations.yaml

@@ -1,0 +1,29 @@
+---
+# Milo locations
+type: horizontal-stack
+cards:
+  - type: button
+    show_name: true
+    show_icon: true
+    show_state: false
+    tap_action:
+      action: perform-action
+      perform_action: script.change_dummy_locations
+      data:
+        who: milo
+        target_zone: zone.eltern_silke
+    entity: person.milo_carlos
+    name: Eltern Silke
+  - type: button
+    show_name: true
+    show_icon: true
+    show_state: false
+    icon: mdi:cradle-outline
+    tap_action:
+      action: perform-action
+      perform_action: script.change_dummy_locations
+      data:
+        who: milo
+        target_zone: zone.kita
+    entity: person.milo_carlos
+    name: Kita
