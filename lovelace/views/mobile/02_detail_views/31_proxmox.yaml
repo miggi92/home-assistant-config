@@ -18,6 +18,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: custom:decluttering-card
         template: proxmox_card_template
         variables:
