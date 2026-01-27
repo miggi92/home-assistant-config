@@ -1,6 +1,7 @@
 ---
 # Milo locations
-type: horizontal-stack
+type: grid
+title: Milo
 cards:
   - type: button
     show_name: true
