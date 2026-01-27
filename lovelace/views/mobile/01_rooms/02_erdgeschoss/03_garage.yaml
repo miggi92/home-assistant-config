@@ -40,8 +40,8 @@ sections:
                       right_title: Reichweite
                       right_entity: sensor.fordpass_tourneo_elveh
                       bar_animation_enabled: true
-                      bar_animation_entity: sensor.fordpass_tourneo_elvehplug
-                      bar_animation_value: CONNECTED
+                      bar_animation_entity: sensor.fordpass_tourneo_elvehcharging
+                      bar_animation_value: "IN_PROGRESS"
                       bar_animation_type: charging
                     - type: bar
                       id: bar-fuel
@@ -130,3 +130,10 @@ sections:
                       display_mode: always
                   vertical_alignment: stretch
                   horizontal_alignment: stretch
+  - type: grid
+    cards:
+      - type: map
+        entities:
+          - entity: device_tracker.fordpass_tourneo_tracker
+        theme_mode: auto
+        hours_to_show: 12
