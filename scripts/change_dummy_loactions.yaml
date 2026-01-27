@@ -1,0 +1,52 @@
+---
+# Change dummy locations
+change_dummy_locations:
+  fields:
+    who:
+      selector:
+        select:
+          multiple: false
+          options:
+            - milo
+            - finn
+            - maja
+      name: Who?
+      description: Change location of person
+      required: true
+    target_zone:
+      name: "Zone"
+      description: "Ziel-Zone auswählen"
+      selector:
+        entity:
+          filter:
+            - domain: zone
+      required: true
+
+  sequence:
+    - variables:
+        config:
+          milo:
+            person_sync: input_select.milo_person_sync
+            home_bool: input_boolean.milo_home
+            tracker: milo_dummy_tracker
+          finn:
+            person_sync: input_select.finn_unterwegs
+            home_bool: input_boolean.finn_home
+            tracker: finn_dummy_tracker
+        latitude: "{{ state_attr(target_zone, 'latitude') }}"
+        longitude: "{{ state_attr(target_zone, 'longitude') }}"
+    - action: input_select.select_option
+      target:
+        entity_id: "{{ config[who].person_sync }}"
+      data:
+        option: "alleine"
+    - action: input_boolean.turn_off
+      target:
+        entity_id: "{{ config[who].home_bool }}"
+    - delay: "00:00:05"
+    - action: device_tracker.see
+      data:
+        dev_id: "{{ config[who].tracker }}"
+        gps:
+          - "{{ latitude }}"
+          - "{{ longitude }}"

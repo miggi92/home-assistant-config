@@ -16,25 +16,10 @@ action:
         entity_id: schedule.milo_kita_zeiten
         state: "on"
     then:
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.milo_person_sync
+      - action: script.change_dummy_locations
         data:
-          option: alleine
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.milo_home
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 5
-          milliseconds: 0
-      - action: device_tracker.see
-        data:
-          dev_id: milo_dummy_tracker
-          gps:
-            - !secret milo_kita_lat
-            - !secret milo_kita_long
+          who: milo
+          target_zone: zone.kita
     else:
       - action: input_select.select_option
         target:
