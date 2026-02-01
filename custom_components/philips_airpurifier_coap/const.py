@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+from homeassistant.components.climate import HVACAction
 from homeassistant.components.number import NumberDeviceClass
 from homeassistant.components.sensor import (
     ATTR_STATE_CLASS,
@@ -124,12 +125,16 @@ class FanModel(StrEnum):
     AC0951 = "AC0951"
     AC1214 = "AC1214"
     AC1715 = "AC1715"
+    AC2210 = "AC2210"
+    AC2220 = "AC2220"
+    AC2221 = "AC2221"
     AC2729 = "AC2729"
     AC2889 = "AC2889"
     AC2936 = "AC2936"
     AC2939 = "AC2939"
     AC2958 = "AC2958"
     AC2959 = "AC2959"
+    AC3021 = "AC3021"
     AC3033 = "AC3033"
     AC3036 = "AC3036"
     AC3039 = "AC3039"
@@ -189,7 +194,8 @@ class PresetMode:
     GENTLE = "gentle"
     NIGHT = "night"
     SLEEP = "sleep"
-    SLEEP_ALLERGY = "allergy_sleep"
+    SLEEP_ALLERGY = "sleep_allergy"
+    ALLERGY_SLEEP = "allergy_sleep"
     TURBO = "turbo"
     MEDIUM = "medium"
     GAS = "gas"
@@ -220,6 +226,7 @@ class PresetMode:
         NIGHT: "pap:sleep_mode",
         SLEEP: "pap:sleep_mode",
         SLEEP_ALLERGY: "pap:sleep_mode",
+        ALLERGY_SLEEP: "pap:sleep_mode",
         TURBO: "pap:speed_3",
         MEDIUM: "pap:speed_2",
         GAS: "pap:gas",
@@ -239,6 +246,17 @@ class FanFunction(StrEnum):
     FAN = "fan"
     HEATING = "heating"
     CIRCULATION = "circulation"
+
+
+class HeatingAction(StrEnum):
+    """The heating action of the heater."""
+
+    STRONG = "strong"
+    MEDIUM = "medium"
+    LOW = "low"
+    IDLE = "idle"
+    FAN = "fan"
+    OFF = "off"
 
 
 class FanAttributes(StrEnum):
@@ -306,6 +324,7 @@ class FanAttributes(StrEnum):
     SWING = "swing"
     TURBO = "turbo"
     OSCILLATION = "oscillation"
+    HEATING_ACTION = "heating_action"
     VALUE_LIST = "value_list"
     ON = "on"
     OFF = "off"
@@ -409,6 +428,11 @@ class PhilipsApi:
         SWITCH_ON: 45,
         SWITCH_OFF: 0,
     }
+    # Heater models (e.g., CX5120) use this map
+    OSCILLATION_MAP4 = {
+        SWITCH_ON: 17222,
+        SWITCH_OFF: 0,
+    }
 
     # the AC1715 seems to follow a new scheme, this should later be refactored
     NEW_NAME = "D01-03"
@@ -463,6 +487,7 @@ class PhilipsApi:
     NEW2_QUICKDRY_MODE = "D03139"
     NEW2_REMAINING_TIME = "D03211"
     NEW2_TARGET_TEMP = "D0310E"
+    NEW2_HEATING_ACTION = "D0313F"
     NEW2_STANDBY_SENSORS = "D03134"
     NEW2_AUTO_PLUS_AI = "D03180"
     NEW2_PREFERRED_INDEX = "D0312A#1"
@@ -518,6 +543,20 @@ class PhilipsApi:
         1: FanFunction.FAN,
         2: FanFunction.CIRCULATION,
         3: FanFunction.HEATING,
+    }
+    HEATING_ACTION_MAP = {
+        65: HVACAction.HEATING,
+        67: HVACAction.HEATING,
+        68: HVACAction.HEATING,
+        -16: HVACAction.IDLE,
+        0: HVACAction.FAN,
+    }
+    HEATING_ACTION_MAP2 = {
+        65: HeatingAction.STRONG,
+        67: HeatingAction.MEDIUM,
+        68: HeatingAction.LOW,
+        -16: HeatingAction.IDLE,
+        0: HeatingAction.FAN,
     }
     TIMER_MAP = {
         0: "Off",

@@ -11,6 +11,9 @@
   ],
   "dhcp": [
     {
+      "macaddress": "6879C4*"
+    },
+    {
       "macaddress": "B0F893*"
     },
     {
@@ -34,8 +37,8 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/kongo09/philips-airpurifier-coap/issues",
   "requirements": [
-    "aioairctrl==0.2.5",
-    "getmac==0.9.4"
+    "aioairctrl>=0.2.5",
+    "getmac>=0.9.4"
   ],
-  "version": "v0.34.3"
+  "version": "v0.35.0"
 }
