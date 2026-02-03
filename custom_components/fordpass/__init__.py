@@ -8,7 +8,7 @@ import aiohttp
 import async_timeout
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_REGION, CONF_USERNAME, UnitOfPressure, EVENT_HOMEASSISTANT_STARTED
+from homeassistant.const import CONF_REGION, CONF_USERNAME, UnitOfPressure, EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import HomeAssistant, ServiceCall, CoreState
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
@@ -62,7 +62,7 @@ from .fordpass_handler import (
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-PLATFORMS = ["button", "lock", "number", "sensor", "switch", "select", "device_tracker"]
+PLATFORMS:Final = [Platform.BUTTON, Platform.LOCK, Platform.NUMBER, Platform.SENSOR, Platform.SWITCH, Platform.SELECT, Platform.DEVICE_TRACKER]
 WEBSOCKET_WATCHDOG_INTERVAL: Final = timedelta(seconds=64)
 
 
@@ -230,10 +230,20 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 
         await asyncio.gather(*reload_tasks)
 
+    async def async_delete_message_service(call: ServiceCall):
+        _LOGGER.debug(f"Running Service 'delete_message'")
+        msg_id = call.data.get('msgid', None)
+        if msg_id is not None:
+            return await FordpassDataHandler.messages_delete_with_id_called_from_service(coordinator, msg_id)
+        else:
+            _LOGGER.warning(f"async_delete_message_service: No msg_id provided!")
+            return False
+
     hass.services.async_register(DOMAIN, "refresh_status", async_refresh_status_service)
     hass.services.async_register(DOMAIN, "clear_tokens", async_clear_tokens_service)
     hass.services.async_register(DOMAIN, "poll_api", poll_api_service)
     hass.services.async_register(DOMAIN, "reload", handle_reload_service)
+    hass.services.async_register(DOMAIN, "delete_message", async_delete_message_service)
 
     config_entry.async_on_unload(config_entry.add_update_listener(entry_update_listener))
     return True
@@ -270,6 +280,7 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
         hass.services.async_remove(DOMAIN, "clear_tokens")
         hass.services.async_remove(DOMAIN, "poll_api")
         hass.services.async_remove(DOMAIN, "reload")
+        hass.services.async_remove(DOMAIN, "delete_message")
 
     return unload_ok
 
@@ -370,7 +381,7 @@ class FordPassDataUpdateCoordinator(DataUpdateCoordinator):
         self._force_classic_requests = False
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=update_interval_as_int))
 
-    async def get_new_client_session(self, vin: str) -> aiohttp.ClientSession:
+    def get_new_client_session(self, vin: str) -> aiohttp.ClientSession:
         """Get a new aiohttp ClientSession for the vehicle."""
         if self.hass is None:
             raise ValueError(f"{self.vli}Home Assistant instance is not available")
@@ -671,7 +682,7 @@ class FordPassEntity(CoordinatorEntity):
     _attr_has_entity_name = True
     _attr_name_addon = None
 
-    def __init__(self, a_tag: Tag, coordinator: FordPassDataUpdateCoordinator, description: EntityDescription | None = None):
+    def __init__(self, entity_type:str, a_tag: Tag, coordinator: FordPassDataUpdateCoordinator, description: EntityDescription | None = None):
         """Initialize the entity."""
         super().__init__(coordinator, description)
 
@@ -687,7 +698,7 @@ class FordPassEntity(CoordinatorEntity):
             self._attr_name_addon = description.name_addon
 
         self.coordinator: FordPassDataUpdateCoordinator = coordinator
-        self.entity_id = f"{DOMAIN}.fordpass_{self.coordinator._vin.lower()}_{a_tag.key}"
+        self.entity_id = f"{entity_type}.fordpass_{self.coordinator._vin.lower()}_{a_tag.key}".lower()
         self._tag = a_tag
 
     def _name_internal(self, device_class_name: str | None, platform_translations: dict[str, Any], ) -> str | UndefinedType | None:

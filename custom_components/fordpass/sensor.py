@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.restore_state import RestoreEntity, async_get, StoredState
@@ -57,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         if a_entity_description.state_class == SensorStateClass.TOTAL_INCREASING:
             # make sure that the entity_id will have the correct domain!
             # in 'some' cases the domain was 'fordpass.' instead of the expected 'sensor.'
-            entity_id = f"{the_platform}.{sensor.entity_id.split('.')[1]}"
+            entity_id = f"{the_platform}.{sensor.entity_id.split('.')[1]}".lower()
             restored_state = storage.last_states.get(entity_id, None)
             if restored_state is not None and isinstance(restored_state, StoredState) and restored_state.state is not None and restored_state.state.state is not None:
                 try:
@@ -105,7 +106,7 @@ class FordPassSensor(FordPassEntity, SensorEntity, RestoreEntity):
                 device_class=SensorDeviceClass.BATTERY
             )
         self._previous_state = None
-        super().__init__(a_tag=entity_description.tag, coordinator=coordinator, description=entity_description)
+        super().__init__(entity_type=Platform.SENSOR, a_tag=entity_description.tag, coordinator=coordinator, description=entity_description)
 
     @property
     def extra_state_attributes(self):

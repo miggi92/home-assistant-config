@@ -15,7 +15,7 @@ from typing import Final, Iterable
 from urllib.parse import urlparse, parse_qs
 
 import aiohttp
-from aiohttp import ClientConnectorError, ClientConnectionError, ContentTypeError
+from aiohttp import ClientConnectionError, ContentTypeError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import DOMAIN
@@ -297,7 +297,7 @@ class ConnectedFordPassVehicle:
             _LOGGER.debug(f"{self.vli}__check_for_closed_session(): RuntimeError - session is closed - trying to create a new session")
             # this might look a bit strange - but I don't want to pass the hass object down to the vehicle object...
             if self.coordinator is not None:
-                new_session = await self.coordinator.get_new_client_session(vin=self.vin)
+                new_session = self.coordinator.get_new_client_session(vin=self.vin)
                 if new_session is not None and not new_session.closed:
                     self.session = new_session
                     return True
@@ -946,10 +946,8 @@ class ConnectedFordPassVehicle:
                         # check if we need to refresh the auto token...
                         await self._ws_check_for_auth_token_refresh(ws)
 
-        except ClientConnectorError as con:
-            _LOGGER.error(f"{self.vli}ws_connect(): Could not connect to websocket: {type(con).__name__} - {con}")
         except ClientConnectionError as err:
-            _LOGGER.error(f"{self.vli}ws_connect(): ??? {type(err).__name__} - {err}")
+            _LOGGER.error(f"{self.vli}ws_connect(): Could not connect to websocket: {type(err).__name__} - {err}")
         except asyncio.TimeoutError as time_exc:
             _LOGGER.debug(f"{self.vli}ws_connect(): TimeoutError: No WebSocket message received within timeout period")
         except CancelledError as canceled:
