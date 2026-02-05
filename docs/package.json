@@ -5,7 +5,7 @@
     "build": "nuxt build --extends docus"
   },
   "dependencies": {
-    "@nuxt/content": "3.11.0",
+    "@nuxt/content": "3.11.2",
     "@nuxt/eslint": "1.13.0",
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "4.4.0",
