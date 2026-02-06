@@ -17,6 +17,14 @@ condition:
     entity_id: binary_sensor.workday_sensor
     state: "on"
 action:
+  - action: homeassistant.update_entity
+    data:
+      entity_id:
+        - sensor.miguel_eta_home
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
   - service: script.notify_engine
     data:
       title: |
