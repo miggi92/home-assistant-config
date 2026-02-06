@@ -1,0 +1,37 @@
+---
+# Someone is in the hause zone
+alias: HausZone
+id: c5d7575a-c8bc-4e61-8c9d-15055796d5cf
+description: "Jemand hat die zone haus betreten"
+trigger:
+  - platform: state
+    entity_id: zone.haus
+    from: "0"
+    for:
+      hours: 0
+      minutes: 3
+      seconds: 0
+
+condition: []
+action:
+  - variables:
+      zone_persons: "{{ state_attr('zone.haus', 'persons') }}"
+      assigned_user: >
+        {% set miguel = 'person.miguel' in zone_persons %}
+        {% set silke = 'person.silke' in zone_persons %}
+        {% if miguel and silke %}
+          admin
+        {% elif miguel %}
+          miguel
+        {% elif silke %}
+          silke
+        {% else %}
+          unknown
+        {% endif %}
+  - condition: template
+    value_template: "{{ assigned_user != 'unknown' }}"
+  - action: script.grocy_chore
+    data:
+      id: "11"
+      user: "{{ assigned_user }}"
+mode: single
