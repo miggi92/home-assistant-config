@@ -56,7 +56,7 @@ sections:
         tap_action:
           action: toggle
       - type: custom:mushroom-entity-card
-        entity: switch.yggdrasil_wi_fi_fritz_box_gastzugang
+        entity: switch.yggdrasil_wi_fi_yggdrasil_gast
         layout: vertical
         name: Guest WiFi
         tap_action:
