@@ -11,130 +11,25 @@ sections:
   - type: grid
     cards:
       - !include ../../../../cards/nav-bar.yaml
-      - type: custom:ultra-card
-        layout:
-          rows:
-            - id: row1
-              columns:
-                - id: col1
-                  modules:
-                    - type: text
-                      text: Ford Tourneo
-                    - id: imageVehicle
-                      type: image
-                      image_url: /local/images/ford_tourneo.png
-                      aspect_ratio: auto
-                      object_fit: cover
-                      alignment: center
-                      image_type: url
-                      width: 100
-                      height: 200
-            - id: row2
-              columns:
-                - id: col2
-                  modules:
-                    - type: bar
-                      id: bar-electro
-                      entity: sensor.fordpass_tourneo_soc
-                      right_enabled: true
-                      right_title: Reichweite
-                      right_entity: sensor.fordpass_tourneo_elveh
-                      bar_animation_enabled: true
-                      bar_animation_entity: sensor.fordpass_tourneo_elvehcharging
-                      bar_animation_value: "IN_PROGRESS"
-                      bar_animation_type: charging
-                    - type: bar
-                      id: bar-fuel
-                      entity: sensor.fordpass_tourneo_fuel
-                      right_enabled: true
-                      right_title: Reichweite
-                      right_entity: sensor.fordpass_tourneo_fuel_range
-                      use_gradient: true
-                      gradient_stops:
-                        - color: "#ff0000"
-                          position: 0
-                        - color: "#ffff00"
-                          position: 50
-                        - color: "#00ff00"
-                          position: 100
-            - id: row3
-              columns:
-                - id: col3
-                  modules:
-                    - type: icon
-                      id: drivingIcons
-                      icons:
-                        - entity: sensor.fordpass_tourneo_speed
-                          name: Geschwindigkeit
-                          icon_mode: entity
-                        - entity: sensor.fordpass_tourneo_enginespeed
-                          name: Drehzahl
-                          icon_mode: entity
-                        - entity: sensor.fordpass_tourneo_gearleverposition
-                          name: Gang
-                          icon_mode: entity
-                        - entity: sensor.fordpass_tourneo_seatbelt
-                          name: Gurt
-                          icon_mode: entity
-                      columns: 6
-                      gap: 16
-                      allow_wrap: true
-                      display_mode: any
-                      display_conditions:
-                        - id: cond_driving
-                          type: entity_state
-                          ui_expanded: true
-                          entity: sensor.fordpass_tourneo_ignitionstatus
-                          operator: "="
-                          value: "ON"
-                    - type: icon
-                      id: infoIcons
-                      icons:
-                        - entity: device_tracker.fordpass_tourneo_tracker
-                          name: Location
-                          icon_inactive: mdi:map-marker
-                          on_click_action: more-info
-                        - entity: sensor.fordpass_tourneo_odometer
-                          name: KM Stand
-                          icon_inactive: mdi:counter
-                        - entity: sensor.fordpass_tourneo_parkingbrakestatus
-                          name: Handbremse
-                          icon_mode: entity
-                          inactive_icon_color: "#ff0000"
-                    - type: icon
-                      id: securityIcons
-                      icons:
-                        - entity: sensor.fordpass_tourneo_alarm
-                          name: Alarmanlage
-                          icon_active: mdi:shield-lock-open
-                          icon_inactive: mdi:shield-lock
-                          color_active: "#ff0000"
-                        - entity: sensor.fordpass_tourneo_doorstatus
-                          name: Türen
-                          icon_active: mdi:car-door
-                          icon_inactive: mdi:car-door
-                          color_active: "#ff0000"
-                        - entity: sensor.fordpass_tourneo_windowposition
-                          name: Fenster
-                          icon_active: mdi:car-windshield-outline
-                          icon_inactive: mdi:car-windshield
-                          color_active: "#ff0000"
-                        - entity: sensor.fordpass_tourneo_doorlock
-                          name: Verriegelung
-                          icon_active: mdi:car-door-lock-open
-                          icon_inactive: mdi:car-door-lock
-                          color_active: "#ff0000"
-                      columns: 6
-                      gap: 16
-                      allow_wrap: true
-                      display_mode: always
-                  vertical_alignment: stretch
-                  horizontal_alignment: stretch
+      - type: custom:decluttering-card
+        template: vehicle_card_template
+        variables:
+          - image_path: /local/images/ford_tourneo.png
+          - sensor_prefix: sensor.fordpass_tourneo
+          - tracker_entity: device_tracker.fordpass_tourneo_tracker
+          - button_prefix: button.fordpass_tourneo
+          - switch_prefix: switch.fordpass_tourneo
   - type: grid
     cards:
-      - type: map
-        entities:
+      - type: conditional
+        conditions:
           - entity: device_tracker.fordpass_tourneo_tracker
-          - entity: zone.home
-        theme_mode: auto
-        hours_to_show: 12
+            state_not: "home"
+        card:
+          type: map
+          entities:
+            - entity: device_tracker.fordpass_tourneo_tracker
+          aspect_ratio: "16:9"
+          default_zoom: 14
+          hours_to_show: 12
+          theme_mode: auto
