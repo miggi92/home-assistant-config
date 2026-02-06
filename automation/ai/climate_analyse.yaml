@@ -13,67 +13,68 @@ conditions:
 actions:
   - action: ai_task.generate_data
     data:
-      entity_id: ai_task.openai_ai_task
+      entity_id: ai_task.google_ai_task
       task_name: climate_analysis
       instructions: |
-        Aufgabe:
-          Erstelle eine kurze, natürlich klingende Zusammenfassung des aktuellen Raumklimas
-          auf Deutsch. Verwende die bereitgestellten Sensordaten.
+        ### ROLE
+        You are an expert for indoor climate and HVAC systems. Analyze the provided sensor data and generate a summary in German.
 
-        Kontext:
-          - Gesamtwohnung:
-            Temperatur: {{ states('sensor.wohnungstemperatur') | float(0) }} °C
-            Luftfeuchtigkeit: {{ states('sensor.wohnungsfeuchtigkeit') | float(0) }} %
-          - Außenbereich:
-            Temperatur: {{ states('sensor.temperatur') | float(0) }} °C
-            Luftfeuchtigkeit: {{ states('sensor.luftfeuchtigkeit') | float(0) }} %
-          - Büro:
-            Temperatur: {{ states('sensor.luftqualitat_buro_temperature') | float(0) }} °C
-            Luftfeuchtigkeit: {{ states('sensor.luftqualitat_buro_humidity') | float(0) }} %
-            VOC Index: {{ states('sensor.luftqualitat_buro_voc_index') | int(0) }}
-            PM2.5: {{ states('sensor.luftqualitat_buro_pm25') | float(0) }} µg/m³
-          - Wohnzimmer:
-            Temperatur: {{ states('sensor.wohnzimmertemperatur') | float(0) }} °C
-            Luftfeuchtigkeit: {{ states('sensor.wohnzimmerluftfeuchtigkeit') | float(0) }} %
-          - Schlafzimmer:
-            Temperatur: {{ states('sensor.schlafzimmertemperatur') | float(0) }} °C
-            Luftfeuchtigkeit: {{ states('sensor.schlafzimmerluftfeuchtigkeit') | float(0) }} %
+        ### INPUT DATA
+        - Home_Global:
+            Temp: {{ states('sensor.wohnungstemperatur') | float(-99) }} °C
+            Humidity: {{ states('sensor.wohnungsfeuchtigkeit') | float(-1) }} %
+        - Outdoors:
+            Temp: {{ states('sensor.temperatur') | float(-99) }} °C
+            Humidity: {{ states('sensor.luftfeuchtigkeit') | float(-1) }} %
+            Dew Point: {{ states('sensor.aussen_thermal_comfort_taupunkt') | float(-99) }} °C
+        - Office:
+            Temp: {{ states('sensor.luftqualitat_buro_temperature') | float(-99) }} °C
+            Humidity: {{ states('sensor.luftqualitat_buro_humidity') | float(-1) }} %
+            VOC: {{ states('sensor.luftqualitat_buro_voc_index') | int(-1) }}
+            PM25: {{ states('sensor.luftqualitat_buro_pm25') | float(-1) }} µg/m³
+        - Living_Room:
+            Temp: {{ states('sensor.wohnzimmertemperatur') | float(-99) }} °C
+            Humidity: {{ states('sensor.wohnzimmerluftfeuchtigkeit') | float(-1) }} %
+            Dew Point: {{ states('sensor.wohnzimmer_thermal_comfort_taupunkt') | float(-99) }} °C
+        - Bedroom:
+            Temp: {{ states('sensor.schlafzimmertemperatur') | float(-99) }} °C
+            Humidity: {{ states('sensor.schlafzimmerluftfeuchtigkeit') | float(-1) }} %
+            Dew Point: {{ states('sensor.schlafzimmer_thermal_comfort_taupunkt') | float(-99) }} °C
 
-        Anweisungen:
-          1. Bewerte, wie angenehm das Klima ist (z. B. zu warm, kühl, ideal, trocken, feucht).
-          2. Beurteile, ob Lüften sinnvoll wäre:
-            - Wenn die Außenluft deutlich trockener ist → "Lüften empfohlen".
-            - Wenn die Außenluft feuchter oder deutlich kälter ist → "Lüften aktuell nicht empfohlen".
-          3. Gib eine klare Empfehlung mit "Empfehlung:" am Ende.
-          4. Wenn Werte fehlen, schreibe: "Keine ausreichenden Daten verfügbar."
-          5. Beziehe die Luftqualität mit ein:
-            - Wenn VOC > 300 oder PM2.5 > 25 → "Lüften empfohlen wegen schlechter Luftqualität".
-            - Wenn beide Werte gut sind → "Luftqualität einwandfrei".
+        ### LOGIC RULES (Ventilation)
+        1. Compare Absolute Humidity (physically):
+          - If Outdoor Temp is significantly lower (>5°C difference) than Indoor Temp, assume outdoor air is drier even if relative humidity is higher (up to 90%).
+          - Recommendation: "Lüften empfohlen" (Ventilation recommended) to reduce indoor humidity.
+        2. Air Quality:
+          - If VOC > 250 OR PM2.5 > 20 -> Priority Recommendation: "Lüften wegen Luftqualität dringend empfohlen".
 
-        Stil:
-          - Sprache: Deutsch
-          - Ton: freundlich, sachlich
-          - Länge: max. 200 Zeichen pro Raum
-          - Kein Smalltalk, keine Meta-Erklärungen
-          - Verwende kurze, klare Sätze
+        ### OUTPUT INSTRUCTIONS
+        - Language: German
+        - Tone: Professional, concise, helpful.
+        - Format per room:
+          1. Current State (e.g., "Angenehm warm", "Zu feucht").
+          2. Specific Reasoning (e.g., "VOC erhöht").
+          3. Actionable Recommendation (Start with "Empfehlung:").
+        - Missing Data: If values are -99 or -1, state "Daten nicht verfügbar".
+
       structure:
         house:
-          description: "Kurze Klima-Analyse der Wohnung"
+          description: "Summary for the whole house"
           required: true
           selector:
             text:
         office:
-          description: "Kurze Klima-Analyse des Büros"
+          description: "Analysis for the office"
           required: true
           selector:
             text:
         living:
-          description: "Kurze Klima-Analyse des Wohnzimmers"
+          description: "Analysis for the living room"
           required: true
           selector:
             text:
         sleep:
-          description: "Kurze Klima-Analyse des Schlafzimmers"
+          description: "Analysis for the bedroom"
           required: true
           selector:
             text:
