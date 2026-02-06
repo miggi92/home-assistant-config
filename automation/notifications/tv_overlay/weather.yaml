@@ -20,6 +20,8 @@ action:
           mdi:weather-rainy
           {% elif is_state("weather.home","snowy") %}
           mdi:weather-snowy
+          {% elif is_state("weather.home", "snowy-rainy") %}
+          mdi:weather-snowy-rainy
           {% elif is_state("weather.home","fog") %}
           mdi:weather-fog
           {% elif is_state("weather.home","sleet") %}
