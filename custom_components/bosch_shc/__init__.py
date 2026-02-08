@@ -2,6 +2,7 @@
 
 import voluptuous as vol
 import functools as ft
+import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
 from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
 from homeassistant.components.zeroconf import async_get_instance
@@ -18,11 +19,14 @@ from homeassistant.const import (
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
+    SupportsResponse,
+    ServiceResponse,
     callback,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     ATTR_EVENT_SUBTYPE,
@@ -30,8 +34,10 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     ATTR_SERVICE_ID,
     ATTR_TITLE,
+    CERT_EXPIRY_WARNING_DAYS,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
+    DOMAIN_NOTIFICATION_ID,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
@@ -43,6 +49,7 @@ from .const import (
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
+from .certificate import parse_certificate
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -62,6 +69,46 @@ PLATFORMS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bosch SHC from a config entry."""
     data = entry.data
+
+    # Pre-flight certificate validity check for clearer user feedback
+    cert_path = data.get(CONF_SSL_CERTIFICATE, "")
+    try:
+        cert_info = (
+            await hass.async_add_executor_job(parse_certificate, cert_path)
+            if cert_path
+            else None
+        )
+    except Exception as err:  # broad: parsing issues shouldn't fully block reauth paths
+        LOGGER.warning("Unable to parse Bosch SHC certificate (%s): %s", cert_path, err)
+        cert_info = None
+
+    if cert_info is not None:
+        if cert_info.days_remaining < 0:
+            from homeassistant.exceptions import ConfigEntryAuthFailed
+
+            expiry = cert_info.not_after.date()
+            LOGGER.error(
+                "Bosch SHC client certificate expired on %s. Reconfigure integration (put controller in pairing mode and re-authenticate).",
+                expiry,
+            )
+            raise ConfigEntryAuthFailed(
+                f"Client certificate expired on {expiry}. Reconfigure the integration."
+            )
+        if cert_info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+            expiry = cert_info.not_after.date()
+            LOGGER.warning(
+                "Bosch SHC client certificate will expire in %d days (on %s). Put controller in pairing mode and reconfigure integration to renew.",
+                cert_info.days_remaining,
+                expiry,
+            )
+            hass.components.persistent_notification.create(
+                (
+                    f"Bosch SHC client certificate will expire in {cert_info.days_remaining} days (on {expiry}).\n"
+                    "To renew: Put the controller into pairing mode (press front button until LEDs flash) and start re-authentication from the integration options."
+                ),
+                title="Bosch SHC certificate expiring",
+                notification_id=DOMAIN_NOTIFICATION_ID,
+            )
 
     zeroconf = await async_get_instance(hass)
     try:
@@ -100,6 +147,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DATA_SHC: device_entry,
         DATA_TITLE: entry.title,
     }
+
+    # Daily certificate re-check scheduling
+    from datetime import timedelta
+    from .const import DATA_CERT_CHECK_UNSUB
+
+    def _scheduled_cert_check(_now):
+        async def _run():
+            try:
+                info = await hass.async_add_executor_job(parse_certificate, cert_path)
+            except Exception:  # silently ignore parsing issues
+                return
+            if info.days_remaining < 0:
+                LOGGER.error(
+                    "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
+                    info.not_after.date(),
+                )
+                hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+            elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+                expiry = info.not_after.date()
+                hass.components.persistent_notification.create(
+                    (
+                        f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
+                        "To renew: Put the controller into pairing mode and re-authenticate the integration."
+                    ),
+                    title="Bosch SHC certificate expiring",
+                    notification_id=DOMAIN_NOTIFICATION_ID,
+                )
+
+        hass.async_create_task(_run())
+
+    hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
+        async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
+    )
 
     async def stop_polling(event):
         """Stop polling service."""
@@ -150,6 +230,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     session.unsubscribe_scenario_callback("shc")
 
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
+    # cancel daily cert check
+    from .const import DATA_CERT_CHECK_UNSUB
+
+    unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
+    if unsub:
+        unsub()
     hass.data[DOMAIN][entry.entry_id].pop(DATA_POLLING_HANDLER)
     await hass.async_add_executor_job(session.stop_polling)
 
@@ -202,7 +288,7 @@ def register_services(hass, entry):
         }
     )
 
-    async def rawscan_service_call(call):
+    async def rawscan_service_call(call) -> ServiceResponse:
         """SHC Scenario service call."""
         title = call.data[ATTR_TITLE]
         for controller_data in hass.data[DOMAIN].values():
@@ -217,13 +303,15 @@ def register_services(hass, entry):
                             service_id=call.data[ATTR_SERVICE_ID],
                         )
                     )
-                    LOGGER.info(rawscan)
+                    # LOGGER.debug(rawscan)
+                    return {call.data[ATTR_COMMAND]: rawscan}
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_TRIGGER_RAWSCAN,
         rawscan_service_call,
         schema=RAWSCAN_TRIGGER_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
 
 
