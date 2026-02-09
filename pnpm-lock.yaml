@@ -39,8 +39,8 @@ importers:
         specifier: ^4.2.1
         version: 4.3.1(@parcel/watcher@2.5.6)(@types/node@25.2.2)(@vue/compiler-sfc@3.5.27)(better-sqlite3@12.6.2)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.6.2))(eslint@9.39.2(jiti@2.6.1))(ioredis@5.9.2)(lightningcss@1.31.1)(magicast@0.5.2)(optionator@0.9.4)(rollup@4.57.1)(terser@5.46.0)(typescript@5.9.3)(vite@7.3.1(@types/node@25.2.2)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))(yaml@2.8.2)
       nuxt-studio:
-        specifier: 1.2.0
-        version: 1.2.0(db0@0.3.4(better-sqlite3@12.6.2))(ioredis@5.9.2)(magicast@0.5.2)(vue@3.5.27(typescript@5.9.3))
+        specifier: 1.3.1
+        version: 1.3.1(db0@0.3.4(better-sqlite3@12.6.2))(ioredis@5.9.2)(magicast@0.5.2)(vue@3.5.27(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -94,6 +94,12 @@ packages:
 
   '@ai-sdk/vue@3.0.69':
     resolution: {integrity: sha512-c7zLSTYWltZwfxvWcq8qCqUuIc0NNazpZamGPKxwJSWjz0ymyk5IFWCxVio7r9wCWStCL0ho79pCYbkVD3rgtQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      vue: ^3.3.4
+
+  '@ai-sdk/vue@3.0.78':
+    resolution: {integrity: sha512-vglaNi5z6jL1/NNuUDhKmVZRp1HPlG4+u+QAydBd/2nhT2Ol/5U7JL2fjlVz6WuP8LUCLwfib7FHPtdZIgFJIw==}
     engines: {node: '>=18'}
     peerDependencies:
       vue: ^3.3.4
@@ -3076,6 +3082,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  ai@6.0.78:
+    resolution: {integrity: sha512-eriIX/NLWfWNDeE/OJy8wmIp9fyaH7gnxTOCPT5bp0MNkvORstp1TwRUql9au8XjXzH7o2WApqbwgxJDDV0Rbw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
@@ -5322,6 +5334,10 @@ packages:
     resolution: {integrity: sha512-5pVCzWXqg9HP159JDhdfQJtFvgmS/KouEVpyYLPEBXWMrQoJBwujsczmLeIKXKI2BTy4RqfXy8N1GfGTZNb57g==}
     hasBin: true
 
+  nuxt-component-meta@0.17.2:
+    resolution: {integrity: sha512-2/mSSqutOX8t+r8cAX1yUYwAPBqicPO5Rfum3XaHVszxKCF4tXEXBiPGfJY9Zn69x/CIeOdw+aM9wmHzQ5Q+lA==}
+    hasBin: true
+
   nuxt-define@1.0.0:
     resolution: {integrity: sha512-CYZ2WjU+KCyCDVzjYUM4eEpMF0rkPmkpiFrybTqqQCRpUbPt2h3snswWIpFPXTi+osRCY6Og0W/XLAQgDL4FfQ==}
 
@@ -5341,8 +5357,8 @@ packages:
   nuxt-site-config@3.2.19:
     resolution: {integrity: sha512-OUGfo8aJWbymheyb9S2u78ADX73C9qBf8u6BwEJiM82JBhvJTEduJBMlK8MWeh3x9NF+/YX4AYsY5hjfQE5jGA==}
 
-  nuxt-studio@1.2.0:
-    resolution: {integrity: sha512-1DCn1Xe3OcMI4uChOJ1R+aggtomH1PT0PKIgB9suQSkWUtK40tmkLZvj8Yj5uj8mKHXb+k/ply4sRElXCTDhtw==}
+  nuxt-studio@1.3.1:
+    resolution: {integrity: sha512-ceWGIq4M9OeDk3jAxk0IZf98h5pziZZQka1RHLqzYkpZYvUbONJgyYaXYJn46WPpSmEJQfVJPLRBzQhsct7Q/w==}
 
   nuxt@4.3.1:
     resolution: {integrity: sha512-bl+0rFcT5Ax16aiWFBFPyWcsTob19NTZaDL5P6t0MQdK63AtgS6fN6fwvwdbXtnTk6/YdCzlmuLzXhSM22h0OA==}
@@ -7146,6 +7162,15 @@ snapshots:
     dependencies:
       '@ai-sdk/provider-utils': 4.0.13(zod@4.3.6)
       ai: 6.0.69(zod@4.3.6)
+      swrv: 1.1.0(vue@3.5.27(typescript@5.9.3))
+      vue: 3.5.27(typescript@5.9.3)
+    transitivePeerDependencies:
+      - zod
+
+  '@ai-sdk/vue@3.0.78(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider-utils': 4.0.14(zod@4.3.6)
+      ai: 6.0.78(zod@4.3.6)
       swrv: 1.1.0(vue@3.5.27(typescript@5.9.3))
       vue: 3.5.27(typescript@5.9.3)
     transitivePeerDependencies:
@@ -10255,6 +10280,14 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       zod: 4.3.6
 
+  ai@6.0.78(zod@4.3.6):
+    dependencies:
+      '@ai-sdk/gateway': 3.0.39(zod@4.3.6)
+      '@ai-sdk/provider': 3.0.8
+      '@ai-sdk/provider-utils': 4.0.14(zod@4.3.6)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.3.6
+
   ajv-formats@3.0.1(ajv@8.17.1):
     optionalDependencies:
       ajv: 8.17.1
@@ -13003,6 +13036,19 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
+  nuxt-component-meta@0.17.2(magicast@0.5.2):
+    dependencies:
+      '@nuxt/kit': 4.3.1(magicast@0.5.2)
+      citty: 0.1.6
+      mlly: 1.8.0
+      ohash: 2.0.11
+      scule: 1.3.0
+      typescript: 5.9.3
+      ufo: 1.6.3
+      vue-component-meta: 3.2.4(typescript@5.9.3)
+    transitivePeerDependencies:
+      - magicast
+
   nuxt-define@1.0.0: {}
 
   nuxt-llms@0.2.0(magicast@0.5.2):
@@ -13078,19 +13124,24 @@ snapshots:
       - vite
       - vue
 
-  nuxt-studio@1.2.0(db0@0.3.4(better-sqlite3@12.6.2))(ioredis@5.9.2)(magicast@0.5.2)(vue@3.5.27(typescript@5.9.3)):
+  nuxt-studio@1.3.1(db0@0.3.4(better-sqlite3@12.6.2))(ioredis@5.9.2)(magicast@0.5.2)(vue@3.5.27(typescript@5.9.3)):
     dependencies:
+      '@ai-sdk/gateway': 3.0.39(zod@4.3.6)
+      '@ai-sdk/vue': 3.0.78(vue@3.5.27(typescript@5.9.3))(zod@4.3.6)
       '@iconify-json/lucide': 1.2.89
       '@nuxtjs/mdc': 0.20.1(magicast@0.5.2)
       '@vueuse/core': 14.2.0(vue@3.5.27(typescript@5.9.3))
+      ai: 6.0.78(zod@4.3.6)
       defu: 6.1.4
       destr: 2.0.5
       js-yaml: 4.1.1
       minimatch: 10.1.2
-      nuxt-component-meta: 0.17.1(magicast@0.5.2)
+      nuxt-component-meta: 0.17.2(magicast@0.5.2)
       remark-mdc: 3.10.0
       shiki: 3.22.0
       unstorage: 1.17.4(db0@0.3.4(better-sqlite3@12.6.2))(ioredis@5.9.2)
+      zod: 4.3.6
+      zod-to-json-schema: 3.25.1(zod@4.3.6)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
