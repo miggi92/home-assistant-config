@@ -48,7 +48,6 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
         self.options = dict(config_entry.options or config_entry.data)
 
         if CONF_ANALYSIS_SETTINGS not in self.options:
@@ -96,6 +95,9 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                     "image_download_size": user_input.get("image_download_size", 100),
                     "enable_bidirectional_sync": user_input.get(
                         "enable_bidirectional_sync", False
+                    ),
+                    "disable_notifications": user_input.get(
+                        "disable_notifications", False
                     ),
                     "unique_id": self.options.get("unique_id"),
                     CONF_ANALYSIS_SETTINGS: self.options.get(
@@ -166,6 +168,10 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                     vol.Optional(
                         "enable_bidirectional_sync",
                         default=self.options.get("enable_bidirectional_sync", False),
+                    ): bool,
+                    vol.Optional(
+                        "disable_notifications",
+                        default=self.options.get("disable_notifications", False),
                     ): bool,
                     vol.Optional("show_advanced", default=False): bool,
                 }

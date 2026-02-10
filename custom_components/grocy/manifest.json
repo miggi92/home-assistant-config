@@ -12,7 +12,8 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/iamkarlson/grocy/issues",
   "requirements": [
-    "pygrocy2==2.5.0"
+    "grocy-py==0.0.4",
+    "icalendar==5.0.11"
   ],
-  "version": "v1.4.0"
+  "version": "v1.8.0"
 }
