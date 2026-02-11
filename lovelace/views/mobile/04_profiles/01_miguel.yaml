@@ -29,6 +29,8 @@ sections:
         entity: input_boolean.miguel_kopfleiste_anzeigen
       - type: custom:mushroom-entity-card
         entity: input_boolean.miguel_seitenleiste_anzeigen
+      - type: custom:mushroom-select-card
+        entity: input_select.background_image_service
   - type: grid
     cards:
       - entity: input_select.milo_person_sync
