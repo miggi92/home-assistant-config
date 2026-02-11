@@ -148,7 +148,7 @@ notify_engine:
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
-                                  caption: "{{ photo.caption }}"
+                                  caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
                                   url: "{{ photo.path }}"
                                   target:
                                     - "{{ chatid }}"
@@ -157,7 +157,7 @@ notify_engine:
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
-                                  caption: "{{ photo.caption }}"
+                                  caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
                                   file: "{{ photo.path }}"
                                   target:
                                     - "{{ chatid }}"
@@ -176,6 +176,7 @@ notify_engine:
                                   | replace('+', '\+')
                                   | replace('_', '\_')
                                   | replace('#', '\#')
+                                  | replace('|', '\|')
                                 }}
                               title: "{{ title }}"
                   - conditions:
