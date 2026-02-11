@@ -21,11 +21,11 @@ background:
   repeat: repeat
   attachment: fixed
   image:
-    media_content_id: media-source://image/image.random_picsum_image
+    media_content_id: media-source://image/image.random_unsplash_picture
     media_content_type: image/jpeg
     metadata:
-      title: Picsum Background Picture
-      thumbnail: /api/image_proxy/image.random_picsum_image
+      title: Unsplash Background Picture
+      thumbnail: /api/image_proxy/image.random_unsplash_picture
       media_class: video
       children_media_class: null
       navigateIds:
