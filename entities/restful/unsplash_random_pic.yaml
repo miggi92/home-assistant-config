@@ -4,7 +4,7 @@ resource: "https://api.unsplash.com/photos/random"
 method: GET
 params:
   client_id: !secret unsplash_client
-  query: "nature,landscape,cityscape,technology"
+  query: "wallpapers,nature,landscape,cityscape,technology,travel"
 sensor:
   - name: "Unsplash Pool"
     value_template: "{{ now().strftime('%d.%m.%Y, %H:%M:%S') }}"
