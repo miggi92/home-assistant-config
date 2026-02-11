@@ -29,7 +29,7 @@ action:
       tag_id: "information"
       group: "Work"
       photo:
-        file: "/config/www/downloaded/work_meals/one.png"
+        path: "/config/www/downloaded/work_meals/one.png"
         caption: "{{ states('input_text.work_meal_one') }}"
   - action: script.notify_engine
     data:
@@ -41,7 +41,7 @@ action:
       tag_id: "information"
       group: "Work"
       photo:
-        file: "/config/www/downloaded/work_meals/one_two.png"
+        path: "/config/www/downloaded/work_meals/one_two.png"
         caption: "{{ states('input_text.work_meal_one_two') }}"
   - action: script.notify_engine
     data:
@@ -53,7 +53,7 @@ action:
       tag_id: "information"
       group: "Work"
       photo:
-        file: "/config/www/downloaded/work_meals/three.png"
+        path: "/config/www/downloaded/work_meals/three.png"
         caption: "{{ states('input_text.work_meal_three') }}"
   - action: script.notify_engine
     data:
@@ -65,7 +65,7 @@ action:
       tag_id: "information"
       group: "Work"
       photo:
-        file: "/config/www/downloaded/work_meals/four.png"
+        path: "/config/www/downloaded/work_meals/four.png"
         caption: "{{ states('input_text.work_meal_four') }}"
   - action: script.notify_engine
     data:
@@ -77,6 +77,6 @@ action:
       tag_id: "information"
       group: "Work"
       photo:
-        file: "/config/www/downloaded/work_meals/five.png"
+        path: "/config/www/downloaded/work_meals/five.png"
         caption: "{{ states('input_text.work_meal_five') }}"
 mode: single
