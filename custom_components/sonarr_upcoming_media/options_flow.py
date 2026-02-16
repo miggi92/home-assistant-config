@@ -5,13 +5,12 @@ import voluptuous as vol
 from .const import (
     CONF_DAYS,
     CONF_MAX,
-    CONF_THEATERS,
     DOMAIN,
     )
 
 import logging
 _LOGGER = logging.getLogger(__name__)
-class RadarrOptionFlow(OptionsFlow):
+class SonarrOptionFlow(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._config_entry = config_entry
 
@@ -25,14 +24,13 @@ class RadarrOptionFlow(OptionsFlow):
             # Validate and process user input here
             return self.async_create_entry(title="", data=user_input)
 
-        RADARR_SCHEMA = vol.Schema({
+        SONARR_SCHEMA = vol.Schema({
             vol.Required(CONF_DAYS, default=self._config_entry.options.get(CONF_DAYS, self._config_entry.data[CONF_DAYS])): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Required(CONF_MAX, default=self._config_entry.options.get(CONF_MAX, self._config_entry.data[CONF_MAX])): vol.All(vol.Coerce(int), vol.Range(min=0)),
-            vol.Optional(CONF_THEATERS, default=self._config_entry.options.get(CONF_THEATERS, self._config_entry.data[CONF_THEATERS])): vol.All(bool),
         })
 
         # Display a form to gather user input
-        return self.async_show_form(step_id="init", data_schema=RADARR_SCHEMA, errors=errors)
+        return self.async_show_form(step_id="init", data_schema=SONARR_SCHEMA, errors=errors)
 
 def keys(d) -> list:
     return [i for i in d.keys()]
