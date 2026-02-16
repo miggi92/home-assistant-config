@@ -1,5 +1,5 @@
 ---
-# Vehicle card
+# Vehicle card refined
 vehicle_card_template:
   default:
     - name: "Mein Auto"
@@ -7,106 +7,246 @@ vehicle_card_template:
     type: custom:stack-in-card
     mode: vertical
     keep:
-      background: true
-      box_shadow: true
-      margin: true
+      background: false
+      box_shadow: false
+      margin: false
       outer_padding: false
       border_radius: true
     cards:
-      - type: picture
-        image: "[[image_path]]"
-        fit_mode: cover
-        tap_action:
-          action: none
-        theme: ha-card-border-radius
-      - type: custom:mushroom-chips-card
-        alignment: center
-        chips:
-          - type: conditional
-            conditions:
-              - entity: "[[sensor_prefix]]_indicators"
-                state_not: "0"
-            chip:
-              type: template
-              icon: mdi:alert-circle
-              icon_color: red
-              content: "Warnung!"
-              tap_action:
-                action: more-info
-              card_mod:
-                style: |
-                  @keyframes blink {
-                    50% { opacity: 0; }
-                  }
-                  ha-card {
-                    animation: blink 1s linear infinite;
-                  }
-          - type: conditional
-            conditions:
-              - entity: "[[sensor_prefix]]_messages"
-                state_not: "0"
-              - entity: "[[sensor_prefix]]_messages"
-                state_not: "None"
-            chip:
-              type: template
-              icon: mdi:email-alert
-              icon_color: orange
-              content: "{{ states('[[sensor_prefix]]_messages') }} Msg"
-              tap_action:
-                action: call-service
-                service: button.press
-                target:
-                  entity_id: "[[button_prefix]]_msgdeleteall"
-              hold_action:
-                action: more-info
-          - type: entity
-            entity: "[[sensor_prefix]]_doorlock"
-            icon: mdi:car-door-lock
-            content_info: none
+      # =================================================
+      # 1. BILD & OVERLAY CHIPS
+      # =================================================
+      - type: custom:stack-in-card
+        mode: vertical
+        keep:
+          margin: false
+          outer_padding: false
+        cards:
+          - type: picture
+            image: "[[image_path]]"
+            fit_mode: cover
+            tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card { border-radius: 12px; transition: filter 0.5s; }
+                /* Optional: Bild etwas abdunkeln, damit weiße Schrift besser lesbar ist */
+                ha-card:hover { filter: brightness(1.1); }
+
+          - type: custom:mushroom-chips-card
+            alignment: end
+            card_mod:
+              style: |
+                ha-card {
+                  margin-top: -60px;     /* Zieht die Chips hoch */
+                  margin-right: 12px;    /* Abstand von rechts */
+                  padding-bottom: 12px;
+                  --chip-background: rgba(0, 0, 0, 0.6); /* Halb-transparenter Hintergrund */
+                  --chip-spacing: 6px;
+                }
+            chips:
+              # --- Warnung (Blinkt rot) ---
+              - type: conditional
+                conditions:
+                  - entity: "[[sensor_prefix]]_indicators"
+                    state_not: "0"
+                chip:
+                  type: template
+                  icon: mdi:alert-circle
+                  icon_color: red
+                  content: "Warnung!"
+                  tap_action:
+                    action: more-info
+                  card_mod:
+                    style: |
+                      ha-card {
+                        --chip-background: rgba(220, 53, 69, 0.9) !important;
+                        --text-color: white;
+                        animation: blink 1s linear infinite;
+                      }
+                      @keyframes blink { 50% { opacity: 0.6; } }
+
+              # --- Nachrichten (Orange) ---
+              - type: conditional
+                conditions:
+                  - entity: "[[sensor_prefix]]_messages"
+                    state_not: "0"
+                  - entity: "[[sensor_prefix]]_messages"
+                    state_not: "None"
+                chip:
+                  type: template
+                  icon: mdi:email-alert
+                  icon_color: orange
+                  content: "{{ states('[[sensor_prefix]]_messages') }}"
+                  tap_action:
+                    action: call-service
+                    service: button.press
+                    target:
+                      entity_id: "[[button_prefix]]_msgdeleteall"
+                  card_mod:
+                    style: |
+                      ha-card { --chip-background: rgba(255, 152, 0, 0.9) !important; --text-color: white; }
+              - type: conditional
+                conditions:
+                  - entity: "[[sensor_prefix]]_elvehcharging"
+                    state_not: "NOT_READY"
+                chip:
+                  type: template
+                  entity: "[[sensor_prefix]]_elvehcharging"
+                  icon: >
+                    {% if is_state(entity, 'IN_PROGRESS') %} mdi:battery-charging-high
+                    {% else %} mdi:power-plug {% endif %}
+                  icon_color: >
+                    {% if is_state(entity, 'IN_PROGRESS') %} green
+                    {% else %} blue {% endif %}
+                  content: "{{ states(entity) }}"
+                  tap_action:
+                    action: more-info
+                  card_mod:
+                    style: |
+                      ha-card {
+                        --chip-background: rgba(0, 0, 0, 0.7) !important;
+                        --text-color: white;
+                        {% if is_state(config.entity, 'IN_PROGRESS') %}
+                          border: 1px solid #4CAF50;
+                          box-shadow: 0 0 5px #4CAF50;
+                          animation: pulse 2s infinite;
+                        {% endif %}
+                      }
+                      }
+              # --- Türschloss (Rot/Grün Logik) ---
+              - type: entity
+                entity: "[[sensor_prefix]]_doorlock"
+                icon: mdi:car-door-lock
+                content_info: none
+                tap_action:
+                  action: toggle
+                card_mod:
+                  style: |
+                    ha-card {
+                      --chip-background: {{ 'rgba(244, 67, 54, 0.9)' if is_state(config.entity, 'open') or is_state(config.entity, 'UNLOCKED') else 'rgba(76, 175, 80, 0.9)' }} !important;
+                      --color: white;
+                    }
+
+              # --- Refresh Button ---
+              - type: template
+                entity: "[[sensor_prefix]]_lastrefresh"
+                icon: mdi:refresh
+                tap_action:
+                  action: call-service
+                  service: button.press
+                  target:
+                    entity_id: "[[button_prefix]]_request_refresh"
+                card_mod:
+                  style: |
+                    ha-card { --color: white; }
+                    /* Icon dreht sich beim Drücken visuell nicht (lässt sich schwer animieren bei press), aber Feedback ist da */
+
+      # =================================================
+      # 2. HAUPTSTEUERUNG & REICHWEITEN
+      # =================================================
+      - type: horizontal-stack
+        cards:
+          # Link: Zündung / Fernstart
+          - type: custom:mushroom-entity-card
+            entity: "[[switch_prefix]]_ignition"
+            icon: mdi:engine
+            name: Klima/Start
+            layout: vertical
             tap_action:
               action: toggle
+            hold_action:
+              action: more-info
+            secondary_info: >
+              {% if is_state('[[sensor_prefix]]_remotestartstatus', 'Active') %}
+                {{ states('[[sensor_prefix]]_remotestartcountdown') }} min
+              {% else %}
+                state
+              {% endif %}
             card_mod:
               style: |
                 ha-card {
-                  --chip-background: {{ 'rgba(255, 59, 48, 0.2)' if is_state(config.entity, 'open') or is_state(config.entity, 'UNLOCKED') else 'rgba(52, 199, 89, 0.2)' }};
-                  --text-color: {{ 'rgb(255, 59, 48)' if is_state(config.entity, 'open') or is_state(config.entity, 'UNLOCKED') else 'rgb(52, 199, 89)' }};
+                  background: none; box-shadow: none; border: none; padding-top: 15px;
                 }
-          - type: template
-            entity: "[[sensor_prefix]]_lastrefresh"
-            icon: mdi:refresh
-            content: >
-              {{ relative_time(states['[[sensor_prefix]]_lastrefresh'].last_updated) }}
-            tap_action:
-              action: call-service
-              service: button.press
-              target:
-                entity_id: "[[button_prefix]]_request_refresh"
+                mushroom-state-icon {
+                  {{ 'animation: pulse 2s infinite;' if is_state(config.entity, 'on') else '' }}
+                }
+
+          # Rechts: Reichweiten (E und Sprit)
+          - type: custom:mushroom-entity-card
+            entity: "[[sensor_prefix]]_elveh"
+            name: Elektro
+            icon: mdi:ev-station
+            primary_info: state
+            secondary_info: name
+            layout: vertical
+            icon_color: green
+            tap_action: { action: none }
             card_mod:
               style: |
-                ha-card {
-                  --chip-background: rgba(var(--rgb-primary-text-color), 0.05);
-                }
+                ha-card { background: none; box-shadow: none; border: none; padding-top: 15px; }
+
+          - type: custom:mushroom-entity-card
+            entity: "[[sensor_prefix]]_fuel_range"
+            name: Benzin
+            icon: mdi:gas-station-outline
+            primary_info: state
+            secondary_info: name
+            layout: vertical
+            icon_color: blue
+            tap_action: { action: none }
+            card_mod:
+              style: |
+                ha-card { background: none; box-shadow: none; border: none; padding-top: 15px; }
+
+      # =================================================
+      # 3. BALKEN (Groß & Untereinander)
+      # =================================================
       - type: custom:bar-card
-        stack: horizontal
+        stack: vertical
+        columns: 1
         height: 40px
         decimal: 0
         positions:
           icon: inside
           name: inside
           value: inside
-        style: |
-          bar-card-card { margin: 10px 16px 16px 16px; }
-          bar-card-row { margin-bottom: 8px; }
-          bar-card-background { border-radius: 12px; }
-          bar-card-currentbar { border-radius: 12px; }
+        card_mod:
+          style: |
+            bar-card-card { margin: 10px 15px 15px 15px; }
+            bar-card-row { margin-bottom: 10px; }
+            bar-card-background { background: rgba(128,128,128,0.15); border-radius: 8px; }
+            bar-card-currentbar { border-radius: 8px; }
+
+            /* --- Hier beginnt die Magie --- */
+            bar-card-row:nth-of-type(1) ha-icon {
+              {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
+                animation: charge-pulse 1.5s infinite ease-in-out;
+                color: #00E676; /* Helles Neongrün während des Ladens */
+              {% endif %}
+            }
+
+            @keyframes charge-pulse {
+              0% { transform: scale(1); }
+              50% { transform: scale(1.4); } /* Icon wird 40% größer */
+              100% { transform: scale(1); }
+            }
         entities:
           - entity: "[[sensor_prefix]]_soc"
-            name: Akku
+            name: Akku Ladestand
             icon: mdi:battery-charging
-            color: "#4CAF50"
-            target: 100
+            severity:
+              - color: "F44336"
+                from: 0
+                to: 15
+              - color: "FF9800"
+                from: 16
+                to: 40
+              - color: "#4CAF50"
+                from: 41
+                to: 100
           - entity: "[[sensor_prefix]]_fuel"
-            name: Tank
+            name: Tankfüllung
             icon: mdi:gas-station
             severity:
               - color: "#F44336"
@@ -118,51 +258,12 @@ vehicle_card_template:
               - color: "#2196F3"
                 from: 41
                 to: 100
-      - type: horizontal-stack
-        cards:
-          - type: custom:mushroom-entity-card
-            entity: "[[sensor_prefix]]_elveh"
-            name: E-Reichweite
-            icon: mdi:ev-station
-            primary_info: state
-            secondary_info: name
-            layout: vertical
-            icon_color: green
-            tap_action: { action: none }
-          - type: custom:mushroom-entity-card
-            entity: "[[sensor_prefix]]_fuel_range"
-            name: Sprit-Reichweite
-            icon: mdi:gas-station-outline
-            primary_info: state
-            secondary_info: name
-            layout: vertical
-            icon_color: blue
-            tap_action: { action: none }
 
-      - type: custom:mushroom-entity-card
-        entity: "[[switch_prefix]]_ignition"
-        icon: mdi:engine
-        name: Fernstart / Klima
-        layout: horizontal
-        tap_action:
-          action: toggle
-        hold_action:
-          action: more-info
-        secondary_info: >
-          {% if is_state('[[sensor_prefix]]_remotestartstatus', 'Active') %}
-            Restzeit: {{ states('[[sensor_prefix]]_remotestartcountdown') }}
-          {% else %}
-            state
-          {% endif %}
-        card_mod:
-          style: |
-            ha-card {
-              background: {{ 'rgba(255, 152, 0, 0.1)' if is_state(config.entity, 'on') else '' }};
-            }
-            mushroom-state-icon {
-              {{ 'animation: pulse 2s infinite;' if is_state(config.entity, 'on') else '' }}
-            }
+      # =================================================
+      # 4. CONDITIONAL: GEPARKT vs FAHREN
+      # =================================================
 
+      # --- GEPARKT (Öl & Reifen) ---
       - type: conditional
         conditions:
           - entity: "[[sensor_prefix]]_ignitionstatus"
@@ -174,13 +275,16 @@ vehicle_card_template:
           cards:
             - type: custom:mushroom-entity-card
               entity: "[[sensor_prefix]]_oil"
-              name: Öl-Status
+              name: Öl-Zustand
               icon: mdi:oil
               primary_info: state
               secondary_info: name
               layout: horizontal
               icon_color: >
                 {% if states('[[sensor_prefix]]_oil') | float(0) < 20 %} red {% else %} green {% endif %}
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }
 
             - type: custom:mushroom-template-card
               entity: "[[sensor_prefix]]_tirepressure"
@@ -191,7 +295,20 @@ vehicle_card_template:
               layout: horizontal
               icon_color: >
                 {% if is_state(entity, 'NORMAL_OPERATION') %} green {% else %} red {% endif %}
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }
 
+            - type: custom:mushroom-template-card
+              entity: "[[sensor_prefix]]_odometer"
+              primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement')}}"
+              icon: mdi:counter
+              layout: horizontal
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }
+
+      # --- FAHREN (Live Daten) ---
       - type: conditional
         conditions:
           - entity: "[[sensor_prefix]]_ignitionstatus"
@@ -200,7 +317,10 @@ vehicle_card_template:
           type: custom:stack-in-card
           cards:
             - type: custom:mushroom-title-card
-              subtitle: "Live Daten"
+              subtitle: "Fahrdaten"
+              card_mod:
+                style: |
+                  ha-card { padding-bottom: 0px; padding-top: 0px; }
             - type: grid
               columns: 3
               square: false
@@ -213,6 +333,9 @@ vehicle_card_template:
                   primary_info: state
                   secondary_info: name
                   icon_color: red
+                  card_mod:
+                    style: |
+                      ha-card { background: none; box-shadow: none; border: none; }
                 - type: custom:mushroom-entity-card
                   entity: "[[sensor_prefix]]_enginespeed"
                   name: RPM
@@ -221,6 +344,9 @@ vehicle_card_template:
                   primary_info: state
                   secondary_info: name
                   icon_color: orange
+                  card_mod:
+                    style: |
+                      ha-card { background: none; box-shadow: none; border: none; }
                 - type: custom:mushroom-entity-card
                   entity: "[[sensor_prefix]]_gearleverposition"
                   name: Gang
@@ -229,3 +355,6 @@ vehicle_card_template:
                   primary_info: state
                   secondary_info: name
                   icon_color: purple
+                  card_mod:
+                    style: |
+                      ha-card { background: none; box-shadow: none; border: none; }
