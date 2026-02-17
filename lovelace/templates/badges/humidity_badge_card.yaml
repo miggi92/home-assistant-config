@@ -4,7 +4,7 @@ humidity_badge_template:
     type: custom:mushroom-template-badge
     icon: mdi:water-percent
     entity: "[[entity]]"
-    content: "{{states(entity) }} %"
+    content: "{{states(entity) | round(2) }} %"
     color: |-
       {% set hum = states(entity) %}
       {% if hum >= '60' or hum <= '40' %}

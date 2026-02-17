@@ -2,7 +2,7 @@
 temperature_badge_template:
   card:
     type: custom:mushroom-template-badge
-    content: "{{states(entity) }} °C"
+    content: "{{states(entity) | round(2) }} °C"
     icon: mdi:thermometer
     entity: "[[entity]]"
     color: |-
