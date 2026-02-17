@@ -20,33 +20,33 @@ sections:
     cards:
       - type: grid
         title: Essen
-        columns: 2
+        columns: 3
         cards:
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.work_meal_one
-              - camera: camera.work_meal_one
+              - image: image.work_meal_one
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.work_meal_one_two
-              - camera: camera.work_meal_one_two
+              - image: image.work_meal_one_two
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.work_meal_three
-              - camera: camera.work_meal_three
+              - image: image.work_meal_three
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.work_meal_four
-              - camera: camera.work_meal_four
+              - image: image.work_meal_four
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.work_meal_five
-              - camera: camera.work_meal_five
+              - image: image.work_meal_five
   - type: grid
     cards:
       - type: custom:decluttering-card

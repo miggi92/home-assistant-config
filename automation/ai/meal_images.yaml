@@ -28,6 +28,9 @@ triggers:
   - trigger: state
     entity_id: input_text.milo_kita_essen_freitag
     id: freitag
+  - trigger: state
+    entity_id: input_text.mittagessen
+    id: mittagessen
 conditions:
   - condition: template
     value_template: "{{  states(trigger.entity_id) != 'unavailable' }}"
@@ -45,6 +48,12 @@ actions:
         sequence:
           - variables:
               directory: kita_meals
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.id in ['frühstück', 'mittagessen', 'abendessen'] }}"
+        sequence:
+          - variables:
+              directory: meals
     default:
       - variables:
           directory: meals

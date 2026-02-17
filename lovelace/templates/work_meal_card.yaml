@@ -4,17 +4,16 @@ work_meal_card_template:
   default:
     - title: "Essensausgabe"
     - entity: input_text.work_meal_one
-    - camera: camera.work_meal_one
+    - image: image.work_meal_one
   card:
     type: custom:config-template-card
     entities:
       - "[[entity]]"
     card:
       type: picture-glance
-      camera_view: auto
       fit_mode: cover
       entities:
         - entity: "[[entity]]"
           show_state: false
-      camera_image: "[[camera]]"
+      image_entity: "[[image]]"
       title: "${states['[[entity]]'].state}"

@@ -24,17 +24,17 @@ sections:
             template: work_meal_card_template
             variables:
               - entity: input_text.milo_kita_essen_mittwoch
-              - camera: camera.kita_mittwoch
+              - image: image.kita_mittwoch
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.milo_kita_essen_donnerstag
-              - camera: camera.kita_donnerstag
+              - image: image.kita_donnerstag
           - type: custom:decluttering-card
             template: work_meal_card_template
             variables:
               - entity: input_text.milo_kita_essen_freitag
-              - camera: camera.kita_freitag
+              - image: image.kita_freitag
   - type: grid
     cards: []
   - type: grid
