@@ -5,61 +5,40 @@ description: ""
 id: ffe67e29-366b-4661-a0b0-bfea95d4468e
 triggers:
   - trigger: state
-    entity_id: input_text.work_meal_one
-    id: one
-  - trigger: state
-    entity_id: input_text.work_meal_one_two
-    id: one_two
-  - trigger: state
-    entity_id: input_text.work_meal_three
-    id: three
-  - trigger: state
-    entity_id: input_text.work_meal_four
-    id: four
-  - trigger: state
-    entity_id: input_text.work_meal_five
-    id: five
-  - trigger: state
-    entity_id: input_text.milo_kita_essen_mittwoch
-    id: mittwoch
-  - trigger: state
-    entity_id: input_text.milo_kita_essen_donnerstag
-    id: donnerstag
-  - trigger: state
-    entity_id: input_text.milo_kita_essen_freitag
-    id: freitag
-  - trigger: state
-    entity_id: input_text.mittagessen
-    id: mittagessen
+    entity_id:
+      - input_text.work_meal_one
+      - input_text.work_meal_one_two
+      - input_text.work_meal_three
+      - input_text.work_meal_four
+      - input_text.work_meal_five
+      - input_text.milo_kita_essen_mittwoch
+      - input_text.milo_kita_essen_donnerstag
+      - input_text.milo_kita_essen_freitag
+      - input_text.mittagessen_montag
+      - input_text.mittagessen_dienstag
+      - input_text.mittagessen_mittwoch
+      - input_text.mittagessen_donnerstag
+      - input_text.mittagessen_freitag
+      - input_text.mittagessen_samstag
+      - input_text.mittagessen_sonntag
 conditions:
   - condition: template
     value_template: "{{  states(trigger.entity_id) != 'unavailable' }}"
 actions:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ trigger.id in ['one', 'one_two', 'three', 'four', 'five'] }}"
-        sequence:
-          - variables:
-              directory: work_meals
-      - conditions:
-          - condition: template
-            value_template: "{{ trigger.id in ['mittwoch', 'donnerstag', 'freitag'] }}"
-        sequence:
-          - variables:
-              directory: kita_meals
-      - conditions:
-          - condition: template
-            value_template: "{{ trigger.id in ['frühstück', 'mittagessen', 'abendessen'] }}"
-        sequence:
-          - variables:
-              directory: meals
-    default:
-      - variables:
-          directory: meals
+  - variables:
+      directory: >
+        {% set eid = trigger.entity_id %}
+        {% if 'work' in eid %}
+          work_meals
+        {% elif 'kita' in eid %}
+          kita_meals
+        {% else %}
+          meals
+        {% endif %}
+      clean_name: "{{ trigger.entity_id.split('.')[1] }}"
   - action: ai_task.generate_image
     data:
-      task_name: "Meal {{ trigger.id }}"
+      task_name: "Meal {{ clean_name }}"
       instructions: |-
         Eine Nahaufnahme (Close-Up shot) in hoher Qualität von:
         {{ trigger.to_state.state }}
@@ -75,6 +54,6 @@ actions:
     data:
       overwrite: true
       url: "http://localhost:8123{{ meal.url }}"
-      filename: "{{ trigger.id }}.png"
+      filename: "{{ clean_name }}.png"
       subdir: "{{ directory }}"
 mode: parallel
