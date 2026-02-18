@@ -23,7 +23,8 @@ triggers:
       - input_text.mittagessen_sonntag
 conditions:
   - condition: template
-    value_template: "{{  states(trigger.entity_id) != 'unavailable' }}"
+    value_template: >
+      {{ states(trigger.entity_id) not in ['unavailable', 'unknown', ''] }}
 actions:
   - variables:
       directory: >
@@ -56,4 +57,9 @@ actions:
       url: "http://localhost:8123{{ meal.url }}"
       filename: "{{ clean_name }}.png"
       subdir: "{{ directory }}"
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.meal_image_cache_buster
+    data:
+      value: "{{ as_timestamp(now()) }}"
 mode: parallel

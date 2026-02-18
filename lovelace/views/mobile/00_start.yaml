@@ -182,6 +182,48 @@ sections:
           - path: birthday
           - icon: mdi:gift
           - path2: special
+      - type: custom:auto-entities
+        card:
+          type: grid
+          columns: 2
+          square: false
+        card_param: cards
+        filter:
+          template: >
+            {% set ns = namespace(cards=[]) %}
+            {% set sources = states.image %}
+
+            {% for i in sources %}
+              {% if ('meal' in i.entity_id or 'kita' in i.entity_id or 'mittag' in i.entity_id)
+                    and i.state not in ['unavailable', 'unknown'] %}
+                {% set text_entity = i.entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
+                {% if 'work' in i.entity_id %}
+                    {% set my_icon = 'mdi:briefcase' %}
+                {% elif 'kita' in i.entity_id %}
+                    {% set my_icon = 'mdi:baby-bottle' %}
+                {% else %}
+                    {% set my_icon = 'mdi:food' %}
+                {% endif %}
+                {% set card_config = {
+                    "type": "picture-glance",
+                    "title": states(text_entity),
+                    "image_entity": i.entity_id,
+                    "fit_mode": "cover",
+                    "entities": [
+                      {
+                        "entity": text_entity,
+                        "name": "Gericht",
+                        "icon": my_icon,
+                        "show_state": "false"
+                      }
+                    ],
+                  }
+                %}
+                {% set ns.cards = ns.cards + [card_config] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.cards }}
+
   - type: grid
     cards:
       - type: grid

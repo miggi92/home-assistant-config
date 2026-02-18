@@ -20,7 +20,7 @@ sections:
     cards:
       - type: grid
         title: Essen
-        columns: 3
+        columns: 2
         cards:
           - type: custom:decluttering-card
             template: work_meal_card_template
