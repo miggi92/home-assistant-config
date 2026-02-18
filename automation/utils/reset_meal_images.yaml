@@ -1,0 +1,51 @@
+---
+#
+alias: "Reset meal images"
+id: c1e734f0-1039-42d0-94ea-ff05029f7f27
+mode: single
+trigger:
+  - trigger: time
+    at: "23:00:00"
+
+condition: []
+action:
+  - variables:
+      entities_to_clear: >
+        {% set prefixes = ['input_text.frühstück_', 'input_text.mittagessen_', 'input_text.abendessen_', 'input_text.milo_kita_essen_'] %}
+        {% set days = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
+        {% set today = days[now().weekday()] %}
+        {% set ns = namespace(found=[]) %}
+
+        {% for p in prefixes %}
+          {% set candidate = p ~ today %}
+          {# Prüfung: Existiert der Sensor im System? #}
+          {% if states[candidate] != None %}
+            {% set ns.found = ns.found + [candidate] %}
+          {% endif %}
+        {% endfor %}
+
+        {{ ns.found }}
+  - if:
+      - condition: state
+        entity_id: schedule.buro_tage
+        state: "on"
+    then:
+      - action: input_text.set_value
+        target:
+          entity_id:
+            - input_text.work_meal_one
+            - input_text.work_meal_one_two
+            - input_text.work_meal_three
+            - input_text.work_meal_four
+            - input_text.work_meal_five
+        data:
+          value: ""
+  - if:
+      - condition: template
+        value_template: "{{ entities_to_clear | count > 0 }}"
+    then:
+      - action: input_text.set_value
+        target:
+          entity_id: "{{ entities_to_clear }}"
+        data:
+          value: ""
