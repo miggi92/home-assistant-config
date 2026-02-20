@@ -6,7 +6,14 @@ icon: mdi:garage
 subview: true
 type: sections
 max_columns: 3
-badges: []
+badges:
+  - type: custom:mushroom-template-badge
+    entity: input_number.last_ev_charging_price
+    icon: "{{ state_attr(entity, 'icon') }}"
+    content: "{{ states(entity) }} {{state_attr(entity, 'unit_of_measurement')}}"
+    label: "{{ state_attr(entity, 'friendly_name') }}"
+    tap_action:
+      action: more-info
 sections:
   - type: grid
     cards:
@@ -19,6 +26,7 @@ sections:
           - tracker_entity: device_tracker.fordpass_tourneo_tracker
           - button_prefix: button.fordpass_tourneo
           - switch_prefix: switch.fordpass_tourneo
+          - app_path: "fordpass://"
   - type: grid
     cards:
       - type: conditional
@@ -26,10 +34,12 @@ sections:
           - entity: device_tracker.fordpass_tourneo_tracker
             state_not: "home"
         card:
-          type: map
-          entities:
-            - entity: device_tracker.fordpass_tourneo_tracker
-          aspect_ratio: "16:9"
-          default_zoom: 14
-          hours_to_show: 12
-          theme_mode: auto
+          type: custom:auto-entities
+          card:
+            type: map
+            theme_mode: auto
+            hours_to_show: 12
+          filter:
+            include:
+              - domain: zone
+              - entity_id: device_tracker.fordpass_tourneo_tracker

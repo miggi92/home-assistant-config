@@ -26,7 +26,8 @@ vehicle_card_template:
             image: "[[image_path]]"
             fit_mode: cover
             tap_action:
-              action: none
+              action: url
+              url_path: "[[app_path]]"
             card_mod:
               style: |
                 ha-card { border-radius: 12px; transition: filter 0.5s; }
@@ -127,7 +128,30 @@ vehicle_card_template:
                       --chip-background: {{ 'rgba(244, 67, 54, 0.9)' if is_state(config.entity, 'open') or is_state(config.entity, 'UNLOCKED') else 'rgba(76, 175, 80, 0.9)' }} !important;
                       --color: white;
                     }
-
+              # --- Location / Zone Chip ---
+              - type: conditional
+                conditions:
+                  - entity: "[[tracker_entity]]"
+                    state_not: "home"
+                chip:
+                  type: template
+                  entity: "[[tracker_entity]]"
+                  icon: >
+                    {% set current_zone = states(entity) %}
+                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') %}
+                    {{ state_attr(zone_entity, 'icon') | default('mdi:road-variant', true) }}
+                  content: >
+                    {% set current_zone = states(entity) %}
+                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') %}
+                    {{ state_attr(zone_entity, 'friendly_name') | default('Abwesend', true) }}
+                  tap_action:
+                    action: more-info
+                  card_mod:
+                    style: |
+                      ha-card {
+                        --chip-background: {{ 'rgba(128, 128, 128, 0.8)' if is_state(config.entity, 'not_home') else 'rgba(33, 150, 243, 0.8)' }} !important;
+                        --text-color: white;
+                      }
               # --- Refresh Button ---
               - type: template
                 entity: "[[sensor_prefix]]_lastrefresh"
@@ -270,7 +294,7 @@ vehicle_card_template:
             state: "OFF"
         card:
           type: grid
-          columns: 2
+          columns: 3
           square: false
           cards:
             - type: custom:mushroom-entity-card
@@ -279,7 +303,7 @@ vehicle_card_template:
               icon: mdi:oil
               primary_info: state
               secondary_info: name
-              layout: horizontal
+              layout: vertical
               icon_color: >
                 {% if states('[[sensor_prefix]]_oil') | float(0) < 20 %} red {% else %} green {% endif %}
               card_mod:
@@ -292,7 +316,7 @@ vehicle_card_template:
                 {% if is_state(entity, 'NORMAL_OPERATION') %} OK {% else %} Prüfen! {% endif %}
               secondary: Reifendruck
               icon: mdi:car-tire-alert
-              layout: horizontal
+              layout: vertical
               icon_color: >
                 {% if is_state(entity, 'NORMAL_OPERATION') %} green {% else %} red {% endif %}
               card_mod:
@@ -301,9 +325,11 @@ vehicle_card_template:
 
             - type: custom:mushroom-template-card
               entity: "[[sensor_prefix]]_odometer"
-              primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement')}}"
+              primary: >
+                {% set distance = states(entity) | float(0) %}
+                {{ "{:,.0f}".format(distance) | replace(',', '.') }} {{ state_attr(entity, 'unit_of_measurement') }}
               icon: mdi:counter
-              layout: horizontal
+              layout: vertical
               card_mod:
                 style: |
                   ha-card { background: none; box-shadow: none; border: none; }

@@ -1,0 +1,53 @@
+---
+# Calculate ev prices
+# sensor.fordpass_tourneo_energytransferlogentry
+id: 93113720-b24b-4681-a767-0d7e06f62cae
+alias: calcEVPrices
+description: Elektroauto preise berechnen
+trigger:
+  - platform: state
+    entity_id: sensor.fordpass_tourneo_energytransferlogentry
+condition: []
+action:
+  - variables:
+      entity: "{{ trigger.entity_id }}"
+      charging_lat: "{{ state_attr(entity, 'location')['latitude'] }}"
+      charging_lon: "{{ state_attr(entity, 'location')['longitude'] }}"
+      charging_zone: >
+        {% set ns = namespace(active='not_home') %}
+
+        {% if charging_lat != None and charging_lon != None %}
+          {% for z in states.zone %}
+            {% set dist = distance(charging_lat, charging_lon, z.entity_id) %}
+            {% set radius_km = state_attr(z.entity_id, 'radius') | float(0) / 1000 %}
+            {% if dist is not none and dist <= radius_km %}
+              {% set ns.active = z.entity_id %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {{ ns.active }}
+      energy_consumed: "{{ state_attr(entity, 'energyConsumed') | float(0) }}"
+      plugged_in_time: "{{ state_attr(entity, 'plugDetails')['totalPluggedInTime'] | float(0) }}"
+      kw_price_rate: 0.0
+      block_free_time: 0
+      blocking_price_rate: 0.0
+      blocking_time: 0
+  - if:
+      - condition: template
+        value_template: "{{  charging_zone == 'zone.work_miguel' }}"
+    then:
+      - variables:
+          kw_price: 0.30
+          block_free_time: "{{( 240 *60 ) | float(0) }}"
+          blocking_price: 0.10
+  - variables:
+      blocking_time: "{{ ( [plugged_in_time - block_free_time, 0] | max | float ) / 60 }}"
+      charging_price: "{{ ( kw_price * energy_consumed ) | round(2) }}"
+      blocking_price: "{{ ( blocking_time * blocking_price ) | round(2) }}"
+      total_price: "{{ ( charging_price + blocking_price ) | round(2) }}"
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.last_ev_charging_price
+    data:
+      value: "{{ total_price }}"
