@@ -41,56 +41,63 @@ sections:
   - type: grid
     cards:
       - type: grid
+        columns: 1
         square: false
         cards:
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.lenz_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.lenz_super
-              name: Lenz
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.agip_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.agip_super
-              name: AGIP
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.jet_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.jet_super
-              name: Jet
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.shell_nh_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.shell_nh_super
-              name: Shell NH
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.kaufland_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.kaufland_super
-              name: Kaufland
-          - type: conditional
-            conditions:
-              - entity: binary_sensor.shell_ns_status
-                state: "on"
-            card:
-              type: custom:mushroom-entity-card
-              entity: sensor.shell_ns_super
-              name: Shell NS
+          - type: custom:mushroom-entity-card
+            entity: sensor.billigsten_tankstellen
+          - type: grid
+            square: false
+            cards:
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.lenz_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.lenz_super
+                  name: Lenz
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.agip_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.agip_super
+                  name: AGIP
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.jet_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.jet_super
+                  name: Jet
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.shell_nh_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.shell_nh_super
+                  name: Shell NH
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.kaufland_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.kaufland_super
+                  name: Kaufland
+              - type: conditional
+                conditions:
+                  - entity: binary_sensor.shell_ns_status
+                    state: "on"
+                card:
+                  type: custom:mushroom-entity-card
+                  entity: sensor.shell_ns_super
+                  name: Shell NS
+
   - type: grid
     cards:
       - type: custom:mini-graph-card
