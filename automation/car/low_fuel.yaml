@@ -1,0 +1,36 @@
+---
+# Low fuel
+id: 53ee55a7-551b-4300-b476-02d6ee103835
+alias: lowFuel
+description: Benzin ist fast leer.
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.fordpass_tourneo_fuel
+    below: 15
+    id: ford
+
+condition: []
+action:
+  - variables:
+      distance: 0
+      cheapest_stations_text: "{{ states('sensor.billigsten_tankstellen') }}"
+
+  - if:
+      - condition: template
+        value_template: "{{ trigger.id == 'ford' }}"
+    then:
+      - variables:
+          distance: "{{  states('sensor.ford_tourneo_custom_gesamtreichweite') }}"
+  - service: script.notify_engine
+    data:
+      title: |
+        Auto muss getankt werden
+      value1: >-
+        Tank vom auto ist fast leer. Reichweite noch {{ distance }} km.
+        Bitte tanken!
+
+        Günstigste Tankstellen aktuell:
+        {{ cheapest_stations_text }}
+      who: "home"
+      tag_id: "information"
+      group: "Car"
