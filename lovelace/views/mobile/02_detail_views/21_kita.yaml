@@ -19,6 +19,7 @@ sections:
       - type: grid
         title: Essen
         columns: 2
+        square: false
         cards:
           - type: custom:decluttering-card
             template: work_meal_card_template

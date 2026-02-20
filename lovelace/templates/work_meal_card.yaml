@@ -2,18 +2,48 @@
 # Work meal card
 work_meal_card_template:
   default:
-    - title: "Essensausgabe"
     - entity: input_text.work_meal_one
     - image: image.work_meal_one
   card:
-    type: custom:config-template-card
-    entities:
-      - "[[entity]]"
-    card:
-      type: picture-glance
-      fit_mode: cover
-      entities:
-        - entity: "[[entity]]"
-          show_state: false
-      image_entity: "[[image]]"
-      title: "${states['[[entity]]'].state}"
+    type: custom:stack-in-card
+    mode: vertical
+    cards:
+      # =================================================
+      # 1. BILD VERFÜGBAR (Zeigt Picture-Glance)
+      # =================================================
+      - type: conditional
+        conditions:
+          - entity: "[[image]]"
+            state_not: "unknown"
+          - entity: "[[image]]"
+            state_not: "unavailable"
+        card:
+          type: custom:config-template-card
+          entities:
+            - "[[entity]]"
+          card:
+            type: picture-glance
+            fit_mode: cover
+            entities:
+              - entity: "[[entity]]"
+                show_state: false
+            image_entity: "[[image]]"
+            title: "${states['[[entity]]'].state}"
+
+      # =================================================
+      # 2. BILD FEHLT (Zeigt nur Text/Input)
+      # =================================================
+      - type: conditional
+        conditions:
+          - entity: "[[image]]"
+            state:
+              - "unknown"
+              - "unavailable"
+        card:
+          type: custom:mushroom-entity-card
+          entity: "[[entity]]"
+          icon: mdi:silverware-fork-knife
+          layout: vertical
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }
