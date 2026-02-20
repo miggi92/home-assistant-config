@@ -1,6 +1,5 @@
 ---
 # Calculate ev prices
-# sensor.fordpass_tourneo_energytransferlogentry
 id: 93113720-b24b-4681-a767-0d7e06f62cae
 alias: calcEVPrices
 description: Elektroauto preise berechnen
@@ -11,11 +10,13 @@ condition: []
 action:
   - variables:
       entity: "{{ trigger.entity_id }}"
+      charger_network: "{{ state_attr(entity, 'location')['network'] | default('', true) | lower }}"
       charging_lat: "{{ state_attr(entity, 'location')['latitude'] }}"
       charging_lon: "{{ state_attr(entity, 'location')['longitude'] }}"
+
+      # Zone ermitteln
       charging_zone: >
         {% set ns = namespace(active='not_home') %}
-
         {% if charging_lat != None and charging_lon != None %}
           {% for z in states.zone %}
             {% set dist = distance(charging_lat, charging_lon, z.entity_id) %}
@@ -25,27 +26,45 @@ action:
             {% endif %}
           {% endfor %}
         {% endif %}
-
         {{ ns.active }}
+
+      # Rohdaten (in Sekunden und kWh)
       energy_consumed: "{{ state_attr(entity, 'energyConsumed') | float(0) }}"
-      plugged_in_time: "{{ state_attr(entity, 'plugDetails')['totalPluggedInTime'] | float(0) }}"
-      kw_price_rate: 0.0
-      block_free_time: 0
-      blocking_price_rate: 0.0
-      blocking_time: 0
-  - if:
-      - condition: template
-        value_template: "{{  charging_zone == 'zone.work_miguel' }}"
-    then:
-      - variables:
-          kw_price: 0.30
-          block_free_time: "{{( 240 *60 ) | float(0) }}"
-          blocking_price: 0.10
+      plugged_in_time_sec: "{{ state_attr(entity, 'plugDetails')['totalPluggedInTime'] | float(0) }}"
+      energy_transmission_time_sec: "{{ state_attr(entity, 'energyTransferDuration')['totalTime'] | float(0) }}"
+
+      # --- TARIF-LOGIK ---
+      kw_price: >
+        {% if charging_zone == 'zone.work_miguel' %} 0.30
+        {% elif charger_network == 'smatrics' %} 0.65
+        {% elif charger_network == 'bosch' %} 0.50
+        {% elif charger_network == 'enbw' %} 0.70
+        {% else %} 0.0 {% endif %}
+
+      block_free_time_sec: >
+        {% if charging_zone == 'zone.work_miguel' %} {{ 240 * 60 }}
+        {% else %} 0 {% endif %}
+
+      blocking_price_per_min: >
+        {% if charging_zone == 'zone.work_miguel' %} 0.10
+        {% else %} 0.0 {% endif %}
+
+      idle_price_per_min: >
+        {% if charger_network in ['smatrics', 'enbw'] %} 0.12
+        {% else %} 0.0 {% endif %}
+
   - variables:
-      blocking_time: "{{ ( [plugged_in_time - block_free_time, 0] | max | float ) / 60 }}"
-      charging_price: "{{ ( kw_price * energy_consumed ) | round(2) }}"
-      blocking_price: "{{ ( blocking_time * blocking_price ) | round(2) }}"
-      total_price: "{{ ( charging_price + blocking_price ) | round(2) }}"
+      # --- ZEIT-BERECHNUNG (in Minuten) ---
+      blocking_time_min: "{{ ([plugged_in_time_sec - block_free_time_sec, 0] | max / 60) | float }}"
+      idle_time_min: "{{ ([plugged_in_time_sec - energy_transmission_time_sec, 0] | max / 60) | float }}"
+
+      # --- PREIS-BERECHNUNG ---
+      charging_total: "{{ (kw_price | float(0) * energy_consumed) | round(2) }}"
+      blocking_total: "{{ (blocking_time_min * blocking_price_per_min | float(0)) | round(2) }}"
+      idle_total: "{{ (idle_time_min * idle_price_per_min | float(0)) | round(2) }}"
+
+      total_price: "{{ (charging_total + blocking_total + idle_total) | round(2) }}"
+
   - action: input_number.set_value
     target:
       entity_id: input_number.last_ev_charging_price
