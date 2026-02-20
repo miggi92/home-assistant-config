@@ -11,7 +11,7 @@ condition: []
 action:
   - variables:
       entities_to_clear: >
-        {% set prefixes = ['input_text.frühstück_', 'input_text.mittagessen_', 'input_text.abendessen_', 'input_text.milo_kita_essen_'] %}
+        {% set prefixes = ['input_text.fruhstuck_', 'input_text.mittagessen_', 'input_text.abendessen_', 'input_text.milo_kita_essen_'] %}
         {% set days = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
         {% set today = days[now().weekday()] %}
         {% set ns = namespace(found=[]) %}
