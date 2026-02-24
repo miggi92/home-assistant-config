@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@nuxt/content": "3.11.2",
-    "@nuxt/eslint": "1.15.1",
+    "@nuxt/eslint": "1.15.2",
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "4.4.0",
     "better-sqlite3": "^12.5.0",
