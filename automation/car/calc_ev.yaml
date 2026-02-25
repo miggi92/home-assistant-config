@@ -36,9 +36,10 @@ action:
       # --- TARIF-LOGIK ---
       kw_price: >
         {% if charging_zone == 'zone.work_miguel' %} 0.30
-        {% elif charger_network == 'smatrics' %} 0.65
+        {% elif charger_network == 'smatrics' or charger_network == 'stadtwerke heilbronn' %} 0.65
         {% elif charger_network == 'bosch' %} 0.50
         {% elif charger_network == 'enbw' %} 0.70
+        {% elif charger_network == 'eze network' %} 0.39
         {% else %} 0.0 {% endif %}
 
       block_free_time_sec: >
@@ -47,6 +48,7 @@ action:
 
       blocking_price_per_min: >
         {% if charging_zone == 'zone.work_miguel' %} 0.10
+        {% elif charger_network == 'eze network' %} 0.03
         {% else %} 0.0 {% endif %}
 
       idle_price_per_min: >
