@@ -6,8 +6,9 @@ stats_text=$1
 readme_file="README.md"
 tmp_file="README_tmp.md"
 
-line_start=$(grep -n "<!-- Entities Stats - Start -->" README.md | cut -d: -f1)
-line_end=$(grep -n "<!-- Entities Stats - End -->" README.md | cut -d: -f1)
+# Zeilennummern finden
+line_start=$(grep -n "<!-- Entities Stats - Start -->" "$readme_file" | cut -d: -f1)
+line_end=$(grep -n "<!-- Entities Stats - End -->" "$readme_file" | cut -d: -f1)
 
 # Prüfen ob Marker existieren
 if [ -z "$line_start" ] || [ -z "$line_end" ]; then
