@@ -13,7 +13,7 @@ action:
       markdown_content: >
         {% set icons = {
           'air_quality': '🌬️', 'alarm_control_panels': '🚨', 'areas': '🏘️', 'automations': '🤖',
-          'binary_sensors': 0️⃣1️⃣, 'buttons': '🔘', 'calendars': '🗓️', 'cameras': '📷',
+          'binary_sensors': '🛡️', 'buttons': '🔘', 'calendars': '🗓️', 'cameras': '📷',
           'climate': '🌡️', 'covers': '🏁', 'custom_integrations': '🛠️', 'dates': '📅',
           'datetimes': '⏰', 'device_trackers': '📍', 'devices': '📱', 'entities': '🧩',
           'fans': '🚁', 'humidifiers': '💧', 'images': '🖼️', 'input_booleans': '☑️',
@@ -31,5 +31,5 @@ action:
           | sort(attribute='name') -%}
         {%- for s in sensors -%}
           {%- set key = s.entity_id.split('.')[1] -%}
-          - {{ icons.get(key, '🔹') }} {{ s.name | capitalize }}: {{ s.state }}
+          - {{ icons.get(key, '🔹') }} {{ s.name | replace('Spook ', '') | capitalize }}: {{ s.state }}
         {% endfor %}
