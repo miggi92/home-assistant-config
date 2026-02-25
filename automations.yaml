@@ -1,55 +1,29 @@
-- id: '1690789658458'
+- id: "1690789658458"
   alias: Android Auto Miguel
-  description: ''
+  description: ""
   trigger:
-  - trigger: state
-    entity_id:
-    - binary_sensor.pixel_9_pro_android_auto
-    to: 'on'
+    - trigger: state
+      entity_id:
+        - binary_sensor.pixel_9_pro_android_auto
+      to: "on"
   condition: []
   action:
-  - action: notify.mobile_app_pixel_9_pro
-    data:
-      title: Connected 2 car
-      message: This device is connected to android auto.
+    - action: notify.mobile_app_pixel_9_pro
       data:
-        car_ui: true
-        notification_icon: mdi:car
-        channel: Auto
-        importance: high
+        title: Connected 2 car
+        message: This device is connected to android auto.
+        data:
+          car_ui: true
+          notification_icon: mdi:car
+          channel: Auto
+          importance: high
   mode: single
-- id: '1708473160035'
-  alias: 'Battery replacement '
-  description: ''
+- id: "1708473160035"
+  alias: "Battery replacement "
+  description: ""
   use_blueprint:
     path: andrew-codechimp/battery_notes_battery_replaced.yaml
-- id: '1728850959105'
-  alias: Reset Internet
-  description: Steckdose an und ausschalten damit die Verbindung neu aufgebaut wird.
-  triggers:
-  - trigger: state
-    entity_id:
-    - sensor.fritz_repeater_1200_ax_letzter_neustart
-    to: unavailable
-  conditions: []
-  actions:
-  - action: switch.turn_off
-    metadata: {}
-    data: {}
-    target:
-      entity_id: switch.tabletsteckdose
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 15
-      milliseconds: 0
-  - action: switch.turn_on
-    metadata: {}
-    data: {}
-    target:
-      entity_id: switch.tabletsteckdose
-  mode: single
-- id: '1766058639894'
+- id: "1766058639894"
   alias: Jukebox Steuerung
   description: Steuerung einer Jukebox über Music Assistant und einen Medienplayer
   use_blueprint:
