@@ -6,77 +6,43 @@ description: "Notify about the work meals"
 trigger:
   - trigger: time
     at: "11:00:00"
+    alias: "Trigger at 11:00 AM"
 condition:
   - condition: state
     entity_id: binary_sensor.workday_sensor
     state: "on"
+    alias: "Check if it is a workday"
   - condition: state
     entity_id: schedule.buro_tage
     state: "on"
+    alias: "Check if office schedule is active"
   - condition: not
     conditions:
       - condition: state
         entity_id: person.miguel
         state: "home"
+    alias: "Ensure Miguel is not at home"
 action:
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photo:
-        path: "/config/www/downloaded/work_meals/one.png"
-        caption: "{{ states('input_text.work_meal_one') }}"
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photo:
-        path: "/config/www/downloaded/work_meals/one_two.png"
-        caption: "{{ states('input_text.work_meal_one_two') }}"
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photo:
-        path: "/config/www/downloaded/work_meals/three.png"
-        caption: "{{ states('input_text.work_meal_three') }}"
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photo:
-        path: "/config/www/downloaded/work_meals/four.png"
-        caption: "{{ states('input_text.work_meal_four') }}"
-  - action: script.notify_engine
-    data:
-      title: |
-        🍴 Heutiges Essen im Geschäft 🍽️
-      value1: |
-        Heute im Geschäft gibt es folgende Gerichte:
-      who: "home"
-      tag_id: "information"
-      group: "Work"
-      photo:
-        path: "/config/www/downloaded/work_meals/five.png"
-        caption: "{{ states('input_text.work_meal_five') }}"
+  - alias: "Iterate through all work meal items"
+    repeat:
+      for_each:
+        - "one"
+        - "one_two"
+        - "three"
+        - "four"
+        - "five"
+      sequence:
+        - action: script.notify_engine
+          alias: "Send notification for current meal"
+          data:
+            title: |
+              🍴 Heutiges Essen im Geschäft 🍽️
+            value1: |
+              Heute im Geschäft gibt es folgende Gerichte:
+            who: "home"
+            tag_id: "information"
+            group: "Work"
+            photo:
+              path: "/config/www/downloaded/work_meals/{{ repeat.item }}.png"
+              caption: "{{ states('input_text.work_meal_' ~ repeat.item) }}"
 mode: single
