@@ -31,5 +31,5 @@ action:
           | sort(attribute='name') -%}
         {%- for s in sensors -%}
           {%- set key = s.entity_id.split('.')[1] -%}
-          - {{ icons.get(key, '🔹') }} {{ s.name | replace('Home Assistant ', '') | capitalize }}: {{ s.state }}
+          - {{ icons.get(key, '🔹') }} {{ s.name | replace('Home Assistant ', '') }}: {{ s.state }}
         {% endfor %}
