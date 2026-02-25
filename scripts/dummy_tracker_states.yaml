@@ -1,55 +1,38 @@
 ---
 # Dummy Tracker states
 dummy_tracker_states:
+  alias: "Update all dummy trackers"
   sequence:
-    - if:
-        - condition: state
-          entity_id: input_boolean.milo_home
-          state: "on"
-      then:
-        - action: device_tracker.see
-          data:
-            dev_id: milo_dummy_tracker
-            location_name: home
-            gps:
-              - !secret home_lat
-              - !secret home_long
-      else:
-        - action: device_tracker.see
-          data:
-            dev_id: milo_dummy_tracker
-            location_name: not_home
-    - if:
-        - condition: state
-          entity_id: input_boolean.maja_home
-          state: "on"
-      then:
-        - action: device_tracker.see
-          data:
-            dev_id: maja_dummy_tracker
-            location_name: home
-            gps:
-              - !secret home_lat
-              - !secret home_long
-      else:
-        - action: device_tracker.see
-          data:
-            dev_id: maja_dummy_tracker
-            location_name: not_home
-    - if:
-        - condition: state
-          entity_id: input_boolean.finn_home
-          state: "on"
-      then:
-        - action: device_tracker.see
-          data:
-            dev_id: finn_dummy_tracker
-            location_name: home
-            gps:
-              - !secret home_lat
-              - !secret home_long
-      else:
-        - action: device_tracker.see
-          data:
-            dev_id: finn_dummy_tracker
-            location_name: not_home
+    - repeat:
+        for_each:
+          - person_id: "milo"
+            select_entity: "input_select.milo_person_sync"
+          - person_id: "maja"
+            select_entity: "input_select.maja_person_sync"
+          - person_id: "finn"
+            select_entity: "input_select.finn_unterwegs"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ states(repeat.item.select_entity) != 'alleine' }}"
+                alias: "Proceed only if person is not alone"
+            then:
+              - if:
+                  - condition: template
+                    value_template: "{{ is_state('input_boolean.' ~ repeat.item.person_id ~ '_home', 'on') }}"
+                    alias: "Check if person is home"
+                then:
+                  - action: device_tracker.see
+                    alias: "Set tracker to home with coordinates"
+                    data:
+                      dev_id: "{{ repeat.item.person_id }}_dummy_tracker"
+                      location_name: "home"
+                      gps:
+                        - !secret home_lat
+                        - !secret home_long
+                else:
+                  - action: device_tracker.see
+                    alias: "Set tracker to not home"
+                    data:
+                      dev_id: "{{ repeat.item.person_id }}_dummy_tracker"
+                      location_name: "not_home"
