@@ -132,6 +132,7 @@ badges:
 
 sections:
   - type: grid
+    square: false
     cards:
       - !include ../../cards/nav-bar.yaml
       - !include ../../cards/residents.yaml
@@ -166,6 +167,7 @@ sections:
             action: navigate
             navigation_path: dwd
   - type: grid
+    square: false
     cards:
       - type: custom:decluttering-card
         template: anniversary_template
@@ -225,6 +227,7 @@ sections:
             {{ ns.cards }}
 
   - type: grid
+    square: false
     cards:
       - type: grid
         square: false
