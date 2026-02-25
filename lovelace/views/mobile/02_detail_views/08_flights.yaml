@@ -15,6 +15,7 @@ sections:
   - type: grid
     column_span: 2
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: entities
         entities:
           - entity: sensor.flightradar24_current_in_area
