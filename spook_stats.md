@@ -1,0 +1,4 @@
+- Covers: 10
+- Lights: 25
+- Automations: 50
+- Switches: 5
