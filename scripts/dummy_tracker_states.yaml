@@ -12,27 +12,41 @@ dummy_tracker_states:
           - person_id: "finn"
             select_entity: "input_select.finn_unterwegs"
         sequence:
-          - if:
-              - condition: template
-                value_template: "{{ states(repeat.item.select_entity) != 'alleine' }}"
-                alias: "Proceed only if person is not alone"
-            then:
-              - if:
+          - choose:
+              - alias: "Handle person home"
+                conditions:
                   - condition: template
                     value_template: "{{ is_state('input_boolean.' ~ repeat.item.person_id ~ '_home', 'on') }}"
-                    alias: "Check if person is home"
-                then:
+                sequence:
                   - action: device_tracker.see
-                    alias: "Set tracker to home with coordinates"
+                    alias: "Set tracker to home"
                     data:
                       dev_id: "{{ repeat.item.person_id }}_dummy_tracker"
                       location_name: "home"
                       gps:
                         - !secret home_lat
                         - !secret home_long
-                else:
+              - alias: "Handle person alone while being home"
+                conditions:
+                  - condition: template
+                    value_template: "{{ is_state(repeat.item.select_entity, 'alleine') }}"
+                  - condition: template
+                    value_template: "{{ is_state('device_tracker.' ~ repeat.item.person_id ~ '_dummy_tracker', 'home') }}"
+                sequence:
                   - action: device_tracker.see
-                    alias: "Set tracker to not home"
+                    alias: "Force not_home if alone and previously home"
+                    data:
+                      dev_id: "{{ repeat.item.person_id }}_dummy_tracker"
+                      location_name: "not_home"
+              - alias: "Handle person not home and not alone"
+                conditions:
+                  - condition: template
+                    value_template: "{{ is_state('input_boolean.' ~ repeat.item.person_id ~ '_home', 'off') }}"
+                  - condition: template
+                    value_template: "{{ is_state(repeat.item.select_entity, 'alleine') == false }}"
+                sequence:
+                  - action: device_tracker.see
+                    alias: "Set tracker to not_home"
                     data:
                       dev_id: "{{ repeat.item.person_id }}_dummy_tracker"
                       location_name: "not_home"
