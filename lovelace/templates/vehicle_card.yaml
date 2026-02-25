@@ -115,6 +115,27 @@ vehicle_card_template:
                         {% endif %}
                       }
                       }
+              # --- Warnung (Blinkt rot) ---
+              - type: conditional
+                conditions:
+                  - entity: "[[sensor_prefix]]_ignitionstatus"
+                    state: "ON"
+                  - entity: "[[sensor_prefix]]_seatbelt"
+                    state_not: "BUCKLED"
+                chip:
+                  type: template
+                  icon: mdi:seatbelt
+                  icon_color: white
+                  tap_action:
+                    action: more-info
+                  card_mod:
+                    style: |
+                      ha-card {
+                        --chip-background: rgba(220, 53, 69, 0.9) !important;
+                        --text-color: white;
+                        animation: blink 1s linear infinite;
+                      }
+                      @keyframes blink { 50% { opacity: 0.6; } }
               # --- Türschloss (Rot/Grün Logik) ---
               - type: entity
                 entity: "[[sensor_prefix]]_doorlock"
@@ -138,11 +159,11 @@ vehicle_card_template:
                   entity: "[[tracker_entity]]"
                   icon: >
                     {% set current_zone = states(entity) %}
-                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') %}
+                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') | replace('ü', 'u') %}
                     {{ state_attr(zone_entity, 'icon') | default('mdi:road-variant', true) }}
                   content: >
                     {% set current_zone = states(entity) %}
-                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') %}
+                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') | replace('ü', 'u') %}
                     {{ state_attr(zone_entity, 'friendly_name') | default('Abwesend', true) }}
                   tap_action:
                     action: more-info

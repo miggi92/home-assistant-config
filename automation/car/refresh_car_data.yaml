@@ -2,13 +2,13 @@
 # Refresh car data
 alias: "Check FordPass Last Refresh"
 id: af2a6157-b2f2-4b20-94cc-d2c6b8bc48f5
-mode: single
+mode: restart
 
 trigger:
   - platform: time_pattern
-    seconds: "/30"
+    seconds: "/15"
     id: "trigger_periodic"
-    alias: "Periodic background check every 30 seconds"
+    alias: "Periodic background check every 15 seconds"
 
   - platform: state
     entity_id:
@@ -34,8 +34,8 @@ action:
         {% set last = dt if dt != None else (now() - timedelta(days=1)) %}
         {{ (now() - last).total_seconds() }}
       is_driving: "{{ is_state('binary_sensor.pixel_9_pro_android_auto', 'on') or is_state('binary_sensor.silke_handy_android_auto', 'on') }}"
-      is_away: "{{ is_state('device_tracker.fordpass_tourneo', 'not_home') }}"
-      interval_active: 30
+      is_away: "{{ not is_state('device_tracker.fordpass_tourneo', 'home') }}"
+      interval_active: 15
       interval_idle: 900
 
   - alias: "Determine update strategy based on conditions"
