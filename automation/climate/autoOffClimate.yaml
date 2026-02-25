@@ -1,0 +1,21 @@
+---
+# Klima automatisch ausschalten, falls sie ausversehn angeschaltet wird.
+alias: autoClimateOff
+id: 203985dd-eedc-4571-b506-07e4c5e6c4e0
+description: "Klima automatisch ausschalten, falls sie ausversehn angeschaltet wird."
+trigger:
+  - platform: state
+    entity_id:
+      - climate.daikinap90134
+    from: "off"
+
+condition:
+  - condition: numeric_state
+    entity_id: sensor.daikinap90134_outside_temperature
+    below: 18
+action:
+  - service: climate.turn_off
+    target:
+      entity_id: climate.daikinap90134
+    data: {}
+mode: single

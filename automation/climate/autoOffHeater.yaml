@@ -18,5 +18,4 @@ action:
     target:
       entity_id: climate.room_climate_wohnzimmer
     data: {}
-
 mode: single
