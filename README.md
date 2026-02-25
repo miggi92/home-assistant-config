@@ -27,6 +27,10 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 ### Entities
 
 <!-- Entities Stats - Start -->
+- Covers: 10
+- Lights: 25
+- Automations: 50
+- Switches: 5
 <!-- Entities Stats - End -->
 
 ## 🎛️ Devices
