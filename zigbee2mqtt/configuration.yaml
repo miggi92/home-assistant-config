@@ -98,8 +98,6 @@ devices:
     friendly_name: Duschsensor
   '0x84ba20fffead3854':
     friendly_name: Essensankündigung
-  '0xcc86ecfffe924d9c':
-    friendly_name: Tabletsteckdose
   '0x54ef441000442eea':
     friendly_name: Luftqualitätssensor
   '0x44e2f8fffebbf742':
@@ -118,5 +116,7 @@ devices:
     friendly_name: Hue Go
   '0x58e6c5fffe36fc60':
     friendly_name: Wohnzimmerecksteckdose
+  '0xa4c1380df18cffff':
+    friendly_name: Babyphone
 version: 5
 groups: {}
