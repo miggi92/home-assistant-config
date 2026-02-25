@@ -1,3 +1,3 @@
 ---
 # auto commit custom components shell cmd
-update_docs: "bash ./bash_scripts/auto_update_docs.sh"
+update_docs: "cat << 'EOF' > /config/spook_stats.md\n{{ markdown_content }}\nEOF\nbash ./bash_scripts/auto_update_docs.sh"

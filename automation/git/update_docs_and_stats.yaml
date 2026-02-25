@@ -1,0 +1,17 @@
+---
+alias: updateDocsAndStats
+id: a1b2c3d4-e5f6-7890-1234-56789abcdef0
+mode: single
+trigger:
+  - trigger: time
+    at: "23:55:00"
+    alias: "Trigger daily before midnight"
+action:
+  - action: shell_command.update_docs
+    alias: "Pass markdown text to shell command and trigger update script"
+    data:
+      markdown_content: |
+        - Covers: {{ states('sensor.covers') | default('0') }}
+        - Lights: {{ states('sensor.lights') | default('0') }}
+        - Automations: {{ states('sensor.automations') | default('0') }}
+        - Switches: {{ states('sensor.switches') | default('0') }}
