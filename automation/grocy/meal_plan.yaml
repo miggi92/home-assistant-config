@@ -1,0 +1,45 @@
+---
+# sensor.grocy_meal_plan
+alias: GrocyMealPlanChange
+id: 59734d7a-feb3-4d98-b15f-cca38c8c8d10
+description: "Meal plan changes"
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.grocy_meal_plan
+  - platform: time
+    at: "00:00:01"
+condition: []
+action:
+  - alias: Loop through next 7 days
+    repeat:
+      count: 7
+      sequence:
+        - alias: Define target date and weekday
+          variables:
+            target_date: "{{ (now() + timedelta(days=repeat.index - 1)).strftime('%Y-%m-%d') }}"
+            target_weekday: >-
+              {% set days = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
+              {{ days[(now() + timedelta(days=repeat.index - 1)).weekday()] }}
+            day_meals: "{{ state_attr('sensor.grocy_meal_plan', 'meals') | selectattr('day', 'eq', target_date) | list }}"
+        - alias: Loop through each meal section
+          repeat:
+            for_each:
+              - "fruehstuck"
+              - "mittagessen"
+              - "abendessen"
+            sequence:
+              - alias: Find recipe for current section and day
+                variables:
+                  current_section: "{{ repeat.item }}"
+                  meal_for_section: >-
+                    {% set section_map = {'fruehstuck': 'frühstück', 'mittagessen': 'mittagessen', 'abendessen': 'abendessen'} %}
+                    {% set match = day_meals | selectattr('section.name', 'iequalto', section_map[current_section]) | list %}
+                    {{ match[0].recipe.name if match | count > 0 else '' }}
+              - alias: Set input_text value or clear it
+                service: input_text.set_value
+                target:
+                  entity_id: "input_text.{{ current_section }}_{{ target_weekday }}"
+                data:
+                  value: "{{ meal_for_section }}"
+mode: restart
