@@ -21,11 +21,11 @@ action:
             target_weekday: >-
               {% set days = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
               {{ days[(now() + timedelta(days=repeat.index - 1)).weekday()] }}
-            day_meals: "{{ state_attr('sensor.grocy_meal_plan', 'meals') | selectattr('day', 'eq', target_date) | list }}"
+            day_meals: "{{ state_attr('sensor.grocy_meal_plan', 'meals') | list }}"
         - alias: Loop through each meal section
           repeat:
             for_each:
-              - "fruehstuck"
+              - "fruhstuck"
               - "mittagessen"
               - "abendessen"
             sequence:
@@ -33,9 +33,15 @@ action:
                 variables:
                   current_section: "{{ repeat.item }}"
                   meal_for_section: >-
-                    {% set section_map = {'fruehstuck': 'frühstück', 'mittagessen': 'mittagessen', 'abendessen': 'abendessen'} %}
-                    {% set match = day_meals | selectattr('section.name', 'iequalto', section_map[current_section]) | list %}
-                    {{ match[0].recipe.name if match | count > 0 else '' }}
+                    {% set section_map = {'fruhstuck': 'frühstück', 'mittagessen': 'mittagessen', 'abendessen': 'abendessen'} %}
+                    {% set target_label = section_map[current_section] %}
+                    {% set ns = namespace(found='') %}
+                    {% for meal in day_meals if meal.day == target_date %}
+                      {% if meal.section.name | lower == target_label | lower %}
+                        {% set ns.found = meal.recipe.name %}
+                      {% endif %}
+                    {% endfor %}
+                    {{ ns.found }}
               - alias: Set input_text value or clear it
                 service: input_text.set_value
                 target:
