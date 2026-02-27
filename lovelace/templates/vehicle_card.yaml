@@ -153,12 +153,11 @@ vehicle_card_template:
                   entity: "[[tracker_entity]]"
                   icon: >
                     {% set current_zone = states(entity) %}
-                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') | replace('ü', 'u') %}
-                    {{ state_attr(zone_entity, 'icon') | default('mdi:road-variant', true) }}
+                    {% set matching_zones = states.zone | selectattr('name', 'eq', current_zone) | list %}
+                    {{ matching_zones[0].attributes.icon if matching_zones and matching_zones[0].attributes.icon else 'mdi:road-variant' }}
                   content: >
                     {% set current_zone = states(entity) %}
-                    {% set zone_entity = 'zone.' ~ current_zone | lower | replace(' ', '_') | replace('ü', 'u') %}
-                    {{ state_attr(zone_entity, 'friendly_name') | default('Abwesend', true) }}
+                    {{ 'Abwesend' if current_zone == 'not_home' else current_zone }}
                   tap_action:
                     action: more-info
                   card_mod:
