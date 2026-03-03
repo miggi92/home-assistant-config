@@ -70,7 +70,7 @@ class PhilipsEntity(Entity):
                 (CONNECTION_NETWORK_MAC, self.config_entry_data.device_information.mac)
             }
             if self.config_entry_data.device_information.mac is not None
-            else None,
+            else set(),
         )
 
     @property
@@ -380,9 +380,8 @@ class PhilipsGenericFanBase(PhilipsGenericControlBase, FanEntity):
             status_pattern = self._available_speeds.get(speed)
             if status_pattern:
                 await self.coordinator.client.set_control_values(data=status_pattern)
-
-            self._device_status.update(status_pattern)
-            self._handle_coordinator_update()
+                self._device_status.update(status_pattern)
+                self._handle_coordinator_update()
 
     @property
     def icon(self) -> str:
@@ -711,7 +710,8 @@ class PhilipsAC1214(PhilipsGenericFan):
         """Set the preset mode to Allergen."""
         _LOGGER.debug("AC1214 switches to mode 'A' first")
         a_status_pattern = self._available_preset_modes.get(PresetMode.ALLERGEN)
-        await self.coordinator.client.set_control_values(data=a_status_pattern)
+        if a_status_pattern is not None:
+            await self.coordinator.client.set_control_values(data=a_status_pattern)
         await asyncio.sleep(1)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
@@ -735,8 +735,9 @@ class PhilipsAC1214(PhilipsGenericFan):
             status_pattern = self._available_preset_modes.get(preset_mode)
             _LOGGER.debug("this corresponds to status pattern: %s", status_pattern)
             if (
-                status_pattern
+                status_pattern is not None
                 and status_pattern.get(PhilipsApi.MODE) != "A"
+                and current_pattern is not None
                 and current_pattern.get(PhilipsApi.MODE) != "M"
             ):
                 await self.async_set_a()
@@ -760,7 +761,7 @@ class PhilipsAC1214(PhilipsGenericFan):
         current_pattern = self._available_preset_modes.get(self.preset_mode)
         _LOGGER.debug("AC1214 is currently on mode: %s", current_pattern)
         if percentage == 0:
-            _LOGGER.debug("AC1214 uses 0% to switch off")
+            _LOGGER.debug("AC1214 uses 0%% to switch off")
             await self.async_turn_off()
         else:
             # the AC1214 also doesn't seem to like switching to mode 'M' without cycling through mode 'A'
@@ -769,8 +770,9 @@ class PhilipsAC1214(PhilipsGenericFan):
             status_pattern = self._available_speeds.get(speed)
             _LOGGER.debug("this corresponds to status pattern: %s", status_pattern)
             if (
-                status_pattern
+                status_pattern is not None
                 and status_pattern.get(PhilipsApi.MODE) != "A"
+                and current_pattern is not None
                 and current_pattern.get(PhilipsApi.MODE) != "M"
             ):
                 await self.async_set_a()
@@ -1262,10 +1264,70 @@ class PhilipsAC3259(PhilipsGenericFan):
     AVAILABLE_SELECTS = [PhilipsApi.GAS_PREFERRED_INDEX]
 
 
-class PhilipsAC3420(PhilipsAC0950):
+class PhilipsAC3420(PhilipsNew2GenericFan):
     """AC3420."""
 
-    AVAILABLE_SELECTS = [PhilipsApi.NEW2_LAMP_MODE]
+    AVAILABLE_PRESET_MODES = {
+        PresetMode.AUTO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 0,
+            PhilipsApi.NEW2_MODE_C: 3,
+        },
+        PresetMode.TURBO: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 18,
+            PhilipsApi.NEW2_MODE_C: 18,
+        },
+        PresetMode.MEDIUM: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 19,
+            PhilipsApi.NEW2_MODE_C: 3,
+        },
+        PresetMode.SLEEP: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 17,
+            PhilipsApi.NEW2_MODE_C: 1,
+        },
+    }
+    AVAILABLE_SPEEDS = {
+        PresetMode.SPEED_1: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 1,
+            PhilipsApi.NEW2_MODE_C: 1,
+        },
+        PresetMode.SPEED_2: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 2,
+            PhilipsApi.NEW2_MODE_C: 2,
+        },
+        PresetMode.SPEED_3: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 3,
+            PhilipsApi.NEW2_MODE_C: 3,
+        },
+        PresetMode.SPEED_4: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 4,
+            PhilipsApi.NEW2_MODE_C: 4,
+        },
+        PresetMode.SPEED_5: {
+            PhilipsApi.NEW2_POWER: 1,
+            PhilipsApi.NEW2_MODE_B: 5,
+            PhilipsApi.NEW2_MODE_C: 18,
+        },
+    }
+
+    # the prefilter data is present but doesn't change for this device, so let's take it out
+    UNAVAILABLE_FILTERS = [PhilipsApi.FILTER_NANOPROTECT_PREFILTER]
+
+    AVAILABLE_SWITCHES = [PhilipsApi.NEW2_CHILD_LOCK, PhilipsApi.NEW2_BEEP]
+    AVAILABLE_LIGHTS = [PhilipsApi.NEW2_DISPLAY_BACKLIGHT3]
+    AVAILABLE_SELECTS = [
+        PhilipsApi.NEW2_GAS_PREFERRED_INDEX,
+        PhilipsApi.NEW2_TIMER2,
+        PhilipsApi.NEW2_LAMP_MODE,
+    ]
+
     AVAILABLE_HUMIDIFIERS = [PhilipsApi.NEW2_HUMIDITY_TARGET]
     AVAILABLE_BINARY_SENSORS = [PhilipsApi.NEW2_ERROR_CODE]
 

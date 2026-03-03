@@ -37,8 +37,8 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/kongo09/philips-airpurifier-coap/issues",
   "requirements": [
-    "aioairctrl>=0.2.5",
+    "aioairctrl==0.3.1",
     "getmac>=0.9.4"
   ],
-  "version": "v0.35.0"
+  "version": "v0.36.2"
 }
