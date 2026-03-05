@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.3.0b2%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.3.0b2)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.3.0%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.3.0)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -44,11 +44,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3623
+- 🧩 Entitäten: 3631
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 564
-- 📍 Geräte-Tracker: 160
-- 🔌 Integrationen: 187
+- 📱 Geräte: 568
+- 📍 Geräte-Tracker: 164
+- 🔌 Integrationen: 188
 - 🗓️ Kalender: 27
 - 📷 Kameras: 12
 - 🌡️ Klima: 2
@@ -60,7 +60,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 👤 Personen: 9
 - 🔌 Schalter: 358
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1689
+- 📟 Sensoren: 1693
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
