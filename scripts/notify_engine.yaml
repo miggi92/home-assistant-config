@@ -150,7 +150,7 @@ notify_engine:
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
                                   caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
                                   url: "{{ photo.path }}"
-                                  target:
+                                  chat_id:
                                     - "{{ chatid }}"
                             else:
                               - action: telegram_bot.send_photo
@@ -159,7 +159,7 @@ notify_engine:
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
                                   caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
                                   file: "{{ photo.path }}"
-                                  target:
+                                  chat_id:
                                     - "{{ chatid }}"
                         else:
                           - action: notify.send_message
