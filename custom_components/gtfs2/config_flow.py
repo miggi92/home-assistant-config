@@ -47,7 +47,6 @@ from .const import (
     CONF_REFRESH_INTERVAL,
     CONF_OFFSET,
     CONF_REAL_TIME,
-    CONF_SOURCE_TIMEZONE_CORRECTION,
     ATTR_API_KEY_LOCATIONS,
     DEFAULT_MAX_LOCAL_STOPS,
     CONF_MAX_LOCAL_STOPS
@@ -66,6 +65,17 @@ from .gtfs_helper import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+TRANSLATION_DESCRIPTION_PLACEHOLDERS = {
+    "docu_extracting": "https://github.com/vingerha/gtfs2/wiki/1.-Initial-setup:-the-static-data-source#performance",
+    "docu_menu_options": "https://github.com/vingerha/gtfs2/wiki/0.-Installation-and-Main-menu",
+    "docu_select_source": "https://github.com/vingerha/gtfs2/wiki/1.-Initial-setup:-the-static-data-source",
+    "docu_local_stops": "https://github.com/vingerha/gtfs2/wiki/2c.-Acquire-local-stops-&-departures",
+    "docu_new_route": "https://github.com/vingerha/gtfs2/wiki/2.-Setup-a-new-route",
+    "docu_setup_train": "https://github.com/vingerha/gtfs2/wiki/2b.-Setup-route-for-trains",
+    "docu_configuring_options": "https://github.com/vingerha/gtfs2/wiki/3.-Configuring-options",
+    "model": "Example model",
+}
 
 @config_entries.HANDLERS.register(DOMAIN)
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -86,9 +96,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_menu(
             step_id="user",
             menu_options=["start_end", "local_stops", "source","remove"],
-            description_placeholders={
-                "model": "Example model",
-            }
+            description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
         )
                    
     async def async_step_start_end(self, user_input: dict | None = None) -> FlowResult:
@@ -103,6 +111,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_FILE, default=""): vol.In(datasources),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,                
             )
 
         user_input[CONF_URL] = "na"
@@ -127,6 +136,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_NAME): str, 
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
             ) 
         user_input[CONF_URL] = "na"
         user_input[CONF_EXTRACT_FROM] = "zip"    
@@ -135,7 +145,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         check_data = await self._check_data(self._user_inputs)
         if check_data :
             errors["base"] = check_data
-            return self.async_abort(reason=check_data)
+            return self.async_abort(reason=check_data, description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS)
         else:
             return self.async_create_entry(
                 title=user_input[CONF_NAME], data=self._user_inputs
@@ -172,12 +182,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         ),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )
         check_data = await self._check_data(user_input)
         if check_data :
             errors["base"] = check_data
-            return self.async_abort(reason=check_data)
+            return self.async_abort(reason=check_data, description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS)
         else:
             self._user_inputs.update(user_input)
             _LOGGER.debug(f"UserInputs Source: {self._user_inputs}")
@@ -195,6 +206,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_FILE, default=""): vol.In(datasources),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )
         try:
@@ -217,7 +229,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         check_data = await self._check_data(self._user_inputs)
         if check_data :
             errors["base"] = check_data
-            return self.async_abort(reason=check_data)
+            return self.async_abort(
+                reason=check_data,
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
+            )
+            
         agencies = get_agency_list(self._pygtfs, self._user_inputs)
         if len(agencies) > 1:
             agencies[:0] = ["0: ALL"]
@@ -230,6 +246,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             vol.Required(CONF_AGENCY): vol.In(agencies),
                         },
                     ),
+                    description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                     errors=errors,
                 ) 
         else:
@@ -250,6 +267,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_ROUTE_TYPE): selector.SelectSelector(selector.SelectSelectorConfig(options=["99", "2"], translation_key="route_type")),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )                
         self._user_inputs.update(user_input)
@@ -275,7 +293,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         if user_input is None:
             route_list = [
-                selector.SelectOptionDict(value=r, label=r.split('#')[1])
+                selector.SelectOptionDict(value=r, label=r.split('##')[1])
                 for r in get_route_list(self._pygtfs, self._user_inputs)
                 ]
             return self.async_show_form(
@@ -286,10 +304,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Required(CONF_DIRECTION): selector.SelectSelector(selector.SelectSelectorConfig(options=["0", "1"], translation_key="direction")),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )
-        user_input[CONF_ROUTE_TYPE] = user_input.get(CONF_ROUTE).split('#')[0] 
-        user_input[CONF_ROUTE] = user_input.get(CONF_ROUTE).split('#')[1].split(":")[0]   
+        user_input[CONF_ROUTE_TYPE] = user_input.get(CONF_ROUTE).split('##')[0] 
+        user_input[CONF_ROUTE] = user_input.get(CONF_ROUTE).split('##')[1].split(": (")[0]   
                
         self._user_inputs.update(user_input)
         _LOGGER.debug(f"UserInputs Route: {self._user_inputs}")
@@ -316,11 +335,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             vol.Optional(CONF_INCLUDE_TOMORROW, default = False): selector.BooleanSelector(),
                         },
                     ),
+                    description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                     errors=errors,
                 )
             except:
                 _LOGGER.debug(f"Likely no stops for this route: {[CONF_ROUTE]}")
                 return self.async_abort(reason="no_stops")
+                
+        # when train route-type, use the names of the selected stops       
+        if self._user_inputs[CONF_ROUTE_TYPE] == '2':
+            user_input[CONF_ORIGIN] = user_input.get(CONF_ORIGIN).split(': ')[1].split(" (")[0] 
+            user_input[CONF_DESTINATION] = user_input.get(CONF_DESTINATION).split(': ')[1].split(" (")[0]  
+            
         self._user_inputs.update(user_input)
         _LOGGER.debug(f"UserInputs Stops: {self._user_inputs}")
         check_config = await self._check_config(self._user_inputs)
@@ -352,6 +378,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             vol.Optional(CONF_INCLUDE_TOMORROW, default = False): selector.BooleanSelector(),
                         },
                     ),
+                    description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                     errors=errors,
                 )
             except:
@@ -381,6 +408,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         vol.Optional(CONF_INCLUDE_TOMORROW, default = False): selector.BooleanSelector(),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )
         self._user_inputs.update(user_input)
@@ -458,7 +486,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
         self._data: dict[str, str] = {}
         self._user_inputs: dict = {}
 
@@ -499,6 +526,7 @@ class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_show_form(
                 step_id="init",
                 data_schema=vol.Schema(opt1_schema),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors = errors
             )                
         
@@ -506,12 +534,12 @@ class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
             opt1_schema = {
                         vol.Optional(CONF_REFRESH_INTERVAL, default=self.config_entry.options.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL)): int,
                         vol.Optional(CONF_OFFSET, default=self.config_entry.options.get(CONF_OFFSET, DEFAULT_OFFSET)): int,
-                        vol.Optional(CONF_SOURCE_TIMEZONE_CORRECTION, default=self.config_entry.options.get(CONF_SOURCE_TIMEZONE_CORRECTION, 0)): int,
                         vol.Optional(CONF_REAL_TIME, default=self.config_entry.options.get(CONF_REAL_TIME)): selector.BooleanSelector()
                     }
             return self.async_show_form(
                 step_id="init",
-                data_schema=vol.Schema(opt1_schema)
+                data_schema=vol.Schema(opt1_schema),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
             )
         
     async def async_step_real_time(
@@ -530,12 +558,13 @@ class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
                 data_schema=vol.Schema(
                     {
                         vol.Required(CONF_TRIP_UPDATE_URL, default=self.config_entry.options.get(CONF_TRIP_UPDATE_URL)): str,
-                        vol.Optional(CONF_API_KEY, default=self.config_entry.options.get(CONF_API_KEY)) : str,
-                        vol.Optional(CONF_API_KEY_NAME, default=self.config_entry.options.get(CONF_API_KEY_NAME,DEFAULT_API_KEY_NAME)) : str,
+                        vol.Optional(CONF_API_KEY, default=self.config_entry.options.get(CONF_API_KEY, '')) : cv.string,
+                        vol.Optional(CONF_API_KEY_NAME, default=self.config_entry.options.get(CONF_API_KEY_NAME,DEFAULT_API_KEY_NAME)) : cv.string,
                         vol.Required(CONF_API_KEY_LOCATION, default=self.config_entry.options.get(CONF_API_KEY_LOCATION,DEFAULT_API_KEY_LOCATION)) : selector.SelectSelector(selector.SelectSelectorConfig(options=ATTR_API_KEY_LOCATIONS, translation_key="api_key_location")),
                         vol.Optional(CONF_ACCEPT_HEADER_PB, default = self.config_entry.options.get(CONF_ACCEPT_HEADER_PB,False)): selector.BooleanSelector(),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )  
         else:
@@ -545,13 +574,14 @@ class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
                     {
                         vol.Required(CONF_TRIP_UPDATE_URL, default=self.config_entry.options.get(CONF_TRIP_UPDATE_URL)): str,
                         vol.Optional(CONF_VEHICLE_POSITION_URL, default=self.config_entry.options.get(CONF_VEHICLE_POSITION_URL,"")): str,
-                        vol.Optional(CONF_ALERTS_URL, default=self.config_entry.options.get(CONF_ALERTS_URL,"")): str,
-                        vol.Optional(CONF_API_KEY, default=self.config_entry.options.get(CONF_API_KEY)) : str,
-                        vol.Optional(CONF_API_KEY_NAME, default=self.config_entry.options.get(CONF_API_KEY_NAME,DEFAULT_API_KEY_NAME)) : str,
+                        vol.Optional(CONF_ALERTS_URL, default=self.config_entry.options.get(CONF_ALERTS_URL,"")): cv.string,
+                        vol.Optional(CONF_API_KEY, default=self.config_entry.options.get(CONF_API_KEY, '')) : cv.string,
+                        vol.Optional(CONF_API_KEY_NAME, default=self.config_entry.options.get(CONF_API_KEY_NAME,DEFAULT_API_KEY_NAME)) : cv.string,
                         vol.Required(CONF_API_KEY_LOCATION, default=self.config_entry.options.get(CONF_API_KEY_LOCATION,DEFAULT_API_KEY_LOCATION)) : selector.SelectSelector(selector.SelectSelectorConfig(options=ATTR_API_KEY_LOCATIONS, translation_key="api_key_location")),
                         vol.Optional(CONF_ACCEPT_HEADER_PB, default = self.config_entry.options.get(CONF_ACCEPT_HEADER_PB,False)): selector.BooleanSelector(),
                     },
                 ),
+                description_placeholders=TRANSLATION_DESCRIPTION_PLACEHOLDERS,
                 errors=errors,
             )      
     

@@ -104,7 +104,8 @@ def get_next_services(self):
     self._route = self._route_id
     self._trip = self._trip_id
     self._direction = self._direction
-    _LOGGER.debug("Configuration for RT route: %s, RT trip: %s, RT stop: %s, RT direction: %s", self._route, self._trip, self._stop, self._direction)
+    self._trip_short_name = self._trip_short_name
+    _LOGGER.debug("Configuration for RT route: %s, RT trip: %s, RT stop: %s, RT direction: %s, trip short name: %s", self._route, self._trip, self._stop, self._direction, self._trip_short_name)
     self._rt_group = "route"
     rt_departures = get_rt_route_trip_statuses(self)
     next_services = rt_departures.get(self._route, {}).get(self._direction, {}).get(self._stop, {}).get("departures", [])
@@ -189,7 +190,7 @@ def get_rt_route_trip_statuses(self):
         _LOGGER.debug("No proper RT feed entities: %s", feed_entities)
         return {}
 
-    _LOGGER.debug("Search departure times for route: %s, trip: %s, type: %s, direction: %s", self._route_id, self._trip_id, self._rt_group, self._direction)
+    _LOGGER.debug("Search departure times for route: %s, trip: %s, type: %s, direction: %s, short_name: %s", self._route_id, self._trip_id, self._rt_group, self._direction, self._trip_short_name)
     for entity in feed_entities:
 
         if entity.get('trip_update', False):
@@ -211,7 +212,7 @@ def get_rt_route_trip_statuses(self):
             else:
                 direction_id = "nn"
                 
-            # for route-based requests, if the rt-data has no route (ex. TER) then the selection should be on trip_id
+            # for route-based requests, if the rt-data has no route (ex. TER) then the selection should be on matching trip_id or matching RT-id with short_name (ex. MTA Metro North RR)
             # result will be that only one RT value will be collected
             if not route_id:
                 self._rt_group = "trip"   
@@ -221,12 +222,15 @@ def get_rt_route_trip_statuses(self):
                 direction_id = self._direction   
 
             trip_id = entity["trip_update"]["trip"]["trip_id"]
-                        
+            entity_id = entity["id"]
+            
+            _LOGGER.debug("Search for entity with params - group: %s, route_id: %s, direction_id: %s, self_trip_id: %s, with rt trip: %s, rt id: %s", self._rt_group, route_id, direction_id, self._trip_id, entity["trip_update"]["trip"], entity_id)            
+                
             # first part covers start/end and thus multiple RT are possible for the same stop, also, for SIRI route_id do not match so a 'in' is used 
             # the second part covers local stops, i.e. per trip, so only one RT possible for that stop         
-            if (self._rt_group == "route" and (str(direction_id) == str(self._direction) and (route_id == self._route_id or self._route_id in route_id)) or (direction_id == "nn" and trip_id == self._trip_id) or (self._trip_id in trip_id)) or (self._rt_group == "trip" and (trip_id == self._trip_id or self._trip_id in trip_id)):
+            if (self._rt_group == "route" and (str(direction_id) == str(self._direction) and (route_id == self._route_id or self._route_id in route_id)) or (direction_id == "nn" and trip_id == self._trip_id) or (self._trip_id in trip_id)) or (self._rt_group == "trip" and (trip_id == self._trip_id or self._trip_id in trip_id)) or entity_id == self._trip_short_name:
                 
-                _LOGGER.debug("Entity found params - group: %s, route_id: %s, direction_id: %s, self_trip_id: %s, with rt trip: %s", self._rt_group, route_id, direction_id, self._trip_id, entity["trip_update"]["trip"])
+                _LOGGER.debug("Entity found params - group: %s, route_id: %s, direction_id: %s, self_trip_id: %s, with rt trip: %s, rt id: %s", self._rt_group, route_id, direction_id, self._trip_id, entity["trip_update"]["trip"], entity_id)
                 
                 for stop in entity["trip_update"]["stop_time_update"]:
                     stop_id = stop["stop_id"]
@@ -241,8 +245,8 @@ def get_rt_route_trip_statuses(self):
                         if self._route_id not in departure_times:
                             departure_times[self._route_id] = {}
                                                
-                        if direction_id == "nn": # i this case the trip_id serves as a basis so one can safely set direction to the requesting entity direction
-                            direction_id = self._direction
+                        if direction_id == "nn" or entity_id == self._trip_short_name: # in this case the trip_id serves as a basis so one can safely set direction to the requesting entity direction
+                            direction_id = self._direction                   
 
                         if direction_id not in departure_times[self._route_id]:
                             departure_times[self._route_id][direction_id] = {}
@@ -466,16 +470,16 @@ def get_gtfs_rt(hass, path, data):
                 url=data.get("url", None),
                 headers=_headers,
                 label=data.get("rt_type", "-"),
-            )
-            file_all = data["file"] + "_converted.txt" 
+            )  
+            file_all = data["file"] + "_converted.txt"
+            # check if content is json else write without format            
+            try:
+                open(os.path.join(gtfs_dir, file_all), "w").write(json.dumps(feed_entities, indent=4)) 
+            except Exception as ex:
+                _LOGGER.debug("Not writing to file as json because of error: %s", ex)
+                open(os.path.join(gtfs_dir, file_all), "w").write(str(feed_entities))              
         except Exception as ex:  # pylint: disable=broad-except
             _LOGGER.info("Ìssues with converting GTFS RT data to JSON, output to string") 
-        # check if content is json else write without format
-        try:
-            open(os.path.join(gtfs_dir, file_all), "w").write(json.dumps(feed_entities, indent=4)) 
-        except Exception as ex:
-            _LOGGER.debug("Not writing to file as json because of error: %s", ex)
-            open(os.path.join(gtfs_dir, file_all), "w").write(str(feed_entities))           
     return "ok"   
         
 class LocalFileAdapter(requests.adapters.HTTPAdapter):
