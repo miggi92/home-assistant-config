@@ -12,6 +12,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfTime,
     UnitOfEnergy,
+    UnitOfPower,
     UnitOfSpeed,
     UnitOfLength,
     UnitOfTemperature,
@@ -243,6 +244,8 @@ class Tag(ApiKey, Enum):
     ELVEH_CHARGING      = ApiKey(key="elVehCharging",
                                  state_fn=lambda data, prev_state: FordpassDataHandler.get_value_for_metrics_key(data, "xevBatteryChargeDisplayStatus"),
                                  attrs_fn=FordpassDataHandler.get_elveh_charging_attrs)
+    ELVEH_CHARGING_POWER   = ApiKey(key="elVehChargingPower",
+                                 state_fn=lambda data, prev_state: FordpassDataHandler.get_elveh_charging_power_state(data))
     ELVEH_PLUG          = ApiKey(key="elVehPlug",
                                  state_fn=lambda data, prev_state: FordpassDataHandler.get_value_for_metrics_key(data, "xevPlugChargerStatus"),
                                  attrs_fn=FordpassDataHandler.get_elveh_plug_attrs)
@@ -353,6 +356,7 @@ EV_ONLY_TAGS: Final = [
     Tag.ELVEH,
     Tag.ELVEH_PLUG,
     Tag.ELVEH_CHARGING,
+    Tag.ELVEH_CHARGING_POWER,
     Tag.ELVEH_CHARGE,
     Tag.EV_START,
     Tag.EV_CANCEL,
@@ -502,6 +506,16 @@ SENSORS = [
         tag=Tag.ELVEH_CHARGING,
         key=Tag.ELVEH_CHARGING.key,
         icon="mdi:ev-station",
+        has_entity_name=True,
+    ),
+    # Tag.ELVEH_CHARGING_POWER
+    ExtSensorEntityDescription(
+        tag=Tag.ELVEH_CHARGING_POWER,
+        key=Tag.ELVEH_CHARGING_POWER.key,
+        icon="mdi:ev-plug-ccs2",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
         has_entity_name=True,
     ),
     # Tag.ELVEH_PLUG: {"icon": "mdi:connection", "api_key": "xevPlugChargerStatus"},

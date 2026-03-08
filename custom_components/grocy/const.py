@@ -5,7 +5,7 @@ from typing import Final
 
 NAME: Final = "Grocy"
 DOMAIN: Final = "grocy"
-VERSION = "v1.11.0-beta"
+VERSION = "v1.11.2"
 
 ISSUE_URL: Final = "https://github.com/iamkarlson/grocy/issues"
 

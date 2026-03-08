@@ -21,7 +21,7 @@ UPDATE_INTERVAL_DEFAULT: Final = 290 # it looks like that the default auto-acces
 BRAND_OPTIONS = ["ford", "lincoln"]
 
 DEFAULT_REGION_FORD: Final = "rest_of_world"
-REGION_OPTIONS_FORD: Final = ["fra", "deu", "ita", "nld", "esp", "nor", "pol", "gbr", "rest_of_europe", "aus", "nzl", "zaf", "bra", "arg", "can", "mex", "usa", "rest_of_world"]
+REGION_OPTIONS_FORD: Final = ["fra", "deu", "dnk", "ita", "nld", "esp", "nor", "pol", "gbr", "prt", "rest_of_europe", "aus", "nzl", "zaf", "bra", "arg", "can", "mex", "usa", "rest_of_world"]
 
 REGION_OPTIONS_LINCOLN: Final = ["lincoln_usa"]
 DEFAULT_REGION_LINCOLN: Final = "lincoln_usa"
@@ -66,6 +66,13 @@ REGIONS: Final = {
         "locale": "de-DE",
         "login_url": "https://login.ford.de",
         "countrycode": "DEU"
+    },
+    # checked 2026/02/19 - working fine...
+    "dnk": {
+        "app_id": REGION_APP_IDS["europe"],
+        "locale": "da-DK",
+        "login_url": "https://login.ford.com",
+        "countrycode": "DNK"
     },
     # checked 2025/06/08 - working fine...
     "fra": {
@@ -113,6 +120,12 @@ REGIONS: Final = {
         "locale": "pl-PL",
         "login_url": "https://login.ford.pl",
         "countrycode": "POL"
+    },
+    "prt": {
+        "app_id": REGION_APP_IDS["europe"], # 1E8C7794-FF5F-49BC-9596-A1E0C86C5B19",
+        "locale": "pt-PT",
+        "login_url": "https://login.ford.com",
+        "countrycode": "PRT"
     },
     # using GBR as our default for the rest of europe...
     "rest_of_europe": {
@@ -211,6 +224,7 @@ TRANSLATIONS: Final = {
         "esp": "Spanien",
         "nor": "Norwegen",
         "pol": "Polen",
+        "prt": "Portugal",
         "gbr": "Vereinigtes Königreich Großbritannien und Irland",
         "aus": "Australien",
         "nzl": "Neuseeland",
@@ -236,6 +250,7 @@ TRANSLATIONS: Final = {
         "esp": "Spain",
         "nor": "Norway",
         "pol": "Poland",
+        "prt": "Portugal",
         "gbr": "United Kingdom of Great Britain and Northern Ireland",
         "aus": "Australia",
         "nzl": "New Zealand",
@@ -261,6 +276,7 @@ TRANSLATIONS: Final = {
         "esp": "Spanje",
         "nor": "Noorwegen",
         "pol": "Polen",
+        "prt": "Portugal",
         "gbr": "Verenigd Koninkrijk Groot-Brittannië en Noord-Ierland",
         "aus": "Australië",
         "nzl": "Nieuw-Zeeland",
