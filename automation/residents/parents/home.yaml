@@ -20,5 +20,5 @@ action:
       entity_id: alarm_control_panel.alarmo
   - action: switch.turn_off
     target:
-      entity_id: switch.kamera_steckdose_wz
+      entity_id: switch.wz_cam_stecker
 mode: single

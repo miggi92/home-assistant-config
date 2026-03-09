@@ -60,11 +60,11 @@ sections:
         graph: line
         name: Spülmaschine Energieverbrauch insg.
         type: sensor
-        entity: sensor.spulmaschine_energy
+        entity: sensor.spulmaschine_summe_verbraucht
         detail: 1
       - name: Spülmaschine Verbrauch
         type: sensor
-        entity: sensor.spulmaschine_power
+        entity: sensor.spulmaschine_leistung
         graph: line
         detail: 2
         hours_to_show: 4
@@ -74,11 +74,11 @@ sections:
         graph: line
         name: Kaffemaschine Energieverbrauch insg.
         type: sensor
-        entity: sensor.kaffemaschine_energy
+        entity: sensor.kaffeemaschine_summe_verbraucht
         detail: 1
       - name: Kaffemaschine Verbrauch
         type: sensor
-        entity: sensor.kaffemaschine_power
+        entity: sensor.kaffeemaschine_leistung
         graph: line
         detail: 2
         hours_to_show: 4

@@ -27,7 +27,7 @@ sections:
           entity: camera.flurcam
       - type: conditional
         conditions:
-          - entity: switch.kamera_steckdose_wz
+          - entity: switch.wz_cam_stecker
             state: "on"
         card:
           type: picture-entity
@@ -40,7 +40,7 @@ sections:
       - type: custom:mushroom-entity-card
         entity: switch.flur_cam_stecker
       - type: custom:mushroom-entity-card
-        entity: switch.kamera_steckdose_wz
+        entity: switch.wz_cam_stecker
       - type: custom:mushroom-entity-card
         entity: switch.babyphone
         icon: mdi:cradle
@@ -54,7 +54,7 @@ sections:
           layout: vertical
       - type: conditional
         conditions:
-          - entity: switch.kamera_steckdose_wz
+          - entity: switch.wz_cam_stecker
             state: "on"
         card:
           type: custom:mushroom-light-card

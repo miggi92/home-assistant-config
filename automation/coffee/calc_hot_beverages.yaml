@@ -5,7 +5,7 @@ id: a7e72c63-bbb1-4960-ac00-982d820e0853
 description: "Calculate amount of hot beverages made"
 trigger:
   - platform: numeric_state
-    entity_id: sensor.kaffemaschine_power
+    entity_id: sensor.kaffeemaschine_leistung
     above: 600
     for: "00:00:10"
 condition:

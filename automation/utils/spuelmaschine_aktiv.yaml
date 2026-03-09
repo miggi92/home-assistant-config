@@ -5,28 +5,16 @@ alias: SpuelmaschineActive
 id: a444c0eb-c032-4e9c-b923-6244fe1a24b8
 mode: single
 triggers:
-  - type: power
-    device_id: 693f221d9b27a211511a735ae34fc6d0
-    entity_id: 63bfc36a2f736572074819f62b69d6ca
-    domain: sensor
-    trigger: device
+  - platform: numeric_state
+    entity_id: sensor.spulmaschine_leistung
     above: 30
+    for: "00:01:00"
     id: "on"
-    for:
-      hours: 0
-      minutes: 1
-      seconds: 0
-  - type: power
-    device_id: 693f221d9b27a211511a735ae34fc6d0
-    entity_id: 63bfc36a2f736572074819f62b69d6ca
-    domain: sensor
-    trigger: device
+  - platform: numeric_state
+    entity_id: sensor.spulmaschine_leistung
     below: 1
+    for: "00:01:00"
     id: "off"
-    for:
-      hours: 0
-      minutes: 1
-      seconds: 0
 conditions: []
 actions:
   - if:

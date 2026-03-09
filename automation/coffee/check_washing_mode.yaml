@@ -5,7 +5,7 @@ id: 0c239eff-b9be-4e90-a936-2e0144783bc9
 description: "Check if machine is washing"
 trigger:
   - platform: numeric_state
-    entity_id: sensor.kaffemaschine_power
+    entity_id: sensor.kaffeemaschine_leistung
     above: 600
     for: "00:00:10"
 condition:

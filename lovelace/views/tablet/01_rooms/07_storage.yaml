@@ -42,7 +42,7 @@ badges:
         mdi:tumble-dryer-off
       {% endif %}
   - type: custom:mushroom-template-badge
-    entity: binary_sensor.abstellkammertursensor_contact
+    entity: binary_sensor.abstellkammertur_offnung
     icon: |-
       {% set active = states(entity) %}
       {% if active == 'on' %}

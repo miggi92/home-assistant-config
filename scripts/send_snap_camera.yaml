@@ -9,7 +9,7 @@ send_cam_snaps:
           - camera: "camera.flurcam"
             switch: "switch.flur_cam_stecker"
           - camera: "camera.korbchen"
-            switch: "switch.kamera_steckdose_wz"
+            switch: "switch.wz_cam_stecker"
         start_time: "{{ now() }}"
     - repeat:
         for_each: "{{ camera_configs }}"

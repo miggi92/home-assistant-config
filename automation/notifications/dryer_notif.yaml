@@ -19,7 +19,7 @@ action:
       title: |
         ♨️ Trockner ♨️
       value1: >-
-        {% set cycleConsumption = ( states("sensor.trockner_steckdose_energy") | float -  states("input_number.dryer_cycle_consumption") | float ) %}
+        {% set cycleConsumption = ( states("sensor.trockner_steckdose_summe_verbraucht") | float -  states("input_number.dryer_cycle_consumption") | float ) %}
         {% set costs = cycleConsumption * states("input_number.strompreis") | float(2) %}
         Trockner ist fertig. Verbrauch {{ cycleConsumption | float|round(2) }} kWh.
         Das macht ca. {{ costs | float|round(2) }} €
