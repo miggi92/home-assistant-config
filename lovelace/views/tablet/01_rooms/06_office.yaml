@@ -18,11 +18,11 @@ badges:
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
-      - entity: sensor.luftqualitat_buro_temperature
+      - entity: sensor.buroluftqualitatssensor_temperatur
   - type: custom:decluttering-card
     template: humidity_badge_template
     variables:
-      - entity: sensor.luftqualitat_buro_humidity
+      - entity: sensor.buroluftqualitatssensor_luftfeuchtigkeit
 
 sections:
   - !include ../../../cards/tablet/left_side.yaml
@@ -38,7 +38,7 @@ sections:
         tap_action:
           action: toggle
       - type: gauge
-        entity: sensor.luftqualitat_buro_pm25
+        entity: sensor.buroluftqualitatssensor_pm25
         name: Feinstaub
         severity:
           green: 0
@@ -49,7 +49,7 @@ sections:
           columns: 6
           rows: 2
       - type: gauge
-        entity: sensor.luftqualitat_buro_voc_index
+        entity: sensor.buroluftqualitatssensor_voc_index
         name: Luftqualität
         severity:
           green: 0

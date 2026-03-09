@@ -5,7 +5,7 @@ description: ""
 triggers:
   - trigger: state
     entity_id:
-      - binary_sensor.schlafzimmerbewegungssensor_occupancy
+      - binary_sensor.schlafzimmerbewegungssensor_bewegung
     to:
       - "on"
     enabled: false

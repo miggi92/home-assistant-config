@@ -143,7 +143,7 @@ sections:
         tap_action:
           action: toggle
       - type: gauge
-        entity: sensor.luftqualitat_buro_pm25
+        entity: sensor.buroluftqualitatssensor_pm25
         name: Feinstaub
         severity:
           green: 0
@@ -151,7 +151,7 @@ sections:
           red: 50
         max: 50
       - type: gauge
-        entity: sensor.luftqualitat_buro_voc_index
+        entity: sensor.buroluftqualitatssensor_voc_index
         name: Luftqualität
         severity:
           green: 0

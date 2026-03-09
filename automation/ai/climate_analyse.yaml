@@ -28,10 +28,10 @@ actions:
             Humidity: {{ states('sensor.luftfeuchtigkeit') | float(-1) }} %
             Dew Point: {{ states('sensor.aussen_thermal_comfort_taupunkt') | float(-99) }} °C
         - Office:
-            Temp: {{ states('sensor.luftqualitat_buro_temperature') | float(-99) }} °C
-            Humidity: {{ states('sensor.luftqualitat_buro_humidity') | float(-1) }} %
-            VOC: {{ states('sensor.luftqualitat_buro_voc_index') | int(-1) }}
-            PM25: {{ states('sensor.luftqualitat_buro_pm25') | float(-1) }} µg/m³
+            Temp: {{ states('sensor.buroluftqualitatssensor_temperatur') | float(-99) }} °C
+            Humidity: {{ states('sensor.buroluftqualitatssensor_luftfeuchtigkeit') | float(-1) }} %
+            VOC: {{ states('sensor.buroluftqualitatssensor_voc_index') | int(-1) }}
+            PM25: {{ states('sensor.buroluftqualitatssensor_pm25') | float(-1) }} µg/m³
         - Living_Room:
             Temp: {{ states('sensor.wohnzimmertemperatur') | float(-99) }} °C
             Humidity: {{ states('sensor.wohnzimmerluftfeuchtigkeit') | float(-1) }} %
