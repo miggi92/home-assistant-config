@@ -17,11 +17,11 @@ badges:
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
-      - entity: sensor.luftqualitat_buro_temperature
+      - entity: sensor.burotemperatur
   - type: custom:decluttering-card
     template: humidity_badge_template
     variables:
-      - entity: sensor.luftqualitat_buro_humidity
+      - entity: sensor.buroluftfeuchtigkeit
   - type: custom:mushroom-template-badge
     entity: input_number.miguel_arbeit_woche
     icon: "{{ state_attr(entity, 'icon') }}"
