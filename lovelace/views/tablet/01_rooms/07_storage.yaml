@@ -76,11 +76,11 @@ sections:
         graph: line
         name: Waschmaschinen Energieverbrauch insg.
         type: sensor
-        entity: sensor.waschmaschinen_steckdose_energy
+        entity: sensor.waschmaschinen_steckdose_summe_verbraucht
         detail: 1
       - name: Waschmaschinen Verbrauch
         type: sensor
-        entity: sensor.waschmaschinen_steckdose_power
+        entity: sensor.waschmaschinen_steckdose_leistung
         graph: line
         detail: 2
         hours_to_show: 4
@@ -90,13 +90,13 @@ sections:
         graph: line
         name: Trockner Energieverbrauch insg.
         type: sensor
-        entity: sensor.trockner_steckdose_energy
+        entity: sensor.trockner_steckdose_summe_verbraucht
         detail: 1
       - hours_to_show: 4
         graph: line
         name: Trockner Verbrauch
         type: sensor
-        entity: sensor.trockner_steckdose_power
+        entity: sensor.trockner_steckdose_leistung
         detail: 2
       - type: custom:decluttering-card
         template: area_battery_card_template
