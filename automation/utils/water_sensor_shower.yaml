@@ -5,20 +5,20 @@ id: 088d95b7-fe66-4f6f-b451-36f57089a574
 description: "Setzt den Duschstatus anhand des Wassersensors"
 trigger:
   - platform: state
-    entity_id: binary_sensor.duschsensor_water_leak
+    entity_id: binary_sensor.duschsensor
 condition:
   - condition: or
     conditions:
       - condition: state
-        entity_id: binary_sensor.duschsensor_water_leak
+        entity_id: binary_sensor.duschsensor
         state: "on"
       - condition: state
-        entity_id: binary_sensor.duschsensor_water_leak
+        entity_id: binary_sensor.duschsensor
         state: "off"
 action:
   - if:
       - condition: state
-        entity_id: binary_sensor.duschsensor_water_leak
+        entity_id: binary_sensor.duschsensor
         state: "on"
     then:
       - service: input_boolean.turn_on

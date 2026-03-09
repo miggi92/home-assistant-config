@@ -23,7 +23,7 @@ badges:
     variables:
       - entity: sensor.badezimmertempsensor_humidity
   - type: entity
-    entity: binary_sensor.duschsensor_water_leak
+    entity: binary_sensor.duschsensor
   - type: custom:decluttering-card
     template: motion_badge_template
     variables:

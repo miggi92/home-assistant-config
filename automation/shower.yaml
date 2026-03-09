@@ -5,7 +5,7 @@ id: 2e10ac5d-5d52-4006-9b95-b46e4d241b99
 description: "Shower automation"
 trigger:
   - platform: state
-    entity_id: binary_sensor.duschsensor_water_leak
+    entity_id: binary_sensor.duschsensor
     to: "on"
 condition: []
 action:
