@@ -28,13 +28,13 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 184
+- 🆙 Aktualisierung: 185
 - 🚨 Alarmbedienfelder: 2
-- ↕️ Auswahlen: 74
+- ↕️ Auswahlen: 69
 - 🤖 Automatisierungen: 190
 - 🏘️ Bereiche: 19
 - 🖼️ Bilder: 28
-- 🛡️ Binäre Sensoren: 240
+- 🛡️ Binäre Sensoren: 238
 - 🛠️ Custom Integrationen: 54
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
@@ -44,11 +44,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3631
+- 🧩 Entitäten: 3635
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 569
-- 📍 Geräte-Tracker: 165
-- 🔌 Integrationen: 187
+- 📱 Geräte: 668
+- 📍 Geräte-Tracker: 166
+- 🔌 Integrationen: 188
 - 🗓️ Kalender: 27
 - 📷 Kameras: 12
 - 🌡️ Klima: 2
@@ -56,18 +56,18 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
 - 🎵 Mediaplayer: 42
-- 🔟 Nummern: 95
+- 🔟 Nummern: 107
 - 👤 Personen: 9
-- 🔌 Schalter: 358
+- 🔌 Schalter: 337
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1692
+- 📟 Sensoren: 1684
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 131
+- 🔘 Tasten: 157
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 37
 - 🚁 Ventilatoren: 4
