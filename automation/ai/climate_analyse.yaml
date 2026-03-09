@@ -6,12 +6,15 @@ description: ""
 triggers:
   - trigger: time_pattern
     minutes: /30
+    alias: Trigger every 30 minutes
 conditions:
   - condition: state
     entity_id: group.residents
     state: "home"
+    alias: Check if residents are home
 actions:
   - action: ai_task.generate_data
+    alias: Generate climate analysis via AI
     data:
       entity_id: ai_task.google_ai_task
       task_name: climate_analysis
@@ -81,23 +84,28 @@ actions:
     response_variable: response
   - parallel:
       - action: input_text.set_value
+        alias: Update house analysis
         target:
           entity_id: input_text.klima_analyse
         data:
           value: "{{ response.data.house }}"
       - action: input_text.set_value
+        alias: Update office analysis
         target:
           entity_id: input_text.arbeitszimmer_klima_analyse
         data:
           value: "{{ response.data.office }}"
       - action: input_text.set_value
+        alias: Update living room analysis
         target:
           entity_id: input_text.wohnzimmer_klima_analyse
         data:
           value: "{{ response.data.living }}"
       - action: input_text.set_value
+        alias: Update bedroom analysis
         target:
           entity_id: input_text.schlafzimmer_klima_analyse
         data:
           value: "{{ response.data.sleep }}"
+    alias: Save analysis to input texts
 mode: single
