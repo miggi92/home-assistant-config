@@ -306,12 +306,18 @@ vehicle_card_template:
                   {{ 'animation: pulse 2s infinite;' if is_state(config.entity, 'on') else '' }}
                 }
 
-          - type: custom:mushroom-entity-card
+          - type: custom:mushroom-template-card
             entity: "[[sensor_prefix]]_elveh"
-            name: Elektro
+            primary: "{{ states('[[sensor_prefix]]_elveh') }} km"
+            secondary: >
+              {% set charging_state = states('[[sensor_prefix]]_elvehcharging') %}
+              {% set end_time_attr = state_attr('[[sensor_prefix]]_elvehcharging', 'estimatedEndTime') %}
+              {% if charging_state == 'IN_PROGRESS' and end_time_attr %}
+                Bis {{ as_timestamp(end_time_attr) | timestamp_custom('%H:%M') }} Uhr
+              {% else %}
+                Elektro
+              {% endif %}
             icon: mdi:ev-station
-            primary_info: state
-            secondary_info: name
             layout: vertical
             icon_color: green
             tap_action: { action: none }
@@ -332,61 +338,85 @@ vehicle_card_template:
               style: |
                 ha-card { background: none; box-shadow: none; border: none; padding-top: 15px; }
 
-      - type: custom:bar-card
-        stack: vertical
-        columns: 1
-        height: 40px
-        decimal: 0
-        positions:
-          icon: inside
-          name: inside
-          value: inside
+      - type: custom:entity-progress-card
+        entity: "[[sensor_prefix]]_soc"
+        name: Akku Ladestand
+        icon: mdi:battery-charging
+        bar_size: large
         card_mod:
           style: |
-            bar-card-card { margin: 10px 15px 15px 15px; }
-            bar-card-row { margin-bottom: 10px; }
-            bar-card-background { background: rgba(128,128,128,0.15); border-radius: 8px; }
-            bar-card-currentbar { border-radius: 8px; }
-
-            bar-card-row:nth-of-type(1) ha-icon {
+            .progress-bar {
               {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
-                animation: charge-pulse 1.5s infinite ease-in-out;
-                color: #00E676;
+                background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0px, rgba(255, 255, 255, 0.15) 10px, rgba(0, 0, 0, 0.2) 10px, rgba(0, 0, 0, 0.2) 20px) !important;
+                background-size: 28px 28px !important;
+                animation: moveStripes 2s linear infinite !important;
+              {% else %}
+                background-color: rgba(128, 128, 128, 0.15) !important;
               {% endif %}
             }
-
-            @keyframes charge-pulse {
+            .progress-bar-inner {
+              {% set batteryLevel = states('[[sensor_prefix]]_soc') | float(0) %}
+              {% if batteryLevel <= 15 %}
+                background-color: #F44336 !important;
+              {% elif batteryLevel <= 40 %}
+                background-color: #FF9800 !important;
+              {% else %}
+                background-color: #4CAF50 !important;
+              {% endif %}
+            }
+            ha-icon {
+              {% set batteryLevel = states('[[sensor_prefix]]_soc') | float(0) %}
+              {% if batteryLevel <= 15 %}
+                color: #F44336 !important;
+              {% elif batteryLevel <= 40 %}
+                color: #FF9800 !important;
+              {% else %}
+                color: #4CAF50 !important;
+              {% endif %}
+              {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
+                animation: chargePulse 2s infinite ease-in-out;
+              {% endif %}
+            }
+            @keyframes moveStripes {
+              0% { background-position: 0 0; }
+              100% { background-position: 28px 0; }
+            }
+            @keyframes chargePulse {
               0% { transform: scale(1); }
               50% { transform: scale(1.4); }
               100% { transform: scale(1); }
             }
-        entities:
-          - entity: "[[sensor_prefix]]_soc"
-            name: Akku Ladestand
-            icon: mdi:battery-charging
-            severity:
-              - color: "F44336"
-                from: 0
-                to: 15
-              - color: "FF9800"
-                from: 16
-                to: 40
-              - color: "#4CAF50"
-                from: 41
-                to: 100
-          - entity: "[[sensor_prefix]]_fuel"
-            name: Tankfüllung
-            icon: mdi:gas-station
-            severity:
-              - color: "#F44336"
-                from: 0
-                to: 15
-              - color: "#FF9800"
-                from: 16
-                to: 40
-              - color: "#2196F3"
-                from: 41
-                to: 100
+
+      - type: custom:entity-progress-card
+        entity: "[[sensor_prefix]]_fuel"
+        name: Tankfüllung
+        bar_size: large
+        icon: mdi:gas-station
+        card_mod:
+          style: |
+            .progress-bar {
+              background-color: rgba(128, 128, 128, 0.15) !important;
+            }
+            .progress-bar-inner {
+              {% set fuelLevel = states('[[sensor_prefix]]_fuel') | float(0) %}
+              {% if fuelLevel <= 15 %}
+                background-color: #F44336 !important;
+              {% elif fuelLevel <= 40 %}
+                background-color: #FF9800 !important;
+              {% else %}
+                background-color: #2196F3 !important;
+              {% endif %}
+            }
+            ha-icon {
+              {% set fuelLevel = states('[[sensor_prefix]]_fuel') | float(0) %}
+              {% if fuelLevel <= 15 %}
+                color: #F44336 !important;
+              {% elif fuelLevel <= 40 %}
+                color: #FF9800 !important;
+              {% else %}
+                color: #2196F3 !important;
+              {% endif %}
+            }
 
       - type: conditional
         conditions:
