@@ -1,5 +1,4 @@
 ---
-# Refresh car data
 alias: "Check FordPass Last Refresh"
 id: af2a6157-b2f2-4b20-94cc-d2c6b8bc48f5
 mode: restart
@@ -24,7 +23,11 @@ trigger:
     id: "trigger_parent_left"
     alias: "Immediate trigger when a parent leaves"
 
-condition: []
+condition:
+  - alias: "Check if battery has enough life"
+    condition: numeric_state
+    entity_id: sensor.fordpass_tourneo_battery
+    above: "70"
 
 action:
   - alias: "Define calculation variables"
@@ -35,8 +38,10 @@ action:
         {{ (now() - last).total_seconds() }}
       is_driving: "{{ is_state('binary_sensor.pixel_9_pro_android_auto', 'on') or is_state('binary_sensor.silke_handy_android_auto', 'on') }}"
       is_away: "{{ not is_state('device_tracker.fordpass_tourneo', 'home') }}"
+      is_charging: "{{ is_state('sensor.fordpass_tourneo_elvehcharging','IN_PROGRESS') }}"
       interval_active: 15
       interval_idle: 900
+      interval_charging: 60
 
   - alias: "Determine update strategy based on conditions"
     choose:
@@ -53,8 +58,25 @@ action:
               entity_id: button.fordpass_tourneo_request_refresh
             alias: "Request FordPass Refresh (Immediate)"
 
+      - alias: "Charging interval update (Car is charging)"
+        conditions:
+          - condition: template
+            value_template: "{{ is_charging }}"
+            alias: "Check if car is charging"
+          - condition: template
+            value_template: "{{ time_since_refresh | float >= interval_charging }}"
+            alias: "Check if charging interval is reached"
+        sequence:
+          - action: button.press
+            target:
+              entity_id: button.fordpass_tourneo_request_refresh
+            alias: "Request FordPass Refresh (Charging)"
+
       - alias: "Active interval update (Car is away or driving)"
         conditions:
+          - condition: template
+            value_template: "{{ not is_charging }}"
+            alias: "Check if not charging to prevent override"
           - condition: template
             value_template: "{{ is_driving or is_away }}"
             alias: "Check if driving or away"
@@ -69,6 +91,9 @@ action:
 
       - alias: "Idle interval update (Car is home and not driving)"
         conditions:
+          - condition: template
+            value_template: "{{ not is_charging }}"
+            alias: "Check if not charging to prevent override"
           - condition: template
             value_template: "{{ not is_driving and not is_away }}"
             alias: "Check if not driving and not away"
