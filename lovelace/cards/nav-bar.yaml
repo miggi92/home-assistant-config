@@ -178,7 +178,12 @@ desktop:
 mobile:
   show_labels: true
 media_player:
-  entity: media_player.spotify_miguel
+  players:
+    - entity: media_player.spotify_miguel
+    - entity: media_player.fernseher_im_wohnzimmer
+      icon: mdi:television
+      title: |
+        [[[ return hass.states['media_player.fernseher_im_wohnzimmer'].attributes.app_name ]]]
   album_cover_background: true
 layout:
   auto-padding:
