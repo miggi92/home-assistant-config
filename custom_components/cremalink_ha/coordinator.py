@@ -45,10 +45,12 @@ class CremalinkCoordinator(DataUpdateCoordinator):
         try:
             data = await self.hass.async_add_executor_job(self.device.get_monitor)
 
-            if data.parsed["status"] == 0: # if in standby, poll slowly
-                self.update_interval = SCAN_INTERVAL_SLOW
-            else:
-                self.update_interval = SCAN_INTERVAL_FAST
+            if data and hasattr(data, 'parsed') and isinstance(data.parsed, dict):
+                status = data.parsed.get("status")
+                if status == 0:  # if in standby, poll slowly
+                    self.update_interval = SCAN_INTERVAL_SLOW
+                elif status is not None:
+                    self.update_interval = SCAN_INTERVAL_FAST
 
             return data
         except Exception as err:
