@@ -1,0 +1,49 @@
+---
+# Matrix https://www.home-assistant.io/integrations/matrix
+matrix:
+  homeserver: !secret matrix_server
+  username: !secret matrix_user
+  password: !secret matrix_password
+  rooms:
+    - !secret matrix_room_encrypted
+    - !secret matrix_room_unencrypted
+  commands:
+    - word: testword
+      name: testword
+      rooms:
+        - !secret matrix_room_encrypted
+        - !secret matrix_room_unencrypted
+    - expression: "My name is (?P<name>.*)"
+      name: introduction
+    - reaction: 👍
+      name: thumbsup
+
+notify:
+  - name: matrix_notify
+    platform: matrix
+    default_room: !secret matrix_room_unencrypted
+
+automation:
+  - alias: "Respond to an introduction"
+    triggers:
+      - trigger: event
+        event_type: matrix_command
+        event_data:
+          command: introduction
+    actions:
+      - action: notify.matrix_notify
+        data:
+          message: "Hello {{trigger.event.data.args['name']}}"
+
+  - alias: "Respond to a reaction in a thread"
+    triggers:
+      - trigger: event
+        event_type: matrix_command
+        event_data:
+          command: thumbsup
+    actions:
+      - action: notify.matrix_notify
+        data:
+          message: "I saw that {{trigger.event.data.args['reaction']}} -- glad you appreciated this!"
+          data:
+            thread_id: "{{trigger.event.data.thread_parent}}"

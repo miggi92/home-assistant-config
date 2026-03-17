@@ -1,0 +1,18 @@
+---
+# Test command
+alias: "Respond to !testword"
+id: 4628f0b3-94fe-494b-890f-24b85b492247
+triggers:
+  - trigger: event
+    event_type: matrix_command
+    event_data:
+      command: testword
+actions:
+  - action: matrix.react
+    data:
+      reaction: "✅"
+      room: "{{trigger.event.data.room}}"
+      message_id: "{{trigger.event.data.event_id}}"
+  - action: notify.matrix_notify
+    data:
+      message: "It looks like you wrote !testword"
