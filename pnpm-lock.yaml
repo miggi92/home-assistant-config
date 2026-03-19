@@ -39,8 +39,8 @@ importers:
         specifier: ^4.2.1
         version: 4.4.2(@babel/core@7.29.0)(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0))(@parcel/watcher@2.5.6)(@types/node@25.5.0)(@vue/compiler-sfc@3.5.30)(better-sqlite3@12.8.0)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.8.0))(eslint@10.0.3(jiti@2.6.1))(ioredis@5.10.0)(lightningcss@1.32.0)(magicast@0.5.2)(optionator@0.9.4)(rollup-plugin-visualizer@6.0.11(rollup@4.59.0))(rollup@4.59.0)(terser@5.46.0)(typescript@5.9.3)(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(yaml@2.8.2))(yaml@2.8.2)
       nuxt-studio:
-        specifier: 1.4.0
-        version: 1.4.0(db0@0.3.4(better-sqlite3@12.8.0))(ioredis@5.10.0)(magicast@0.5.2)(vue@3.5.30(typescript@5.9.3))
+        specifier: 1.5.0
+        version: 1.5.0(db0@0.3.4(better-sqlite3@12.8.0))(ioredis@5.10.0)(magicast@0.5.2)(vue@3.5.30(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -5349,8 +5349,8 @@ packages:
   nuxt-site-config@3.2.21:
     resolution: {integrity: sha512-WCqo4cirBc+GLPBZOU1ye5+f4xjC7Sf7qbKt/zpeCtEUqJLHDR0MoKICfsGt/8EdkSDYUo+m5BNZ1oxai0isgQ==}
 
-  nuxt-studio@1.4.0:
-    resolution: {integrity: sha512-L6VLdJG2gNeCixwppv54zceeorUcO0vX0/rAAKiwz48L1ERV0S2CsAX4JcnAUw51V/+Et4KBVADjtYsPKO5NGw==}
+  nuxt-studio@1.5.0:
+    resolution: {integrity: sha512-dmZcXuR2pXsjk8ipqd7M5dOTjBybnhVmwmbw/W8qiupte8qqOU+fKRMyrUBD7qKeMts7sElTeER3stj+b4Wniw==}
 
   nuxt@4.4.2:
     resolution: {integrity: sha512-iWVFpr/YEqVU/CenqIHMnIkvb2HE/9f+q8oxZ+pj2et+60NljGRClCgnmbvGPdmNFE0F1bEhoBCYfqbDOCim3Q==}
@@ -7596,8 +7596,7 @@ snapshots:
       '@eslint/core': 1.1.1
       levn: 0.4.1
 
-  '@fastify/accept-negotiator@2.0.1':
-    optional: true
+  '@fastify/accept-negotiator@2.0.1': {}
 
   '@fingerprintjs/botd@2.0.0': {}
 
@@ -7665,8 +7664,7 @@ snapshots:
       '@iconify/types': 2.0.0
       vue: 3.5.30(typescript@5.9.3)
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -10704,8 +10702,7 @@ snapshots:
 
   cssesc@3.0.0: {}
 
-  cssfilter@0.0.10:
-    optional: true
+  cssfilter@0.0.10: {}
 
   cssnano-preset-default@7.0.11(postcss@8.5.8):
     dependencies:
@@ -11988,7 +11985,6 @@ snapshots:
       - idb-keyval
       - ioredis
       - uploadthing
-    optional: true
 
   iron-webcrypto@1.2.1: {}
 
@@ -13052,7 +13048,7 @@ snapshots:
       - vite
       - vue
 
-  nuxt-studio@1.4.0(db0@0.3.4(better-sqlite3@12.8.0))(ioredis@5.10.0)(magicast@0.5.2)(vue@3.5.30(typescript@5.9.3)):
+  nuxt-studio@1.5.0(db0@0.3.4(better-sqlite3@12.8.0))(ioredis@5.10.0)(magicast@0.5.2)(vue@3.5.30(typescript@5.9.3)):
     dependencies:
       '@ai-sdk/gateway': 3.0.66(zod@4.3.6)
       '@ai-sdk/vue': 3.0.116(vue@3.5.30(typescript@5.9.3))(zod@4.3.6)
@@ -13062,6 +13058,7 @@ snapshots:
       ai: 6.0.116(zod@4.3.6)
       defu: 6.1.4
       destr: 2.0.5
+      ipx: 3.1.1(db0@0.3.4(better-sqlite3@12.8.0))(ioredis@5.10.0)
       js-yaml: 4.1.1
       minimatch: 10.2.4
       nuxt-component-meta: 0.17.2(magicast@0.5.2)
@@ -14290,7 +14287,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -15206,7 +15202,6 @@ snapshots:
     dependencies:
       commander: 2.20.3
       cssfilter: 0.0.10
-    optional: true
 
   y-protocols@1.0.7(yjs@13.6.30):
     dependencies:
