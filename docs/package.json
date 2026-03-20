@@ -13,7 +13,7 @@
     "docus": "latest",
     "eslint": "^10.0.0",
     "nuxt": "^4.2.1",
-    "nuxt-studio": "1.5.0",
+    "nuxt-studio": "1.5.1",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.32.1",
