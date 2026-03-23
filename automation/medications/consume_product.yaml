@@ -5,7 +5,7 @@ id: fa040eca-2d48-4243-a8c6-28b78d5b3f7c
 description: "Medi consume in Grocy"
 trigger:
   - platform: state
-    entity_id: input_select.medis_miguel_heuschnupfen
+    entity_id: input_select.medis_miguel_heuschnupfen_graeser_birke
     to: "genommen"
     id: heuschnupfen
   - platform: state

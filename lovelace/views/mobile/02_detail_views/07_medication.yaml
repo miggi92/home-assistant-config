@@ -20,7 +20,7 @@ sections:
           template: >
             {% set result = namespace(items=[]) %}
             {% for medi in states.input_select | selectattr('entity_id', 'match', 'input_select.medis_') | selectattr('state', 'eq', 'ausstehend') %}
-              {% set clean_name = medi.attributes.friendly_name | replace('Medis ', '') | replace('medis ', '') | replace('medis_', '')  %}
+              {% set clean_name = medi.attributes.friendly_name | replace('Medis ', '') | replace('medis ', '') | replace('medis_', '') %}
               {% set item = {
                 'type': 'custom:multiple-entity-row',
                 'entity': medi.entity_id,
@@ -30,10 +30,13 @@ sections:
                   {
                     'icon': 'mdi:check',
                     'name': 'Nehmen',
+                    'styles': {
+                      '--paper-item-icon-color': 'green'
+                    },
                     'tap_action': {
                       'action': 'call-service',
                       'service': 'input_select.select_option',
-                      'data': {
+                      'service_data': {
                         'entity_id': medi.entity_id,
                         'option': 'genommen'
                       }
@@ -42,10 +45,13 @@ sections:
                   {
                     'icon': 'mdi:close',
                     'name': 'Überspringen',
+                    'styles': {
+                      '--paper-item-icon-color': 'red'
+                    },
                     'tap_action': {
                       'action': 'call-service',
                       'service': 'input_select.select_option',
-                      'data': {
+                      'service_data': {
                         'entity_id': medi.entity_id,
                         'option': 'übersprungen'
                       }
@@ -74,16 +80,16 @@ sections:
                 icon: mdi:pill
                 icon_color: red
                 tap_action:
-                  action: none
+                  action: more-info
             - entity_id: input_select.medis_*
-              state: "überprungen"
+              state: "übersprungen"
               options:
                 type: custom:mushroom-entity-card
                 secondary_info: last-changed
                 icon: mdi:pill-off
                 icon_color: grey
                 tap_action:
-                  action: none
+                  action: more-info
           exclude:
             - last_changed: "> 1 d ago"
         sort:

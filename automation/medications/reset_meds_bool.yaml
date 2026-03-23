@@ -1,8 +1,7 @@
 ---
 # Reset medi booleans, that the notification can be send
-alias: MedisResetBool
+alias: MedisResetSelect
 id: b67001f4-cf8f-414d-a1bb-84fe46b2b37b
-description: "Medis reset"
 trigger:
   - platform: time
     at: "00:01:00"
@@ -23,54 +22,76 @@ trigger:
       offset: "-01:00:00"
     id: "abends"
 action:
+  - variables:
+      all_not_needed: >
+        {% set current_season = states('sensor.season') | lower %}
+        {% set defined_seasons = ['spring', 'summer', 'autumn', 'winter'] %}
+        {% set ns = namespace(items=[]) %}
+        {% for medi in states.input_select | selectattr('entity_id', 'match', 'input_select.medis_') %}
+          {% set entity_id = medi.entity_id %}
+          {% set is_needed = true %}
+          {% set entity_labels = labels(entity_id) | map('lower') | list %}
+          {% set entity_seasons = entity_labels | select('in', defined_seasons) | list %}
+          {% if entity_seasons | length > 0 and current_season not in entity_seasons %}
+            {% set is_needed = false %}
+          {% endif %}
+          {% if is_needed and 'heuschnupfen' in entity_id %}
+            {% set pollen_types = entity_id.split('_')[4:] %}
+            {% set pollen_ns = namespace(count=0) %}
+            {% for pt in pollen_types %}
+              {% set sensor = 'sensor.pollenflug_' ~ pt ~ '_112' %}
+              {% set pollen_ns.count = pollen_ns.count + (states(sensor) | float(0)) %}
+            {% endfor %}
+            {% if pollen_ns.count == 0 %}
+              {% set is_needed = false %}
+            {% endif %}
+          {% endif %}
+          {% if not is_needed %}
+            {% set ns.items = ns.items + [entity_id] %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.items }}
+      entities_to_pending: >
+        {% set ns = namespace(items=[]) %}
+        {% set target_labels = namespace(labels=[]) %}
+        {% if trigger.id == 'daily' %}
+          {% set target_labels.labels = ['medisdaily'] %}
+          {% if now().isoweekday() == 7 %}
+            {% set target_labels.labels = target_labels.labels + ['medisweekly'] %}
+          {% endif %}
+        {% else %}
+          {% set target_labels.labels = ['medishourly', trigger.id] %}
+        {% endif %}
+        {% for label in target_labels.labels %}
+          {% for medi in label_entities(label) %}
+            {% if medi not in all_not_needed and medi not in ns.items %}
+              {% set ns.items = ns.items + [medi] %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+        {{ ns.items }}
+    alias: "Calculate required states upfront"
+
   - if:
-      - alias: "check if it is the daily Trigger"
-        condition: template
-        value_template: "{{  trigger.id == 'daily' }}"
+      - condition: template
+        value_template: "{{ all_not_needed | length > 0 }}"
+        alias: "Check if there are not needed medis"
     then:
       - action: input_select.select_option
         target:
-          label_id: medisdaily
+          entity_id: "{{ all_not_needed }}"
         data:
-          option: "ausstehend"
-      - variables:
-          heuschnupfen: >
-            {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
-              {%- if "heuschnupfen" in medi -%}
-                {{ medi }}
-              {%- endif -%}
-            {%- endfor -%}
-      - choose:
-          - conditions: "{{ heuschnupfen != '' }}"
-            sequence:
-              - repeat:
-                  for_each: "{{ heuschnupfen.split(' ') }}"
-                  sequence:
-                    - variables:
-                        pollen_typ: "{{ repeat.item.split('_')[4] }}"
-                        pollen_sensor: "sensor.pollenflug_{{ pollen_typ }}_112"
-                    - condition: template
-                      value_template: >
-                        {{ states(repeat.item) != 'on' and states(pollen_sensor) | float == 0 }}
-                    - action: input_select.select_option
-                      target:
-                        entity_id: "{{ repeat.item }}"
-                      data:
-                        option: "übersprungen"
-        alias: "Heuschnupfen anschalten, wenn gerade keine Pollen unterwegs sind"
-      - condition: time
-        weekday:
-          - sun
+          option: "nicht notwendig"
+        alias: "Set not needed medis"
+
+  - if:
+      - condition: template
+        value_template: "{{ entities_to_pending | length > 0 }}"
+        alias: "Check if there are medis to set to ausstehend"
+    then:
       - action: input_select.select_option
         target:
-          label_id: medisweekly
+          entity_id: "{{ entities_to_pending }}"
         data:
           option: "ausstehend"
-    else:
-      - action: input_select.select_option
-        target:
-          label_id:
-            - medishourly
-            - "{{ trigger.id }}"
-        data:
-          option: "ausstehend"
+        alias: "Set pending medis"
