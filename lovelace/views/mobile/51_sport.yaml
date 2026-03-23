@@ -19,12 +19,18 @@ sections:
       - type: custom:button-card
         template: handballnet_next_game_card
         entity: sensor.sg_heuchelberg_alle_spiele
+        variables:
+          table_entity: sensor.sg_heuchelberg_tabellenplatz
       - type: custom:button-card
         template: handballnet_next_game_card
         entity: sensor.tv_1895_flein_2_alle_spiele
+        variables:
+          table_entity: sensor.tv_1895_flein_2_tabellenplatz
       - type: custom:button-card
         template: handballnet_next_game_card
         entity: sensor.sg_heuchelberg_wja_alle_spiele
+        variables:
+          table_entity: sensor.sg_heuchelberg_wja_tabellenplatz
 
   - type: grid
     cards:

@@ -1,6 +1,8 @@
 ---
 #
 handballnet_next_game_card:
+  variables:
+    table_entity: sensor.sg_heuchelberg_wja_tabellenplatz
   show_name: false
   show_state: false
   show_icon: false
@@ -22,40 +24,69 @@ handballnet_next_game_card:
   custom_fields:
     home: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        return `<img src="${m.home_team.logo}" height="50">`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) return '';
+        return `<img src="${matchData.home_team.logo}" height="50">`;
       ]]]
     away: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        return `<img src="${m.away_team.logo}" height="50">`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) return '';
+        return `<img src="${matchData.away_team.logo}" height="50">`;
       ]]]
     vs: |
-      🆚
+      [[[
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) {
+          const logoUrl = states[entity.entity_id].attributes.entity_picture;
+          return `<img src="${logoUrl}" height="60">`;
+        }
+        return `🆚`;
+      ]]]
     homeName: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        return `<b>${m.home_team.name}</b>`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) return '';
+        return `<b>${matchData.home_team.name}</b>`;
       ]]]
     awayName: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        return `<b>${m.away_team.name}</b>`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) return '';
+        return `<b>${matchData.away_team.name}</b>`;
       ]]]
     date: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        const ts = new Date(m.starts_at_local);
-        return ts.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year:'numeric' })
-          + '<br>' + ts.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) {
+          const friendlyName = states[entity.entity_id].attributes.friendly_name;
+          const teamName = friendlyName.replace(' Alle Spiele', '');
+          return `<b>${teamName}</b>`;
+        }
+        const timestamp = new Date(matchData.starts_at_local);
+        return timestamp.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year:'numeric' }) + '<br>' + timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
       ]]]
     info: |
       [[[
-        const m = states[entity.entity_id].attributes.next_match;
-        return `📍 ${m.field}`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) {
+          const recentMatches = states[entity.entity_id].attributes.recent_matches;
+          if (!recentMatches || recentMatches.length === 0) return '';
+          const leagueName = recentMatches[0].tournament.name;
+          return `🏆 ${leagueName}`;
+        }
+        return `📍 ${matchData.field}`;
       ]]]
     bottom: |
       [[[
-        const m = states[entity.entity_id].attributes.upcoming_matches[0];
-        return `🏆 ${m.tournament.name}`;
+        const matchData = states[entity.entity_id].attributes.next_match;
+        if (!matchData) {
+          const tableSensorId = variables.table_entity;
+          const tableSensor = states[tableSensorId];
+          const tableRank = tableSensor ? tableSensor.state : '?';
+          return `📊 Tabellenplatz: ${tableRank}`;
+        }
+        const upcomingMatches = states[entity.entity_id].attributes.upcoming_matches;
+        if (!upcomingMatches || upcomingMatches.length === 0) return '';
+        return `🏆 ${upcomingMatches[0].tournament.name}`;
       ]]]
