@@ -10,40 +10,78 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
-      - type: "custom:auto-entities"
+      - type: custom:auto-entities
         show_empty: false
         card:
           type: entities
-          title: "Müssen genommen werden"
+          title: "Ausstehende Medikamente"
           show_header_toggle: false
         filter:
-          include:
-            - entity_id: input_boolean.medis_*
-              state: "off"
-              options:
-                type: custom:mushroom-entity-card
-                secondary_info: last-changed
-                icon: mdi:pill
-                icon_color: red
-                tap_action:
-                  action: more-info
+          template: >
+            {% set result = namespace(items=[]) %}
+            {% for medi in states.input_select | selectattr('entity_id', 'match', 'input_select.medis_') | selectattr('state', 'eq', 'ausstehend') %}
+              {% set clean_name = medi.attributes.friendly_name | replace('Medis ', '') | replace('medis ', '') | replace('medis_', '')  %}
+              {% set item = {
+                'type': 'custom:multiple-entity-row',
+                'entity': medi.entity_id,
+                'name': clean_name,
+                'show_state': false,
+                'entities': [
+                  {
+                    'icon': 'mdi:check',
+                    'name': 'Nehmen',
+                    'tap_action': {
+                      'action': 'call-service',
+                      'service': 'input_select.select_option',
+                      'data': {
+                        'entity_id': medi.entity_id,
+                        'option': 'genommen'
+                      }
+                    }
+                  },
+                  {
+                    'icon': 'mdi:close',
+                    'name': 'Überspringen',
+                    'tap_action': {
+                      'action': 'call-service',
+                      'service': 'input_select.select_option',
+                      'data': {
+                        'entity_id': medi.entity_id,
+                        'option': 'übersprungen'
+                      }
+                    }
+                  }
+                ]
+              } %}
+              {% set result.items = result.items + [item] %}
+            {% endfor %}
+            {{ result.items }}
   - type: grid
     cards:
       - type: "custom:auto-entities"
         show_empty: false
         card:
           type: entities
-          title: "Zuletzt genommen"
+          title: "Historie"
           show_header_toggle: false
         filter:
           include:
-            - entity_id: input_boolean.medis_*
-              state: "on"
+            - entity_id: input_select.medis_*
+              state: "genommen"
               options:
                 type: custom:mushroom-entity-card
                 secondary_info: last-changed
                 icon: mdi:pill
                 icon_color: red
+                tap_action:
+                  action: none
+            - entity_id: input_select.medis_*
+              state: "überprungen"
+              options:
+                type: custom:mushroom-entity-card
+                secondary_info: last-changed
+                icon: mdi:pill-off
+                icon_color: grey
                 tap_action:
                   action: none
           exclude:

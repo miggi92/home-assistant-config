@@ -30,7 +30,7 @@ action:
       medis_hourly: >
         {% set result = namespace(items=[]) %}
         {% for medi in label_entities('MedisHourly') %}
-          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+          {% if states(medi) == 'ausstehend' %}
             {% set result.items = result.items + [medi] %}
           {% endif %}
         {% endfor %}
@@ -39,7 +39,7 @@ action:
       medis_daily: >
         {% set result = namespace(items=[]) %}
         {% for medi in label_entities('MedisDaily') %}
-          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+          {% if states(medi) == 'ausstehend' %}
             {% set result.items = result.items + [medi] %}
           {% endif %}
         {% endfor %}
@@ -48,7 +48,7 @@ action:
       medis_weekly: >
         {% set result = namespace(items=[]) %}
         {% for medi in label_entities('MedisWeekly') %}
-          {% if states(medi) in ['on', 'off'] and states(medi) == 'off' %}
+          {% if states(medi) == 'ausstehend' %}
             {% set result.items = result.items + [medi] %}
           {% endif %}
         {% endfor %}

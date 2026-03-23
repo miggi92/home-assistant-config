@@ -28,9 +28,11 @@ action:
         condition: template
         value_template: "{{  trigger.id == 'daily' }}"
     then:
-      - action: input_boolean.turn_off
+      - action: input_select.select_option
         target:
           label_id: medisdaily
+        data:
+          option: "ausstehend"
       - variables:
           heuschnupfen: >
             {%- for medi in label_entities('MedisDaily') | list if states(medi) in ('on','off') -%}
@@ -50,19 +52,25 @@ action:
                     - condition: template
                       value_template: >
                         {{ states(repeat.item) != 'on' and states(pollen_sensor) | float == 0 }}
-                    - action: input_boolean.turn_on
+                    - action: input_select.select_option
                       target:
                         entity_id: "{{ repeat.item }}"
+                      data:
+                        option: "übersprungen"
         alias: "Heuschnupfen anschalten, wenn gerade keine Pollen unterwegs sind"
       - condition: time
         weekday:
           - sun
-      - action: input_boolean.turn_off
+      - action: input_select.select_option
         target:
           label_id: medisweekly
+        data:
+          option: "ausstehend"
     else:
-      - action: input_boolean.turn_off
+      - action: input_select.select_option
         target:
           label_id:
             - medishourly
             - "{{ trigger.id }}"
+        data:
+          option: "ausstehend"
