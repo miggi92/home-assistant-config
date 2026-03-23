@@ -45,19 +45,15 @@ actions:
             Dew Point: {{ states('sensor.schlafzimmer_thermal_comfort_taupunkt') | float(-99) }} °C
 
         ### LOGIC RULES (Ventilation)
-        1. Compare Absolute Humidity (physically):
-          - If Outdoor Temp is significantly lower (>5°C difference) than Indoor Temp, assume outdoor air is drier even if relative humidity is higher (up to 90%).
-          - Recommendation: "Lüften empfohlen" (Ventilation recommended) to reduce indoor humidity.
-        2. Air Quality:
-          - If VOC > 250 OR PM2.5 > 20 -> Priority Recommendation: "Lüften wegen Luftqualität dringend empfohlen".
+        1. Absolute Humidity: Compare Dew Point values. If Outdoor Dew Point < Indoor Dew Point, bringing outside air in will reduce indoor humidity.
+        2. Air Quality: If VOC > 250 OR PM2.5 > 20 -> Priority Recommendation: "Lüften dringend empfohlen (Luftqualität)".
 
         ### OUTPUT INSTRUCTIONS
         - Language: German
-        - Tone: Professional, concise, helpful.
-        - Format per room:
-          1. Current State (e.g., "Angenehm warm", "Zu feucht").
-          2. Specific Reasoning (e.g., "VOC erhöht").
-          3. Actionable Recommendation (Start with "Empfehlung:").
+        - Tone: Professional, ultra-concise, helpful.
+        - Constraint: MAXIMUM 150 characters per room response! This is a strict system limit.
+        - Format: Combine current state, reasoning and recommendation into a maximum of 2 short sentences.
+        - Example: "Angenehm warm. Luftfeuchtigkeit leicht hoch, kurzes Lüften empfohlen."
         - Missing Data: If values are -99 or -1, state "Daten nicht verfügbar".
 
       structure:
