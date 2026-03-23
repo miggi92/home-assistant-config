@@ -54,7 +54,7 @@ class DreoDeviceDetails:
     preset_modes: list[str]
     """List of possible preset mode names"""
 
-    device_ranges: dict[range]
+    device_ranges: dict[str, tuple]
     """Dictionary of different ranges"""
 
     mode_names: list[str] | dict
@@ -170,6 +170,18 @@ SUPPORTED_DEVICES = {
     # Tower Fans
     "DR-HTF": DreoDeviceDetails(device_type=DreoDeviceType.TOWER_FAN),
 
+    "DR-HTF018S": DreoDeviceDetails(
+        device_type=DreoDeviceType.TOWER_FAN,
+        preset_modes=[
+            ("normal", 1),
+            ("natural", 2),
+            ("sleep", 3),
+            ("auto", 4),
+        ],
+        device_ranges={
+            SPEED_RANGE: (1, 9)
+        }),
+
     # Air Circulators
     "DR-HAF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     "DR-HPF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
@@ -265,6 +277,8 @@ SUPPORTED_DEVICES = {
         ],
     ),
     "DR-HSH010S": DreoHeaterDeviceDetails(),
+    "DR-HSH011": DreoHeaterDeviceDetails(),
+    "DR-HSH011S": DreoHeaterDeviceDetails(),
 
     # Are these even used?  They don't show up as model numbers.  Should they be a DR prefix?
     "WH714S": DreoHeaterDeviceDetails(
@@ -321,6 +335,15 @@ SUPPORTED_DEVICES = {
 
     "DR-HHM": DreoDeviceDetails(device_type=DreoDeviceType.HUMIDIFIER),
 
+    "DR-HHM006S": DreoDeviceDetails(
+        device_type=DreoDeviceType.HUMIDIFIER,
+        preset_modes=[
+            ("manual", 0),
+            ("auto", 1),
+            ("sleep", 2),
+        ],
+    ),
+
     # Dehumidifiers
         "DR-HDH001S": DreoDeviceDetails(
         device_type=DreoDeviceType.DEHUMIDIFIER,
@@ -331,6 +354,14 @@ SUPPORTED_DEVICES = {
     ),
 
     "DR-HDH002S": DreoDeviceDetails(
+        device_type=DreoDeviceType.DEHUMIDIFIER,
+        device_ranges={
+            HUMIDITY_RANGE: (30, 85),
+            SPEED_RANGE: (1, 3)
+        }
+    ),
+
+    "DR-HDH005S": DreoDeviceDetails(
         device_type=DreoDeviceType.DEHUMIDIFIER,
         device_ranges={
             HUMIDITY_RANGE: (30, 85),

@@ -9,6 +9,7 @@ from .constant import (
     MODE_KEY,
     OSCON_KEY,
     OSCANGLE_KEY,
+    OSCMODE_KEY,
     MUTEON_KEY,
     POWERON_KEY,
     DEVON_KEY,
@@ -24,7 +25,10 @@ from .constant import (
     FIXEDCONF_KEY,
     DreoHeaterMode,
     TemperatureUnit,
-    HeaterOscillationAngles
+    HeaterOscillationAngles,
+    HEATER_OSCMODE_SWING_MAP,
+    HEATER_SWING_OSCMODE_MAP,
+    SWING_OFF,
 )
 
 from .pydreobasedevice import PyDreoBaseDevice
@@ -47,6 +51,7 @@ class PyDreoHeater(PyDreoBaseDevice):
         self._htalevel = None
         self._oscon = None
         self._oscangle = None
+        self._oscmode = None
         self._temperature = None
         self._mute_on = None
         self._fixed_conf = None
@@ -89,9 +94,6 @@ class PyDreoHeater(PyDreoBaseDevice):
     def poweron(self, value: bool):
         """Set if the heater is on or off"""
         _LOGGER.debug("poweron: poweron.setter - %s", value)
-        if self._is_on == value:
-            _LOGGER.debug("poweron: poweron - value already %s, skipping command", value)
-            return
         self._send_command(POWERON_KEY, value)
 
     @property
@@ -127,7 +129,7 @@ class PyDreoHeater(PyDreoBaseDevice):
         """Set the heat level."""
         htalevel = int(htalevel) # ensure it's an int
         _LOGGER.debug("htalevel: htalevel.setter(%s, %s)", self.name, htalevel)
-        if (self._device_definition.device_ranges[HEAT_RANGE][0] > htalevel > self._device_definition.device_ranges[HEAT_RANGE][1]):
+        if not (self._device_definition.device_ranges[HEAT_RANGE][0] <= htalevel <= self._device_definition.device_ranges[HEAT_RANGE][1]):
             _LOGGER.error("htalevel: Heat level %s is not in the acceptable range: %s",
                             htalevel,
                             self._device_definition.device_ranges[HEAT_RANGE])
@@ -151,7 +153,7 @@ class PyDreoHeater(PyDreoBaseDevice):
     def ecolevel(self, ecolevel : int):
         """Set the target temperature."""
         _LOGGER.debug("ecolevel: ecolevel(%s)", ecolevel)
-        if self._device_definition.device_ranges[ECOLEVEL_RANGE][0] > ecolevel > self._device_definition.device_ranges[ECOLEVEL_RANGE][1]:
+        if not (self._device_definition.device_ranges[ECOLEVEL_RANGE][0] <= ecolevel <= self._device_definition.device_ranges[ECOLEVEL_RANGE][1]):
             _LOGGER.error("ecolevel: Target Temperature %s is not in the acceptable range: %s",
                             ecolevel,
                             self._device_definition.device_ranges[ECOLEVEL_RANGE])
@@ -178,7 +180,15 @@ class PyDreoHeater(PyDreoBaseDevice):
     @property
     def temperature(self):
         """Get the temperature"""
-        return self._temperature
+        temp = self._temperature
+        if (temp is not None and self.temperature_offset is not None):
+            temp += self.temperature_offset
+        return temp
+
+    @property
+    def temperature_offset(self):
+        """Get the temperature calibration value"""
+        return self._tempoffset
 
     @property
     def temperature_units(self) -> TemperatureUnit:
@@ -230,6 +240,24 @@ class PyDreoHeater(PyDreoBaseDevice):
         else:
             _LOGGER.error("oscangle: Attempting to set oscillation angle on a device that doesn't support it.")
             return
+
+    @property
+    def oscmode(self) -> int | None:
+        """Get the oscmode integer value (used by newer heater firmware)."""
+        return self._oscmode
+
+    @oscmode.setter
+    def oscmode(self, value: int) -> None:
+        """Set the oscmode value."""
+        _LOGGER.debug("oscmode: oscmode.setter(%s) -> %s", self.name, value)
+        if self._oscmode is not None:
+            if self._oscmode == value:
+                _LOGGER.debug("oscmode: oscmode - value already %s, skipping command", value)
+                return
+            self._send_command(OSCMODE_KEY, value)
+        else:
+            _LOGGER.error("oscmode: Attempting to set oscmode on a device that doesn't support it.")
+            raise ValueError("Attempting to set oscmode on a device that doesn't support it.")
 
     @property
     def ptcon(self) -> bool:
@@ -343,16 +371,17 @@ class PyDreoHeater(PyDreoBaseDevice):
         self._mode = self.get_state_update_value(state, MODE_KEY)
         self._oscon = self.get_state_update_value(state, OSCON_KEY)
         self._oscangle = self.get_state_update_value(state, OSCANGLE_KEY)
+        self._oscmode = self.get_state_update_value(state, OSCMODE_KEY)
         self._mute_on = self.get_state_update_value(state, MUTEON_KEY)
         self._dev_on = self.get_state_update_value(state, DEVON_KEY)
         timeron = self.get_state_update_value(state, TIMERON_KEY)
-        self._timer_on = timeron["du"]
+        self._timer_on = timeron.get("du") if isinstance(timeron, dict) else None
         self._cooldown = self.get_state_update_value(state, COOLDOWN_KEY)
         self._ptc_on = self.get_state_update_value(state, PTCON_KEY)
         self._light_on = self.get_state_update_value(state, LIGHTON_KEY)
         self._ctlstatus = self.get_state_update_value(state, CTLSTATUS_KEY)
         timeroff = self.get_state_update_value(state, TIMEROFF_KEY)
-        self._timer_off = timeroff["du"]
+        self._timer_off = timeroff.get("du") if isinstance(timeroff, dict) else None
         self._ecolevel = self.get_state_update_value(state, ECOLEVEL_KEY)
         self._childlockon = self.get_state_update_value(state, CHILDLOCKON_KEY)
         self._tempoffset = self.get_state_update_value(state, TEMPOFFSET_KEY)
@@ -392,6 +421,10 @@ class PyDreoHeater(PyDreoBaseDevice):
         if isinstance(val_oscangle, int):
             self._oscangle = val_oscangle
 
+        val_oscmode = self.get_server_update_key_value(message, OSCMODE_KEY)
+        if isinstance(val_oscmode, int):
+            self._oscmode = val_oscmode
+
         val_muteon = self.get_server_update_key_value(message, MUTEON_KEY)
         if isinstance(val_muteon, bool):
             self._mute_on = val_muteon
@@ -412,6 +445,11 @@ class PyDreoHeater(PyDreoBaseDevice):
         val_ptc_on = self.get_server_update_key_value(message, PTCON_KEY)
         if isinstance(val_ptc_on, bool):
             self._ptc_on = val_ptc_on
+            # If PTC (heating element) is on, the device must be powered on
+            # This handles cases where the WebSocket update includes ptcon but not poweron
+            if val_ptc_on and not self._is_on:
+                _LOGGER.debug("handle_server_update: PTC turned on, inferring device is powered on")
+                self._is_on = True
 
         val_light_on = self.get_server_update_key_value(message, LIGHTON_KEY)
         if isinstance(val_light_on, bool):

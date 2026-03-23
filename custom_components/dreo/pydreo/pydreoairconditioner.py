@@ -102,9 +102,6 @@ class PyDreoAC(PyDreoBaseDevice):
     def poweron(self, value: bool):
         """Set if the air conditioner is on or off"""
         _LOGGER.debug("poweron: poweron.setter - %s", value)
-        if self._is_on == value:
-            _LOGGER.debug("poweron: poweron - value already %s, skipping command", value)
-            return
         self._send_command(POWERON_KEY, value)
 
     @property
@@ -164,7 +161,15 @@ class PyDreoAC(PyDreoBaseDevice):
     @property
     def temperature(self):
         """Get the temperature"""
-        return self._temperature
+        temp = self._temperature
+        if (temp is not None and self.temperature_offset is not None):
+            temp += self.temperature_offset
+        return temp
+
+    @property
+    def temperature_offset(self):
+        """Get the temperature calibration value"""
+        return self._tempoffset
 
     # @temperature.setter
     # def temperature(self, value: int) -> None:
@@ -463,7 +468,7 @@ class PyDreoAC(PyDreoBaseDevice):
             self.work_time = val_work_time
 
         val_temp_target_reached = self.get_server_update_key_value(message, TEMP_TARGET_REACHED_KEY)
-        if isinstance(val_work_time, int):
+        if isinstance(val_temp_target_reached, int):
             self.temp_target_reached = "Yes" if val_temp_target_reached > 0 else "No"
 
     def set_ha_temperature_unit_is_celsius(self, is_celsius: bool) -> None:

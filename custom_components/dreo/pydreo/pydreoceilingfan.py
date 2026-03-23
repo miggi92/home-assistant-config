@@ -32,6 +32,8 @@ class PyDreoCeilingFan(PyDreoFanBase):
     @staticmethod
     def _clamp_rgb_tuple(rgb: tuple) -> tuple[int, int, int]:
         """Clamp RGB tuple values to 0-255 integers."""
+        if len(rgb) != 3:
+            raise ValueError(f"RGB tuple must have exactly 3 elements, got {len(rgb)}")
         return tuple(max(0, min(255, int(round(c)))) for c in rgb)
 
     @staticmethod
@@ -101,9 +103,6 @@ class PyDreoCeilingFan(PyDreoFanBase):
     def is_on(self, value: bool):
         """Set if the fan is on or off"""
         _LOGGER.debug("is_on: is_on.setter - %s", value)
-        if self._is_on == value:
-            _LOGGER.debug("is_on: is_on - value already %s, skipping command", value)
-            return
         self._send_command(FANON_KEY, value)
 
     @property

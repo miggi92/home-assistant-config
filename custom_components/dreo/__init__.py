@@ -1,7 +1,5 @@
 """Dreo HomeAssistant Integration."""
-import json
 import logging
-import time
 
 from .haimports import *  # pylint: disable=W0401,W0614
 from .const import (
@@ -35,7 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     if DEBUG_TEST_MODE:
         _LOGGER.error("async_setup_entry: DEBUG_TEST_MODE is True!")
         from .debug_test_mode import get_debug_test_mode_payload  # pylint: disable=C0415
-        debug__test_mode_payload : json = get_debug_test_mode_payload("custom_components/dreo")
+        debug__test_mode_payload : dict = get_debug_test_mode_payload("custom_components/dreo")
         if debug__test_mode_payload is None:
             _LOGGER.error("async_setup_entry: Unable to get debug test mode payload.  Exiting setup.")
             return False
@@ -52,13 +50,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     if not login:
         _LOGGER.error("async_setup_entry: Unable to login to the dreo server")
-        return False
+        raise ConfigEntryNotReady("Unable to login to the Dreo server")
 
     load_devices = await hass.async_add_executor_job(pydreo_manager.load_devices)
 
     if not load_devices:
         _LOGGER.error("async_setup_entry: Unable to load devices from the dreo server")
-        return False
+        raise ConfigEntryNotReady("Unable to load devices from the Dreo server")
 
     _LOGGER.debug("async_setup_entry: Checking for supported installed device types")
     device_types = set()

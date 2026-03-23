@@ -27,7 +27,9 @@ KEYS_TO_REDACT = {
     "_username",
     "token",
     "_token",
-    "productId"
+    "access_token",
+    "productId",
+    "deviceId"
 }
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,8 +54,11 @@ def _get_diagnostics(pydreo_manager: PyDreo) -> dict[str, Any]:
 
     return data
 
-def _redact_values(data: dict) -> dict:
+def _redact_values(data) -> dict:
     """Rebuild and redact values of a dictionary, recursively"""
+
+    if not isinstance(data, dict):
+        return data
 
     new_data = {}
 

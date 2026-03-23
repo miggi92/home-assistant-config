@@ -53,7 +53,6 @@ class Helpers:
             body["himei"] = "faede31549d649f58864093158787ec9"
             body["password"] = cls.hash_password(pydreo_manager.password)
             body["scope"] = "all"
-            print(body)
 
         elif type_ == "devicelist":
             body = {**cls.req_body_base()}
@@ -147,7 +146,7 @@ class Helpers:
                     url + api, json=json_object, headers=headers, timeout=API_TIMEOUT
                 )
         except requests.exceptions.RequestException as exception:
-            _LOGGER.debug("call_api: %s", exception)
+            _LOGGER.error("call_api: Request failed - %s", exception)
         else:
             if r.status_code == 200:
                 status_code = 200
@@ -158,16 +157,18 @@ class Helpers:
                         Helpers.redactor(json.dumps(response)),
                     )
             else:
-                _LOGGER.debug("call_api: Unable to fetch %s%s", url, api)
+                status_code = r.status_code
+                _LOGGER.error("call_api: API request failed with status code %s for %s%s",
+                             r.status_code, url, api)
         return response, status_code
 
     @staticmethod
-    def code_check(reponse_dict: dict) -> bool:
+    def code_check(response_dict: dict) -> bool:
         """Test if code == 0 for successful API call."""
-        if reponse_dict is None:
-            _LOGGER.error("Helpers::code_check - reponse_dict is None")
+        if response_dict is None:
+            _LOGGER.error("Helpers::code_check - response_dict is None")
             return False
-        if isinstance(reponse_dict, dict) and reponse_dict.get("code") == 0:
+        if isinstance(response_dict, dict) and response_dict.get("code") == 0:
             return True
         return False
 
@@ -177,7 +178,7 @@ class Helpers:
         return str(int(time.time() * 1000))
 
     @staticmethod
-    def name_from_value(name_value_list : list[tuple], value) -> str:
+    def name_from_value(name_value_list : list[tuple], value) -> str | None:
         """Return name from list of tuples."""
         if not name_value_list:
             _LOGGER.error("Helpers::name_from_value - name_value_list is None")
