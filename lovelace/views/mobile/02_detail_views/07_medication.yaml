@@ -30,9 +30,6 @@ sections:
                   {
                     'icon': 'mdi:check',
                     'name': 'Nehmen',
-                    'styles': {
-                      '--paper-item-icon-color': 'green'
-                    },
                     'tap_action': {
                       'action': 'call-service',
                       'service': 'input_select.select_option',
@@ -44,10 +41,7 @@ sections:
                   },
                   {
                     'icon': 'mdi:close',
-                    'name': 'Überspringen',
-                    'styles': {
-                      '--paper-item-icon-color': 'red'
-                    },
+                    'name': 'Skip',
                     'tap_action': {
                       'action': 'call-service',
                       'service': 'input_select.select_option',
