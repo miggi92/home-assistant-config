@@ -53,7 +53,11 @@ badges:
       navigation_path: notification
   - type: custom:mushroom-template-badge
     icon: mdi:medication
-    color: red
+    color: >
+      {% if states('number.anzahl_der_ausstehenden_medikamente') | int(0) > 0 %}
+        red
+      {% else %}
+        grey
     tap_action:
       action: navigate
       navigation_path: medication
