@@ -166,18 +166,7 @@ notify_engine:
                             target:
                               entity_id: "{{ notifier }}"
                             data:
-                              message: >
-                                {{ message
-                                  | replace('.', '\.')
-                                  | replace('-', '\-')
-                                  | replace('(', '\(')
-                                  | replace(')', '\)')
-                                  | replace('!', '\!')
-                                  | replace('+', '\+')
-                                  | replace('_', '\_')
-                                  | replace('#', '\#')
-                                  | replace('|', '\|')
-                                }}
+                              message: "{{ message }}"
                               title: "{{ title }}"
                   - conditions:
                       - condition: template
