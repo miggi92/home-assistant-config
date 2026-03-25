@@ -185,6 +185,11 @@ SUPPORTED_DEVICES = {
     # Air Circulators
     "DR-HAF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     "DR-HPF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
+    # HPF-series devices: The API returns controlsConf with only a template reference
+    # (e.g. {"template": "DR-HPF002S"}) and no control/schedule.modes data, so
+    # parse_preset_modes() cannot auto-detect modes. Preset modes must be hardcoded here.
+    # TODO: Investigate whether the official Dreo Open API provides full controlsConf
+    # data that would allow auto-detection of preset modes for these devices.
     "DR-HPF008S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
         # Note: Fan preset_modes use tuple format (name, value) despite type annotation.
@@ -203,6 +208,14 @@ SUPPORTED_DEVICES = {
 
     "DR-HPF007S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
+        preset_modes=[
+            ("normal", 1),
+            ("auto", 2),
+            ("sleep", 3),
+            ("natural", 4),
+            ("turbo", 5),
+            ("custom", 6)
+        ],
         device_ranges={
             SPEED_RANGE: (1, 10),
             HORIZONTAL_ANGLE_RANGE: (-75,75),

@@ -55,7 +55,8 @@ class PyDreo:  # pylint: disable=function-redefined
                  password, 
                  redact=True, 
                  debug_test_mode=False,
-                 debug_test_mode_payload=None) -> None:
+                 debug_test_mode_payload=None,
+                 token=None) -> None:
         """Initialize Dreo class with username, password and time zone."""
         self._transport = CommandTransport(self._transport_consume_message)
 
@@ -67,7 +68,7 @@ class PyDreo:  # pylint: disable=function-redefined
         self.raw_response = None
         self.username : str = username
         self.password : str  = password
-        self.token = None
+        self.token = token
         self.account_id = None
         self.enabled = False
         self.in_process = False
@@ -288,6 +289,14 @@ class PyDreo:  # pylint: disable=function-redefined
             _LOGGER.debug("login: Debug Test Mode is enabled.  Skipping login.")  
             return True
 
+        if self.token is not None:
+            # Support token format "token:REGION" (e.g., "abc123:NA" or "abc123:EU")
+            if ":" in self.token:
+                self.token, self.auth_region = self.token.rsplit(":", 1)
+            _LOGGER.debug("login: Token already provided. Skipping login.")
+            self.enabled = True
+            return True
+
         user_check = isinstance(self.username, str) and len(self.username) > 0
         pass_check = isinstance(self.password, str) and len(self.password) > 0
         if user_check is False:
@@ -455,6 +464,8 @@ class PyDreo:  # pylint: disable=function-redefined
         """Re-authenticate to refresh the token. Updates transport if running."""
         _LOGGER.info("_re_login: Attempting to refresh authentication token")
         old_token = self.token
+        # Clear token so login() performs a real authentication
+        self.token = None
         if self.login():
             _LOGGER.info("_re_login: Re-login successful, token refreshed")
             # Update the WebSocket transport with the new token
