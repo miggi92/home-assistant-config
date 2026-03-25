@@ -92,7 +92,7 @@ action:
             person_device: "{{ repeat.item.device }}"
             person_notification: >
               {% if repeat.item.notification is defined %}
-                {{ states(repeat.item.pnotification) }}
+                {{ states(repeat.item.notification) }}
               {% else %} none {% endif %}
             medi_message: "{{ medis_by_person[person_key] }}"
         - choose:
