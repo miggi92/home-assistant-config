@@ -1,0 +1,72 @@
+---
+#  Zigbee Lichtschalter Milo
+alias: "LichtschalterEcke"
+id: e9b377f1-91c1-4763-8b8b-b83531b38ce7
+description: "Schaltet das Licht an und aus"
+mode: single
+trigger:
+  - device_id: 8b5c951ba08a34ff26d6abe46847e1d5
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_on
+    trigger: device
+    id: "on"
+  - device_id: 8b5c951ba08a34ff26d6abe46847e1d5
+    domain: zha
+    type: remote_button_short_press
+    subtype: turn_off
+    trigger: device
+    id: "off"
+  - device_id: 8b5c951ba08a34ff26d6abe46847e1d5
+    domain: zha
+    type: remote_button_long_press
+    subtype: dim_down
+    trigger: device
+    id: "down"
+  - device_id: 8b5c951ba08a34ff26d6abe46847e1d5
+    domain: zha
+    type: remote_button_long_press
+    subtype: dim_up
+    trigger: device
+    id: "up"
+condition: []
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: "on"
+        sequence:
+          - alias: "Turn light on"
+            action: light.turn_on
+            target:
+              entity_id: light.hue_go
+            data: {}
+      - conditions:
+          - condition: trigger
+            id: "off"
+        sequence:
+          - alias: "Turn light off"
+            action: light.turn_off
+            target:
+              entity_id: light.hue_go
+            data: {}
+      - conditions:
+          - condition: trigger
+            id: "up"
+        sequence:
+          - alias: "Increase brightness"
+            action: light.turn_on
+            target:
+              entity_id: light.hue_go
+            data:
+              brightness_step_pct: 10
+      - conditions:
+          - condition: trigger
+            id: "down"
+        sequence:
+          - alias: "Decrease brightness"
+            action: light.turn_on
+            target:
+              entity_id: light.hue_go
+            data:
+              brightness_step_pct: -10
