@@ -91,32 +91,41 @@ sections:
           action: toggle
   - type: grid
     cards:
-      - type: custom:mushroom-climate-card
-        entity: climate.daikinap90134
-        name: Klimaanlage
-        show_temperature_control: true
-        hvac_modes:
-          - heat_cool
-          - heat
-          - cool
-          - fan_only
-          - dry
-      - type: custom:mushroom-climate-card
-        entity: climate.room_climate_wohnzimmer
-        name: Heizung
-        show_temperature_control: true
-        hvac_modes:
-          - auto
-          - heat
-          - "off"
       - type: conditional
         conditions:
-          - condition: or
-            conditions:
-              - entity: sensor.season
-                state: "spring"
-              - entity: sensor.season
-                state: "summer"
+          - condition: numeric_state
+            entity: sensor.daikinap90134_outside_temperature
+            above: "20"
+        card:
+          type: custom:mushroom-climate-card
+          entity: climate.daikinap90134
+          name: Klimaanlage
+          show_temperature_control: true
+          hvac_modes:
+            - heat_cool
+            - heat
+            - cool
+            - fan_only
+            - dry
+      - type: conditional
+        conditions:
+          - condition: numeric_state
+            entity: sensor.daikinap90134_outside_temperature
+            below: "20"
+        card:
+          type: custom:mushroom-climate-card
+          entity: climate.room_climate_wohnzimmer
+          name: Heizung
+          show_temperature_control: true
+          hvac_modes:
+            - auto
+            - heat
+            - "off"
+      - type: conditional
+        conditions:
+          - condition: numeric_state
+            entity: sensor.daikinap90134_outside_temperature
+            above: "20"
         card:
           type: custom:timer-bar-card
           entity: timer.climate_auto_off
@@ -124,12 +133,9 @@ sections:
             layout: vertical
       - type: conditional
         conditions:
-          - condition: or
-            conditions:
-              - entity: sensor.season
-                state: "autumn"
-              - entity: sensor.season
-                state: "winter"
+          - condition: numeric_state
+            entity: sensor.daikinap90134_outside_temperature
+            below: "20"
         card:
           type: custom:timer-bar-card
           entity: timer.heating_auto_off
