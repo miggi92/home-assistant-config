@@ -184,6 +184,11 @@ SUPPORTED_DEVICES = {
 
     # Air Circulators
     "DR-HAF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
+    "DR-HAF004S": DreoDeviceDetails(
+        device_type=DreoDeviceType.AIR_CIRCULATOR,
+        device_ranges={
+            VERTICAL_ANGLE_RANGE: (0, 90)
+        }),
     "DR-HPF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     # HPF-series devices: The API returns controlsConf with only a template reference
     # (e.g. {"template": "DR-HPF002S"}) and no control/schedule.modes data, so
@@ -228,6 +233,20 @@ SUPPORTED_DEVICES = {
             SPEED_RANGE: (1, 10),
             HORIZONTAL_ANGLE_RANGE: (-60, 60)
         }),
+    "DR-HPF025S": DreoDeviceDetails(                                                                                                                                                  
+      device_type=DreoDeviceType.AIR_CIRCULATOR,                                                                                                                                  
+      preset_modes=[                                                                                                                                                                
+          ("normal", 1),                                                                                                                                                            
+          ("auto", 2),                                                                                                                                                              
+          ("sleep", 3),                                                                                                                                                             
+          ("natural", 4),
+          ("turbo", 5)                                                                                                                                                              
+      ],                                                    
+      device_ranges={
+          SPEED_RANGE: (1, 9),
+          HORIZONTAL_ANGLE_RANGE: (-60, 60),                                                                                                                                        
+          VERTICAL_ANGLE_RANGE: (0, 90)
+      }),
 
     # Ceiling Fans
     "DR-HCF": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN),

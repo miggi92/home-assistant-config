@@ -93,7 +93,10 @@ class Helpers:
                         '(?<=authKey": ")|',
                         '(?<=uuid": ")|',
                         '(?<=cid": ")|',
-                        '(?<=authorization": "))',
+                        '(?<=authorization": ")|',
+                        '(?<=client_secret": ")|',
+                        '(?<=client_id": ")|',
+                        '(?<=himei": "))',
                         '[^"]+',
                     )
                 ),

@@ -109,6 +109,8 @@ class PyDreoHumidifier(PyDreoBaseDevice):
     @property
     def modes(self) -> list[str]:
         """Get the list of modes"""
+        if self._modes is None:
+            return None
         return Helpers.get_name_list(self._modes)
 
     @property
@@ -195,6 +197,8 @@ class PyDreoHumidifier(PyDreoBaseDevice):
         self._send_command(SCHEDULE_ENABLE, value)        
     @mode.setter
     def mode(self, value: str) -> None:
+        if self._modes is None:
+            raise NotImplementedError("Attempting to set mode on a device that doesn't support modes.")
         numeric_value = Helpers.value_from_name(self._modes, value)
         if numeric_value is not None:
             if self._mode == numeric_value:
@@ -237,12 +241,12 @@ class PyDreoHumidifier(PyDreoBaseDevice):
 
         val_water_level = self.get_server_update_key_value(message, WATER_LEVEL_STATUS_KEY)
         if isinstance(val_water_level, int):
-            val_water_level = WATER_LEVEL_STATUS_MAP[val_water_level]
+            val_water_level = WATER_LEVEL_STATUS_MAP.get(val_water_level, val_water_level)
             self._wrong = val_water_level		
 
         val_rgblevel = self.get_server_update_key_value(message, RGB_LEVEL)
         if isinstance(val_rgblevel, int):
-            val_rgblevel = RGB_MAP[val_rgblevel]
+            val_rgblevel = RGB_MAP.get(val_rgblevel, val_rgblevel)
             self._rgblevel = val_rgblevel 
 
         val_scheon = self.get_server_update_key_value(message, SCHEDULE_ENABLE)
