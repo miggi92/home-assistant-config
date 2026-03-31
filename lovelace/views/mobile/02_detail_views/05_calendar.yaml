@@ -64,10 +64,12 @@ sections:
             color: blue
             icon: mdi:handball
             name: HBL
+            initiallyHidden: true
           - entity: calendar.2_hbl_spielplan
             color: yellow
             icon: mdi:handball
             name: 2. HBL
+            initiallyHidden: true
         days: 7
         startingDay: today
         startingDayOffset: 0
@@ -80,6 +82,7 @@ sections:
           showLowTemperature: false
           useTwiceDaily: false
           entity: weather.home
+          roundTemperature: true
         locale: de
         showLocation: true
         hidePastEvents: true
