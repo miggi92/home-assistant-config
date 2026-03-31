@@ -17,11 +17,11 @@ badges:
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
-      - entity: sensor.kuchentempsensor_temperature
+      - entity: sensor.kuchentemperatur
   - type: custom:decluttering-card
     template: humidity_badge_template
     variables:
-      - entity: sensor.kuchentempsensor_humidity
+      - entity: sensor.kuchenluftfeuchtigkeit
   - type: entity-filter
     state_filter:
       - operator: "!="
