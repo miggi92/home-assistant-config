@@ -43,7 +43,7 @@ sections:
         color_list:
           - var(--primary-color)
         series:
-          - entity: sensor.epex_spot_data_net_price
+          - entity: sensor.gunstigster_strom_waschmaschine_total_price
             name: Electricity Price
             type: line
             yaxis_id: uurprijs
