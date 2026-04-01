@@ -17,7 +17,7 @@ action:
       title: "📞 Anruf 📞"
       value1: |
         {{ states('sensor.callmon_name') }} ruft gerade an.
-      who: "home, home_audio"
+      who: "home_audio"
       tag_id: "information"
       group: "Telephone"
 
