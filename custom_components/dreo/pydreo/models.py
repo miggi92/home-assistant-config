@@ -1,6 +1,7 @@
 """Supported device models for the PyDreo library."""
 
 from dataclasses import dataclass
+from typing import Callable
 
 from .constant import (
     HORIZONTAL_ANGLE_RANGE,
@@ -69,6 +70,9 @@ class DreoDeviceDetails:
     cooking_range: dict
     """Dictionary of different cooking ranges"""
 
+    override_fn: Callable | None
+    """Optional function called once after initial state load to apply hardware-specific overrides."""
+
     def __init__(
         self,
         device_type: DreoDeviceType = None,
@@ -79,6 +83,7 @@ class DreoDeviceDetails:
         fan_modes: list[str] = None,
         cooking_modes: list[str] = None,
         cooking_range: dict = None,
+        override_fn: Callable | None = None,
     ):
         if (device_type is None):
             raise ValueError("device_type is required")
@@ -87,12 +92,13 @@ class DreoDeviceDetails:
         self.preset_modes = preset_modes
         self.device_ranges = device_ranges
         if self.device_ranges is None:
-            self.device_ranges = {} 
+            self.device_ranges = {}
         self.mode_names = mode_names
         self.swing_modes = swing_modes
         self.fan_modes = fan_modes
         self.cooking_modes = cooking_modes
         self.cooking_range = cooking_range
+        self.override_fn = override_fn
 
 @dataclass
 class DreoACDeviceDetails(DreoDeviceDetails):
@@ -166,6 +172,21 @@ SUPPORTED_MODEL_PREFIXES = {
     "DR-HEC"
 }
 
+
+def _haf004s_mcu_override(device) -> None:
+    """Restrict vertical angle range to (0, 90) for DR-HAF004S units with the SC95F8613B MCU.
+
+    Older hardware revisions using this chip cannot physically reach negative vertical
+    angles.  Newer revisions report a different chip string and use the full range
+    parsed from the API, so this function intentionally leaves them untouched.
+    """
+    if device.raw_state is None:
+        return
+    mixed = device.raw_state.get("data", {}).get("mixed", {})
+    mcu_obj = mixed.get("mcu_hardware_model", {})
+    mcu_model = mcu_obj.get("state", "") if isinstance(mcu_obj, dict) else ""
+    if mcu_model == "SC95F8613B":
+        device._vertical_angle_range = (0, 90)  # pylint: disable=protected-access
 SUPPORTED_DEVICES = {
     # Tower Fans
     "DR-HTF": DreoDeviceDetails(device_type=DreoDeviceType.TOWER_FAN),
@@ -186,9 +207,8 @@ SUPPORTED_DEVICES = {
     "DR-HAF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     "DR-HAF004S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
-        device_ranges={
-            VERTICAL_ANGLE_RANGE: (0, 90)
-        }),
+        override_fn=_haf004s_mcu_override,
+    ),
     "DR-HPF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     # HPF-series devices: The API returns controlsConf with only a template reference
     # (e.g. {"template": "DR-HPF002S"}) and no control/schedule.modes data, so

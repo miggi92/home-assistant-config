@@ -203,6 +203,9 @@ class PyDreo:  # pylint: disable=function-redefined
 
                 self.load_device_state(device)
 
+                if device_details.override_fn is not None:
+                    device_details.override_fn(device)
+
                 self.devices.append(device)
 
                 self._device_list_by_sn[device.serial_number] = device

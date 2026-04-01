@@ -35,6 +35,7 @@ PARAM_TRANSLATIONS = {
         "district": "District",
         "additional_sides_matcher": "Additional Sides Matcher",
         "community": "Community",
+        "language": "Language",
         "g1": "Group 1",
         "g2": "Group 2",
         "g3": "Group 3",
@@ -63,6 +64,7 @@ PARAM_DESCRIPTIONS = {
         "district": "District",
         "additional_sides_matcher": "Additional matcher for collection sides",
         "community": "Community",
+        "language": "Language (e.g. pl, en, uk, ru)",
         "g1": GROUP_DESCRIPTION_EN,
         "g2": GROUP_DESCRIPTION_EN,
         "g3": GROUP_DESCRIPTION_EN,
@@ -169,6 +171,13 @@ TEST_CASES = {
         "app": "eco-przyszlosc",
         "additional_sides_matcher": "Zabudowa wielolokalowa i niezamieszkała o zwiększonej częstotliwości",
     },
+    "Ukrainian language": {
+        "town": "Krzeszowice",
+        "street": "Wyki",
+        "house_number": "1",
+        "additional_sides_matcher": "Заміська забудова",
+        "language": "uk",
+    },
 }
 
 
@@ -186,6 +195,7 @@ class Source:
         house_number="",
         additional_sides_matcher="",
         community="",
+        language="pl",
         g1="",
         g2="",
         g3="",
@@ -220,9 +230,9 @@ class Source:
         }
 
         if app:
-            self._ecoharmonogram_pl = Ecoharmonogram(app)
+            self._ecoharmonogram_pl = Ecoharmonogram(app, language)
         else:
-            self._ecoharmonogram_pl = Ecoharmonogram()
+            self._ecoharmonogram_pl = Ecoharmonogram(language=language)
 
     def fetch(self):
         if self.community_input == "":
