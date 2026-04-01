@@ -12,6 +12,8 @@ condition:
     entity_id: input_boolean.audible_notifications
     state: "on"
 action:
+  - delay:
+      seconds: 1
   - service: script.notify_engine
     data:
       title: "📞 Anruf 📞"
