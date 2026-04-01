@@ -5,7 +5,7 @@ id: 9369a9dc-88fb-4ee8-a724-94559678db81
 description: "Uhr Festnetz"
 trigger:
   - platform: state
-    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch
+    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_nextcloud
 condition: []
 action:
   - variables:

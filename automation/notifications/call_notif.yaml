@@ -5,7 +5,7 @@ id: 2779b29f-8710-4a7b-adc8-03ec212b4ffb
 description: "Benachrichtigen bei verpassten anrufen"
 trigger:
   - platform: state
-    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_telefonbuch
+    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_nextcloud
     from: ringing
 condition: []
 action:
