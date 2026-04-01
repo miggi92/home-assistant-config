@@ -12,30 +12,13 @@ condition: []
 action:
   - variables:
       message: "Essen ist fertig."
-  - if:
-      - condition: state
-        entity_id: input_boolean.audible_notifications
-        state: "on"
-        alias: "Check 4 audible notifications"
-    then:
-      - action: notify.send_message
-        target:
-          floor_id: 1_og
-        data:
-          message: "{{ message }}"
-    else:
-      - if:
-          - condition: state
-            entity_id: input_boolean.text_notifications
-            state: "on"
-        then:
-          - action: script.notify_engine
-            data:
-              title: |
-                👨‍🍳 Essen 👨‍🍳
-              value1: "{{ message }}"
-              who: "home"
-              tag_id: "information"
-              group: "Food"
+  - action: script.notify_engine
+    data:
+      title: |
+        👨‍🍳 Essen 👨‍🍳
+      value1: "{{ message }}"
+      who: "home, home_audio"
+      tag_id: "information"
+      group: "Food"
 
-mode: parallel
+mode: queued

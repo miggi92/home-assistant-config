@@ -77,9 +77,6 @@ notify_engine:
 
   mode: parallel
   sequence:
-    - condition: state
-      entity_id: input_boolean.text_notifications
-      state: "on"
     - variables:
         channel_services:
           home: notify.telegram_bot_home
@@ -92,6 +89,7 @@ notify_engine:
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify
           family: notify.signalfamily
+          home_audio: notify.wohnung_durchsagen
         user_channel_selectors:
           miguel: input_select.miguel_notification_channel
           silke: input_select.silke_notification_channel
@@ -102,28 +100,35 @@ notify_engine:
           telegram_miguel: !secret telegram_miguel
           telegram_silke: !secret telegram_silke
         server_url: "{{ states('input_text.serverurl') }}"
+
     - parallel:
         - repeat:
             for_each: "{{ recipient_list }}"
             sequence:
               - condition: template
-                alias: "Check if recipient's notifications are muted"
+                alias: "Check if notifications are allowed for recipient"
                 value_template: >
                   {% set recipient = repeat.item %}
-                  {% set muteSwitch = 'input_boolean.notifications_' ~ recipient %}
-
-                  {% if recipient in ['tv', 'tv_overlay', 'work', 'home', 'sig_home', 'family'] %}
-                    true
-                  {% elif states(muteSwitch) is not none %}
-                    {{ is_state(muteSwitch, 'on') }}
+                  {% if recipient == 'home_audio' %}
+                    {{ is_state('input_boolean.audible_notifications', 'on') }}
                   {% else %}
-                    true
+                    {% if not is_state('input_boolean.text_notifications', 'on') %}
+                      false
+                    {% else %}
+                      {% set mute_switch = 'input_boolean.notifications_' ~ recipient %}
+                      {% if recipient in ['tv', 'tv_overlay', 'work', 'home', 'sig_home', 'family'] %}
+                        true
+                      {% elif states(mute_switch) is not none %}
+                        {{ is_state(mute_switch, 'on') }}
+                      {% else %}
+                        true
+                      {% endif %}
+                    {% endif %}
                   {% endif %}
               - variables:
                   recipient: "{{ repeat.item }}"
                   notifier: >
                     {% set selector = user_channel_selectors.get(recipient) %}
-
                     {% if selector %}
                       {% set selected_channel = states(selector) %}
                       {{ channel_services.get(selected_channel) | default('notify.miguel_telegram') }}
@@ -134,17 +139,32 @@ notify_engine:
               - choose:
                   - conditions:
                       - condition: template
+                        value_template: "{{ recipient == 'home_audio' }}"
+                        alias: "Condition for audio notifications"
+                    sequence:
+                      - action: notify.send_message
+                        alias: "Send audio notification"
+                        target:
+                          entity_id: "{{ notifier }}"
+                        data:
+                          message: "{{ message }}"
+                  - conditions:
+                      - condition: template
                         value_template: "{{ 'telegram' in notifier }}"
+                        alias: "Condition for Telegram"
                     sequence:
                       - if:
                           - condition: template
                             value_template: "{{ photo is defined }}"
+                            alias: "Check if photo is defined"
                         then:
                           - if:
                               - condition: template
                                 value_template: "{{ photo.path.startswith(('http://', 'https://')) }}"
+                                alias: "Check if photo is a URL"
                             then:
                               - action: telegram_bot.send_photo
+                                alias: "Send Telegram photo via URL"
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
@@ -154,6 +174,7 @@ notify_engine:
                                     - "{{ chatid }}"
                             else:
                               - action: telegram_bot.send_photo
+                                alias: "Send Telegram photo via file path"
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
@@ -163,6 +184,7 @@ notify_engine:
                                     - "{{ chatid }}"
                         else:
                           - action: notify.send_message
+                            alias: "Send Telegram text message"
                             target:
                               entity_id: "{{ notifier }}"
                             data:
@@ -170,47 +192,51 @@ notify_engine:
                               title: "{{ title }}"
                   - conditions:
                       - condition: template
-                        value_template: "{{ who == 'tv' }}"
+                        value_template: "{{ recipient == 'tv' }}"
+                        alias: "Condition for TV"
                     sequence:
                       - action: "{{ notifier }}"
                         alias: "Send Notification to TV"
                         data:
-                          title: "{{ title  }}"
+                          title: "{{ title }}"
                           message: "{{ message }}"
                           data:
                             position: "top-right"
                             image:
-                              url: "{{ photo.path }}"
+                              url: "{{ photo.path if photo is defined else '' }}"
                   - conditions:
                       - condition: template
                         value_template: "{{ 'signal' in notifier }}"
+                        alias: "Condition for Signal"
                     sequence:
                       - action: "{{ notifier }}"
-                        alias: "Signal notification "
+                        alias: "Signal notification"
                         data:
                           message: >-
                             **{{ title }}**
 
                             {{ message }}
                           data: >
-                            {% set data = {} %}
-                            {% set data = dict(data, **{'text_mode': 'styled'}) %}
-                            {% if photo %}
-                              {% set data = dict(data, **{'attachments': [photo]}) %}
+                            {% set payload = {} %}
+                            {% set payload = dict(payload, **{'text_mode': 'styled'}) %}
+                            {% if photo is defined and photo %}
+                              {% set payload = dict(payload, **{'attachments': [photo]}) %}
                             {% endif %}
-                            {{ data }}
+                            {{ payload }}
                   - conditions:
                       - condition: template
-                        value_template: "{{ who == 'tv_overlay' }}"
+                        value_template: "{{ recipient == 'tv_overlay' }}"
+                        alias: "Condition for TV Overlay"
                     sequence:
                       - action: notify.tvoverlaynotify
+                        alias: "Send TV Overlay notification"
                         data:
                           title: "{{ title }}"
                           message: "{{ message }}"
                           data:
-                            appTitle: "{{ group }}"
+                            appTitle: "{{ group if group is defined else '' }}"
                             seconds: 15
-                            image: "{{ photo.path }}"
+                            image: "{{ photo.path if photo is defined else '' }}"
                 default:
                   - variables:
                       notification_payload: >
@@ -238,10 +264,12 @@ notify_engine:
                       title: "{{ title }}"
                       message: "{{ message }}"
                       data: "{{ notification_payload }}"
+
         - alias: "Duplicate notification logic"
           sequence:
             - condition: template
               value_template: "{{ who != 'tv' and who != 'work' and who != 'tv_overlay' }}"
+              alias: "Only duplicate if not specific device"
             - variables:
                 duplications:
                   - who: tv
@@ -261,28 +289,30 @@ notify_engine:
                   - if:
                       - condition: template
                         value_template: "{{ repeat.item.condition }}"
+                        alias: "Condition matches"
                       - condition: template
                         value_template: "{{ states(repeat.item.device) == 'home' }}"
                         alias: "Check if device is home"
                       - condition: and
+                        alias: "Check mediaplayer state if defined"
                         conditions:
                           - condition: template
-                            value_template: "{{ repeat.item.media_check != '' }}"
-                            alias: "Check if mediaplayer is defined"
-                          - condition: template
-                            value_template: "{{ states(repeat.item.media_check) != 'unavailable' }}"
-                            alias: "Mediaplayer is not unavailable"
-                          - condition: template
-                            value_template: "{{ states(repeat.item.media_check) != 'off' }}"
-                            alias: "Mediaplayer is not off"
+                            value_template: >
+                              {% if repeat.item.media_check is defined %}
+                                {{ states(repeat.item.media_check) != 'unavailable' and states(repeat.item.media_check) != 'off' }}
+                              {% else %}
+                                true
+                              {% endif %}
+                            alias: "Mediaplayer is available and not off"
                     then:
                       - action: script.notify_engine
+                        alias: "Call script again for duplicates"
                         data:
                           title: "{{ title }}"
                           value1: "{{ value1 }}"
-                          value2: "{{ value2 }}"
-                          value3: "{{ value3 }}"
+                          value2: "{{ value2 | default('') }}"
+                          value3: "{{ value3 | default('') }}"
                           who: "{{ repeat.item.who }}"
-                          group: "{{ group }}"
-                          photo: "{{ photo }}"
-                          tag_id: "{{ tag_id }}"
+                          group: "{{ group | default('') }}"
+                          photo: "{{ photo | default('') }}"
+                          tag_id: "{{ tag_id | default('') }}"

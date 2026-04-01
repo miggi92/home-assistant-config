@@ -1,0 +1,24 @@
+---
+# Festnetz Audio
+alias: FestnetzAudio
+id: 77c7b8e9-ce77-4af8-8b9a-946acb763b0c
+description: "Benachrichtigen bei anrufen"
+trigger:
+  - platform: state
+    entity_id: sensor.fritz_box_7590_ax_anrufmonitor_nextcloud
+    to: ringing
+condition:
+  - condition: state
+    entity_id: input_boolean.audible_notifications
+    state: "on"
+action:
+  - service: script.notify_engine
+    data:
+      title: "📞 Anruf 📞"
+      value1: |
+        {{ states('sensor.callmon_name') }} ruft gerade an.
+      who: "home, home_audio"
+      tag_id: "information"
+      group: "Telephone"
+
+mode: single
