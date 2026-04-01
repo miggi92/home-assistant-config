@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.3.4%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.3.4)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.4.0%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.4.0)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -28,14 +28,14 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 187
+- 🆙 Aktualisierung: 188
 - 🚨 Alarmbedienfelder: 2
 - ↕️ Auswahlen: 69
-- 🤖 Automatisierungen: 197
+- 🤖 Automatisierungen: 198
 - 🏘️ Bereiche: 19
 - 🖼️ Bilder: 28
 - 🛡️ Binäre Sensoren: 246
-- 🛠️ Custom Integrationen: 53
+- 🛠️ Custom Integrationen: 54
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
 - 🔡 Eingabe-Auswahlen: 9
@@ -44,37 +44,37 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3728
+- 🧩 Entitäten: 3752
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 582
 - 📍 Geräte-Tracker: 177
-- 🔌 Integrationen: 188
+- 🔌 Integrationen: 194
 - 🗓️ Kalender: 27
 - 📷 Kameras: 12
 - 🌡️ Klima: 2
 - 💡 Lichter: 34
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
-- 🎵 Mediaplayer: 43
-- 🔟 Nummern: 108
+- 🎵 Mediaplayer: 42
+- 🔟 Nummern: 111
 - 👤 Personen: 9
-- 🔌 Schalter: 334
+- 🔌 Schalter: 343
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1744
+- 📟 Sensoren: 1748
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 167
+- 🔘 Tasten: 166
 - 📢 Text-zu-Sprache: 4
-- 🔡 Texte: 37
+- 🔡 Texte: 40
 - 🚁 Ventilatoren: 4
 - 🔥 Wasserheizungen: 0
 - 🌤️ Wetter: 3
 - 🕒 Zeiten: 0
-- 🗺️ Zonen: 36
+- 🗺️ Zonen: 39
 <!-- Entities Stats - End -->
 
 ## 🎛️ Devices
