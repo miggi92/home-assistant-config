@@ -1,0 +1,9 @@
+---
+# BT Proxy
+substitutions:
+  node_name: proxy-kitchen
+  node_friendly_name: Kitchen Proxy
+  ip_address: 192.168.0.78
+
+packages:
+  base: !include proxy_base.yaml

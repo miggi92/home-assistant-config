@@ -1,0 +1,9 @@
+---
+# BT Proxy
+substitutions:
+  node_name: proxy-hallway
+  node_friendly_name: Flur Proxy
+  ip_address: 192.168.0.98
+
+packages:
+  base: !include proxy_base.yaml

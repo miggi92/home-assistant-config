@@ -1,0 +1,9 @@
+---
+# BT Proxy
+substitutions:
+  node_name: proxy-couch
+  node_friendly_name: Sofa Proxy
+  ip_address: 192.168.0.3
+
+packages:
+  base: !include proxy_base.yaml

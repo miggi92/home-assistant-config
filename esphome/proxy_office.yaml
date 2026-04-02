@@ -1,0 +1,9 @@
+---
+# BT Proxy
+substitutions:
+  node_name: proxy-office
+  node_friendly_name: Büro Proxy
+  ip_address: 192.168.0.7
+
+packages:
+  base: !include proxy_base.yaml
