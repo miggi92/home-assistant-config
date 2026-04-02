@@ -30,6 +30,16 @@ wifi:
 
 captive_portal:
 
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "${node_friendly_name} IP Address"
+    mac_address:
+      name: "${node_friendly_name} MAC Address"
+
+  - platform: version
+    name: "${node_friendly_name} ESPHome Version"
+
 sensor:
   - platform: uptime
     name: "${node_friendly_name} Uptime"
