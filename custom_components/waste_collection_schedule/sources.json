@@ -213,6 +213,12 @@
       "id": "canning_wa_gov_au"
     },
     {
+      "title": "City of Canterbury-Bankstown (NSW)",
+      "module": "cbcity_nsw_gov_au",
+      "default_params": {},
+      "id": "cbcity_nsw_gov_au"
+    },
+    {
       "title": "City of Casey",
       "module": "casey_vic_gov_au",
       "default_params": {},
@@ -273,6 +279,12 @@
       "id": "joondalup_wa_gov_au"
     },
     {
+      "title": "City of Kalamunda",
+      "module": "kalamunda_wa_gov_au",
+      "default_params": {},
+      "id": "kalamunda_wa_gov_au"
+    },
+    {
       "title": "City of Kingston",
       "module": "kingston_vic_gov_au",
       "default_params": {},
@@ -289,6 +301,12 @@
       "module": "monash_vic_gov_au",
       "default_params": {},
       "id": "monash_vic_gov_au"
+    },
+    {
+      "title": "City of Moonee Valley",
+      "module": "moonee_valley_vic_gov_au",
+      "default_params": {},
+      "id": "moonee_valley_vic_gov_au"
     },
     {
       "title": "City of Mount Gambier",
@@ -587,6 +605,12 @@
       "id": "frwa_com_au"
     },
     {
+      "title": "Kempsey Shire Council",
+      "module": "kempsey_nsw_gov_au",
+      "default_params": {},
+      "id": "kempsey_nsw_gov_au"
+    },
+    {
       "title": "Kiama City Council",
       "module": "kiama_nsw_gov_au",
       "default_params": {},
@@ -771,6 +795,12 @@
       "module": "app_my_local_services_au",
       "default_params": {},
       "id": "app_my_local_services_au"
+    },
+    {
+      "title": "Northern Beaches Council (NSW)",
+      "module": "northernbeaches_nsw_gov_au",
+      "default_params": {},
+      "id": "northernbeaches_nsw_gov_au"
     },
     {
       "title": "Penrith City Council",
@@ -1167,6 +1197,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "APP Lipizzanerheimat",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Arnfels",
       "module": "citiesapps_com",
       "default_params": {},
@@ -1371,6 +1407,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "B\u00e4rnbach",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "B\u00fcrg-V\u00f6stenhof",
       "module": "citiesapps_com",
       "default_params": {},
@@ -1483,6 +1525,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Edelschrott",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "Eggenburg",
@@ -1711,10 +1759,28 @@
       "id": "ics_gda_gv_at"
     },
     {
+      "title": "Geistthal-S\u00f6dingberg",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
+      "title": "gem2go (Abfallverband)",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_gem2go_dev"
+    },
+    {
       "title": "Gemeinde Sulz",
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Gemeinde24",
+      "module": "gemeinde24_at",
+      "default_params": {},
+      "id": "gemeinde24_at"
     },
     {
       "title": "Gemeindeverband Horn",
@@ -2071,6 +2137,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Hirschegg-Pack",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Hochwolkersdorf",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2161,6 +2233,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Kainach",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "Kaindorf",
@@ -2313,6 +2391,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Krottendorf-Gaisfeld",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Krumpendorf am W\u00f6rthersee",
       "module": "ics",
       "default_params": {},
@@ -2335,6 +2419,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
+    },
+    {
+      "title": "K\u00f6flach",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "K\u00f6ssen",
@@ -2445,6 +2535,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Ligist",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Linz AG",
       "module": "ics",
       "default_params": {},
@@ -2511,6 +2607,12 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "Maria Lankowitz",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Maria Rain",
       "module": "ics",
       "default_params": {},
@@ -2569,6 +2671,18 @@
       "module": "edlitz_at",
       "default_params": {},
       "id": "edlitz_at"
+    },
+    {
+      "title": "Marktgemeinde G\u00f6ssendorf",
+      "module": "goessendorf_at",
+      "default_params": {},
+      "id": "goessendorf_at"
+    },
+    {
+      "title": "Marktgemeinde Obdach",
+      "module": "obdach_at",
+      "default_params": {},
+      "id": "obdach_at"
     },
     {
       "title": "Marz",
@@ -2659,6 +2773,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Mooskirchen",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "Mureck",
@@ -3087,6 +3207,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Rosental a.d Kainach",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Rottenbach",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3133,6 +3259,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Sankt Martin am W\u00f6llmi\u00dfberg",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "Sankt Oswald bei Plankenwarth",
@@ -3437,6 +3569,18 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "Stallhofen",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_stallhofen_gv_at"
+    },
+    {
+      "title": "Stallhofen",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
+    },
+    {
       "title": "Statzendorf",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3531,6 +3675,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "S\u00f6ding-Sankt Johann",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "S\u00f6ll",
@@ -3675,6 +3825,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Voitsberg",
+      "module": "lipizzanerheimat_at",
+      "default_params": {},
+      "id": "lipizzanerheimat_at"
     },
     {
       "title": "Vordernberg",
@@ -3863,6 +4019,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "W\u00f6llersdorf-Steinabr\u00fcckl",
+      "module": "citiesapps_com",
+      "default_params": {},
+      "id": "citiesapps_com"
+    },
+    {
       "title": "W\u00f6rterberg",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3931,6 +4093,12 @@
       "id": "bep_environnement_be"
     },
     {
+      "title": "Eupen",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_eupen_be"
+    },
+    {
       "title": "Hygea",
       "module": "hygea_be",
       "default_params": {},
@@ -3966,6 +4134,15 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Burnaby (BC)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "city": "Burnaby",
+        "state": "British Columbia"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
       "title": "Calgary (AB)",
       "module": "calgary_ca",
       "default_params": {},
@@ -3973,6 +4150,14 @@
     },
     {
       "title": "Calgary, AB",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
+      "title": "Castlegar, BC",
       "module": "ics",
       "default_params": {
         "split_at": "\\, (?:and )?|(?: and )"
@@ -4005,10 +4190,26 @@
       "id": "ics_recollect"
     },
     {
-      "title": "City of Hamlton (ON)",
+      "title": "City of Guelph, ON",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
+      "title": "City of Hamilton (ON)",
       "module": "recyclecoach_com",
       "default_params": {},
       "id": "recyclecoach_com"
+    },
+    {
+      "title": "City of Kingston, ON",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "City of Lethbridge",
@@ -4051,6 +4252,12 @@
       "id": "ics_recollect"
     },
     {
+      "title": "City of Windsor",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_citywindsor_ca"
+    },
+    {
       "title": "County of Simcoe, ON",
       "module": "ics",
       "default_params": {
@@ -4077,6 +4284,14 @@
     },
     {
       "title": "District of Saanich, BC",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
+      "title": "Durham Region, ON",
       "module": "ics",
       "default_params": {
         "split_at": "\\, (?:and )?|(?: and )"
@@ -4130,6 +4345,14 @@
       "id": "ics_ville_levis_qc_ca"
     },
     {
+      "title": "Markham, ON",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
       "title": "Montreal (QC)",
       "module": "montreal_ca",
       "default_params": {},
@@ -4146,6 +4369,14 @@
       "module": "publidata_ca",
       "default_params": {},
       "id": "publidata_ca"
+    },
+    {
+      "title": "Muskoka District (Huntsville, ON)",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "Niagara Region",
@@ -4202,6 +4433,12 @@
       "id": "publidata_ca"
     },
     {
+      "title": "Qu\u00e9bec (QC)",
+      "module": "ville_quebec_qc_ca",
+      "default_params": {},
+      "id": "ville_quebec_qc_ca"
+    },
+    {
       "title": "Region of Waterloo",
       "module": "ics",
       "default_params": {
@@ -4224,6 +4461,12 @@
       "id": "ics_recollect"
     },
     {
+      "title": "Rivi\u00e8re-Beaudette",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_riviere_beaudette_com"
+    },
+    {
       "title": "RM of Morris, MB",
       "module": "ics",
       "default_params": {
@@ -4236,6 +4479,14 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_vsj_ca"
+    },
+    {
+      "title": "St Clair Township, ON",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "Strathcona County, ON",
@@ -4283,6 +4534,14 @@
   ],
   "Czech Republic": [
     {
+      "title": "D\u011btmarovice (part Glembovec)",
+      "module": "ics",
+      "default_params": {
+        "url": "https://raw.githubusercontent.com/aleswita/home-assistant/refs/heads/master/waste/detmarovice_glembovec.ics"
+      },
+      "id": "ics_detmarovice_glembovec_cz"
+    },
+    {
       "title": "Litovel",
       "module": "ics",
       "default_params": {},
@@ -4293,6 +4552,12 @@
       "module": "laznebohdanec_cz",
       "default_params": {},
       "id": "laznebohdanec_cz"
+    },
+    {
+      "title": "OZO Ostrava",
+      "module": "ozoostrava_cz",
+      "default_params": {},
+      "id": "ozoostrava_cz"
     },
     {
       "title": "Praha",
@@ -4341,6 +4606,12 @@
       "module": "kalundborg_dk",
       "default_params": {},
       "id": "kalundborg_dk"
+    },
+    {
+      "title": "Kolding Kommune",
+      "module": "kolding_dk",
+      "default_params": {},
+      "id": "kolding_dk"
     },
     {
       "title": "Kredsl\u00f8b",
@@ -4523,6 +4794,14 @@
       "id": "opendata_bordeauxmetropole_fr"
     },
     {
+      "title": "CA Saint Germain Boucles de Seine",
+      "module": "publidata_fr",
+      "default_params": {
+        "instance_id": 1420
+      },
+      "id": "publidata_fr"
+    },
+    {
       "title": "Ch\u00e2teauroux M\u00e9tropole",
       "module": "publidata_fr",
       "default_params": {
@@ -4629,6 +4908,12 @@
         "city": "Martignas-sur-Jalle"
       },
       "id": "opendata_bordeauxmetropole_fr"
+    },
+    {
+      "title": "M\u00e9motri - Agglom\u00e9ration Pau B\u00e9arn Pyr\u00e9n\u00e9es",
+      "module": "memotri_agglo_pau_fr",
+      "default_params": {},
+      "id": "memotri_agglo_pau_fr"
     },
     {
       "title": "M\u00e9rignac",
@@ -4815,10 +5100,22 @@
       "id": "ics_abfall_app_net"
     },
     {
+      "title": "Abfall Export (vCal)",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_export_vcal"
+    },
+    {
       "title": "Abfall IO ICS Version",
       "module": "ics",
       "default_params": {},
       "id": "ics_abfall_io_ics"
+    },
+    {
+      "title": "Abfall Lippe",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_lippe_de"
     },
     {
       "title": "Abfall Stuttgart",
@@ -5064,6 +5361,12 @@
       "module": "nuernberger_land_de",
       "default_params": {},
       "id": "nuernberger_land_de"
+    },
+    {
+      "title": "Abfallwirtschaft Ortenaukreis",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_io_ics"
     },
     {
       "title": "Abfallwirtschaft Ortenaukreis",
@@ -5413,6 +5716,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_kreis_alzey_worms_de"
+    },
+    {
+      "title": "AMBnet",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_ambnet_biz"
     },
     {
       "title": "Anzing",
@@ -6282,6 +6591,18 @@
       "id": "ead_darmstadt_de"
     },
     {
+      "title": "EAW Rheingau-Taunus-Kreis",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_eaw_rheingau_taunus_de"
+    },
+    {
+      "title": "EAW Sangerhausen (Gemos)",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_eaw_wastebox_gemos_de"
+    },
+    {
       "title": "Ebersberg",
       "module": "awido_de",
       "default_params": {
@@ -6444,6 +6765,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_entsorgungstermine_jena_de"
+    },
+    {
+      "title": "Entsorgungsverband V\u00f6lklingen (EVV)",
+      "module": "evv_voelklingen_de",
+      "default_params": {},
+      "id": "evv_voelklingen_de"
     },
     {
       "title": "Eppstein",
@@ -6719,6 +7046,12 @@
       "module": "gfa_lueneburg_de",
       "default_params": {},
       "id": "gfa_lueneburg_de"
+    },
+    {
+      "title": "Ginsheim-Gustavsburg",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_gigu_de"
     },
     {
       "title": "Gipsprojekt",
@@ -7087,6 +7420,12 @@
       "id": "jumomind_de"
     },
     {
+      "title": "Kirchhain",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_export_vcal"
+    },
+    {
       "title": "Kirchseeon",
       "module": "awido_de",
       "default_params": {
@@ -7094,6 +7433,12 @@
         "customer": "ebe"
       },
       "id": "awido_de"
+    },
+    {
+      "title": "Knittel Entsorgung",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_knittel_entsorgung_com"
     },
     {
       "title": "Kommunalservice Landkreis B\u00f6rde A\u00f6R",
@@ -7965,6 +8310,12 @@
       "id": "muellabfuhr_de"
     },
     {
+      "title": "Landkreis Holzminden",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_app_net"
+    },
+    {
       "title": "Landkreis Kaiserslautern",
       "module": "ics",
       "default_params": {},
@@ -8015,6 +8366,14 @@
         "app_id": "de.k4systems.leipziglk"
       },
       "id": "app_abfallplus_de"
+    },
+    {
+      "title": "Landkreis Lichtenfels",
+      "module": "awido_de",
+      "default_params": {
+        "customer": "lichtenfels"
+      },
+      "id": "awido_de"
     },
     {
       "title": "Landkreis Limburg-Weilburg",
@@ -8746,6 +9105,12 @@
       "id": "neu_ulm_de"
     },
     {
+      "title": "Neuenrade",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_neuenrade_de"
+    },
+    {
       "title": "Neum\u00fcnster (MyMuell App)",
       "module": "jumomind_de",
       "default_params": {
@@ -9459,6 +9824,12 @@
       "id": "abfall_io"
     },
     {
+      "title": "Stadt L\u00f6hne",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_export_vcal"
+    },
+    {
       "title": "Stadt Mainhausen",
       "module": "ics",
       "default_params": {},
@@ -9613,6 +9984,12 @@
       "module": "stadtservice_bruehl_de",
       "default_params": {},
       "id": "stadtservice_bruehl_de"
+    },
+    {
+      "title": "Stadtwerke Bergheim",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_swbm_de"
     },
     {
       "title": "Stadtwerke Erfurt, SWE",
@@ -9856,12 +10233,24 @@
       "id": "abfall_io"
     },
     {
+      "title": "Vlotho",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_vlotho_de"
+    },
+    {
       "title": "Volkmarsen (MyMuell App)",
       "module": "jumomind_de",
       "default_params": {
         "service_id": "mymuell"
       },
       "id": "jumomind_de"
+    },
+    {
+      "title": "VUE Waltrop",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_vue_waltrop_de"
     },
     {
       "title": "V\u00f6hl",
@@ -12726,14 +13115,6 @@
       "id": "ximmio_nl"
     },
     {
-      "title": "Assen",
-      "module": "burgerportaal_nl",
-      "default_params": {
-        "organization": "assen"
-      },
-      "id": "burgerportaal_nl"
-    },
-    {
       "title": "Avalex",
       "module": "ximmio_nl",
       "default_params": {
@@ -12756,6 +13137,14 @@
         "company": "bar"
       },
       "id": "ximmio_nl"
+    },
+    {
+      "title": "BAT Tilburg",
+      "module": "burgerportaal_nl",
+      "default_params": {
+        "organization": "bat"
+      },
+      "id": "burgerportaal_nl"
     },
     {
       "title": "BurgerPortaal",
@@ -12816,6 +13205,14 @@
       "id": "ximmio_nl"
     },
     {
+      "title": "Gemeente Assen",
+      "module": "burgerportaal_nl",
+      "default_params": {
+        "organization": "assen"
+      },
+      "id": "burgerportaal_nl"
+    },
+    {
       "title": "Gemeente Berkelland",
       "module": "hvcgroep_nl",
       "default_params": {
@@ -12824,12 +13221,26 @@
       "id": "hvcgroep_nl"
     },
     {
+      "title": "Gemeente Borsele",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_afvalkalender_borsele_nl"
+    },
+    {
       "title": "Gemeente Cranendonck",
       "module": "hvcgroep_nl",
       "default_params": {
         "service": "cranendonck"
       },
       "id": "hvcgroep_nl"
+    },
+    {
+      "title": "Gemeente Groningen",
+      "module": "burgerportaal_nl",
+      "default_params": {
+        "organization": "groningen"
+      },
+      "id": "burgerportaal_nl"
     },
     {
       "title": "Gemeente Hellendoorn",
@@ -12888,12 +13299,26 @@
       "id": "hvcgroep_nl"
     },
     {
+      "title": "Gemeente Utrecht",
+      "module": "burgerportaal_nl",
+      "default_params": {
+        "organization": "utrecht"
+      },
+      "id": "burgerportaal_nl"
+    },
+    {
       "title": "Gemeente Venlo",
       "module": "ximmio_nl",
       "default_params": {
         "company": "venlo"
       },
       "id": "ximmio_nl"
+    },
+    {
+      "title": "Gemeente Venray",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_afvalkalender_venray_nl"
     },
     {
       "title": "Gemeente Venray",
@@ -12951,11 +13376,11 @@
     },
     {
       "title": "Mijn Blink",
-      "module": "hvcgroep_nl",
+      "module": "ximmio_nl",
       "default_params": {
-        "service": "mijnblink"
+        "company": "mijnblink"
       },
-      "id": "hvcgroep_nl"
+      "id": "ximmio_nl"
     },
     {
       "title": "PreZero",
@@ -13138,6 +13563,12 @@
       "module": "wellington_govt_nz",
       "default_params": {},
       "id": "wellington_govt_nz"
+    },
+    {
+      "title": "Western Bay of Plenty District Council",
+      "module": "western_bay_of_plenty_nz",
+      "default_params": {},
+      "id": "western_bay_of_plenty_nz"
     }
   ],
   "Norway": [
@@ -13246,6 +13677,22 @@
       "module": "ecoharmonogram_pl",
       "default_params": {},
       "id": "ecoharmonogram_pl"
+    },
+    {
+      "title": "Gda\u0144sk",
+      "module": "smiecioplan_pl",
+      "default_params": {
+        "city": "gdansk"
+      },
+      "id": "smiecioplan_pl"
+    },
+    {
+      "title": "Gdynia",
+      "module": "smiecioplan_pl",
+      "default_params": {
+        "city": "gdynia"
+      },
+      "id": "smiecioplan_pl"
     },
     {
       "title": "Gmina Bardo",
@@ -14170,12 +14617,34 @@
       "id": "sims_pl"
     },
     {
+      "title": "SmiecioPlan",
+      "module": "smiecioplan_pl",
+      "default_params": {},
+      "id": "smiecioplan_pl"
+    },
+    {
+      "title": "Sopot",
+      "module": "smiecioplan_pl",
+      "default_params": {
+        "city": "sopot"
+      },
+      "id": "smiecioplan_pl"
+    },
+    {
       "title": "Strzelce Kraje\u0144skie",
       "module": "sims_pl",
       "default_params": {
         "owner": "Strzelce Kraje\u0144skie"
       },
       "id": "sims_pl"
+    },
+    {
+      "title": "Szczecin",
+      "module": "smiecioplan_pl",
+      "default_params": {
+        "city": "szczecin"
+      },
+      "id": "smiecioplan_pl"
     },
     {
       "title": "Warsaw",
@@ -14220,6 +14689,18 @@
   ],
   "Slovenia": [
     {
+      "title": "Kamnik",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_publicus_si"
+    },
+    {
+      "title": "Komenda",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_publicus_si"
+    },
+    {
       "title": "Komunala Kranj",
       "module": "komunala_kranj_si",
       "default_params": {},
@@ -14232,10 +14713,34 @@
       "id": "mojiodpadki_si"
     },
     {
+      "title": "Pivka",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_publicus_si"
+    },
+    {
+      "title": "Postojna",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_publicus_si"
+    },
+    {
       "title": "Prodnik",
       "module": "prodnik_si",
       "default_params": {},
       "id": "prodnik_si"
+    },
+    {
+      "title": "Publicus d.o.o.",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_publicus_si"
+    },
+    {
+      "title": "PUP Saubermacher",
+      "module": "pup_si",
+      "default_params": {},
+      "id": "pup_si"
     },
     {
       "title": "Simbio",
@@ -14298,6 +14803,14 @@
       "id": "edpevent_se"
     },
     {
+      "title": "Eker\u00f6",
+      "module": "roslagsvatten_se",
+      "default_params": {
+        "municipality": "ekero"
+      },
+      "id": "roslagsvatten_se"
+    },
+    {
       "title": "G\u00e4strike \u00c5tervinnare",
       "module": "gastrikeatervinnare_se",
       "default_params": {},
@@ -14344,6 +14857,12 @@
       "module": "renhallningen_kristianstad_se",
       "default_params": {},
       "id": "renhallningen_kristianstad_se"
+    },
+    {
+      "title": "Kung\u00e4lvs kommun Avfallshantering",
+      "module": "kungalv_se",
+      "default_params": {},
+      "id": "kungalv_se"
     },
     {
       "title": "Landskrona - Sval\u00f6vs Renh\u00e5llning",
@@ -14482,6 +15001,12 @@
       "id": "edpevent_se"
     },
     {
+      "title": "Roslagsvatten",
+      "module": "roslagsvatten_se",
+      "default_params": {},
+      "id": "roslagsvatten_se"
+    },
+    {
       "title": "Samverkan \u00c5tervinning Milj\u00f6 (S\u00c5M)",
       "module": "samiljo_se",
       "default_params": {},
@@ -14564,10 +15089,24 @@
       "id": "vasyd_se"
     },
     {
+      "title": "Vaxholm",
+      "module": "roslagsvatten_se",
+      "default_params": {
+        "municipality": "vaxholm"
+      },
+      "id": "roslagsvatten_se"
+    },
+    {
       "title": "VIVAB Soph\u00e4mtning",
       "module": "vivab_se",
       "default_params": {},
       "id": "vivab_se"
+    },
+    {
+      "title": "V\u00e4rmd\u00f6 Soph\u00e4mtning",
+      "module": "varmdo_se",
+      "default_params": {},
+      "id": "varmdo_se"
     },
     {
       "title": "V\u00e4stervik Milj\u00f6 & Energi",
@@ -14588,6 +15127,14 @@
         "service_provider": "orebro-kommun"
       },
       "id": "edpevent_se"
+    },
+    {
+      "title": "\u00d6ster\u00e5ker",
+      "module": "roslagsvatten_se",
+      "default_params": {
+        "municipality": "osteraker"
+      },
+      "id": "roslagsvatten_se"
     }
   ],
   "Switzerland": [
@@ -14620,12 +15167,24 @@
       "id": "a_region_ch"
     },
     {
+      "title": "Basel-Stadt",
+      "module": "data_bs_ch",
+      "default_params": {},
+      "id": "data_bs_ch"
+    },
+    {
       "title": "Berg",
       "module": "a_region_ch",
       "default_params": {
         "municipality": "Berg"
       },
       "id": "a_region_ch"
+    },
+    {
+      "title": "Buchegg",
+      "module": "buchegg_so_ch",
+      "default_params": {},
+      "id": "buchegg_so_ch"
     },
     {
       "title": "B\u00fchler",
@@ -14785,6 +15344,12 @@
         "municipality": "Mittelh\u00e4usern"
       },
       "id": "koeniz_ch"
+    },
+    {
+      "title": "mopage.ch",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_mopage_ch"
     },
     {
       "title": "Muolen",
@@ -15043,6 +15608,12 @@
         "municipality": "Waldstatt"
       },
       "id": "a_region_ch"
+    },
+    {
+      "title": "Wiedlisbach",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_mopage_ch"
     },
     {
       "title": "Winterthur",
@@ -16081,6 +16652,12 @@
       "id": "ics_recollect"
     },
     {
+      "title": "Midlothian Council",
+      "module": "midlothian_gov_uk",
+      "default_params": {},
+      "id": "midlothian_gov_uk"
+    },
+    {
       "title": "Milton Keynes council",
       "module": "milton_keynes_gov_uk",
       "default_params": {},
@@ -16195,6 +16772,12 @@
       "module": "nwleics_gov_uk",
       "default_params": {},
       "id": "nwleics_gov_uk"
+    },
+    {
+      "title": "North Yorkshire Council - Craven",
+      "module": "northyorks_craven_gov_uk",
+      "default_params": {},
+      "id": "northyorks_craven_gov_uk"
     },
     {
       "title": "North Yorkshire Council - Hambleton",
@@ -16763,6 +17346,12 @@
       "id": "warwickdc_gov_uk"
     },
     {
+      "title": "Watford Borough Council",
+      "module": "watford_gov_uk",
+      "default_params": {},
+      "id": "watford_gov_uk"
+    },
+    {
       "title": "Waverley Borough Council",
       "module": "waverley_gov_uk",
       "default_params": {},
@@ -16895,6 +17484,12 @@
       "id": "wokingham_gov_uk"
     },
     {
+      "title": "Wolverhampton City Council",
+      "module": "wolverhampton_gov_uk",
+      "default_params": {},
+      "id": "wolverhampton_gov_uk"
+    },
+    {
       "title": "Worcester City",
       "module": "roundlookup_uk",
       "default_params": {
@@ -16976,6 +17571,14 @@
       "id": "ics_recyclebycity_com"
     },
     {
+      "title": "City of Denver, CO",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
       "title": "City of Flagstaff, AZ",
       "module": "ics",
       "default_params": {},
@@ -17012,7 +17615,7 @@
       "id": "ics_recollect"
     },
     {
-      "title": "City of Oklahoma City (unofficial)",
+      "title": "City of Oklahoma City",
       "module": "okc_gov",
       "default_params": {},
       "id": "okc_gov"
@@ -17147,6 +17750,14 @@
       "module": "roundrocktexas_gov",
       "default_params": {},
       "id": "roundrocktexas_gov"
+    },
+    {
+      "title": "Sacramento County, CA",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "Seattle Public Utilities",

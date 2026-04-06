@@ -130,15 +130,21 @@ class ScheduleResponse(TypedDict):
     footer: str
 
 
+SUPPORTED_LANGUAGES_LITERAL = Literal["pl", "en", "uk", "ru"]
+SUPPORTED_LANGUAGES = get_args(SUPPORTED_LANGUAGES_LITERAL)
+
+
 class Ecoharmonogram:
-    def __init__(self, app: str | None = None, language: str = "pl"):
+    def __init__(
+        self, app: str | None = None, language: SUPPORTED_LANGUAGES_LITERAL = "pl"
+    ):
         self._headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             # "Accept": "application/json",
             "X-Requested-With": "XMLHttpRequest",
         }
         self._app = app if app else None
-        self._language = language
+        self._language = language if language in SUPPORTED_LANGUAGES else "pl"
         self._client_id = hex(randrange(0x1000000000000000, 0xFFFFFFFFFFFFFFFF))[2:]
 
     def do_request(

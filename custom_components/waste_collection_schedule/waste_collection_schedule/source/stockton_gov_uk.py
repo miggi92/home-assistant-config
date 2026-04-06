@@ -3,8 +3,8 @@ import json
 import re
 from datetime import datetime
 
-import cloudscraper
 from bs4 import BeautifulSoup
+from curl_cffi import requests
 
 from waste_collection_schedule import Collection
 
@@ -36,14 +36,8 @@ class Source:
         self._uprn: str | int = uprn
 
     def fetch(self):
-        """Fetch using cloudscraper to bypass Cloudflare anti-bot protection"""
-        scraper = cloudscraper.create_scraper(
-            browser={
-                "browser": "chrome",
-                "platform": "windows",
-                "mobile": False,
-            }
-        )
+        """Fetch using curl_cffi to bypass Cloudflare anti-bot protection"""
+        scraper = requests.Session(impersonate="chrome124")
 
         # Start a session with the target URL
         r = scraper.get(API_URL, timeout=30)

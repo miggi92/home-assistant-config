@@ -29,6 +29,7 @@ TEST_CASES = {
 SERVICE_URLS = {
     "avalex": "https://wasteprod2api.ximmio.com",
     "meerlanden": "https://wasteprod2api.ximmio.com",
+    "mijnblink": "https://wasteprod2api.ximmio.com",
     "rad": "https://wasteprod2api.ximmio.com",
     "westland": "https://wasteprod2api.ximmio.com",
 }
@@ -87,6 +88,12 @@ SERVICE_MAP = [
         "url": "https://www.meppel.nl/",
         "uuid": "b7a594c7-2490-4413-88f9-94749a3ec62a",
         "company": "meppel",
+    },
+    {
+        "title": "Mijn Blink",
+        "url": "https://mijnblink.nl/",
+        "uuid": "252d30d0-2e74-469c-8f1e-c0e2e434eb58",
+        "company": "mijnblink",
     },
     {
         "title": "RAD BV",
