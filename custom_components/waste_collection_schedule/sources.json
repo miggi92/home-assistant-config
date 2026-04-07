@@ -291,6 +291,12 @@
       "id": "kingston_vic_gov_au"
     },
     {
+      "title": "City of Manningham",
+      "module": "manningham_vic_gov_au",
+      "default_params": {},
+      "id": "manningham_vic_gov_au"
+    },
+    {
       "title": "City of Mitcham",
       "module": "app_my_local_services_au",
       "default_params": {},
@@ -539,6 +545,12 @@
       "id": "goldcoast_qld_gov_au"
     },
     {
+      "title": "Greater Dandenong City Council",
+      "module": "greaterdandenong_vic_gov_au",
+      "default_params": {},
+      "id": "greaterdandenong_vic_gov_au"
+    },
+    {
       "title": "Gwydir Shire Council",
       "module": "impactapps_com_au",
       "default_params": {
@@ -643,6 +655,12 @@
       "id": "app_my_local_services_au"
     },
     {
+      "title": "Lismore City Council",
+      "module": "lismore_city_nsw_gov_au",
+      "default_params": {},
+      "id": "lismore_city_nsw_gov_au"
+    },
+    {
       "title": "Lithgow City Council",
       "module": "impactapps_com_au",
       "default_params": {
@@ -717,6 +735,12 @@
       "module": "midcoast_nsw_gov_au",
       "default_params": {},
       "id": "midcoast_nsw_gov_au"
+    },
+    {
+      "title": "Mitchell Shire Council",
+      "module": "mitchellshire_vic_gov_au",
+      "default_params": {},
+      "id": "mitchellshire_vic_gov_au"
     },
     {
       "title": "Moira Shire Council",
@@ -4399,10 +4423,13 @@
       "id": "recyclecoach_com"
     },
     {
-      "title": "Orillia, Ontario",
-      "module": "orillia_ca",
-      "default_params": {},
-      "id": "orillia_ca"
+      "title": "Orillia (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "city": "Orillia",
+        "state": "Ontario"
+      },
+      "id": "recyclecoach_com"
     },
     {
       "title": "Ottawa, Canada",
@@ -6717,6 +6744,12 @@
       "id": "awido_de"
     },
     {
+      "title": "ENNI Energie & Umwelt Niederrhein (Moers)",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfallkalender_enni_de"
+    },
+    {
       "title": "Entsorgung Dortmund GmbH (EDG)",
       "module": "app_abfallplus_de",
       "default_params": {
@@ -7050,7 +7083,25 @@
     {
       "title": "Ginsheim-Gustavsburg",
       "module": "ics",
-      "default_params": {},
+      "default_params": {
+        "method": "POST",
+        "params": {
+          "dateFrom": "2026-01-01",
+          "dateTo": "2026-12-31",
+          "category": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        "url": "https://abfallkalender.gigu.de/export"
+      },
       "id": "ics_gigu_de"
     },
     {
@@ -8282,6 +8333,7 @@
           "papier": "1",
           "papiertonne": "1"
         },
+        "split_at": "\\+",
         "url": "https://mobil.abfallwirtschaft-heidenheim.de/icalendar/download.php",
         "year_field": "jahr"
       },
@@ -8430,6 +8482,14 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_nerdbridge_de"
+    },
+    {
+      "title": "Landkreis Oldenburg",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "27708a019a2e35de7eb4bbe7c851609f"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Landkreis Ostallg\u00e4u",
@@ -9018,6 +9078,12 @@
         "operator": "biedenkopf"
       },
       "id": "buergerportal_de"
+    },
+    {
+      "title": "MZV Hegau",
+      "module": "mzvhegau_de",
+      "default_params": {},
+      "id": "mzvhegau_de"
     },
     {
       "title": "MZV Rotenburg",
@@ -13051,6 +13117,12 @@
       "id": "esch_lu"
     },
     {
+      "title": "Luxembourg",
+      "module": "luxembourg_lu",
+      "default_params": {},
+      "id": "luxembourg_lu"
+    },
+    {
       "title": "SICA",
       "module": "sica_lu",
       "default_params": {},
@@ -15069,6 +15141,12 @@
       "id": "avfallsapp_se"
     },
     {
+      "title": "Telge \u00c5tervinning",
+      "module": "telge_se",
+      "default_params": {},
+      "id": "telge_se"
+    },
+    {
       "title": "Uppsala Vatten",
       "module": "edpevent_se",
       "default_params": {
@@ -15246,6 +15324,18 @@
         "municipality": "Goldach"
       },
       "id": "a_region_ch"
+    },
+    {
+      "title": "Gossau ZH",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_gossau_zh_ch"
+    },
+    {
+      "title": "Grenchen (CH)",
+      "module": "grenchen_ch",
+      "default_params": {},
+      "id": "grenchen_ch"
     },
     {
       "title": "Grosswangen",
@@ -15830,6 +15920,12 @@
       "id": "iapp_itouchvision_com"
     },
     {
+      "title": "Bolsover District Council",
+      "module": "bolsover_gov_uk",
+      "default_params": {},
+      "id": "bolsover_gov_uk"
+    },
+    {
       "title": "Bolton Council",
       "module": "bolton_gov_uk",
       "default_params": {},
@@ -16024,6 +16120,12 @@
       "module": "chichester_gov_uk",
       "default_params": {},
       "id": "chichester_gov_uk"
+    },
+    {
+      "title": "Chorley Council",
+      "module": "chorley_gov_uk",
+      "default_params": {},
+      "id": "chorley_gov_uk"
     },
     {
       "title": "City of Doncaster Council",
@@ -16610,6 +16712,12 @@
       "module": "mansfield_gov_uk",
       "default_params": {},
       "id": "mansfield_gov_uk"
+    },
+    {
+      "title": "Medway Council",
+      "module": "medway_gov_uk",
+      "default_params": {},
+      "id": "medway_gov_uk"
     },
     {
       "title": "Melton Borough Council",
@@ -17228,6 +17336,12 @@
       "module": "tameside_gov_uk",
       "default_params": {},
       "id": "tameside_gov_uk"
+    },
+    {
+      "title": "Teignbridge District Council",
+      "module": "teignbridge_gov_uk",
+      "default_params": {},
+      "id": "teignbridge_gov_uk"
     },
     {
       "title": "Telford and Wrekin Council",
