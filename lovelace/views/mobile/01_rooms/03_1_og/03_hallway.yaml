@@ -31,15 +31,21 @@ sections:
         name: Guest WiFi
         tap_action:
           action: toggle
-      - type: custom:mushroom-fan-card
-        entity: fan.tower_fan
-        icon: mdi:fan
-        icon_type: icon
-        icon_animation: true
-        show_percentage_control: true
-        collapsible_controls: true
-        show_oscillate_control: true
-        layout: vertical
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.hvac_advisor
+            state: "cool"
+        card:
+          type: custom:mushroom-fan-card
+          entity: fan.tower_fan
+          icon: mdi:fan
+          icon_type: icon
+          icon_animation: true
+          show_percentage_control: true
+          collapsible_controls: true
+          show_oscillate_control: true
+          layout: vertical
   - type: grid
     cards:
       - type: custom:flower-card

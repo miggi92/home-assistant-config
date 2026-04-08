@@ -93,9 +93,9 @@ sections:
     cards:
       - type: conditional
         conditions:
-          - condition: numeric_state
-            entity: sensor.daikinap90134_outside_temperature
-            above: "20"
+          - condition: state
+            entity: sensor.hvac_advisor
+            state: "cool"
         card:
           type: custom:mushroom-climate-card
           entity: climate.daikinap90134
@@ -109,9 +109,9 @@ sections:
             - dry
       - type: conditional
         conditions:
-          - condition: numeric_state
-            entity: sensor.daikinap90134_outside_temperature
-            below: "20"
+          - condition: state
+            entity: sensor.hvac_advisor
+            state: "heat"
         card:
           type: custom:mushroom-climate-card
           entity: climate.room_climate_wohnzimmer
@@ -123,9 +123,9 @@ sections:
             - "off"
       - type: conditional
         conditions:
-          - condition: numeric_state
-            entity: sensor.daikinap90134_outside_temperature
-            above: "20"
+          - condition: state
+            entity: sensor.hvac_advisor
+            state: "cool"
         card:
           type: custom:timer-bar-card
           entity: timer.climate_auto_off
@@ -133,9 +133,9 @@ sections:
             layout: vertical
       - type: conditional
         conditions:
-          - condition: numeric_state
-            entity: sensor.daikinap90134_outside_temperature
-            below: "20"
+          - condition: state
+            entity: sensor.hvac_advisor
+            state: "heat"
         card:
           type: custom:timer-bar-card
           entity: timer.heating_auto_off
