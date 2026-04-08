@@ -11,13 +11,24 @@
 			"matchCurrentVersion": "!/^0/",
 			"automerge": true
 		},
-
+		{
+			"matchFileNames": ["docs/**"],
+			"groupName": "docs dependencies",
+			"labels": ["dependencies", "documentation"],
+			"commitMessageTopic": "docs dependencies"
+		},
 		{
 			"matchManagers": ["github-actions"],
 			"description": "Group Actions",
 			"labels": ["github-actions", "dependencies"],
 			"groupName": "github actions",
 			"groupSlug": "github-actions"
+		},
+		{
+			"matchFileNames": ["custom_components/**"],
+			"groupName": "custom components dependencies",
+			"labels": ["dependencies"],
+			"commitMessageTopic": "custom components"
 		}
 	],
 	"vulnerabilityAlerts": {
