@@ -184,6 +184,7 @@ media_player:
       icon: mdi:television
       title: |
         [[[ return hass.states['media_player.fernseher_im_wohnzimmer'].attributes.app_name ]]]
+    - entity: media_player.toniebox_milo
   album_cover_background: true
 layout:
   auto-padding:

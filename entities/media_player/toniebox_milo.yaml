@@ -1,0 +1,15 @@
+---
+# TonieBox Milo
+platform: custom_universal_media_player
+name: Toniebox Milo
+device_class: speaker
+state_template: >
+  {% if is_state('sensor.milo_tonie_box_playback', 'ON') %}
+    playing
+  {% else %}
+    idle
+  {% endif %}
+attributes:
+  entity_picture: image.milo_tonie_box_content_picture|entity_picture
+  media_title: sensor.milo_tonie_box_content_title
+  volume_level: sensor.milo_tonie_box_volume_normalized
