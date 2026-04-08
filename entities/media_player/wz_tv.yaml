@@ -1,0 +1,65 @@
+---
+platform: custom_universal_media_player
+name: Wohnzimmer TV
+device_class: tv
+state_template: "{{ states('media_player.fernseher_im_wohnzimmer') }}"
+attributes:
+  entity_picture: image.active_app_picture|entity_picture
+  media_title: sensor.active_app
+  media_position: media_player.fernseher_im_wohnzimmer|media_position
+  media_duration: media_player.fernseher_im_wohnzimmer|media_duration
+  media_content_id: media_player.fernseher_im_wohnzimmer|media_content_id
+  media_content_type: media_player.fernseher_im_wohnzimmer|media_content_type
+  media_position_updated_at: media_player.fernseher_im_wohnzimmer|media_position_updated_at
+  volume_level: media_player.wztv|volume_level
+  is_volume_muted: media_player.wztv|is_volume_muted
+commands:
+  turn_on:
+    alias: "Turn on the TV"
+    service: media_player.turn_on
+    target:
+      entity_id: media_player.fernseher_im_wohnzimmer
+  turn_off:
+    alias: "Turn off the TV"
+    service: media_player.turn_off
+    target:
+      entity_id: media_player.fernseher_im_wohnzimmer
+  volume_up:
+    alias: "Increase receiver volume"
+    service: media_player.volume_up
+    target:
+      entity_id: media_player.wztv
+  volume_down:
+    alias: "Decrease receiver volume"
+    service: media_player.volume_down
+    target:
+      entity_id: media_player.wztv
+  volume_set:
+    alias: "Set exact receiver volume"
+    service: media_player.volume_set
+    target:
+      entity_id: media_player.wztv
+    data:
+      volume_level: "{{ volume_level }}"
+  volume_mute:
+    alias: "Toggle receiver mute"
+    service: media_player.volume_mute
+    target:
+      entity_id: media_player.wztv
+    data:
+      is_volume_muted: "{{ is_volume_muted }}"
+  media_play:
+    alias: "Play media on TV"
+    service: media_player.media_play
+    target:
+      entity_id: media_player.fernseher_im_wohnzimmer
+  media_pause:
+    alias: "Pause media on TV"
+    service: media_player.media_pause
+    target:
+      entity_id: media_player.fernseher_im_wohnzimmer
+  media_stop:
+    alias: "Stop media on TV"
+    service: media_player.media_stop
+    target:
+      entity_id: media_player.fernseher_im_wohnzimmer
