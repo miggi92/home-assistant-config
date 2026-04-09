@@ -1,7 +1,7 @@
 import logging
 import re
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -20,7 +20,18 @@ from .analysis_const import (
     DEFAULT_SCORE_THRESHOLD,
     DEFAULT_SEASONAL_WEIGHT,
 )
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    CONF_ENABLE_PRODUCT_SENSORS,
+    CONF_SELECTION_CRITERIA,
+    CONF_PREFER_GENERIC_PRODUCTS,
+    CONF_AUTO_SELECT_FIRST,
+    CONF_SUGGEST_CREATE_ONLY_NO_MATCH,
+    DEFAULT_PREFER_GENERIC_PRODUCTS,
+    DEFAULT_AUTO_SELECT_FIRST,
+    DEFAULT_SUGGEST_CREATE_ONLY_NO_MATCH,
+)
+from .schema import SELECTION_CRITERIA_SCHEMA
 from .services import async_create_restart_repair_issue
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,6 +59,7 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
+        self._stored_config_entry = config_entry
         self.options = dict(config_entry.options or config_entry.data)
 
         if CONF_ANALYSIS_SETTINGS not in self.options:
@@ -56,6 +68,12 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                 CONF_FREQUENCY_WEIGHT: DEFAULT_FREQUENCY_WEIGHT,
                 CONF_SEASONAL_WEIGHT: DEFAULT_SEASONAL_WEIGHT,
                 CONF_SCORE_THRESHOLD: DEFAULT_SCORE_THRESHOLD,
+            }
+
+        if CONF_SELECTION_CRITERIA not in self.options:
+            self.options[CONF_SELECTION_CRITERIA] = {
+                CONF_PREFER_GENERIC_PRODUCTS: DEFAULT_PREFER_GENERIC_PRODUCTS,
+                CONF_AUTO_SELECT_FIRST: DEFAULT_AUTO_SELECT_FIRST,
             }
         self._data = {"unique_id": self.options.get("unique_id")}
 
@@ -79,9 +97,17 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                             "image_download_size": user_input.get(
                                 "image_download_size", 100
                             ),
+                            "enable_bidirectional_sync": user_input.get(
+                                "enable_bidirectional_sync", False
+                            ),
+                            CONF_ENABLE_PRODUCT_SENSORS: user_input.get(
+                                CONF_ENABLE_PRODUCT_SENSORS, True
+                            ),
                         }
                     )
                     return await self.async_step_advanced()
+            if user_input.get("show_advanced", False):
+                return await self.async_step_advanced()
 
             if not is_valid_url(user_input.get("api_url", "")):
                 self._errors["base"] = "invalid_api_url"
@@ -96,8 +122,8 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                     "enable_bidirectional_sync": user_input.get(
                         "enable_bidirectional_sync", False
                     ),
-                    "disable_notifications": user_input.get(
-                        "disable_notifications", False
+                    CONF_ENABLE_PRODUCT_SENSORS: user_input.get(
+                        CONF_ENABLE_PRODUCT_SENSORS, True
                     ),
                     "unique_id": self.options.get("unique_id"),
                     CONF_ANALYSIS_SETTINGS: self.options.get(
@@ -109,6 +135,17 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                             CONF_SCORE_THRESHOLD: DEFAULT_SCORE_THRESHOLD,
                         },
                     ),
+                    "disable_notifications": user_input.get(
+                        "disable_notifications", False
+                    ),
+                    CONF_SELECTION_CRITERIA: self.options.get(
+                        CONF_SELECTION_CRITERIA,
+                        {
+                            CONF_PREFER_GENERIC_PRODUCTS: DEFAULT_PREFER_GENERIC_PRODUCTS,
+                            CONF_AUTO_SELECT_FIRST: DEFAULT_AUTO_SELECT_FIRST,
+                            CONF_SUGGEST_CREATE_ONLY_NO_MATCH: DEFAULT_SUGGEST_CREATE_ONLY_NO_MATCH,
+                        },
+                    ),
                 }
 
                 old_api_url = self.options.get("api_url")
@@ -118,6 +155,9 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                 )
                 old_disable_timeout = self.options.get("disable_timeout", False)
                 old_image_size = self.options.get("image_download_size", 100)
+                old_product_sensors = self.options.get(
+                    CONF_ENABLE_PRODUCT_SENSORS, True
+                )
 
                 settings_changed = (
                     old_api_url
@@ -130,6 +170,8 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                         or old_disable_timeout
                         != user_input.get("disable_timeout", False)
                         or old_image_size != user_input.get("image_download_size", 100)
+                        or old_product_sensors
+                        != user_input.get(CONF_ENABLE_PRODUCT_SENSORS, True)
                     )
                 )
                 first_time_setup = not (old_api_url and old_api_key)
@@ -144,41 +186,38 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
 
                 return self.async_create_entry(title="", data=updated_data)
 
+        # Create base schema
+        base_schema = {
+            vol.Required("api_url", default=self.options.get("api_url", "")): str,
+            vol.Required(
+                "verify_ssl", default=self.options.get("verify_ssl", True)
+            ): bool,
+            vol.Required("api_key", default=self.options.get("api_key", "")): str,
+            vol.Optional(
+                "disable_timeout",
+                default=self.options.get("disable_timeout", False),
+            ): bool,
+            vol.Optional(
+                "image_download_size",
+                default=self.options.get("image_download_size", 100),
+            ): vol.All(vol.Coerce(int), vol.In([0, 50, 100, 150, 200])),
+            vol.Optional(
+                "enable_bidirectional_sync",
+                default=self.options.get("enable_bidirectional_sync", False),
+            ): bool,
+            vol.Optional(
+                CONF_ENABLE_PRODUCT_SENSORS,
+                default=self.options.get(CONF_ENABLE_PRODUCT_SENSORS, True),
+            ): bool,
+            vol.Optional("show_advanced", default=False): bool,
+        }
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "api_url", default=self.options.get("api_url", "")
-                    ): str,
-                    vol.Required(
-                        "verify_ssl", default=self.options.get("verify_ssl", True)
-                    ): bool,
-                    vol.Required(
-                        "api_key", default=self.options.get("api_key", "")
-                    ): str,
-                    vol.Optional(
-                        "disable_timeout",
-                        default=self.options.get("disable_timeout", False),
-                    ): bool,
-                    vol.Optional(
-                        "image_download_size",
-                        default=self.options.get("image_download_size", 100),
-                    ): vol.All(vol.Coerce(int), vol.In([0, 50, 100, 150, 200])),
-                    vol.Optional(
-                        "enable_bidirectional_sync",
-                        default=self.options.get("enable_bidirectional_sync", False),
-                    ): bool,
-                    vol.Optional(
-                        "disable_notifications",
-                        default=self.options.get("disable_notifications", False),
-                    ): bool,
-                    vol.Optional("show_advanced", default=False): bool,
-                }
-            ),
+            data_schema=vol.Schema(base_schema),
             errors=self._errors,
             description_placeholders={
-                "disclaimer": "ℹ️ The shopping suggestions work great with default settings. Only access advanced settings if you need to fine-tune the algorithm."
+                "disclaimer": "ℹ️ The shopping suggestions work great with default settings. Only access advanced settings if you need to fine-tune the algorithm.",
             },
         )
 
@@ -187,10 +226,12 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
     ) -> FlowResult:
         """Handle advanced settings with disclaimer."""
         self._errors = {}
-        current_settings = self.options.get(CONF_ANALYSIS_SETTINGS, {})
+        current_analysis_settings = self.options.get(CONF_ANALYSIS_SETTINGS, {})
+        current_selection_criteria = self.options.get(CONF_SELECTION_CRITERIA, {})
 
         if user_input is not None:
             try:
+                # Extract analysis settings
                 analysis_settings = {
                     CONF_CONSUMPTION_WEIGHT: user_input.get(
                         CONF_CONSUMPTION_WEIGHT, DEFAULT_CONSUMPTION_WEIGHT
@@ -206,7 +247,26 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
                     ),
                 }
 
+                # Extract selection criteria
+                selection_criteria = {
+                    CONF_PREFER_GENERIC_PRODUCTS: user_input.get(
+                        CONF_PREFER_GENERIC_PRODUCTS, DEFAULT_PREFER_GENERIC_PRODUCTS
+                    ),
+                    CONF_AUTO_SELECT_FIRST: user_input.get(
+                        CONF_AUTO_SELECT_FIRST, DEFAULT_AUTO_SELECT_FIRST
+                    ),
+                    CONF_SUGGEST_CREATE_ONLY_NO_MATCH: user_input.get(
+                        CONF_SUGGEST_CREATE_ONLY_NO_MATCH,
+                        DEFAULT_SUGGEST_CREATE_ONLY_NO_MATCH,
+                    ),
+                }
+
                 analysis_settings = ANALYSIS_SCHEMA(analysis_settings)
+                try:
+                    selection_criteria = SELECTION_CRITERIA_SCHEMA(selection_criteria)
+                except vol.Invalid:
+                    self._errors["base"] = "invalid_selection_criteria"
+
                 total_weight = (
                     analysis_settings[CONF_CONSUMPTION_WEIGHT]
                     + analysis_settings[CONF_FREQUENCY_WEIGHT]
@@ -220,9 +280,15 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
             if not self._errors:
                 updated_data = dict(self.options)
                 updated_data[CONF_ANALYSIS_SETTINGS] = analysis_settings
+                updated_data[CONF_SELECTION_CRITERIA] = selection_criteria
 
-                old_settings = self.options.get(CONF_ANALYSIS_SETTINGS, {})
-                if old_settings != analysis_settings:
+                old_analysis_settings = self.options.get(CONF_ANALYSIS_SETTINGS, {})
+                old_selection_criteria = self.options.get(CONF_SELECTION_CRITERIA, {})
+
+                if (
+                    old_analysis_settings != analysis_settings
+                    or old_selection_criteria != selection_criteria
+                ):
                     await _create_restart_repair_issue(
                         self.hass, "restart_required_analysis"
                     )
@@ -233,35 +299,57 @@ class ShoppingListWithGrocyOptionsConfigFlow(config_entries.OptionsFlow):  # typ
             step_id="advanced",
             data_schema=vol.Schema(
                 {
+                    # Analysis Settings
                     vol.Required(
                         CONF_SCORE_THRESHOLD,
-                        default=current_settings.get(
+                        default=current_analysis_settings.get(
                             CONF_SCORE_THRESHOLD, DEFAULT_SCORE_THRESHOLD
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
                     vol.Required(
                         CONF_CONSUMPTION_WEIGHT,
-                        default=current_settings.get(
+                        default=current_analysis_settings.get(
                             CONF_CONSUMPTION_WEIGHT, DEFAULT_CONSUMPTION_WEIGHT
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
                     vol.Required(
                         CONF_FREQUENCY_WEIGHT,
-                        default=current_settings.get(
+                        default=current_analysis_settings.get(
                             CONF_FREQUENCY_WEIGHT, DEFAULT_FREQUENCY_WEIGHT
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
                     vol.Required(
                         CONF_SEASONAL_WEIGHT,
-                        default=current_settings.get(
+                        default=current_analysis_settings.get(
                             CONF_SEASONAL_WEIGHT, DEFAULT_SEASONAL_WEIGHT
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+                    # Selection Criteria
+                    vol.Optional(
+                        CONF_PREFER_GENERIC_PRODUCTS,
+                        default=current_selection_criteria.get(
+                            CONF_PREFER_GENERIC_PRODUCTS,
+                            DEFAULT_PREFER_GENERIC_PRODUCTS,
+                        ),
+                    ): bool,
+                    vol.Optional(
+                        CONF_AUTO_SELECT_FIRST,
+                        default=current_selection_criteria.get(
+                            CONF_AUTO_SELECT_FIRST, DEFAULT_AUTO_SELECT_FIRST
+                        ),
+                    ): bool,
+                    vol.Optional(
+                        CONF_SUGGEST_CREATE_ONLY_NO_MATCH,
+                        default=current_selection_criteria.get(
+                            CONF_SUGGEST_CREATE_ONLY_NO_MATCH,
+                            DEFAULT_SUGGEST_CREATE_ONLY_NO_MATCH,
+                        ),
+                    ): bool,
                 }
             ),
             errors=self._errors,
             description_placeholders={
-                "warning": "⚠️ These settings control how shopping suggestions are calculated. Incorrect values may completely break the feature. We recommend leaving defaults unchanged unless you fully understand the algorithm. All weights must sum to 1.0."
+                "warning": "⚠️ Analysis settings control how shopping suggestions are calculated. Selection criteria work only with bidirectional sync enabled. All weights must sum to 1.0."
             },
         )
 

@@ -36,6 +36,8 @@ blueprint:
               value: "spanish"
             - label: "Deutsch"
               value: "german"
+            - label: "Italiano"
+              value: "italian"
 
 variables:
   todo_entity: !input todo_entity
@@ -74,6 +76,13 @@ trigger:
       - "Setze {product} auf [meine] Einkaufsliste"
       - "Ich brauche {product}"
 
+      - "Aggiungi {quantity} {product} alla [mia] lista della spesa"
+      - "Metti {quantity} {product} sulla [mia] lista della spesa"
+      - "Ho bisogno di {quantity} {product}"
+      - "Aggiungi {product} alla [mia] lista della spesa"
+      - "Metti {product} sulla [mia] lista della spesa"
+      - "Ho bisogno di {product}"
+
       - "Choix {choice_text}"
       - "Le {choice_text}"
       - "Numéro {choice_text}"
@@ -87,6 +96,9 @@ trigger:
       - "Auswahl {choice_text}"
       - "Nummer {choice_text}"
       - "Die {choice_text}"
+      - "Scelta {choice_text}"
+      - "Numero {choice_text}"
+      - "Opzione {choice_text}"
     id: conversation
   - platform: event
     event_type: grocy_voice_choice_result
