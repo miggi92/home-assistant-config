@@ -1,29 +1,29 @@
-- id: "1690789658458"
+- id: '1690789658458'
   alias: Android Auto Miguel
-  description: ""
+  description: ''
   trigger:
-    - trigger: state
-      entity_id:
-        - binary_sensor.pixel_9_pro_android_auto
-      to: "on"
+  - trigger: state
+    entity_id:
+    - binary_sensor.pixel_9_pro_android_auto
+    to: 'on'
   condition: []
   action:
-    - action: notify.mobile_app_pixel_9_pro
+  - action: notify.mobile_app_pixel_9_pro
+    data:
+      title: Connected 2 car
+      message: This device is connected to android auto.
       data:
-        title: Connected 2 car
-        message: This device is connected to android auto.
-        data:
-          car_ui: true
-          notification_icon: mdi:car
-          channel: Auto
-          importance: high
+        car_ui: true
+        notification_icon: mdi:car
+        channel: Auto
+        importance: high
   mode: single
-- id: "1708473160035"
-  alias: "Battery replacement "
-  description: ""
+- id: '1708473160035'
+  alias: 'Battery replacement '
+  description: ''
   use_blueprint:
     path: andrew-codechimp/battery_notes_battery_replaced.yaml
-- id: "1766058639894"
+- id: '1766058639894'
   alias: Jukebox Steuerung
   description: Steuerung einer Jukebox über Music Assistant und einen Medienplayer
   use_blueprint:
@@ -31,3 +31,44 @@
     input:
       media_player: media_player.jukebox
       default_playlist: Binder Party
+- id: '1775773377422'
+  alias: 'TV Licht schalter '
+  description: ''
+  triggers:
+  - event_type: zha_event
+    event_data:
+      device_id: 84b7775dd55f7215f4bb0f0925be9e65
+      command: 'off'
+    trigger: event
+  - event_type: zha_event
+    event_data:
+      device_id: 84b7775dd55f7215f4bb0f0925be9e65
+      command: 'on'
+    trigger: event
+  conditions: []
+  actions:
+  - action: light.toggle
+    metadata: {}
+    target:
+      entity_id: light.tv_licht
+    data: {}
+  mode: single
+- id: '1775773676360'
+  alias: Lichthelligkeit per Rad steuern
+  description: ''
+  triggers:
+  - event_type: zha_event
+    event_data:
+      device_id: 84b7775dd55f7215f4bb0f0925be9e65
+      command: move_to_level
+    alias: Trigger when wheel is rotated
+    trigger: event
+  conditions: []
+  actions:
+  - alias: Update light brightness
+    action: light.turn_on
+    target:
+      entity_id: light.tv_licht
+    data:
+      brightness: '{{ trigger.event.data.params.level }}'
+  mode: restart
