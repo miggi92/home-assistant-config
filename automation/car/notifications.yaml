@@ -1,0 +1,83 @@
+---
+# Notifications
+id: 55aaff45-6a17-465e-a2ee-e31d1987aaef
+alias: carNotif
+description: "Benachrichtigungen"
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.fordpass_tourneo_indicators
+    above: 0
+    id: warnings
+  - platform: numeric_state
+    entity_id: sensor.fordpass_tourneo_messages
+    above: 0
+    id: messages
+condition: []
+action:
+  - alias: processWarnings
+    if:
+      - condition: template
+        value_template: "{{ trigger.id == 'warnings' }}"
+    then:
+      - alias: buildWarningMessage
+        variables:
+          title: "Warnmeldung"
+          level: "warning"
+          msg: >
+            Aktuell gibt es Warnungen für folgende Systeme:
+            {%- set attributes = states.sensor.fordpass_tourneo_indicators.attributes %}
+            {%- for key, value in attributes.items() %}
+              {%- if value == true %}
+                - {{ key.split('_')[0] }}
+              {%- endif %}
+            {%- endfor %}
+      - alias: generateAiWarningMessage
+        action: ai_task.generate_data
+        data:
+          task_name: Car warning
+          instructions: >-
+            {{ msg }}
+            Bitte gib mir die Fehlermeldungen von oben fürs auto aus. Alles in einem
+            einfachen deutschen Satz, der dann als Benachrichtung verschickt werden
+            kann.
+          entity_id: ai_task.google_ai_task
+        response_variable: aiResponse
+      - alias: sendWarningNotification
+        service: script.notify_engine
+        data:
+          title: "{{ title }}"
+          value1: "{{ aiResponse.data }}"
+          who: "home"
+          tag_id: "{{ level }}"
+          group: "Car"
+  - alias: processMessages
+    if:
+      - condition: template
+        value_template: "{{ trigger.id == 'messages' }}"
+    then:
+      - alias: buildCarMessages
+        variables:
+          carMessages: >
+            {%- set attributes = states.sensor.fordpass_tourneo_messages.attributes %}
+            {%- set ns = namespace(items=[]) %}
+            {%- for key, value in attributes.items() %}
+              {%- if key.endswith('_Content') %}
+                {%- set prefix = key.split('_')[0] %}
+                {%- set subject_key = prefix ~ '_Subject' %}
+                {%- set subject = attributes.get(subject_key, 'Nachricht vom Auto') %}
+                {%- set ns.items = ns.items + [{"title": subject, "msg": value}] %}
+              {%- endif %}
+            {%- endfor %}
+            {{ ns.items | to_json }}
+      - alias: sendIndividualMessages
+        repeat:
+          for_each: "{{ carMessages | from_json }}"
+          sequence:
+            - alias: sendSingleMessage
+              service: script.notify_engine
+              data:
+                title: "{{ repeat.item.title }}"
+                value1: "{{ repeat.item.msg }}"
+                who: "home"
+                tag_id: "information"
+                group: "Car"
