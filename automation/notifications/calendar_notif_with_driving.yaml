@@ -8,12 +8,16 @@ trigger:
     event: start
     offset: "-00:30:00"
 condition:
-  - condition: template
+  - alias: "Überprüfe ob ein Ort angegeben ist"
+    condition: template
     value_template: "{{ trigger.calendar_event.location != '' }}"
 action:
-  - variables:
-      start_time: "{{ trigger.calendar_event.start_time | as_timestamp | timestamp_custom('%H:%M', True) }}"
-  - service: script.notify_engine
+  - alias: "Setze Startzeit Variable"
+    variables:
+      start_time: >-
+        {{ as_timestamp(trigger.calendar_event.start_time, now().timestamp()) | timestamp_custom('%H:%M', True) }}
+  - alias: "Sende Benachrichtigung"
+    service: script.notify_engine
     data:
       title: |
         🗓️ Terminerinnerung - {{ trigger.calendar_event.summary }} 🗓️

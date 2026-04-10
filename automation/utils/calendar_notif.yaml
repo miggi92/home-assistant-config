@@ -7,7 +7,7 @@ trigger:
   - trigger: time
     at:
       entity_id: sensor.calendar_depature_info_time
-      offset: "-00:05:00"
+      offset: "-00:10:00"
 condition:
   - condition: template
     value_template: >
