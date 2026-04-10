@@ -26,3 +26,4 @@ action:
       value1: >
         Dein Termin **{{ title }}** beginnt um {{ as_datetime(start_time).strftime('%H:%M') }}.
         Fahrtzeit nach {{ location }}: {{ travel_time }} Minuten (+{{ buffer }} min Puffer).
+      who: "home,home_audio"
