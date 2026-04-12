@@ -56,7 +56,7 @@ INTEGRATION_INIT: Final = "INTG_INIT"
 
 defaultHeadersDec2025 = {
     "Accept-Encoding": "gzip",
-    "Connection": "Keep-Alive",
+    "Connection": "keep-alive",
     "User-Agent": "okhttp/4.12.0",
 }
 
@@ -77,21 +77,14 @@ apiHeaders = {
 # Kudos to Rik for providing this info
 loginHeadersOct2025 = {
     "Accept-Encoding": "gzip",
-    "Connection": "Keep-Alive",
+    "Connection": "keep-alive",
     "Content-Type": "application/x-www-form-urlencoded",
     "User-Agent": "okhttp/4.12.0",
-    #"Host": "login.ford.com" # looks like that this info is not required (which makes my live easier)
+    #"Host": "login.ford.com" # looks like that this info is not required (which makes my life easier)
 }
 
 MAX_401_RESPONSE_COUNT: Final = 10
 LOG_DATA: Final = False
-
-# DEPRECATED - do not use anymore!
-# BASE_URL: Final = "https://usapi.cv.ford.com/api"
-# SSO_URL: Final = "https://sso.ci.ford.com"
-
-# hopefully also not used anylonger...
-# GUARD_URL: Final = "https://api.mps.ford.com/api"
 
 AUTONOMIC_URL: Final = "https://api.autonomic.ai/v1"
 AUTONOMIC_BETA_URL: Final = "https://api.autonomic.ai/v1beta"
@@ -101,6 +94,8 @@ AUTONOMIC_ACCOUNT_URL: Final = "https://accounts.autonomic.ai/v1"
 #FORD_LOGIN_URL: Final = "https://login.ford.com"
 FORD_FOUNDATIONAL_API: Final = "https://api.foundational.ford.com/api"
 FORD_VEHICLE_API: Final = "https://api.vehicle.ford.com/api"
+FORD_MPS: Final = "https://api.mps.ford.com"
+FORD_MPS_API: Final = f"{FORD_MPS}/api"
 ERROR: Final = "ERROR"
 
 START_CHARGE_KEY:Final      = "START_CHARGE"
@@ -828,9 +823,12 @@ class ConnectedFordPassVehicle:
         # but when we cleared the tokens... we must mark us as 're-auth' required...
         self._is_reauth_required = True
 
+    # ***********************************************************
+    # ***********************************************************
+    # ***********************************************************
 
-    # the WebSocket related handling...
-    async def ws_connect(self):
+    # the WebSocket-related handling...
+    async def ws_connect(self, do_inventory_check:bool=False):
         _LOGGER.debug(f"{self.vli}ws_connect() STARTED...")
         self.ws_connected = False
         await self.__ensure_valid_tokens()
@@ -845,12 +843,17 @@ class ConnectedFordPassVehicle:
             if self.auto_access_token is None:
                 return None
 
+        if do_inventory_check:
+            if not await self.req_vehicles_inventory_check_int():
+                _LOGGER.debug(f"{self.vli}ws_connect() - req_vehicles_inventory_check_int() failed, will not establish WebSocket connection")
+                return None
+
         headers_ws = {
-            **apiHeaders,
-            "authorization": f"Bearer {self.auto_access_token}",
-            "Application-Id": self.app_id,
-            "Connection": "Upgrade",
+            **defaultHeadersDec2025,
+            "Connection": "Upgrade", # this will overwrite the "Keep-Alive" from the defaultHeadersDec2025
+            "Authorization": f"Bearer {self.auto_access_token}",
             "Upgrade": "websocket",
+            #"Host": "api.autonomic.ai"
             #"Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits",
             #"Sec-WebSocket-Key": "QOX3XLqFRFO6N+kAyrhQKA==",
             #"Sec-WebSocket-Version": "13"
@@ -1399,7 +1402,6 @@ class ConnectedFordPassVehicle:
 
         return data
 
-
     async def update_remote_climate_int(self):
         # only update remote climate data if not present yet
         if self._remote_climate_control_supported:
@@ -1408,7 +1410,6 @@ class ConnectedFordPassVehicle:
 
             if self._cached_rcc_data is not None and len(self._cached_rcc_data) > 0:
                 self._data_container[ROOT_REMOTE_CLIMATE_CONTROL] = self._cached_rcc_data
-
 
     async def update_preferred_charge_times_int(self):
         # only update remote climate data if not present yet
@@ -1488,40 +1489,11 @@ class ConnectedFordPassVehicle:
             except BaseException as ex:
                 _LOGGER.warning(f"{self.vli}_ws_debounce_update_energy_transfer_logs(): Error during 'energy_transfer_logs' data refresh - {type(ex).__name__} - {ex}")
 
-    # async def req_handle_energy_transfer_logs_result_async(self, list_data:list):
-    #     try:
-    #         if self.coordinator is not None:
-    #             _LOGGER.debug(f"{self.vli}req_handle_energy_transfer_logs_result_async(): started")
-    #             prev_last_id = self.coordinator._last_ENERGY_TRANSFER_LOG_ENTRY_ID
-    #             new_last_id = None
-    #             for item in list_data:
-    #                 _LOGGER.info(f"{item}")
-    #                 a_item_id = item["id"]
-    #
-    #                 # for the first entry in the list we store it for later...
-    #                 if new_last_id is None:
-    #                     new_last_id == a_item_id
-    #
-    #                 # when we have reached an entry, that is already the last handled log entry, then we
-    #                 # can skipp the handling...
-    #                 if prev_last_id == a_item_id:
-    #                     break
-    #                 else:
-    #                     # for the given entry we must create a "log" entry for the corresponding sensor in HA
-    #                     if hasattr(self.coordinator, 'create_energy_transfer_log_entry'):
-    #                         await self.coordinator.create_energy_transfer_log_entry(item)
-    #
-    #             # all energy_transfer items are processed...
-    #             if new_last_id is not None and new_last_id != prev_last_id:
-    #                 self.coordinator._last_ENERGY_TRANSFER_LOG_ENTRY_ID = new_last_id
-    #
-    #     except CancelledError:
-    #         _LOGGER.debug(f"{self.vli}req_handle_energy_transfer_logs_result_async(): was canceled - all good")
-    #     except BaseException as ex:
-    #         _LOGGER.warning(f"{self.vli}req_handle_energy_transfer_logs_result_async(): Error during processing list_data {list_data} - {type(ex).__name__} - {ex}")
+    # ***********************************************************
+    # ***********************************************************
+    # ***********************************************************
 
-
-    async def req_status(self):
+    async def req_status(self, do_as_post=False):
         """Get Vehicle status from API"""
         global _AUTO_FOUR_NULL_ONE_COUNTER
         try:
@@ -1531,27 +1503,58 @@ class ConnectedFordPassVehicle:
 
             await self.__ensure_valid_tokens()
             if self._HAS_COM_ERROR:
-                _LOGGER.debug(f"{self.vli}req_status(): - COMM ERROR")
+                _LOGGER.debug(f"{self.vli}req_status(): [as POST? {do_as_post}] - COMM ERROR")
                 return None
             else:
-                _LOGGER.debug(f"{self.vli}req_status(): - auto_access_token exist? {self.auto_access_token is not None}")
+                _LOGGER.debug(f"{self.vli}req_status(): [as POST? {do_as_post}] - auto_access_token exist? {self.auto_access_token is not None}")
                 if self.auto_access_token is None:
                     return None
 
-            headers_state = {
-                **apiHeaders,
-                "authorization": f"Bearer {self.auto_access_token}",
-                "Application-Id": self.app_id,
-            }
-            params_state = {
-                "lrdt": "01-01-1970 00:00:00"
-            }
-            response_state = await self.session.get(
-                f"{AUTONOMIC_URL}/telemetry/sources/fordpass/vehicles/{self.vin}",
-                params=params_state,
-                headers=headers_state,
-                timeout=self.timeout
-            )
+            if do_as_post:
+                # 2026/04/09 @bapirex THIS is currently not working for me [from GERMANY]
+                # {"code":502,"error":"bad gateway","message":"A TMC service returned an invalid response","messageTemplate":"A TMC service returned an invalid response","timestamp":"2026-04-09T10:07:31.960128Z","referenceId":"ID-HERE"}
+
+                # The FordPass app uses POST to the v1beta :query endpoint with an
+                # includeMetrics body, not GET to v1. Using GET /v1/ is a detectable
+                # difference that Ford could use to identify non-app API clients.
+                headers_state = {
+                    **apiHeaders,
+                    "Authorization": f"Bearer {self.auto_access_token}",
+                    #"Application-Id": self.app_id, # AUTONOMIC Endpoints don't need the Application-Id
+                }
+                telemetry_body = {
+                    "includeMetrics": [
+                        "metrics",
+                        "customMetrics",
+                        "configurations",
+                        "states",
+                        "events",
+                        "commands",
+                        "messages",
+                    ]
+                }
+                response_state = await self.session.post(
+                    f"{AUTONOMIC_BETA_URL}/telemetry/sources/fordpass/vehicles/{self.vin}:query",
+                    headers=headers_state,
+                    data=json.dumps(telemetry_body),
+                    timeout=self.timeout
+                )
+            else:
+                # the classic way as GET...
+                headers_state = {
+                    **apiHeaders,
+                    "Authorization": f"Bearer {self.auto_access_token}",
+                    #"Application-Id": self.app_id, # AUTONOMIC Endpoints don't need the Application-Id
+                }
+                params_state = {
+                    "lrdt": "01-01-1970 00:00:00"
+                }
+                response_state = await self.session.get(
+                    f"{AUTONOMIC_URL}/telemetry/sources/fordpass/vehicles/{self.vin}",
+                    params=params_state,
+                    headers=headers_state,
+                    timeout=self.timeout
+                )
 
             if response_state.status == 200:
                 # ok first resetting the counter for 401 errors (if we had any)
@@ -1564,10 +1567,10 @@ class ConnectedFordPassVehicle:
             elif response_state.status == 401:
                 _AUTO_FOUR_NULL_ONE_COUNTER[self.vin] += 1
                 if _AUTO_FOUR_NULL_ONE_COUNTER[self.vin] > MAX_401_RESPONSE_COUNT:
-                    _LOGGER.error(f"{self.vli}req_status(): status_code: 401 - mark_re_auth_required()")
+                    _LOGGER.error(f"{self.vli}req_status(): [as POST? {do_as_post}] status_code: 401 - mark_re_auth_required()")
                     self.mark_re_auth_required()
                 else:
-                    (_LOGGER.warning if _AUTO_FOUR_NULL_ONE_COUNTER[self.vin] > 2 else _LOGGER.info)(f"{self.vli}req_status(): status_code: 401 - AUTO counter: {_AUTO_FOUR_NULL_ONE_COUNTER}")
+                    (_LOGGER.warning if _AUTO_FOUR_NULL_ONE_COUNTER[self.vin] > 2 else _LOGGER.info)(f"{self.vli}req_status(): [as POST? {do_as_post}] status_code: 401 - AUTO counter: {_AUTO_FOUR_NULL_ONE_COUNTER}")
                     await asyncio.sleep(5)
                 return None
             elif response_state.status == 403:
@@ -1580,24 +1583,24 @@ class ConnectedFordPassVehicle:
 
                     # if the message is not the 'NOT AUTHORIZED', then we at least must also return the
                     # default error
-                    _LOGGER.debug(f"{self.vli}req_status():  status_code: 403 - response: '{msg}'")
+                    _LOGGER.debug(f"{self.vli}req_status(): [as POST? {do_as_post}] status_code: 403 - response: '{msg}'")
                     self._HAS_COM_ERROR = True
                     return None
                 except BaseException as e:
-                    _LOGGER.debug(f"{self.vli}req_status():  status_code: 403 - Error while handle 'response' - {type(e).__name__} - {e}")
+                    _LOGGER.debug(f"{self.vli}req_status(): [as POST? {do_as_post}] status_code: 403 - Error while handle 'response' - {type(e).__name__} - {e}")
                     self._HAS_COM_ERROR = True
                     return None
                 pass
             else:
-                _LOGGER.info(f"{self.vli}req_status(): status_code : {response_state.status} - {response_state.real_url} - Received response: {await response_state.text()}")
+                _LOGGER.info(f"{self.vli}req_status(): [as POST? {do_as_post}] status_code : {response_state.status} - {response_state.real_url} - Received response: {await response_state.text()}")
                 self._HAS_COM_ERROR = True
                 return None
 
         except BaseException as e:
             if not await self.__check_for_closed_session(e):
-                _LOGGER.warning(f"{self.vli}req_status(): Error while '_request_token' for vehicle {self.vin} - {type(e).__name__} - {e}")
+                _LOGGER.warning(f"{self.vli}req_status(): [as POST? {do_as_post}] Error while '_request_token' for vehicle {self.vin} - {type(e).__name__} - {e}")
             else:
-                _LOGGER.info(f"{self.vli}req_status(): RuntimeError - Session was closed occurred - but a new Session could be generated")
+                _LOGGER.info(f"{self.vli}req_status(): [as POST? {do_as_post}] RuntimeError - Session was closed occurred - but a new Session could be generated")
             self._HAS_COM_ERROR = True
             return None
 
@@ -1780,6 +1783,36 @@ class ConnectedFordPassVehicle:
 
             self._HAS_COM_ERROR = True
             return None
+
+    async def req_vehicles_inventory_check_int(self):
+        # The FordPass app calls the vehicle inventory endpoint shortly BEFORE or AFTER
+        # opening a WebSocket connection. This validates the vehicle is authorized and
+        # mimics the app's API call sequence (a behavioral fingerprint).
+        try:
+            inv_headers = {
+                **defaultHeadersDec2025,
+                "Authorization": f"Bearer {self.auto_access_token}",
+                #"Host": "api.autonomic.ai"
+            }
+            inv_response = await self.session.get(
+                f"{AUTONOMIC_URL}/inventory/vehicles:getByVin",
+                params={"vin": self.vin, "includeRelations": "groups"},
+                headers=inv_headers,
+                timeout=self.timeout,
+            )
+            if 200 <= inv_response.status <= 205:
+                inventory_data = await inv_response.json()
+                if self._LOCAL_LOGGING:
+                    await self._local_logging("inventory_vehicles", inventory_data)
+                _LOGGER.debug(f"{self.vli}req_vehicles_inventory_check_int() FINE")
+                return True
+            else:
+                _LOGGER.info(f"{self.vli}req_vehicles_inventory_check_int() - inventory pre-check returned {inv_response.status}")
+                return False
+
+        except Exception as e:
+            _LOGGER.debug(f"{self.vli}req_vehicles_inventory_check_int() - inventory pre-check failed: {e}")
+            return False
 
     async def req_remote_climate(self):
         global _FOUR_NULL_ONE_COUNTER
@@ -2065,64 +2098,9 @@ class ConnectedFordPassVehicle:
             self._HAS_COM_ERROR = True
             return None
 
-
-
     # ***********************************************************
     # ***********************************************************
     # ***********************************************************
-    # async def guard_status(self):
-    #     """Retrieve guard status from API"""
-    #     await self.__ensure_valid_tokens()
-    #     if self._HAS_COM_ERROR:
-    #         _LOGGER.debug(f"{self.vli}guard_status() - COMM ERROR")
-    #         return None
-    #     else:
-    #         _LOGGER.debug(f"{self.vli}guard_status() - access_token exist? {self.access_token is not None}")
-    #
-    #     headers_gs = {
-    #         **apiHeaders,
-    #         "auth-token": self.access_token,
-    #         "Application-Id": self.app_id,
-    #     }
-    #     params_gs = {"lrdt": "01-01-1970 00:00:00"}
-    #
-    #     response_gs = await self.session.get(
-    #         f"{GUARD_URL}/guardmode/v1/{self.vin}/session",
-    #         params=params_gs,
-    #         headers=headers_gs,
-    #         timeout=self.timeout
-    #     )
-    #     return await response_gs.json()
-    #
-    # async def enable_guard(self):
-    #     """
-    #     Enable Guard mode on supported models
-    #     """
-    #     await self.__ensure_valid_tokens()
-    #     if self._HAS_COM_ERROR:
-    #         return None
-    #
-    #     response = self.__make_request(
-    #         "PUT", f"{GUARD_URL}/guardmode/v1/{self.vin}/session", None, None
-    #     )
-    #     _LOGGER.debug(f"{self.vli}enable_guard: {await response.text()}")
-    #     return response
-    #
-    # async def disable_guard(self):
-    #     """
-    #     Disable Guard mode on supported models
-    #     """
-    #     await self.__ensure_valid_tokens()
-    #     if self._HAS_COM_ERROR:
-    #         return None
-    #
-    #     response = self.__make_request(
-    #         "DELETE", f"{GUARD_URL}/guardmode/v1/{self.vin}/session", None, None
-    #     )
-    #     _LOGGER.debug(f"{self.vli}disable_guard: {await response.text()}")
-    #     return response
-
-
 
     # public final GenericCommand<CommandStateActuation> actuationCommand;
     # public final GenericCommand<CommandStateActuation> antiTheft;
@@ -2171,7 +2149,10 @@ class ConnectedFordPassVehicle:
                     "command":  FORD_COMMAND_MAP.get(command_key, None)}
         return None
 
-    # operations
+    # ***********************************************************
+    # __request_and_poll_command_ford
+    # ***********************************************************
+
     async def start_charge(self):
         # VALUE_CHARGE, CHARGE_NOW, CHARGE_DT, CHARGE_DT_COND, CHARGE_SOLD, HOME_CHARGE_NOW, HOME_STORE_CHARGE, HOME_CHARGE_DISCHARGE
         # START_GLOBAL_CHARGE
@@ -2184,6 +2165,11 @@ class ConnectedFordPassVehicle:
     async def pause_charge(self):
         # PAUSE_GLOBAL_CHARGE
         return await self.__request_and_poll_command_ford(command_key=PAUSE_CHARGE_KEY)
+
+
+    # ***********************************************************
+    # __request_command (@FORD)
+    # ***********************************************************
 
     async def set_zone_lighting(self, target_option:str, current_option=None):
         if target_option is None or str(target_option) == ZONE_LIGHTS_VALUE_OFF:
@@ -2299,6 +2285,27 @@ class ConnectedFordPassVehicle:
 
         return result
 
+    # ── Guard mode (Ford MPS API, not Autonomic) ──────────────────────
+    async def get_guard_mode(self):
+        """Retrieve guard mode session status."""
+        # for MARQ24 this just returns
+        # {'returnCode': 200, 'returnMessage': 'The request was Successful.'}
+        return await self.__request_command("getGuardMode", include_xvin_in_header=True)
+
+    async def set_guard_mode(self):
+        """Enable Guard mode on supported models."""
+        return await self.__request_command("setGuardMode", include_xvin_in_header=True)
+
+    async def del_guard_mode(self):
+        """Disable Guard mode on supported models."""
+        # for MARQ24 this just returns
+        # {'returnCode': 300, 'returnMessage': 'Enrollment is still in progress.'}
+        return await self.__request_command("delGuardMode", include_xvin_in_header=True)
+
+    # ***********************************************************
+    # __request_and_poll_command_autonomic
+    # ***********************************************************
+
     # NOT USED YET
     # def start_engine(self):
     #     return self.__request_and_poll_command(command="startEngine")
@@ -2346,8 +2353,317 @@ class ConnectedFordPassVehicle:
         status = await self.__request_and_poll_command_autonomic(baseurl=AUTONOMIC_URL, write_command="statusRefresh")
         return status
 
+    # MARQ24: the following commands have been added by PR#205 (https://github.com/marq24/ha-fordpass/pull/215)
+    # Unfortunately, some of these commands currently work for me (or they had been modified).
+    #
+    # I am quite confident that all `write_command` should not have the suffix `Command` - at least when I
+    # enable/disable the departure time (via the app) then the actual type property is:
+    # `"type": "updateDepartureTimes"` [and not updateDepartureTimesCommand as it was suggested in the PR]
 
-    async def __request_command(self, command:str, post_data=None, vin=None):
+    # ── Departure times ────────────────────────────────────────────────
+
+    async def departure_times_enable(self):
+        """Enable departure times with the given schedule list."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="enableDepartureTimes",
+            properties={},
+            data_version="1"
+        )
+
+    async def departure_times_disable(self):
+        """Disable all departure times."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="disableDepartureTimes",
+            properties={},
+            data_version="1",
+            #properties={"isDepartureTimeEnabled": False, "departureSchedules": []},
+            #data_version="2",
+        )
+
+    async def departure_times_update(self, schedules: list):
+        """Update departure time schedules (see enable_departure_times for format).
+
+        schedules: list of dicts with keys:
+            dayOfWeek (str): e.g. "MONDAY"
+            schedules (list): each with locationId, preconditionTemperature
+                ("LOW"|"MEDIUM"|"HIGH"|"OFF"), scheduleId, scheduleStatus
+                ("ON"|"OFF"), timeOfDay ({hours, minutes})
+        """
+
+        # TODO: we must find a place where we can get our 'schedules' from...
+
+        # APP will 'delete' a schedule via POST:
+        # sample_data = {
+        #     "properties": {
+        #         "departureSchedules": [
+        #             {
+        #                 "dayOfWeek": "MONDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 1,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 2,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "TUESDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 3,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 4,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "WEDNESDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 5,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 6,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "THURSDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 7,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 8,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "FRIDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 9,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 10,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "SATURDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 11,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 12,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             },
+        #             {
+        #                 "dayOfWeek": "SUNDAY",
+        #                 "schedules": [
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 13,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     },
+        #                     {
+        #                         "locationId": 0,
+        #                         "preconditionTemperature": "OFF",
+        #                         "scheduleId": 14,
+        #                         "scheduleStatus": "OFF",
+        #                         "timeOfDay": {
+        #                             "hours": 24,
+        #                             "minutes": 0
+        #                         }
+        #                     }
+        #                 ]
+        #             }
+        #         ],
+        #         "isDepartureTimeEnabled": True
+        #     },
+        #     "tags": {},
+        #     "type": "updateDepartureTimes",
+        #     "version": "1",
+        #     "wakeUp": True
+        # }
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="updateDepartureTimes",
+            properties={"isDepartureTimeEnabled": True, "departureSchedules": schedules},
+        )
+
+    # ── On-demand preconditioning ──────────────────────────────────────
+    # MARQ24 none of these commands work for me...
+
+    async def preconditioning_start(self):
+        """Start cabin preconditioning (independent of remote start)."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="startOnDemandPreconditioning",
+            properties={"preconditioningDuration": 0, "vehiclePreconditionSetting": 2},
+            data_version="1",
+        )
+
+    async def preconditioning_extend(self):
+        """Extend active preconditioning session."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="extendOnDemandPreconditioning",
+            properties={"preconditioningDuration": 0, "vehiclePreconditionSetting": 2},
+            data_version="1",
+        )
+
+    async def preconditioning_stop(self):
+        """Stop active preconditioning session."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="stopOnDemandPreconditioning",
+            properties={"preconditioningDuration": 0, "vehiclePreconditionSetting": 1},
+        )
+
+    # ── Trailer light check ────────────────────────────────────────────
+    # MARQ24 none of these commands wok for me...
+
+    async def trailer_light_check_start(self):
+        """Flash trailer lights to verify connection."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_URL,
+            write_command="startTrailerLightCheck",
+        )
+
+    async def trailer_light_check_stop(self):
+        """Stop trailer light check."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_URL,
+            write_command="stopTrailerLightCheck",
+        )
+
+    # ── PPO (Programmable Parameter Override) ──────────────────────────
+    # MARQ24 none of these commands work for me...
+
+    async def ppo_refresh(self):
+        """One-shot PPO refresh."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="ppoRefresh",
+        )
+
+    async def ppo_refresh_continuous(self, frequency: int = 3, duration: int = 10):
+        """Start continuous PPO refresh (default: every 3 min for 10 min)."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="ppoRefreshContinuous",
+            properties={"frequencyAndDuration": {"frequency": frequency, "duration": duration}},
+        )
+
+    async def ppo_refresh_cancel(self):
+        """Cancel continuous PPO refresh."""
+        return await self.__request_and_poll_command_autonomic(
+            baseurl=AUTONOMIC_BETA_URL,
+            write_command="ppoRefreshContinuousCancel",
+            properties={"frequencyAndDuration": {"frequency": 0, "duration": 0}},
+        )
+
+    # ***********************************************************
+    # ***********************************************************
+    # ***********************************************************
+
+    async def __request_command(self, command:str, post_data=None, include_xvin_in_header=False, return_response_content=False):
         try:
             await self.__ensure_valid_tokens()
             if self._HAS_COM_ERROR:
@@ -2363,28 +2679,27 @@ class ConnectedFordPassVehicle:
                 "auth-token": self.access_token,
                 "Application-Id": self.app_id,
             }
-            # do we want to overwrite the vin?!
-            if vin is None:
-                vin = self.vin
+            if include_xvin_in_header:
+                headers["X-Vin"] = self.vin
 
             request_type = None
             check_command = None
             if command == "turnZoneLightsOff":
                 request_type = "DELETE"
-                command_url = f"https://api.mps.ford.com/vehicles/vpfi/zonelightingactivation"
-                post_data = {"vin": vin}
+                command_url = f"{FORD_MPS}/vehicles/vpfi/zonelightingactivation"
+                post_data = {"vin": self.vin}
 
             elif command == "turnZoneLightsOn":
                 request_type = "PUT"
-                command_url = f"https://api.mps.ford.com/vehicles/vpfi/zonelightingactivation"
-                post_data = {"vin": vin}
+                command_url = f"{FORD_MPS}/vehicles/vpfi/zonelightingactivation"
+                post_data = {"vin": self.vin}
 
             elif command == "setZoneLightsMode":
                 # if we can't get the target mode, we assume the default mode '0' (= ALL)
                 target_zone = post_data.get("zone", "0")
                 request_type = "PUT"
-                command_url = f"https://api.mps.ford.com/vehicles/vpfi/{target_zone}/zonelightingzone"
-                post_data = {"vin": vin}
+                command_url = f"{FORD_MPS}/vehicles/vpfi/{target_zone}/zonelightingzone"
+                post_data = {"vin": self.vin}
 
             # remote climate control stuff...
             elif command == "setRemoteClimateControl":
@@ -2392,12 +2707,22 @@ class ConnectedFordPassVehicle:
                 request_type = "PUT"
                 # Unfortunately, the PUT request will only return an object like this:
                 # {"status": 200} - so there is no id, command_id or anything else present
-                # that could be used,to verify if your data update was successful.
+                # that could be used to verify if your data update was successful.
                 # But I saw in the 'states:commands:publishProfilePreferencesR2Command' - so
                 # at the end of the day the request will be received by the vehicle.
                 # Using a timestamp will be also not perfect, because we can/will send muliple
                 # UpdateProfile requests...
                 check_command = "publishProfilePreferencesR2"
+
+            # guard-mode stuff...
+            elif command.endswith("GuardMode"):
+                command_url = f"{FORD_MPS_API}/gmfi/v1/session"
+                if command == "getGuardMode":
+                    request_type = "GET"
+                if command == "setGuardMode":
+                    request_type = "PUT"
+                if command == "delGuardMode":
+                    request_type = "DELETE"
 
             if command_url is None:
                 _LOGGER.warning(f"{self.vli}__request_command() - command '{command}' is not supported by the integration")
@@ -2408,7 +2733,7 @@ class ConnectedFordPassVehicle:
             else:
                 json_post_data = None
 
-            if request_type is None or request_type not in ["POST", "PUT", "DELETE"]:
+            if request_type is None or request_type not in ["GET", "POST", "PUT", "DELETE"]:
                 _LOGGER.warning(f"{self.vli}__request_command() - Unsupported request type '{request_type}' for command '{command}'")
                 return False
 
@@ -2428,6 +2753,11 @@ class ConnectedFordPassVehicle:
                                                 data=json_post_data,
                                                 headers=headers,
                                                 timeout=self.timeout)
+            elif request_type == "GET":
+                req = await self.session.get(f"{command_url}",
+                                                data=json_post_data,
+                                                headers=headers,
+                                                timeout=self.timeout)
 
             if req is not None:
                 if not (200 <= req.status <= 205):
@@ -2443,12 +2773,15 @@ class ConnectedFordPassVehicle:
 
                 _LOGGER.debug(f"{self.vli}__request_command(): '{command}' response: {response}")
 
-                # not used yet - since we do not have a command_id or similar
+                # not used yet - since we do not have a command_id or similar,
                 # see: 'elif command == "setRemoteClimateControl":'
                 #if check_command is not None:
                 #    await self.__wait_for_state(command_id=None, state_command_str=check_command, use_websocket=self.ws_connected)
 
-                return True
+                if return_response_content:
+                    return response
+                else:
+                    return True
 
         except BaseException as e:
             if not await self.__check_for_closed_session(e):
@@ -2473,8 +2806,8 @@ class ConnectedFordPassVehicle:
 
             headers = {
                 **apiHeaders,
-                "authorization": f"Bearer {self.auto_access_token}",
-                "Application-Id": self.app_id # a bit unusual, that Application-id will be provided for an autonomic endpoint?!
+                "Authorization": f"Bearer {self.auto_access_token}",
+                #"Application-Id": self.app_id # AUTONOMIC Endpoints don't need the Application-Id
             }
 
             data = {
@@ -2668,15 +3001,21 @@ class ConnectedFordPassVehicle:
                         # Remove the original commands dictionary
                         del states["commands"]
 
+                    command_key = state_command_str
+                    # ONLY append 'Command' to the state_command_str, if the plain state_command_str cannot
+                    # be found in the states dict... e.g., for disableDepartureTimes & enableDepartureTimes
+                    # the state_command_str is without the 'Command' suffix in the states[]!
+                    if not state_command_str.endswith("Command") and command_key not in states:
+                        command_key = f"{state_command_str}Command"
+
                     # ok now we can check if our command is in the (updated) states dict
-                    command_key = state_command_str if state_command_str.endswith("Command") else f"{state_command_str}Command"
                     if command_key in states:
                         resp_command_obj = states[command_key]
                         #_LOGGER.debug(f"{self.vli}__wait_for_state(): Found command object")
                         #_LOGGER.info(f"{resp_command_obj}")
 
                         if command_id is None or ("commandId" in resp_command_obj and resp_command_obj["commandId"] == command_id):
-                            #_LOGGER.debug(f"{self.vli}__wait_for_state(): Found the commandId")
+                            #_LOGGER.info(f"{self.vli}__wait_for_state(): Found the commandId")
 
                             if "value" in resp_command_obj and "toState" in resp_command_obj["value"]:
                                 to_state = resp_command_obj["value"]["toState"].upper()
