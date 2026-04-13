@@ -13,7 +13,6 @@ Typical workflow:
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -49,7 +48,7 @@ class IntraMapsSearchError(IntraMapsError):
 @dataclass(frozen=True)
 class MapsClientConfig:
     """
-    Configuration schema for the RockinghamCityMaps Client.
+    Configuration schema for the IntraMaps Client.
 
     Attributes:
         base_url: The root URL of the IntraMaps server (e.g., https://maps.example.gov).
@@ -70,6 +69,15 @@ class MapsClientConfig:
     app_type: str = "MapBuilder"
     dataset_code: str = ""
     include_disabled_modules: bool = True
+
+    # Lite config support (required by some SaaS-hosted instances)
+    lite_config_id: str = ""
+
+    # Override to select a specific module instead of auto-discovering
+    module_id: str = ""
+
+    # Selection layer filter for search queries
+    selection_layer_filter: str = ""
 
     # Defaults for selection logic
     default_selection_layer: str = "9f256a90-46da-4519-9d0e-d3d1b4e8c462"
@@ -165,6 +173,8 @@ class MapsClient:
             "datasetCode": self.cfg.dataset_code,
             "includeDisabledModules": str(self.cfg.include_disabled_modules).lower(),
         }
+        if self.cfg.lite_config_id:
+            params["liteConfigId"] = self.cfg.lite_config_id
 
         try:
             r = self._session.post(
@@ -183,19 +193,22 @@ class MapsClient:
 
             self.intramaps_session = ims.strip()
 
-            # Extract the first available module to act as our operational context
-            data = r.json()
-            modules = data.get("moduleList") or data.get("modules") or []
-            if not modules or not isinstance(modules, list):
-                raise IntraMapsSessionError(
-                    "No modules found in project configuration."
-                )
+            # Use configured module_id if provided, otherwise discover from project
+            if self.cfg.module_id:
+                self._module_id = self.cfg.module_id
+            else:
+                data = r.json()
+                modules = data.get("moduleList") or data.get("modules") or []
+                if not modules or not isinstance(modules, list):
+                    raise IntraMapsSessionError(
+                        "No modules found in project configuration."
+                    )
 
-            self._module_id = modules[0].get("id")
-            if not self._module_id:
-                raise IntraMapsSessionError(
-                    "Module list found but first module has no ID."
-                )
+                self._module_id = modules[0].get("id")
+                if not self._module_id:
+                    raise IntraMapsSessionError(
+                        "Module list found but first module has no ID."
+                    )
 
             return self.intramaps_session
 
@@ -254,12 +267,14 @@ class MapsClient:
         self._address_form_template_id = match["templateId"]
         return self._address_form_template_id
 
-    def search_address(self, address: str) -> dict[str, Any]:
+    def search_address(self, address: str, suburb: str | None = None) -> dict[str, Any]:
         """
         Perform a full-text search for an address string.
 
         Args:
             address: The address string to look up (e.g., '20 Settlers Ave').
+            suburb: Optional suburb name to prefer in results when multiple
+                    matches are returned (case-insensitive).
 
         Returns:
             The dictionary representing the first match found by the server.
@@ -273,6 +288,8 @@ class MapsClient:
             "resubmit": "false",
             "IntraMapsSession": self.intramaps_session,
         }
+        if self.cfg.selection_layer_filter:
+            params["selectionLayersFilter"] = self.cfg.selection_layer_filter
 
         self.log.info(f"Searching address: {address}")
         r = self._session.post(
@@ -287,9 +304,17 @@ class MapsClient:
         if not results:
             raise IntraMapsSearchError(f"No results found for address: {address}")
 
+        # If a suburb is provided, prefer results that mention it
+        if suburb and suburb.strip():
+            suburb_lower = suburb.strip().casefold()
+            for result in results:
+                display = str(result.get("displayValue", "")).casefold()
+                if suburb_lower in display:
+                    return result
+
         return results[0]
 
-    def select_address(self, address: str) -> dict[str, Any]:
+    def select_address(self, address: str, suburb: str | None = None) -> dict[str, Any]:
         """
         Orchestrates the full search-and-select workflow.
 
@@ -302,7 +327,7 @@ class MapsClient:
         Returns:
             A result dictionary containing success status and the final API response.
         """
-        result = self.search_address(address)
+        result = self.search_address(address, suburb)
 
         # Extract required keys. GIS APIs often use inconsistent casing (dbkey vs dbKey).
         db_key = self._get_case_insensitive(result, "dbKey")
@@ -365,26 +390,133 @@ class MapsClient:
         self._session.close()
 
 
-# --- Execution Example ---
+# --- Integration API Client ---
 
-if __name__ == "__main__":
-    # Configure logging for console output
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-    # Initialize config for Rockingham WA instance
-    config = MapsClientConfig(
-        base_url="https://maps.rockingham.wa.gov.au",
-        project="1917ad36-6a1d-4145-9eeb-736f8fa9646d",
+@dataclass(frozen=True)
+class IntegrationClientConfig:
+    """Configuration for the IntraMaps Integration (REST/apikey) API."""
+
+    base_url: str
+    instance: str = "IntraMaps23A"
+    api_key: str = ""
+    config_id: str = "00000000-0000-0000-0000-000000000000"
+    project: str = ""
+    timeout_s: int = 25
+
+
+class IntegrationClient:
+    """Client for the IntraMaps Integration API (apikey-authenticated REST)."""
+
+    def __init__(self, config: IntegrationClientConfig):
+        self.cfg = config
+
+    def _url(self, path: str) -> str:
+        base = self.cfg.base_url.rstrip("/")
+        return f"{base}/{self.cfg.instance}/ApplicationEngine/Integration/api{path}"
+
+    def _headers(self) -> dict[str, str]:
+        h: dict[str, str] = {}
+        if self.cfg.api_key:
+            h["Authorization"] = f"apikey {self.cfg.api_key}"
+        return h
+
+    def search(self, form_id: str, fields: str) -> dict[str, str]:
+        """Search using an Integration API form.
+
+        Returns a name→value dict from the first result.
+        """
+        params: dict[str, str] = {
+            "configId": self.cfg.config_id,
+            "form": form_id,
+            "fields": fields,
+        }
+        if self.cfg.project:
+            params["project"] = self.cfg.project
+
+        r = requests.get(
+            self._url("/search/"),
+            params=params,
+            headers=self._headers(),
+            timeout=self.cfg.timeout_s,
+        )
+        r.raise_for_status()
+        results = r.json()
+
+        if not results or not results[0]:
+            raise IntraMapsSearchError(f"No results found for: {fields}")
+
+        return {item["name"]: item["value"] for item in results[0]}
+
+    def search_all(self, form_id: str, fields: str) -> list[dict[str, str]]:
+        """Search returning all results as a list of name→value dicts."""
+        params: dict[str, str] = {
+            "configId": self.cfg.config_id,
+            "form": form_id,
+            "fields": fields,
+        }
+        if self.cfg.project:
+            params["project"] = self.cfg.project
+
+        r = requests.get(
+            self._url("/search/"),
+            params=params,
+            headers=self._headers(),
+            timeout=self.cfg.timeout_s,
+        )
+        r.raise_for_status()
+        results = r.json()
+
+        if not results:
+            raise IntraMapsSearchError(f"No results found for: {fields}")
+
+        return [{item["name"]: item["value"] for item in result} for result in results]
+
+    def reproject(
+        self, x: float, y: float, epsg_in: str, epsg_out: str
+    ) -> dict[str, Any]:
+        """Reproject coordinates between coordinate systems."""
+        params = {
+            "configId": self.cfg.config_id,
+            "project": self.cfg.project,
+            "x": str(x),
+            "y": str(y),
+            "epsg": epsg_in,
+            "epsgout": epsg_out,
+        }
+        r = requests.get(
+            self._url("/Reproject"),
+            params=params,
+            headers=self._headers(),
+            timeout=self.cfg.timeout_s,
+        )
+        r.raise_for_status()
+        return r.json()
+
+
+# --- Helpers ---
+
+
+def extract_panel_fields(
+    response: dict[str, Any], panel_key: str = "info1"
+) -> dict[str, str]:
+    """Extract a name→value dict from an IntraMaps infoPanels response.
+
+    Handles the nested structure: infoPanels > panel_key > feature > fields,
+    where each field has a name/caption and a value dict with a 'value' key.
+    """
+    fields = (
+        response.get("infoPanels", {})
+        .get(panel_key, {})
+        .get("feature", {})
+        .get("fields", [])
     )
-
-    try:
-        # Use context manager to ensure the network session is closed properly
-        with MapsClient(config) as client:
-            res = client.select_address("13 Settlers Avenue BALDIVIS")
-            print("\nFinal API Selection Response:")
-            print(json.dumps(res, indent=2))
-
-    except IntraMapsError as e:
-        logging.error(f"IntraMaps Operation Failed: {e}")
-    except Exception as e:
-        logging.error(f"Unexpected System Error: {e}")
+    result: dict[str, str] = {}
+    for field in fields:
+        name = field.get("name") or field.get("caption", "")
+        value = field.get("value", {})
+        if isinstance(value, dict):
+            result[name] = value.get("value", "")
+        elif isinstance(value, str):
+            result[name] = value
+    return result

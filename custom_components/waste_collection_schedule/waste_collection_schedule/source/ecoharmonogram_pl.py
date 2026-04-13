@@ -188,6 +188,12 @@ TEST_CASES = {
         "additional_sides_matcher": "Заміська забудова",
         "language": "uk",
     },
+    "Sławków (mixed sides: empty + non-empty, no matcher)": {
+        "town": "Sławków",
+        "street": "Jagiellońska",
+        "house_number": "32",
+        "additional_sides_matcher": "",  # Available sides are "Zabudowa wysoka" and "" (empty string)
+    },
 }
 
 
@@ -374,26 +380,26 @@ class Source:
         for street in streets["streets"]:
             if street["sides"] == "":
                 to_return.append(street)
-            elif self.additional_sides_matcher_input == "":
-                raise SourceArgumentRequiredWithSuggestions(
-                    "additional_sides_matcher",
-                    self.additional_sides_matcher_input,
-                    {x["sides"] for x in streets["streets"]},
-                )
-            elif (
+            elif self.additional_sides_matcher_input != "" and (
                 street["sides"].lower().casefold()
                 == self.additional_sides_matcher_input.lower().casefold()
             ):
                 to_return.append(street)
 
         if len(to_return) == 0:
+            if self.additional_sides_matcher_input == "":
+                raise SourceArgumentRequiredWithSuggestions(
+                    "additional_sides_matcher",
+                    self.additional_sides_matcher_input,
+                    {x["sides"] for x in streets["streets"]},
+                )
             raise SourceArgumentNotFoundWithSuggestions(
                 "additional_sides_matcher",
                 self.additional_sides_matcher_input,
                 {x["sides"] for x in streets["streets"]},
             )
 
-        return streets
+        return {**streets, "streets": to_return}
 
     @staticmethod
     def _extract_number(value: str) -> int | None:

@@ -46,10 +46,8 @@ TEST_CASES = {
         "house_number": "1",
         "service": "hvcgroep",
     },
-    "ZRD": {
-        "postal_code": "4691DH", 
-        "house_number": "4", 
-        "service": "zrd"},
+    "Reinis": {"postal_code": "3201AA", "house_number": "1", "service": "reinis"},
+    "ZRD": {"postal_code": "4691DH", "house_number": "4", "service": "zrd"},
 }
 
 _LOGGER = logging.getLogger(__name__)
@@ -248,13 +246,23 @@ SERVICE_MAP = [
         },
     },
     {
+        "title": "Reinis",
+        "api_url": "https://reinis.nl",
+        "icons": {
+            "appel-gft": "mdi:leaf",
+            "plastic-pak-blik": "mdi:recycle",
+            "doos-karton-papier": "mdi:archive",
+            "kliko-grijs-zak-grijs-rest": "mdi:trash-can",
+        },
+    },
+    {
         "title": "ZRD",
         "api_url": "https://www.zrd.nl",
         "icons": {
-            "appel en blad": "mdi:leaf",         # GFT-afval
-            "pet pak blik": "mdi:recycle",       # PMD
-            "zak rest rest": "mdi:trash-can",    # Restafval
-            "karton": "mdi:archive",             # Papier en karton
+            "appel en blad": "mdi:leaf",  # GFT-afval
+            "pet pak blik": "mdi:recycle",  # PMD
+            "zak rest rest": "mdi:trash-can",  # Restafval
+            "karton": "mdi:archive",  # Papier en karton
         },
     },
 ]
@@ -285,7 +293,7 @@ class Source:
     ):
         self.postal_code = postal_code
         self.house_number = house_number
-        self.house_letter = postal_code
+        self.house_letter = house_letter
         self.suffix = suffix
         self._url, self._icons = get_service_name_map()[service]
 
