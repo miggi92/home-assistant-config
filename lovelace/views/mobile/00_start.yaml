@@ -52,6 +52,15 @@ badges:
       action: navigate
       navigation_path: notification
   - type: custom:mushroom-template-badge
+    entity: switch.dnd
+    content: "DnD"
+    icon: >
+      {% if states(entity) == "on" %}
+      mdi:minus-circle
+      {% else %}
+      mdi:minus-circle-off
+      {% endif %}
+  - type: custom:mushroom-template-badge
     icon: mdi:medication
     color: >
       {% if states('number.anzahl_der_ausstehenden_medikamente') | int(0) > 0 %}
