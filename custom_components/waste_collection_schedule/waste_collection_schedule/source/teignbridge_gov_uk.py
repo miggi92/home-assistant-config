@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from waste_collection_schedule import Collection  # type: ignore[attr-defined]
 
@@ -44,7 +44,7 @@ class Source:
 
     def fetch(self) -> list[Collection]:
         # Fetch collection schedule
-        r = requests.get(BIN_URL, params={"uprn": self._uprn})
+        r = requests.get(BIN_URL, params={"uprn": self._uprn}, impersonate="chrome124")
         r.raise_for_status()
 
         soup = BeautifulSoup(r.text, "html.parser")
