@@ -31,6 +31,11 @@ sections:
         entity: sensor.sg_heuchelberg_wja_alle_spiele
         variables:
           table_entity: sensor.sg_heuchelberg_wja_tabellenplatz
+      - type: custom:button-card
+        template: handballnet_next_game_card
+        entity: sensor.hsg_lauffen_neipperg_m_ll_1_bw_alle_spiele
+        variables:
+          table_entity: sensor.hsg_lauffen_neipperg_m_ll_1_bw_tabellenplatz
 
   - type: grid
     cards:
