@@ -32,7 +32,7 @@ actions:
       - action: light.turn_on
         metadata: {}
         data:
-          brightness_pct: 5
+          brightness_pct: 25
           color_name: red
         target:
           entity_id: light.hue_go
