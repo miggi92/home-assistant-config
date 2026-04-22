@@ -22,7 +22,7 @@ triggers:
     from:
       - "on"
 conditions:
-  - conditions: state
+  - condition: state
     entity_id: input_boolean.automatic_lights
     state: "on"
   - condition: state
