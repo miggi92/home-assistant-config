@@ -8,6 +8,7 @@ trigger:
       - sensor.sg_heuchelberg_live_events
       - sensor.tv_1895_flein_2_live_events
       - sensor.sg_heuchelberg_wja_live_events
+      - sensor.hsg_lauffen_neipperg_m_ll_1_bw_live_events
 
 condition:
   - condition: template
