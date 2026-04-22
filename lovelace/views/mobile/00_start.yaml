@@ -60,6 +60,8 @@ badges:
       {% else %}
       mdi:minus-circle-off
       {% endif %}
+    tap_action:
+      action: more-info
   - type: custom:mushroom-template-badge
     icon: mdi:medication
     color: >
