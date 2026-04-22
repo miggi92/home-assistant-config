@@ -38,7 +38,11 @@ action:
                     {% set ns = namespace(found='') %}
                     {% for meal in day_meals if meal.day == target_date %}
                       {% if meal.section.name | lower == target_label | lower %}
-                        {% set ns.found = meal.recipe.name %}
+                        {% if meal.type == 'note' %}
+                          {% set ns.found = meal.note %}
+                        {% elif meal.recipe and meal.recipe.name %}
+                          {% set ns.found = meal.recipe.name %}
+                        {% endif %}
                       {% endif %}
                     {% endfor %}
                     {{ ns.found }}
