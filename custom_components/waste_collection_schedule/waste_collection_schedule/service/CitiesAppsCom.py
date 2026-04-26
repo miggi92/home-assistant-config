@@ -112,6 +112,11 @@ SERVICE_MAP = [
         "country": "at",
     },
     {
+        "title": "Bischofshofen",
+        "url": "https://www.bischofshofen.at",
+        "country": "at",
+    },
+    {
         "title": "Blindenmarkt",
         "url": "blindenmarkt.gv.at/",
         "country": "at",
@@ -129,6 +134,11 @@ SERVICE_MAP = [
     {
         "title": "Bromberg",
         "url": "http://www.bromberg.at",
+        "country": "at",
+    },
+    {
+        "title": "Bruck an der Mur",
+        "url": "https://www.bruckmur.at",
         "country": "at",
     },
     {
@@ -1089,11 +1099,6 @@ SERVICE_MAP = [
     {
         "title": "Rust",
         "url": "https://www.freistadt-rust.at",
-        "country": "at",
-    },
-    {
-        "title": "Saalfelden am Steinernen Meer",
-        "url": "www.stadtmarketing-saalfelden.at/de",
         "country": "at",
     },
     {
