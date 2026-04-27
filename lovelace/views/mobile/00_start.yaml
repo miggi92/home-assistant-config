@@ -209,14 +209,17 @@ sections:
           template: >-
             {% set ns = namespace(cards=[]) %}
             {% set is_workday = is_state('schedule.buro_tage', 'on') %}
+            {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
+            {% set today_weekday = weekdays[now().weekday()] %}
 
             {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
               {% set entity_id = image_state.entity_id %}
 
-              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id %}
+              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'frustuck' in entity_id or 'abendessen' in entity_id %}
                 {% set is_work_entity = 'work' in entity_id %}
+                {% set is_today_entity = today_weekday in entity_id %}
 
-                {% if not is_work_entity or is_workday %}
+                {% if (is_work_entity and is_workday) or (not is_work_entity and is_today_entity) %}
                   {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
 
                   {% if is_work_entity %}
