@@ -30,6 +30,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: weather-forecast
         show_current: true
         show_forecast: true

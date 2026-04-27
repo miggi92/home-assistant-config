@@ -44,6 +44,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: conditional
         conditions:
           - entity: binary_sensor.grocy_missing_products
@@ -61,10 +62,6 @@ sections:
 
   - type: grid
     cards:
-      - type: entity
-        entity: sensor.picnic_monats_kosten
-      - type: entity
-        entity: sensor.picnic_jahres_kosten
       - type: custom:mushroom-entity-card
         entity: sensor.picnic_status_der_letzten_bestellung
       - type: conditional
