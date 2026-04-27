@@ -206,41 +206,43 @@ sections:
           square: false
         card_param: cards
         filter:
-          template: >
+          template: >-
             {% set ns = namespace(cards=[]) %}
-            {% set sources = states.image %}
+            {% set is_workday = is_state('schedule.buro_tage', 'on') %}
 
-            {% for i in sources %}
-              {% if ('meal' in i.entity_id or 'kita' in i.entity_id or 'mittag' in i.entity_id)
-                    and i.state not in ['unavailable', 'unknown'] %}
-                {% set text_entity = i.entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
-                {% if 'work' in i.entity_id %}
-                    {% set my_icon = 'mdi:briefcase' %}
-                {% elif 'kita' in i.entity_id %}
-                    {% set my_icon = 'mdi:baby-bottle' %}
-                {% else %}
-                    {% set my_icon = 'mdi:food' %}
-                {% endif %}
-                {% set card_config = {
+            {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
+              {% set entity_id = image_state.entity_id %}
+
+              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id %}
+                {% set is_work_entity = 'work' in entity_id %}
+
+                {% if not is_work_entity or is_workday %}
+                  {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
+
+                  {% if is_work_entity %}
+                    {% set entity_icon = 'mdi:briefcase' %}
+                  {% elif 'kita' in entity_id %}
+                    {% set entity_icon = 'mdi:baby-bottle' %}
+                  {% else %}
+                    {% set entity_icon = 'mdi:food' %}
+                  {% endif %}
+
+                  {% set ns.cards = ns.cards + [{
                     "type": "picture-glance",
                     "title": states(text_entity),
-                    "image_entity": i.entity_id,
+                    "image_entity": entity_id,
                     "fit_mode": "cover",
-                    "entities": [
-                      {
-                        "entity": text_entity,
-                        "name": "Gericht",
-                        "icon": my_icon,
-                        "show_state": "false"
-                      }
-                    ],
-                  }
-                %}
-                {% set ns.cards = ns.cards + [card_config] %}
+                    "entities": [{
+                      "entity": text_entity,
+                      "name": "Gericht",
+                      "icon": entity_icon,
+                      "show_state": "false"
+                    }]
+                  }] %}
+                {% endif %}
               {% endif %}
             {% endfor %}
             {{ ns.cards }}
-
   - type: grid
     square: false
     cards:
