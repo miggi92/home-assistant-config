@@ -10,49 +10,36 @@ anniversary_card:
     icon: "[[icon]]"
     entity: "[[entity]]"
     primary: >
-      {% if state_attr(entity, 'years_at_anniversary') == 0 %}
-        {{ state_attr(entity, 'friendly_name') }}
-      {% else %}
-        {{ state_attr(entity, 'friendly_name') }} ({{ state_attr(entity, 'years_at_anniversary') }})
-      {% endif %}
+      {% set years = state_attr(entity, 'years_at_anniversary') %}
+      {{ state_attr(entity, 'friendly_name') }}{{ ' (' ~ years ~ ')' if years > 0 else '' }}
     icon_color: "[[icon_color]]"
     secondary: >
-      {%- set event_date = state_attr(entity, 'next_date') %}
-      {%- set now = now() %}
-      {%- if event_date.date() == now.date() %}
+      {% set remaining_days = states(entity) | int(0) %}
+      {% if remaining_days == 0 %}
         Heute
-      {%- else %}
-        {%- set delta = event_date - now %}
-        {%- set weeks = (delta.days // 7) %}
-        {%- set days = delta.days % 7 %}
-        {%- set hours = delta.seconds // 3600 %}
-        {%- set minutes = (delta.seconds % 3600) // 60 %}
-        {{ "{} Wochen ".format(weeks) if weeks > 0 else "" }}
-        {{ "{} Tage ".format(days) if days > 0 else "" }}
-        {{ "{} Stunden ".format(hours) if hours > 0 else "" }}
-        {{ "{} Minuten ".format(minutes) if minutes > 0 else "" }}
-      {%- endif %}
-    badge_icon: >
-      {%- set event = int(states(entity)) %}
-      {% if event <= 10 %}
-        mdi:exclamation-thick
+      {% elif remaining_days == 1 %}
+        Morgen
+      {% else %}
+        {% set weeks = remaining_days // 7 %}
+        {% set days = remaining_days % 7 %}
+        {{ "{} Wochen ".format(weeks) if weeks > 0 else "" }}{{ "{} Tage".format(days) if days > 0 else "" }}
       {% endif %}
-    badge_color: red
+    badge_icon: >
+      {% set remaining_days = states(entity) | int(0) %}
+      {% if remaining_days > 0 and remaining_days <= 10 %}
+        mdi:exclamation-thick
+      {% elif remaining_days == 0 %}
+        mdi:party-popper
+      {% endif %}
+    badge_color: >
+      {% set remaining_days = states(entity) | int(0) %}
+      {{ 'red' if remaining_days <= 10 else 'transparent' }}
     tap_action:
       action: more-info
     card_mod:
-      style:
-        mushroom-shape-icon$: |
-          .shape {
-            background: radial-gradient(var(--card-background-color) 60%, transparent 0%),
-                        conic-gradient(rgb(var(--rgb-red)) {{ (365 - int(states(config.entity))) / 365 * 100 }}% 0%,
-                        var(--card-background-color) 0% 100%);
-          }
-          .shape:after {
-            content: "";
-            height: 100%;
-            width: 100%;
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(var(--rgb-[[icon_color]]), 0.2);
-          }
+      style: |
+        ha-card {
+          {% set days_left = states(config.entity) | int(0) %}
+          {% set progress_percent = ((90 - days_left) / 90 * 100) | round(1) %}
+          background: linear-gradient(to right, color-mix(in srgb, [[icon_color]] 15%, transparent) {{ progress_percent }}%, var(--ha-card-background, var(--card-background-color, white)) {{ progress_percent }}%);
+        }
