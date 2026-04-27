@@ -20,6 +20,9 @@ badges:
     entity: binary_sensor.grocy_missing_products
     name: Fehlende Produkte
     state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#missing"
   - type: entity
     show_name: true
     show_state: true
@@ -27,6 +30,9 @@ badges:
     entity: binary_sensor.grocy_expiring_products
     name: Bald abgelaufene Produkte
     state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#expiring"
   - type: entity
     show_name: true
     show_state: true
@@ -34,6 +40,9 @@ badges:
     entity: binary_sensor.grocy_expired_products
     name: Abgelaufene Produkte
     state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#expired"
   - type: entity
     show_name: true
     show_state: true
@@ -41,6 +50,9 @@ badges:
     entity: binary_sensor.grocy_overdue_products
     name: Lange abgelaufene Produkte
     state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#overdue"
 sections:
   - type: grid
     cards:
@@ -105,3 +117,42 @@ sections:
             attributes:
               label: Getränke
               icon: mdi:beer
+      - type: custom:decluttering-card
+        template: grocy_popup
+        variables:
+          - hash: "#expiring"
+          - name: Bald abgelaufene Produkte
+          - icon: mdi:clock-alert
+          - entity: binary_sensor.grocy_expiring_products
+          - attribute: expiring_products
+          - empty_message: Keine bald abgelaufenen Produkte.
+
+      - type: custom:decluttering-card
+        template: grocy_popup
+        variables:
+          - hash: "#missing"
+          - name: Fehlende Produkte
+          - icon: mdi:clock-alert
+          - entity: binary_sensor.grocy_missing_products
+          - attribute: missing_products
+          - empty_message: Keine fehlenden Produkte.
+
+      - type: custom:decluttering-card
+        template: grocy_popup
+        variables:
+          - hash: "#expired"
+          - name: Abgelaufene Produkte
+          - icon: mdi:alert-circle
+          - entity: binary_sensor.grocy_expired_products
+          - attribute: expired_products
+          - empty_message: Keine abgelaufenen Produkte.
+
+      - type: custom:decluttering-card
+        template: grocy_popup
+        variables:
+          - hash: "#overdue"
+          - name: Lange abgelaufene Produkte
+          - icon: mdi:alert-octagon
+          - entity: binary_sensor.grocy_overdue_products
+          - attribute: overdue_products
+          - empty_message: Keine lange abgelaufenen Produkte.

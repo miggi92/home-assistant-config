@@ -1,0 +1,23 @@
+---
+grocy_popup:
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "[[hash]]"
+        name: "[[name]]"
+        icon: "[[icon]]"
+      - type: markdown
+        content: >
+          {% set items = state_attr('[[entity]]', '[[attribute]]') %}
+          {% if items %}
+            {% for item in items %}
+          - **{{ item.name }}**
+              {%- if item.get('amount_missing') %} | Fehlt: {{ item.amount_missing }}{% endif -%}
+              {%- if item.get('available_amount') %} | Bestand: {{ item.available_amount }}{% if item.get('default_quantity_unit_purchase') %} {{ item.default_quantity_unit_purchase.name }}{% endif %}{% endif -%}
+              {%- if item.get('best_before_date') %} | MHD: {{ as_timestamp(item.best_before_date) | timestamp_custom('%d.%m.%Y') }}{% endif %}
+            {% endfor %}
+          {% else %}
+            [[empty_message]]
+          {% endif %}
