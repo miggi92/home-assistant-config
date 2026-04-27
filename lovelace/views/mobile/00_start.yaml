@@ -215,7 +215,7 @@ sections:
             {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
               {% set entity_id = image_state.entity_id %}
 
-              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'frustuck' in entity_id or 'abendessen' in entity_id %}
+              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'fruhstuck' in entity_id or 'abendessen' in entity_id %}
                 {% set is_work_entity = 'work' in entity_id %}
                 {% set is_today_entity = today_weekday in entity_id %}
 
