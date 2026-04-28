@@ -10,13 +10,41 @@ grocy_popup:
         icon: "[[icon]]"
       - type: markdown
         content: >
+          {% set group_mapping = {
+            1: 'Obst & Gemüse',
+            2: 'Milchprodukte',
+            3: 'Fisch & Fleisch',
+            4: 'Backwaren',
+            5: 'Getränke',
+            6: 'Konserven & Trockenware',
+            7: 'Gewürze und Kräuter',
+            8: 'Süßwaren & Snacks',
+            9: 'Tiefkühl',
+            10: 'Haushaltswaren',
+            11: 'Backzutaten',
+            12: 'Tiernahrung',
+            13: 'Babynahrung',
+            14: 'Medikamente',
+            15: 'Fertiggerichte'
+          } %}
+
           {% set items = state_attr('[[entity]]', '[[attribute]]') %}
           {% if items %}
-            {% for item in items %}
+            {% for group in items | groupby('product_group_id') %}
+              {% set g_id = group.grouper %}
+              {% if g_id is none %}
+                {% set g_name = 'Ohne Kategorie' %}
+              {% else %}
+                {% set g_name = group_mapping.get(g_id, 'Kategorie ' ~ g_id) %}
+              {% endif %}
+
+          ### {{ g_name }}
+              {% for item in group.list %}
           - **{{ item.name }}**
               {%- if item.get('amount_missing') %} | Fehlt: {{ item.amount_missing }}{% endif -%}
               {%- if item.get('available_amount') %} | Bestand: {{ item.available_amount }}{% if item.get('default_quantity_unit_purchase') %} {{ item.default_quantity_unit_purchase.name }}{% endif %}{% endif -%}
-              {%- if item.get('best_before_date') %} | MHD: {{ as_timestamp(item.best_before_date) | timestamp_custom('%d.%m.%Y') }}{% endif %}
+              {%- if item.get('best_before_date') and '2999' not in item.get('best_before_date') %} | MHD: {{ as_timestamp(item.best_before_date) | timestamp_custom('%d.%m.%Y') }}{% endif %}
+              {% endfor %}
             {% endfor %}
           {% else %}
             [[empty_message]]
