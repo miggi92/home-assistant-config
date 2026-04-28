@@ -13,6 +13,9 @@ badges:
       navigation_path: start
   - type: entity
     entity: sensor.grocy_stock
+    tap_action:
+      action: navigate
+      navigation_path: "#stock"
   - type: entity
     show_name: true
     show_state: true
@@ -117,6 +120,16 @@ sections:
             attributes:
               label: Getränke
               icon: mdi:beer
+      - type: custom:decluttering-card
+        template: grocy_popup
+        variables:
+          - hash: "#stock"
+          - name: Aktueller Bestand
+          - icon: mdi:fridge-outline
+          - entity: sensor.grocy_stock
+          - attribute: products
+          - empty_message: Das Lager ist komplett leer.
+
       - type: custom:decluttering-card
         template: grocy_popup
         variables:
