@@ -1,0 +1,23 @@
+---
+most_tracked_popup:
+  card:
+    type: vertical-stack
+    cards:
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "#mostTracked"
+        name: "Top 10"
+        icon: "mdi:airplane-search"
+      - type: markdown
+        content: >-
+          {% set flights = state_attr('sensor.flightradar24_most_tracked', 'flights') %}
+          {% if flights %}
+          {% for flight in flights %}
+          <ha-icon icon="mdi:airplane"></ha-icon> **{{ flight.callsign | default('Unbekannt', true) }}**{% if flight.flight_number %} ({{ flight.flight_number }}){% endif %} - {{ flight.aircraft_model | default('Unbekanntes Flugzeug', true) }}<br>
+          <ha-icon icon="mdi:map-marker-outline"></ha-icon> {{ flight.airport_origin_city | default('?', true) }} ({{ flight.airport_origin_code_iata | default('?', true) }}) ➔ {{ flight.airport_destination_city | default('?', true) }} ({{ flight.airport_destination_code_iata | default('?', true) }})<br>
+          <ha-icon icon="mdi:cursor-default-click-outline"></ha-icon> Clicks: {{ flight.clicks | default('0', true) }}
+          {% if not loop.last %}<hr>{% endif %}
+          {% endfor %}
+          {% else %}
+          Keine Tracking-Daten verfügbar.
+          {% endif %}

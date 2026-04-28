@@ -11,12 +11,25 @@ badges:
     tap_action:
       action: navigate
       navigation_path: start
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: sensor.flightradar24_most_tracked
+    name: Most tracked
+    state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#mostTracked"
 sections:
   - type: grid
-    column_span: 2
     cards:
       - !include ../../../cards/nav-bar.yaml
-      - type: entities
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - operator: "!="
+            value: "0"
         entities:
           - entity: sensor.flightradar24_current_in_area
             name: In area
@@ -64,3 +77,43 @@ sections:
             {%if flight.time_scheduled_departure %}Departure - {{ flight.time_scheduled_departure | timestamp_custom('%H:%M') }}; {% endif %}{%if flight.time_scheduled_arrival%}Arrival - {{ flight.time_scheduled_arrival | timestamp_custom('%H:%M') }}{% endif %}
             Altitude - {{ flight.altitude }} ft{%if flight.altitude > 0 %} ({{(flight.altitude * 0.3048)| round(0)}} m){% endif%}; Gr. speed - {{ flight.ground_speed }} kts{%if flight.ground_speed > 0 %} ({{(flight.ground_speed * 1.852)| round(0)}} km/h){% endif%}
           {% endfor %}
+  - type: grid
+    title: "Flughafen"
+    cards:
+      - type: entity-filter
+        show_empty: false
+        state_filter:
+          - operator: "!="
+            value: "0"
+        entities:
+          - entity: sensor.flightradar24_airport_arrivals_canceled
+            name: Arrivals canceled
+          - entity: sensor.flightradar24_airport_arrivals_delayed
+            name: Arrivals delayed
+          - entity: sensor.flightradar24_airport_arrivals_on_time
+            name: Arrivals on time
+          - entity: sensor.flightradar24_airport_departures_canceled
+            name: Departures canceled
+          - entity: sensor.flightradar24_airport_departures_delayed
+            name: Departures delayed
+          - entity: sensor.flightradar24_airport_departures_on_time
+            name: Departures on time
+      - type: markdown
+        title: Arrivals
+        content: >
+          {% set flights =
+          state_attr('sensor.flightradar24_airport_arrivals','flights') |
+          default([], true) %}
+            | TIME | FROM | FLIGHT | REMARK |
+            | ---- | ---- | ------ | ------ | {% for f in flights[:5] %}
+            | {{ f.time_scheduled_arrival | timestamp_custom('%H:%M') if f.time_scheduled_departure else '--:--' }} | {{ f.airport_city |  default('---', true) }} | {{ f.flight_number |  default('---', true) }} | {{ f.status_text |  default('---', true) }} | {% endfor %}
+      - type: markdown
+        title: Departures
+        content: >
+          {% set flights = state_attr('sensor.flightradar24_airport_departures',
+          'flights') |  default([], true) %}
+            | TIME | TO | FLIGHT | REMARK |
+            | ---- | ---- | ------ | ------ | {% for f in flights[:5] %}
+            | {{ f.time_scheduled_departure | timestamp_custom('%H:%M') if f.time_scheduled_departure else '--:--' }} | {{ f.airport_city |  default('---', true) }} | {{ f.flight_number |  default('---', true) }} | {{ f.status_text |  default('---', true) }} |{% endfor %}
+      - type: custom:decluttering-card
+        template: most_tracked_popup
