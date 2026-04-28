@@ -35,10 +35,3 @@ anniversary_template:
       type: entities
       show_header_toggle: false
       title: "[[title]]"
-      header:
-        type: picture
-        image: "[[picture_url]]"
-        tap_action:
-          action: none
-        hold_action:
-          action: none

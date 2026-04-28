@@ -188,64 +188,15 @@ sections:
         template: anniversary_template
         variables:
           - title: Urlaubscountdown
-          - picture_url: /local/images/urlaub_header.png
           - path: urlaub
           - icon: mdi:beach
       - type: custom:decluttering-card
         template: anniversary_template
         variables:
           - title: Geburtstage & Jahrestage
-          - picture_url: https://www.home-assistant.io/images/lovelace/header-footer/balloons-header.png
           - path: birthday
           - icon: mdi:gift
           - path2: special
-      - type: custom:auto-entities
-        card:
-          type: grid
-          columns: 2
-          square: false
-        card_param: cards
-        filter:
-          template: >-
-            {% set ns = namespace(cards=[]) %}
-            {% set is_workday = is_state('schedule.buro_tage', 'on') %}
-            {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
-            {% set today_weekday = weekdays[now().weekday()] %}
-
-            {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
-              {% set entity_id = image_state.entity_id %}
-
-              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'fruhstuck' in entity_id or 'abendessen' in entity_id %}
-                {% set is_work_entity = 'work' in entity_id %}
-                {% set is_today_entity = today_weekday in entity_id %}
-
-                {% if (is_work_entity and is_workday) or (not is_work_entity and is_today_entity) %}
-                  {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
-
-                  {% if is_work_entity %}
-                    {% set entity_icon = 'mdi:briefcase' %}
-                  {% elif 'kita' in entity_id %}
-                    {% set entity_icon = 'mdi:baby-bottle' %}
-                  {% else %}
-                    {% set entity_icon = 'mdi:food' %}
-                  {% endif %}
-
-                  {% set ns.cards = ns.cards + [{
-                    "type": "picture-glance",
-                    "title": states(text_entity),
-                    "image_entity": entity_id,
-                    "fit_mode": "cover",
-                    "entities": [{
-                      "entity": text_entity,
-                      "name": "Gericht",
-                      "icon": entity_icon,
-                      "show_state": "false"
-                    }]
-                  }] %}
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-            {{ ns.cards }}
   - type: grid
     square: false
     cards:
@@ -383,3 +334,60 @@ sections:
                   - nav_path: network
                   - icon: mdi:network
                   - icon_color: red
+  - type: grid
+    column_span: 3
+    cards:
+      - type: custom:mushroom-title-card
+        title: Heutige Gerichte
+      - type: custom:auto-entities
+        card:
+          type: custom:layout-card
+          layout_type: custom:grid-layout
+          layout:
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))
+            gap: 12px
+        card_param: cards
+        filter:
+          template: >-
+            {% set ns = namespace(cards=[]) %}
+            {% set is_workday = is_state('schedule.buro_tage', 'on') %}
+            {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
+            {% set today_weekday = weekdays[now().weekday()] %}
+
+            {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
+              {% set entity_id = image_state.entity_id %}
+
+              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'fruhstuck' in entity_id or 'abendessen' in entity_id %}
+                {% set is_work_entity = 'work' in entity_id %}
+                {% set is_today_entity = today_weekday in entity_id %}
+
+                {% if (is_work_entity and is_workday) or (not is_work_entity and is_today_entity) %}
+                  {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
+
+                  {% if is_work_entity %}
+                    {% set entity_icon = 'mdi:briefcase' %}
+                  {% elif 'kita' in entity_id %}
+                    {% set entity_icon = 'mdi:baby-bottle' %}
+                  {% else %}
+                    {% set entity_icon = 'mdi:food' %}
+                  {% endif %}
+
+                  {% set ns.cards = ns.cards + [{
+                    "type": "picture-glance",
+                    "title": states(text_entity),
+                    "image_entity": entity_id,
+                    "fit_mode": "cover",
+                    "aspect_ratio": "16:9",
+                    "entities": [{
+                      "entity": text_entity,
+                      "name": "Gericht",
+                      "icon": entity_icon,
+                      "show_state": "false"
+                    }]
+                  }] %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.cards }}
+        grid_options:
+          columns: full
