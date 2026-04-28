@@ -28,14 +28,13 @@ actions:
     data:
       task_name: "Meal {{ clean_name }}"
       instructions: |-
-        Eine Nahaufnahme (Close-Up shot) in hoher Qualität von:
-        {{ trigger.to_state.state }}
-        Der Stil ist moderne Food-Fotografie.
-        Die Beleuchtung ist warm und natürlich, um die Texturen des Essens hervorzuheben.
-        Der Fokus liegt knackig scharf auf dem Hauptgericht, mit einem schönen, unscharfen Hintergrund (Bokeh).
-        Bitte keine Texte auf die Bilder generieren.
-        Es sieht köstlich und frisch zubereitet aus.
-      entity_id: ai_task.google_ai_task
+        Professional, high-resolution food photography of: {{ trigger.to_state.state }}.
+        The dish is appetizingly plated on appropriate tableware and set on a stylish dining table.
+        Modern food styling aesthetics.
+        Natural, warm side lighting highlights the textures, gloss, and freshness of the ingredients.
+        Subtly garnished with appropriate fresh herbs, spices, or sides to add color contrast.
+        Razor-sharp focus on the dish in the foreground, with a soft bokeh background suggesting a cozy restaurant or home setting.
+        No text, no words, no watermarks.
     response_variable: meal
 
   - action: downloader.download_file
