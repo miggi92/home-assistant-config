@@ -337,15 +337,11 @@ sections:
   - type: grid
     column_span: 3
     cards:
-      - type: custom:mushroom-title-card
-        title: Heutige Gerichte
       - type: custom:auto-entities
+        show_empty: false
+        column_span: 3
         card:
-          type: custom:layout-card
-          layout_type: custom:grid-layout
-          layout:
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))
-            gap: 12px
+          type: vertical-stack
         card_param: cards
         filter:
           template: >-
@@ -363,31 +359,53 @@ sections:
 
                 {% if (is_work_entity and is_workday) or (not is_work_entity and is_today_entity) %}
                   {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
+                  {% set current_text = states(text_entity) %}
 
-                  {% if is_work_entity %}
-                    {% set entity_icon = 'mdi:briefcase' %}
-                  {% elif 'kita' in entity_id %}
-                    {% set entity_icon = 'mdi:baby-bottle' %}
-                  {% else %}
-                    {% set entity_icon = 'mdi:food' %}
+                  {% if current_text and current_text | trim != '' and current_text not in ['unknown', 'unavailable'] %}
+
+                    {% if is_work_entity %}
+                      {% set entity_icon = 'mdi:briefcase' %}
+                    {% elif 'kita' in entity_id %}
+                      {% set entity_icon = 'mdi:baby-bottle' %}
+                    {% else %}
+                      {% set entity_icon = 'mdi:food' %}
+                    {% endif %}
+
+                    {% set ns.cards = ns.cards + [{
+                      "type": "picture-glance",
+                      "title": current_text,
+                      "image_entity": entity_id,
+                      "fit_mode": "cover",
+                      "aspect_ratio": "16:9",
+                      "entities": [{
+                        "entity": text_entity,
+                        "name": "Gericht",
+                        "icon": entity_icon,
+                        "show_state": "false"
+                      }]
+                    }] %}
                   {% endif %}
 
-                  {% set ns.cards = ns.cards + [{
-                    "type": "picture-glance",
-                    "title": states(text_entity),
-                    "image_entity": entity_id,
-                    "fit_mode": "cover",
-                    "aspect_ratio": "16:9",
-                    "entities": [{
-                      "entity": text_entity,
-                      "name": "Gericht",
-                      "icon": entity_icon,
-                      "show_state": "false"
-                    }]
-                  }] %}
                 {% endif %}
               {% endif %}
             {% endfor %}
-            {{ ns.cards }}
-        grid_options:
-          columns: full
+
+            {% if ns.cards | length > 0 %}
+              {{ [
+                {
+                  "type": "custom:mushroom-title-card",
+                  "title": "Heutiger Speiseplan"
+                },
+                {
+                  "type": "custom:layout-card",
+                  "layout_type": "custom:grid-layout",
+                  "layout": {
+                    "grid-template-columns": "repeat(auto-fit, minmax(250px, 1fr))",
+                    "gap": "12px"
+                  },
+                  "cards": ns.cards
+                }
+              ] }}
+            {% else %}
+              {{ [] }}
+            {% endif %}
