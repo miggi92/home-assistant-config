@@ -78,7 +78,7 @@ sections:
         detail: 1
       - name: Kaffemaschine Verbrauch
         type: sensor
-        entity: sensor.kaffeemaschine_leistung
+        entity: sensor.kaffeemaschine_power
         graph: line
         detail: 2
         hours_to_show: 4

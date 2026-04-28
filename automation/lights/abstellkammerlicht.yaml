@@ -7,11 +7,11 @@ mode: single
 trigger:
   - platform: state
     entity_id:
-      - binary_sensor.abstellkammertur_offnung
+      - binary_sensor.abstellkammertur_contact
 action:
   - if:
       - condition: state
-        entity_id: binary_sensor.abstellkammertur_offnung
+        entity_id: binary_sensor.abstellkammertur_contact
         state: "on"
     then:
       - service: light.turn_on

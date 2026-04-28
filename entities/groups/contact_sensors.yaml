@@ -4,4 +4,4 @@ contact_sensors:
   name: Kontaktsensoren
   icon: mdi:door
   entities:
-    - binary_sensor.abstellkammertur_offnung
+    - binary_sensor.abstellkammertur_contact
