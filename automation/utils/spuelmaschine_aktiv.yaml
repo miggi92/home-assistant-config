@@ -6,12 +6,12 @@ id: a444c0eb-c032-4e9c-b923-6244fe1a24b8
 mode: single
 triggers:
   - platform: numeric_state
-    entity_id: sensor.spulmaschine_leistung
+    entity_id: sensor.spulmaschine_power
     above: 30
     for: "00:01:00"
     id: "on"
   - platform: numeric_state
-    entity_id: sensor.spulmaschine_leistung
+    entity_id: sensor.spulmaschine_power
     below: 1
     for: "00:01:00"
     id: "off"

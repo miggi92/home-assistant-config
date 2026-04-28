@@ -64,7 +64,7 @@ sections:
         detail: 1
       - name: Spülmaschine Verbrauch
         type: sensor
-        entity: sensor.spulmaschine_leistung
+        entity: sensor.spulmaschine_power
         graph: line
         detail: 2
         hours_to_show: 4
