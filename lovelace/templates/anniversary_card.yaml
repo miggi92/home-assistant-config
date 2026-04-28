@@ -14,15 +14,24 @@ anniversary_card:
       {{ state_attr(entity, 'friendly_name') }}{{ ' (' ~ years ~ ')' if years > 0 else '' }}
     icon_color: "[[icon_color]]"
     secondary: >
-      {% set remaining_days = states(entity) | int(0) %}
-      {% if remaining_days == 0 %}
+      {% set raw_days = states(entity) | float(-1) %}
+      {% set remaining_days = raw_days | int(0) %}
+
+      {% if raw_days == 0 %}
         Heute
+      {% elif raw_days > 0 and raw_days < 1 %}
+        {% set total_minutes = (raw_days * 24 * 60) | int %}
+        {% set hours = total_minutes // 60 %}
+        {% set minutes = total_minutes % 60 %}
+        {{ "{} Stunden ".format(hours) if hours > 0 else "" }}{{ "{} Minuten".format(minutes) if minutes > 0 else "" }}
       {% elif remaining_days == 1 %}
         Morgen
-      {% else %}
+      {% elif remaining_days > 1 %}
         {% set weeks = remaining_days // 7 %}
         {% set days = remaining_days % 7 %}
-        {{ "{} Wochen ".format(weeks) if weeks > 0 else "" }}{{ "{} Tage".format(days) if days > 0 else "" }}
+        {% set week_text = "1 Woche " if weeks == 1 else "{} Wochen ".format(weeks) if weeks > 1 else "" %}
+        {% set day_text = "1 Tag" if days == 1 else "{} Tage".format(days) if days > 1 else "" %}
+        {{ week_text }}{{ day_text }}
       {% endif %}
     badge_icon: >
       {% set remaining_days = states(entity) | int(0) %}
