@@ -17,3 +17,11 @@ homeassistant:
   allowlist_external_dirs:
     - /config/www
     - /media
+  auth_providers:
+    - type: trusted_networks
+      trusted_networks:
+        - 192.168.0.31
+      trusted_users:
+        192.168.0.31: 82a6acbf6df748f29525cc3efc66c1ae
+      allow_bypass_login: true
+    - type: homeassistant

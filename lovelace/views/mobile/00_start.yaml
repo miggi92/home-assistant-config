@@ -345,12 +345,13 @@ sections:
         card_param: cards
         filter:
           template: >-
-            {% set ns = namespace(cards=[]) %}
-            {% set is_workday = is_state('schedule.buro_tage', 'on') %}
-            {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
-            {% set today_weekday = weekdays[now().weekday()] %}
+            {% set ns = namespace(cards=[]) %} {% set is_workday =
+            is_state('schedule.buro_tage', 'on') %} {% set weekdays = ['montag',
+            'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag']
+            %} {% set today_weekday = weekdays[now().weekday()] %}
 
-            {% for image_state in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
+            {% for image_state in states.image | rejectattr('state', 'in',
+            ['unavailable', 'unknown']) %}
               {% set entity_id = image_state.entity_id %}
 
               {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'fruhstuck' in entity_id or 'abendessen' in entity_id %}
@@ -409,3 +410,5 @@ sections:
             {% else %}
               {{ [] }}
             {% endif %}
+        grid_options:
+          columns: full

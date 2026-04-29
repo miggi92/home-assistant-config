@@ -147,6 +147,13 @@ routes:
       [[[ return hass.states['person.silke'].attributes.entity_picture ]]]
     hidden: |
       [[[ return user.name != 'Silke' ]]]
+  - url: /lovelace-mobile/tablet
+    icon: mdi:cog
+    label: "Profil"
+    image: |
+      [[[ return hass.states['image.tablet_picture'].attributes.entity_picture ]]]
+    hidden: |
+      [[[ return user.name != 'Tablet' ]]]
   - icon: mdi:dots-horizontal
     label: Mehr
     tap_action:

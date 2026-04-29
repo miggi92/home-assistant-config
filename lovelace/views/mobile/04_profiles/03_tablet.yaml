@@ -1,0 +1,46 @@
+---
+title: Profil Tablet
+path: tablet
+icon: mdi:beach
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+  - type: grid
+    cards:
+      - type: grid
+        title: Dashboard settings
+        square: false
+        grid_options:
+          columns: full
+        columns: 2
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.tablet_kopfleiste_anzeigen
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.tablet_seitenleiste_anzeigen
+          - type: picture
+            image_entity: image.random_picsum_image
+            alt_text: Picsum Image
+          - type: picture
+            image_entity: image.random_unsplash_picture
+            alt_text: Unsplash Image
+          - type: custom:mushroom-select-card
+            entity: input_select.background_image_service
+            secondary_info: last-changed
+  - type: grid
+    cards:
+      - entity: input_select.milo_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+      - entity: input_select.finn_unterwegs
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+      - entity: input_select.maja_person_sync
+        type: custom:mushroom-select-card
+        secondary_info: last-changed
+      - !include ../../../cards/milo_locations.yaml

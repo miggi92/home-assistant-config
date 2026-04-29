@@ -13,6 +13,10 @@ kiosk_mode:
         - "silke"
       hide_header: '{{ is_state("input_boolean.silke_kopfleiste_anzeigen", "off") }}'
       hide_sidebar: '{{ is_state("input_boolean.silke_seitenleiste_anzeigen", "off") }}'
+    - users:
+        - "tablet"
+      hide_header: '{{ is_state("input_boolean.tablet_kopfleiste_anzeigen", "off") }}'
+      hide_sidebar: '{{ is_state("input_boolean.tablet_seitenleiste_anzeigen", "off") }}'
 views: !include_dir_list ../views/mobile
 background:
   opacity: 33
