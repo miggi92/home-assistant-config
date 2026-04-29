@@ -5,6 +5,7 @@ person_card_template:
     - title: Person Info
     - id: miguel
     - watch: default
+    - korbchen: default
   card:
     type: custom:mushroom-template-card
     entity_id: "[[entity]]"
@@ -13,6 +14,7 @@ person_card_template:
     primary: |-
       {{ state_attr("[[entity]]","friendly_name") }}
     secondary: |-
+      {% set koerbchen = states("[[korbchen]]") %}
       {% set state =  states("[[entity]]")  | slugify %}
       {% set roomState =  states("[[beacon]]") %}
       {% set floor = state_attr("[[beacon]]", 'floor_name') %}
@@ -20,6 +22,8 @@ person_card_template:
       {% if state == "home" %}
         {%- if roomState != "unknown" and roomState != "not_home" %}
         {{ roomState }} - {{ floor }}
+        {%- elif koerbchen == "on" %}
+          Körbchen
         {%- endif %}
       Zu Hause seit {{ relative_time(lastChanged) }}
       {% elif state == "work_silke" or state == "work_miguel" %}

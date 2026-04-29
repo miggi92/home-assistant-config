@@ -55,6 +55,7 @@ cards:
           - entity: person.maja
           - id: maja
           - work_zone: zone.home
+          - korbchen: binary_sensor.maja_korbchen_occupancy
   - type: custom:auto-entities
     show_empty: false
     card:

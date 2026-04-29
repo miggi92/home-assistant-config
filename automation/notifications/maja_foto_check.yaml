@@ -10,6 +10,20 @@ trigger:
       entity_id: timer.maja_check
 condition: []
 action:
-  - service: script.send_cam_snaps
-    data: {}
+  - if:
+      - condition: state
+        entity_id: binary_sensor.maja_korbchen_occupancy
+        state: "on"
+    then:
+      - service: script.notify_engine
+        data:
+          title: |
+            🐕 Maja Check 🐕
+          value1: "Maja liegt im Körbchen."
+          who: "home"
+          tag_id: "information"
+          group: "Residents"
+    else:
+      - service: script.send_cam_snaps
+        data: {}
 mode: single

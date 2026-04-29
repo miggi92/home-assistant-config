@@ -1,0 +1,9 @@
+---
+waste_badge_template:
+  card:
+    type: custom:mushroom-template-badge
+    icon: mdi:delete
+    entity: "[[entity]]"
+    content: "{{states(entity) }}"
+    tap_action:
+      action: more-info

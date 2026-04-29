@@ -96,12 +96,91 @@ badges:
     template: motion_badge_template
     variables:
       - entity: binary_sensor.bewegungssensoren
-  - type: entity
-    show_name: true
-    show_state: true
-    show_icon: true
-    entity: sensor.nachste_abholung
-    show_entity_picture: false
+  - type: custom:decluttering-card
+    template: waste_badge_template
+    variables:
+      - entity: sensor.restmull
+    visibility:
+      - condition: or
+        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
+        conditions:
+          - condition: state
+            entity: sensor.restmull
+            state: "Restabfall in 2 days"
+          - condition: state
+            entity: sensor.restmull
+            state: "Restabfall in 1 days"
+          - condition: state
+            entity: sensor.restmull
+            state: "Restabfall in 0 days"
+  - type: custom:decluttering-card
+    template: waste_badge_template
+    variables:
+      - entity: sensor.papier
+    visibility:
+      - condition: or
+        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
+        conditions:
+          - condition: state
+            entity: sensor.papier
+            state: "Papiertonne in 1 days"
+          - condition: state
+            entity: sensor.papier
+            state: "Papiertonne in 2 days"
+          - condition: state
+            entity: sensor.papier
+            state: "Papiertonne in 0 days"
+  - type: custom:decluttering-card
+    template: waste_badge_template
+    variables:
+      - entity: sensor.gelbe_tonne
+    visibility:
+      - condition: or
+        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
+        conditions:
+          - condition: state
+            entity: sensor.gelbe_tonne
+            state: "Gelbe Tonne in 2 days"
+          - condition: state
+            entity: sensor.gelbe_tonne
+            state: "Gelbe Tonne in 1 days"
+          - condition: state
+            entity: sensor.gelbe_tonne
+            state: "Gelbe Tonne in 0 days"
+  - type: custom:decluttering-card
+    template: waste_badge_template
+    variables:
+      - entity: sensor.bio
+    visibility:
+      - condition: or
+        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
+        conditions:
+          - condition: state
+            entity: sensor.bio
+            state: "Bioabfall in 2 days"
+          - condition: state
+            entity: sensor.bio
+            state: "Bioabfall in 1 days"
+          - condition: state
+            entity: sensor.bio
+            state: "Bioabfall in 0 days"
+  - type: custom:decluttering-card
+    template: waste_badge_template
+    variables:
+      - entity: sensor.schadstoffe
+    visibility:
+      - condition: or
+        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
+        conditions:
+          - condition: state
+            entity: sensor.schadstoffe
+            state: "Schadstoffe in 2 days"
+          - condition: state
+            entity: sensor.schadstoffe
+            state: "Schadstoffe in 1 days"
+          - condition: state
+            entity: sensor.schadstoffe
+            state: "Schadstoffe in 0 days"
   - type: custom:decluttering-card
     template: timer_badge_template
     variables:
