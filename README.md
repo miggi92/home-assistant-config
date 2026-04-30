@@ -28,39 +28,39 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 190
+- 🆙 Aktualisierung: 189
 - 🚨 Alarmbedienfelder: 2
 - ↕️ Auswahlen: 81
 - 🤖 Automatisierungen: 201
 - 🏘️ Bereiche: 19
-- 🖼️ Bilder: 42
-- 🛡️ Binäre Sensoren: 250
-- 🛠️ Custom Integrationen: 58
+- 🖼️ Bilder: 43
+- 🛡️ Binäre Sensoren: 254
+- 🛠️ Custom Integrationen: 57
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
 - 🔡 Eingabe-Auswahlen: 9
-- ☑️ Eingabe-Booleans: 49
+- ☑️ Eingabe-Booleans: 51
 - 📅 Eingabe-Datum/Zeit: 11
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3768
+- 🧩 Entitäten: 3787
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 894
-- 📍 Geräte-Tracker: 130
+- 📱 Geräte: 546
+- 📍 Geräte-Tracker: 132
 - 🔌 Integrationen: 195
 - 🗓️ Kalender: 28
 - 📷 Kameras: 11
 - 🌡️ Klima: 2
-- 💡 Lichter: 34
+- 💡 Lichter: 35
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
-- 🎵 Mediaplayer: 46
+- 🎵 Mediaplayer: 47
 - 🔟 Nummern: 103
 - 👤 Personen: 9
 - 🔌 Schalter: 366
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1771
+- 📟 Sensoren: 1780
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
