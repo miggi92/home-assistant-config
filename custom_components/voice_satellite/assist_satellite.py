@@ -1274,20 +1274,24 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
             )
 
         elif event_type == intent.TimerEventType.UPDATED:
-            # Create a new list with updated timer data
+            # Add/remove time, pause, and unpause all fire UPDATED. HA core's
+            # TimerInfo.start_hours/minutes/seconds are immutable and reflect
+            # the ORIGINAL spoken duration, not the post-update remaining
+            # time, so they cannot be used to compute the new total. Use
+            # seconds_left instead: right after add_time/pause/unpause, HA
+            # sets updated_at = now, so seconds_left equals the new full
+            # runtime from this moment forward.
+            new_total = timer_info.seconds_left
             updated = []
             for timer in self._active_timers:
                 if timer["id"] == timer_id:
-                    h = timer_info.start_hours or 0
-                    m = timer_info.start_minutes or 0
-                    s = timer_info.start_seconds or 0
                     updated.append({
                         **timer,
-                        "total_seconds": h * 3600 + m * 60 + s,
+                        "total_seconds": new_total,
                         "started_at": time.time(),
-                        "start_hours": h,
-                        "start_minutes": m,
-                        "start_seconds": s,
+                        "start_hours": timer_info.start_hours or 0,
+                        "start_minutes": timer_info.start_minutes or 0,
+                        "start_seconds": timer_info.start_seconds or 0,
                     })
                 else:
                     updated.append(timer)

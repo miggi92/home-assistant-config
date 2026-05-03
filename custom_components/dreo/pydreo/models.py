@@ -240,11 +240,9 @@ SUPPORTED_DEVICES = {
         device_ranges={ECOLEVEL_RANGE: (41, 85)},
     ),
     "DR-HSH003S": DreoHeaterDeviceDetails(
-        device_ranges={ECOLEVEL_RANGE: (41, 85)},
         swing_modes=[SWING_OFF, SWING_ON],
     ),
     "DR-HSH004S": DreoHeaterDeviceDetails(
-        device_ranges={ECOLEVEL_RANGE: (41, 85)},
         swing_modes=[SWING_OFF, SWING_ON],
     ),
     "DR-HSH006S": DreoHeaterDeviceDetails(
@@ -324,18 +322,26 @@ SUPPORTED_DEVICES = {
         cooking_range=COOKING_RANGES,
     ),
     "DR-HHM": DreoDeviceDetails(device_type=DreoDeviceType.HUMIDIFIER),
+    "DR-HHM014S": DreoDeviceDetails(
+        device_type=DreoDeviceType.HUMIDIFIER,
+        preset_modes=[
+            ("normal", 0),
+            ("auto", 1),
+            ("sleep", 2),
+        ],
+    ),
     "DR-HHM005S": DreoDeviceDetails(
         device_type=DreoDeviceType.HUMIDIFIER,
         preset_modes=[
             ("auto", 1),
-            ("manual", 0),
+            ("normal", 0),
             ("sleep", 2),
         ],
     ),
     "DR-HHM006S": DreoDeviceDetails(
         device_type=DreoDeviceType.HUMIDIFIER,
         preset_modes=[
-            ("manual", 0),
+            ("normal", 0),
             ("auto", 1),
             ("sleep", 2),
         ],

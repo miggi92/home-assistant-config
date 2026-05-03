@@ -898,6 +898,17 @@ class WasteCollectionConfigFlow(ConfigFlow, domain=DOMAIN):  # type: ignore[call
         )
 
     async def finish(self) -> ConfigFlowResult:
+        if not self._options.get(CONF_SENSORS) and hasattr(self, "_fetched_types"):
+            self._options[CONF_SENSORS] = [
+                {
+                    CONF_NAME: t,
+                    CONF_DETAILS_FORMAT: "upcoming",
+                    CONF_COLLECTION_TYPES: [t],
+                    CONF_VALUE_TEMPLATE: 'on {{value.date.strftime("%a")}}, {{value.date.strftime("%d.%m.%Y")}}'
+                }
+                for t in self._fetched_types if t
+            ]
+
         return self.async_create_entry(
             title=self._title,
             data=self._args_data,

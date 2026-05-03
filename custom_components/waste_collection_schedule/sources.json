@@ -393,6 +393,12 @@
       "id": "onkaparingacity_com"
     },
     {
+      "title": "City of Parramatta",
+      "module": "cityofparramatta_nsw_gov_au",
+      "default_params": {},
+      "id": "cityofparramatta_nsw_gov_au"
+    },
+    {
       "title": "City of Port Adelaide Enfield",
       "module": "app_my_local_services_au",
       "default_params": {},
@@ -814,6 +820,12 @@
       "id": "mrsc_vic_gov_au"
     },
     {
+      "title": "Maitland City Council",
+      "module": "maitland_nsw_gov_au",
+      "default_params": {},
+      "id": "maitland_nsw_gov_au"
+    },
+    {
       "title": "Mansfield Shire Council",
       "module": "mansfield_vic_gov_au",
       "default_params": {},
@@ -1122,10 +1134,22 @@
       "id": "stonnington_vic_gov_au"
     },
     {
+      "title": "Strathfield Council",
+      "module": "strathfield_nsw_gov_au",
+      "default_params": {},
+      "id": "strathfield_nsw_gov_au"
+    },
+    {
       "title": "Sunshine Coast Queensland (QLD)",
       "module": "sunshinecoast_qld_gov_au",
       "default_params": {},
       "id": "sunshinecoast_qld_gov_au"
+    },
+    {
+      "title": "Sutherland Shire Council",
+      "module": "sutherlandshire_nsw_gov_au",
+      "default_params": {},
+      "id": "sutherlandshire_nsw_gov_au"
     },
     {
       "title": "The Flinders Ranges Council",
@@ -1278,14 +1302,6 @@
       "module": "umweltverbaende_at",
       "default_params": {
         "district": "korneuburg"
-      },
-      "id": "umweltverbaende_at"
-    },
-    {
-      "title": "Abfallverband Schwechat",
-      "module": "umweltverbaende_at",
-      "default_params": {
-        "district": "schwechat"
       },
       "id": "umweltverbaende_at"
     },
@@ -4397,6 +4413,15 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Brampton (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "BRAMP",
+        "project_id": "3179"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
       "title": "Brantford (ON)",
       "module": "recyclecoach_com",
       "default_params": {
@@ -4406,11 +4431,29 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Burlington (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "BURL",
+        "project_id": "3169"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
       "title": "Burnaby (BC)",
       "module": "recyclecoach_com",
       "default_params": {
         "city": "Burnaby",
         "state": "British Columbia"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
+      "title": "Caledon (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "CALED",
+        "project_id": "3179"
       },
       "id": "recyclecoach_com"
     },
@@ -4450,6 +4493,14 @@
       "module": "barrie_ca",
       "default_params": {},
       "id": "barrie_ca"
+    },
+    {
+      "title": "City of Beaumont, AB",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "City of Edmonton, AB",
@@ -4634,12 +4685,30 @@
       "id": "ics_recollect"
     },
     {
+      "title": "Guelph (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "GUEL",
+        "project_id": "3194"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
       "title": "Halifax, NS",
       "module": "ics",
       "default_params": {
         "split_at": "\\, (?:and )?|(?: and )"
       },
       "id": "ics_recollect"
+    },
+    {
+      "title": "Halton Hills (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "HALT",
+        "project_id": "3169"
+      },
+      "id": "recyclecoach_com"
     },
     {
       "title": "Halton Region, ON",
@@ -4675,6 +4744,12 @@
         "project_id": "583"
       },
       "id": "recyclecoach_com"
+    },
+    {
+      "title": "Laval (QC)",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_laval_ca"
     },
     {
       "title": "London (ON)",
@@ -4716,6 +4791,24 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Milton (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "MILT",
+        "project_id": "3169"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
+      "title": "Mississauga (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "MISS",
+        "project_id": "3179"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
       "title": "Montreal (QC)",
       "module": "montreal_ca",
       "default_params": {},
@@ -4726,6 +4819,12 @@
       "module": "info_collectes_ca",
       "default_params": {},
       "id": "info_collectes_ca"
+    },
+    {
+      "title": "MRC Joliette (QC)",
+      "module": "mrcjoliette_qc_ca",
+      "default_params": {},
+      "id": "mrcjoliette_qc_ca"
     },
     {
       "title": "MRC Marguerite-D'Youville",
@@ -4759,6 +4858,15 @@
       "title": "Oak Bay (BC)",
       "module": "recyclecoach_com",
       "default_params": {},
+      "id": "recyclecoach_com"
+    },
+    {
+      "title": "Oakville (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "OAKV",
+        "project_id": "3169"
+      },
       "id": "recyclecoach_com"
     },
     {
@@ -4897,6 +5005,15 @@
       "module": "toronto_ca",
       "default_params": {},
       "id": "toronto_ca"
+    },
+    {
+      "title": "Toronto (ON) - Circular Materials",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "TORONTO",
+        "project_id": "CIRCMATONT"
+      },
+      "id": "recyclecoach_com"
     },
     {
       "title": "Township of Langley (BC)",
@@ -5307,6 +5424,14 @@
       "id": "opendata_bordeauxmetropole_fr"
     },
     {
+      "title": "Le Havre Seine M\u00e9tropole",
+      "module": "publidata_fr",
+      "default_params": {
+        "instance_id": 1408
+      },
+      "id": "publidata_fr"
+    },
+    {
       "title": "Le Taillan-M\u00e9doc",
       "module": "opendata_bordeauxmetropole_fr",
       "default_params": {
@@ -5387,6 +5512,12 @@
       "id": "publidata_fr"
     },
     {
+      "title": "Rueil-Malmaison",
+      "module": "rueil_malmaison_fr",
+      "default_params": {},
+      "id": "rueil_malmaison_fr"
+    },
+    {
       "title": "Saint Quentin en Yvelines",
       "module": "publidata_fr",
       "default_params": {
@@ -5433,6 +5564,12 @@
         "instance_id": 159
       },
       "id": "publidata_fr"
+    },
+    {
+      "title": "SICTOM de Lons-le-Saunier",
+      "module": "sictom_lons_le_saunier_fr",
+      "default_params": {},
+      "id": "sictom_lons_le_saunier_fr"
     },
     {
       "title": "SIVOM Rive Droite",
@@ -7909,6 +8046,12 @@
         "service_id": "mymuell"
       },
       "id": "jumomind_de"
+    },
+    {
+      "title": "Karben",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_mein_abfallkalender_online"
     },
     {
       "title": "KECL Kommunalentsorgung Chemnitzer Land",
@@ -13636,6 +13779,12 @@
       "id": "ecoapp_ecoservice_lt"
     },
     {
+      "title": "Ekonovus",
+      "module": "ekonovus_lt",
+      "default_params": {},
+      "id": "ekonovus_lt"
+    },
+    {
       "title": "Kauno \u0161vara",
       "module": "grafikai_svara_lt",
       "default_params": {},
@@ -16543,6 +16692,14 @@
       "id": "basingstoke_gov_uk"
     },
     {
+      "title": "Bassetlaw District Council",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
+    },
+    {
       "title": "Bath & North East Somerset Council",
       "module": "bathnes_gov_uk",
       "default_params": {},
@@ -17359,6 +17516,12 @@
       "id": "camden_gov_uk"
     },
     {
+      "title": "London Borough of Hackney",
+      "module": "hackney_gov_uk",
+      "default_params": {},
+      "id": "hackney_gov_uk"
+    },
+    {
       "title": "London Borough of Harrow",
       "module": "harrow_gov_uk",
       "default_params": {},
@@ -17915,6 +18078,12 @@
       "id": "iapp_itouchvision_com"
     },
     {
+      "title": "South Ayrshire Council",
+      "module": "south_ayrshire_gov_uk",
+      "default_params": {},
+      "id": "south_ayrshire_gov_uk"
+    },
+    {
       "title": "South Cambridgeshire District Council",
       "module": "greater_cambridge_waste_org",
       "default_params": {},
@@ -18424,6 +18593,12 @@
         "state": "New Mexico"
       },
       "id": "recyclecoach_com"
+    },
+    {
+      "title": "Baton Rouge, LA",
+      "module": "baton_rouge_la_us",
+      "default_params": {},
+      "id": "baton_rouge_la_us"
     },
     {
       "title": "City of Austin, TX",
