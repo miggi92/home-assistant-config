@@ -8,17 +8,16 @@ triggers:
     entity_id: weather.home
 conditions: []
 actions:
-  - action: openai_conversation.generate_image
+  - action: ai_task.generate_image
     data:
-      size: 1024x1024
-      quality: standard
-      style: vivid
-      config_entry: 01JAE4ZR2CG7T0XTAV08YDB7SS
-      prompt: >-
-        Leingarten wenn das Wetter so ist {{ states("weather.home") }} zur der
-        Uhrzeit {{ states('sensor.date_time_iso') }}. Bitte auch den Mond {{
-        states('sensor.moon') }} die Sonne {{ states('sun.sun') }} und die
-        Jahreszeit {{ states('sensor.season') }} beachten.
+      task_name: "Wetterbild"
+      instructions: >-
+        A photorealistic landscape photography of the town Leingarten, Germany.
+        The current season is {{ states('sensor.season') }}.
+        The weather condition is {{ states('weather.home') | replace('_', ' ') | replace('-', ' ') }}.
+        It is currently {% if is_state('sun.sun', 'above_horizon') %}daytime{% else %}nighttime{% endif %} at {{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%H:%M') }}.
+        {% if is_state('sun.sun', 'below_horizon') %}The night sky shows a {{ states('sensor.moon') | replace('_', ' ') }} moon.{% endif %}
+        Cinematic lighting, high resolution, highly detailed.
     response_variable: generated_image
   - alias: Send out a manual event to update the image entity
     event: new_weather_image
