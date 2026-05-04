@@ -1,0 +1,105 @@
+---
+title: Hausbau
+path: bau
+icon: mdi:home
+subview: true
+type: sections
+max_columns: 3
+header:
+  layout: center
+  badges_position: top
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+      - type: markdown
+        title: Build Timeline
+        content: |
+          {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
+          {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
+          {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
+          {% set ns = namespace(found=false, match_error=true, completed_count=0) %}
+          {% set total_phases = entities | length %}
+
+          | Date | Milestone | Status | Timeline |
+          | :--- | :--- | :--- | :--- |
+          {%- for entity in entities %}
+          {%- set phase_name = entity.attributes.friendly_name | replace('Hausbau ', '') %}
+          {%- set phase_name_clean = phase_name | lower | trim %}
+          {%- set date_val = entity.state %}
+
+          {%- if date_val not in ['unknown', 'unavailable'] %}
+            {%- set dt = (date_val | as_datetime | as_local) %}
+            {%- set date_fmt = dt.strftime('%d.%m.%Y') %}
+            {%- set days_diff = (dt.date() - now().date()).days %}
+            {%- if days_diff > 0 %}
+              {%- set time_info = "in " ~ days_diff ~ " Tagen" %}
+            {%- elif days_diff == 0 %}
+              {%- set time_info = "Heute" %}
+            {%- else %}
+              {%- set time_info = "vor " ~  (days_diff | abs) ~ " Tagen" %}
+            {%- endif %}
+          {%- else %}
+            {%- set date_fmt = 'TBD' %}
+            {%- set time_info = '-' %}
+          {%- endif %}
+
+          {%- set is_current = false %}
+          {%- if current_phase_clean == phase_name_clean %}
+            {%- set icon = '🏗️' %}
+            {%- set ns.found = true %}
+            {%- set ns.match_error = false %}
+            {%- set is_current = true %}
+          {%- elif not ns.found %}
+            {%- set icon = '✅' %}
+            {%- set ns.completed_count = ns.completed_count + 1 %}
+          {%- else %}
+            {%- set icon = '⏳' %}
+          {%- endif %}
+
+          {%- if is_current %}
+          | **{{ date_fmt }}** | **<span style="color: var(--primary-color);">{{ phase_name }}</span>** | {{ icon }} | **{{ time_info }}** |
+          {%- else %}
+          | {{ date_fmt }} | {{ phase_name }} | {{ icon }} | {{ time_info }} |
+          {%- endif %}
+          {%- endfor %}
+
+          ***
+
+          {% set percent = (ns.completed_count / total_phases * 100) | round(0) %}
+          {% set blocks_filled = (percent / 10) | round(0) | int %}
+          {% set blocks_empty = 10 - blocks_filled %}
+
+          **Progress:** `[{{ '█' * blocks_filled }}{{ '░' * blocks_empty }}]` {{ percent }}%
+
+          {% if ns.match_error %}
+          > ⚠️ **Fehler:** Die aktuelle Phase aus dem Dropdown (`{{ current_phase }}`) stimmt mit keinem der Helfer-Namen überein.
+          {% endif %}
+  - type: grid
+    cards:
+      - type: custom:auto-entities
+        card:
+          type: vertical-stack
+        card_param: cards
+        filter:
+          template: |
+            [
+              {
+                "type": "custom:mushroom-entity-card",
+                "entity": "input_select.hausbau_aktuelle_phase",
+                "name": "Aktuelle Phase",
+                "icon": "mdi:crane",
+                "icon_color": "blue"
+              },
+              {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
+              {% for entity in entities %}
+              {
+                "type": "custom:mushroom-entity-card",
+                "entity": "{{ entity.entity_id }}",
+                "name": "{{ entity.attributes.friendly_name | replace('Hausbau ', '') }}"
+              }{{ "," if not loop.last else "" }}
+              {% endfor %}
+            ]
+  - type: grid
+    cards: []
