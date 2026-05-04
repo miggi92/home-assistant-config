@@ -48,7 +48,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 543
 - 📍 Geräte-Tracker: 126
-- 🔌 Integrationen: 195
+- 🔌 Integrationen: 194
 - 🗓️ Kalender: 28
 - 📷 Kameras: 11
 - 🌡️ Klima: 2
