@@ -1,69 +1,100 @@
-# Example .gitignore file for your config dir.
-# An * ensures that everything will be ignored.
+# ==============================================================================
+# 1. ALLES IGNORIEREN
+# ==============================================================================
 *
-# Now, whitelist anything that's a directory
+
+# ==============================================================================
+# 2. ORDNER-STRUKTUR ERLAUBEN
+# ==============================================================================
+# Erlaubt Git, in Ordner zu schauen, um whitelisted Dateien zu finden.
 !*/
-# You can whitelist files/folders with !, these will not be ignored.
+
+# ==============================================================================
+# 3. PERFORMANCE & SYSTEM-ORDNER SOFORT WIEDER IGNORIEREN
+# ==============================================================================
+# Diese Ordner werden sofort ausgeschlossen, damit Git sie gar nicht erst
+# nach erlaubten Dateien (wie *.json) durchsuchen muss. Das spart enorm Zeit.
+.storage/
+.cache/
+.cloud/
+cremalink_tokens/
+node_modules/
+/www/community/
+/www/llmvision/
+/media/llmvision/
+/www/cams/
+/www/images/screenshots/
+/www/downloaded/
+/www/cam_captures/
+/www/mail_and_packages/
+/image/
+/node-red/
+/tts/
+/themes/
+/zigbee2mqtt/log/
+/zha_ota/
+/docs/.vitepress/dist/
+/docs/.vitepress/cache/
+
+# ==============================================================================
+# 4. DATEITYPEN & SPEZIFISCHE DATEIEN ERLAUBEN (WHITELIST)
+# ==============================================================================
+# Gängige Konfigurations- und Code-Dateien
 !*.yaml
 !*.yml
-!.gitignore
 !*.md
+!*.json
+!*.py
+!*.js
+!*.ts
+!*.vue
+!*.mts
+!*.sh
+
+# Bilder und Medien
 !*.png
 !*.jpg
 !*.jpeg
-!*.mp3
-!*.json
-!*.py
-!*.repositories
-!*.js
-!*.sh
-!*.mts
 !*.ico
-!*.ts
-!*.vue
+!*.mp3
 
-# Whitlist files
+# Spezifische Home Assistant & System-Dateien
+!.gitignore
+!*.repositories
 !.yamllint
 !.gitkeep
 !.HA_VERSION
 !bun.lockb
 !.npmrc
+!/custom_components/
 
-# Ignore folders.
-.storage
-.cache
-cremalink_tokens
-.cloud
-.google.token
-node_modules
-!/custom_components
-/www/community
-/www/llmvision
-/media/llmvision
-/www/cams
-/www/images/screenshots
-/www/downloaded
-/www/cam_captures
-/www/mail_and_packages
-/image
-/node-red
-/tts
-/themes
-/zigbee2mqtt/log
-/zha_ota
-/docs/.vitepress/dist
-/docs/.vitepress/cache
+# ==============================================================================
+# 5. SENSIBLE & GENERIERTE DATEIEN AUSDRÜCKLICH IGNORIEREN (BLACKLIST)
+# ==============================================================================
+# Diese Sektion MUSS ganz unten stehen!
+# Sie überschreibt die Whitelist von oben (wie !*.yaml oder !*.json),
+# damit deine Secrets wirklich sicher bleiben.
 
-# ignore files
-/www/logo/work_miguel_logo.svg
-
-# Ensure these YAML files are ignored, otherwise your secret data/credentials will leak.
-ip_bans.yaml
+# Core Home Assistant Secrets & Datenbanken
 secrets.yaml
+ip_bans.yaml
 known_devices.yaml
 google_calendars.yaml
 .shopping_list.json
+.google.token
+home-assistant.log
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+OZW_Log.txt
+
+# Spezifische Konfigurationen & Add-on State
 skyqDefaultRoom.yaml
+/www/logo/work_miguel_logo.svg
 zigbee2mqtt/state.json
 zigbee2mqtt/configuration.yaml
 zigbee2mqtt/coordinator_backup.json
+
+# OS-spezifische unsichtbare Dateien
+.DS_Store
+Thumbs.db
