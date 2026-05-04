@@ -38,17 +38,17 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🛠️ Custom Integrationen: 57
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
-- 🔡 Eingabe-Auswahlen: 9
+- 🔡 Eingabe-Auswahlen: 10
 - ☑️ Eingabe-Booleans: 51
-- 📅 Eingabe-Datum/Zeit: 11
+- 📅 Eingabe-Datum/Zeit: 25
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3798
+- 🧩 Entitäten: 3812
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 543
-- 📍 Geräte-Tracker: 126
-- 🔌 Integrationen: 194
+- 📱 Geräte: 542
+- 📍 Geräte-Tracker: 125
+- 🔌 Integrationen: 195
 - 🗓️ Kalender: 28
 - 📷 Kameras: 11
 - 🌡️ Klima: 2
@@ -58,7 +58,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎵 Mediaplayer: 47
 - 🔟 Nummern: 111
 - 👤 Personen: 9
-- 🔌 Schalter: 362
+- 🔌 Schalter: 361
 - 🔒 Schlösser: 2
 - 📟 Sensoren: 1782
 - 📢 Sirenen: 0
@@ -74,7 +74,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔥 Wasserheizungen: 0
 - 🌤️ Wetter: 3
 - 🕒 Zeiten: 0
-- 🗺️ Zonen: 40
+- 🗺️ Zonen: 41
 <!-- Entities Stats - End -->
 
 ## 🎛️ Devices
