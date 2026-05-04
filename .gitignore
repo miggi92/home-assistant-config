@@ -65,3 +65,5 @@ google_calendars.yaml
 .shopping_list.json
 skyqDefaultRoom.yaml
 zigbee2mqtt/state.json
+zigbee2mqtt/configuration.yaml
+zigbee2mqtt/coordinator_backup.json
