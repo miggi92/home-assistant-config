@@ -9,6 +9,63 @@ wake:
       integration: voice_satellite
       domain: assist_satellite
 
+show:
+  name: Show
+  description: >-
+    Run a prompt through the satellite's Assist pipeline and display the
+    response in the voice satellite overlay. Plays the wake chime, optionally
+    speaks the response, and keeps the bubble on screen until dismissed
+    (stop word or double tap) or until the configured duration elapses.
+    Designed for scheduled tasks like a morning briefing.
+  target:
+    entity:
+      integration: voice_satellite
+      domain: assist_satellite
+  fields:
+    prompt:
+      name: Prompt
+      description: >-
+        Text sent to the Assist pipeline as if the user had spoken it. The
+        LLM response is what the satellite displays.
+      required: true
+      example: What's the weather forecast for today?
+      selector:
+        text:
+          multiline: true
+    silent:
+      name: Silent
+      description: >-
+        When true (default), only display the response. When false, also speak
+        it through the satellite's TTS engine.
+      default: true
+      example: false
+      selector:
+        boolean:
+    pipeline:
+      name: Pipeline
+      description: >-
+        Which pipeline runs the prompt. Pass 1 or 2 to use the matching
+        wake-word slot's pipeline, or pass an exact pipeline name. Defaults
+        to slot 1.
+      example: 1
+      default: 1
+      selector:
+        text:
+    duration:
+      name: Duration
+      description: >-
+        Seconds to display the response before auto-dismissing. 0 (default)
+        keeps the bubble on screen until the user dismisses it manually
+        (stop word or double tap).
+      default: 0
+      example: 60
+      selector:
+        number:
+          min: 0
+          max: 86400
+          mode: box
+          unit_of_measurement: s
+
 start_timer:
   name: Start timer
   description: >-

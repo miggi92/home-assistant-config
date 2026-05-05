@@ -554,6 +554,132 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
                 self._satellite_name,
             )
 
+    async def async_show(
+        self,
+        prompt: str,
+        silent: bool = True,
+        pipeline_param: int | str = 1,
+        duration: int = 0,
+        context: Any = None,
+    ) -> None:
+        """Push a `show-trigger` event so the card runs the prompt itself.
+
+        Resolves the user's pipeline choice (slot 1/2 or by name) into a
+        pipeline_id and pushes the prompt + metadata to the card. The card
+        plays the wake chime and triggers `voice_satellite/run_pipeline`
+        with `intent_input`, which runs the actual pipeline server-side.
+        Pipeline events flow back over the same subscription, so the card
+        renders bubbles, tool-call rich media, and TTS exactly like a
+        wake-word interaction.
+
+        Returning here does NOT mean the show finished — the card owns the
+        rest of the lifecycle (run, sticky display, dismissal).
+        """
+        from homeassistant.components.assist_pipeline import (
+            async_get_pipeline,
+            async_get_pipelines,
+        )
+
+        pipeline = self._resolve_show_pipeline(
+            pipeline_param, async_get_pipeline, async_get_pipelines
+        )
+        if pipeline is None:
+            _LOGGER.warning(
+                "voice_satellite.show: no pipeline resolved for '%s' (param=%r)",
+                self._satellite_name,
+                pipeline_param,
+            )
+            return
+
+        self._announce_id += 1
+        show_id = self._announce_id
+        self._push_satellite_event(
+            "show-trigger",
+            {
+                "id": show_id,
+                "prompt": prompt,
+                "silent": bool(silent),
+                "duration": int(duration),
+                "pipeline_id": pipeline.id,
+                "pipeline_name": pipeline.name,
+            },
+        )
+
+        _LOGGER.debug(
+            "voice_satellite.show: pushed trigger #%d on '%s' "
+            "(pipeline=%s, silent=%s, duration=%ds)",
+            show_id,
+            self._satellite_name,
+            pipeline.name,
+            silent,
+            duration,
+        )
+
+    def _resolve_show_pipeline(
+        self,
+        pipeline_param: int | str,
+        async_get_pipeline,
+        async_get_pipelines,
+    ):
+        """Resolve a show service `pipeline` argument to a Pipeline object.
+
+        Accepts:
+          * 1 — satellite's slot 1 pipeline (the framework select).
+                If "preferred", falls back to HA's globally preferred pipeline.
+          * 2 — satellite's slot 2 pipeline (custom select).
+                If "Preferred", falls back to slot 1.
+          * str — pipeline display name (case-sensitive).
+
+        Returns None if nothing resolves.
+        """
+        from .select import PIPELINE_2_PREFERRED
+
+        # Explicit name lookup.
+        if isinstance(pipeline_param, str):
+            for p in async_get_pipelines(self.hass):
+                if p.name == pipeline_param:
+                    return p
+            _LOGGER.warning(
+                "voice_satellite.show: no pipeline named '%s' — falling back to default",
+                pipeline_param,
+            )
+            return async_get_pipeline(self.hass)
+
+        registry = er.async_get(self.hass)
+
+        # Slot 2 — fall through to slot 1 when "Preferred".
+        if pipeline_param == 2:
+            slot2_eid = registry.async_get_entity_id(
+                "select", DOMAIN, f"{self._entry.entry_id}_pipeline_2"
+            )
+            if slot2_eid:
+                state = self.hass.states.get(slot2_eid)
+                if (
+                    state
+                    and state.state not in ("unknown", "unavailable", PIPELINE_2_PREFERRED)
+                ):
+                    for p in async_get_pipelines(self.hass):
+                        if p.name == state.state:
+                            return p
+
+        # Slot 1 (or fall-through from slot 2 = Preferred).
+        slot1_eid = registry.async_get_entity_id(
+            "select", DOMAIN, f"{self._entry.entry_id}-pipeline"
+        )
+        if slot1_eid:
+            state = self.hass.states.get(slot1_eid)
+            if state:
+                # Framework's AssistPipelineSelect uses "preferred" (lowercase)
+                # to mean "use HA's globally preferred pipeline".
+                if state.state == "preferred":
+                    return async_get_pipeline(self.hass)
+                if state.state not in ("unknown", "unavailable"):
+                    for p in async_get_pipelines(self.hass):
+                        if p.name == state.state:
+                            return p
+
+        return async_get_pipeline(self.hass)
+
     async def async_internal_start_conversation(
         self,
         start_message: str | None = None,
@@ -902,6 +1028,180 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
             state,
             mapped,
         )
+
+    async def async_run_pipeline_text(
+        self,
+        connection,
+        msg_id: int,
+        start_stage: str,
+        end_stage: str,
+        intent_input: str,
+        pipeline_id_override: str | None = None,
+        conversation_id: str | None = None,
+        extra_system_prompt: str | None = None,
+    ) -> None:
+        """Run a bridged pipeline with TEXT input (start_stage=intent).
+
+        Why this exists separately from `async_run_pipeline`: the framework's
+        `async_accept_pipeline_from_satellite` and `async_pipeline_from_audio_stream`
+        helpers always pass `stt_stream` through to `PipelineInput` and never
+        accept `intent_input`. Validation then fails with "intent_input is
+        required for intent recognition". So we build PipelineRun + PipelineInput
+        directly. Used by `voice_satellite.show`.
+
+        Pipeline events flow through `_internal_on_pipeline_event` to the
+        existing card subscription, so the frontend renders bubbles, tool-call
+        rich media, and TTS exactly like a wake-word turn.
+        """
+        from homeassistant.components.assist_pipeline import async_get_pipeline
+        from homeassistant.components.assist_pipeline.pipeline import (
+            AudioSettings,
+            PipelineInput,
+            PipelineRun,
+        )
+        from homeassistant.core import Context
+        from homeassistant.helpers import chat_session
+
+        self._pipeline_gen += 1
+        my_gen = self._pipeline_gen
+        self._pipeline_connection = connection
+        self._pipeline_msg_id = msg_id
+        self._pipeline_audio_queue = None
+        self._pipeline_run_started = False
+
+        # Conversation continuity — same session-duration check as the audio
+        # path so a show fires inside an active conversation thread when the
+        # user hasn't been idle long enough to roll a fresh chat.
+        if conversation_id:
+            self._conversation_id = conversation_id
+        else:
+            duration = self._get_session_duration_seconds()
+            if duration is not None:
+                elapsed = time.monotonic() - self._conversation_last_activity
+                if self._conversation_last_activity == 0.0 or elapsed > duration:
+                    self._conversation_id = None
+        self._conversation_last_activity = time.monotonic()
+
+        stage_map = {
+            "intent": PipelineStage.INTENT,
+            "tts": PipelineStage.TTS,
+        }
+        start_stage_enum = stage_map.get(start_stage, PipelineStage.INTENT)
+        end_stage_enum = stage_map.get(end_stage, PipelineStage.TTS)
+
+        pipeline_id = pipeline_id_override or self._resolve_pipeline()
+
+        try:
+            pipeline = async_get_pipeline(self.hass, pipeline_id=pipeline_id)
+        except Exception:  # noqa: BLE001 — surface as pipeline run-time error
+            _LOGGER.warning(
+                "async_run_pipeline_text: pipeline %r not found for '%s'",
+                pipeline_id,
+                self._satellite_name,
+                exc_info=True,
+            )
+            self._send_text_pipeline_error(
+                connection,
+                msg_id,
+                "pipeline-not-found",
+                f"Pipeline {pipeline_id!r} not found",
+            )
+            if self._pipeline_gen == my_gen:
+                self._pipeline_connection = None
+                self._pipeline_msg_id = None
+            return
+
+        _LOGGER.debug(
+            "Text-input pipeline starting for '%s' (pipeline=%s, start=%s, end=%s)",
+            self._satellite_name,
+            pipeline.name,
+            start_stage,
+            end_stage,
+        )
+
+        device_id = (
+            self.registry_entry.device_id if self.registry_entry else None
+        )
+
+        try:
+            with chat_session.async_get_chat_session(
+                self.hass, self._conversation_id
+            ) as session:
+                self._conversation_id = session.conversation_id
+
+                pipeline_run = PipelineRun(
+                    hass=self.hass,
+                    context=Context(),
+                    pipeline=pipeline,
+                    start_stage=start_stage_enum,
+                    end_stage=end_stage_enum,
+                    event_callback=self._internal_on_pipeline_event,
+                    tts_audio_output=self.tts_options,
+                    audio_settings=AudioSettings(),
+                )
+
+                pipeline_input = PipelineInput(
+                    run=pipeline_run,
+                    session=session,
+                    intent_input=intent_input,
+                    device_id=device_id,
+                    satellite_id=self.entity_id,
+                    conversation_extra_system_prompt=extra_system_prompt,
+                )
+
+                # validate=True is required so prepare_recognize_intent runs;
+                # without it, intent_agent stays None and recognize_intent
+                # raises "Recognize intent was not prepared" silently.
+                await pipeline_input.execute(validate=True)
+        except Exception as err:  # noqa: BLE001 — surface unexpected failures
+            _LOGGER.exception(
+                "Text-input pipeline failed for '%s'", self._satellite_name
+            )
+            # Only emit a synthetic error if PipelineRun.start() never ran
+            # (and thus never emitted run-start). Once run-start has fired,
+            # the framework's PipelineInput.execute() emits ERROR + run-end
+            # itself in its own try/except, so we'd duplicate.
+            if not self._pipeline_run_started:
+                self._send_text_pipeline_error(
+                    connection,
+                    msg_id,
+                    "pipeline-setup-failed",
+                    str(err) or "Pipeline setup failed",
+                )
+        finally:
+            if self._pipeline_gen == my_gen:
+                self._pipeline_connection = None
+                self._pipeline_msg_id = None
+                self._pipeline_audio_queue = None
+
+    def _send_text_pipeline_error(
+        self,
+        connection,
+        msg_id: int,
+        code: str,
+        message: str,
+    ) -> None:
+        """Push a synthetic run-start + error + run-end so the card unwinds.
+
+        When async_run_pipeline_text fails before PipelineInput.execute()
+        emits its own events, the frontend's ShowManager would otherwise
+        wait forever (overlay + chime, no further events). The pipeline
+        event handlers gate on run-start, so we send a minimal trio that
+        passes the gate and triggers handleError → show.dismiss().
+        """
+        try:
+            connection.send_event(
+                msg_id, {"type": "run-start", "data": {}}
+            )
+            connection.send_event(
+                msg_id,
+                {"type": "error", "data": {"code": code, "message": message}},
+            )
+            connection.send_event(
+                msg_id, {"type": "run-end", "data": {}}
+            )
+        except Exception:  # noqa: BLE001 — connection may already be dead
+            pass
 
     async def async_run_pipeline(
         self,

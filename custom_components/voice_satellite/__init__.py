@@ -286,6 +286,43 @@ async def _async_handle_start_timer_service(call: ServiceCall) -> None:
             )
 
 
+async def _async_handle_show_service(call: ServiceCall) -> None:
+    """Handle voice_satellite.show — run a prompt through the LLM and display the result.
+
+    Resolves the requested pipeline (slot 1, slot 2, or by name), runs the
+    prompt through that pipeline's conversation agent, optionally renders
+    the response as TTS, and pushes a `show` satellite event to the card.
+    Frontend handles sticky display + dismissal.
+    """
+    hass = call.hass
+    entity_ids: list[str] = call.data["entity_id"]
+    prompt: str = call.data["prompt"]
+    silent: bool = call.data.get("silent", True)
+    pipeline_param = call.data.get("pipeline", 1)
+    duration: int = call.data.get("duration", 0)
+
+    for entity_id in entity_ids:
+        entity = _find_entity(hass, entity_id)
+        if entity is None:
+            _LOGGER.warning("voice_satellite.show: entity %s not found", entity_id)
+            continue
+        try:
+            await entity.async_show(
+                prompt=prompt,
+                silent=silent,
+                pipeline_param=pipeline_param,
+                duration=duration,
+                context=call.context,
+            )
+        except Exception as err:  # noqa: BLE001 — surface as warning, do not abort other entities
+            _LOGGER.warning(
+                "voice_satellite.show: failed for %s: %s",
+                entity_id,
+                err,
+                exc_info=True,
+            )
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up integration-wide resources: frontend JS + WebSocket commands."""
     # Sync custom wake word models and custom sounds with persistent storage
@@ -316,6 +353,26 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         schema=vol.Schema(
             {
                 vol.Required("entity_id"): cv.entity_ids,
+            }
+        ),
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "show",
+        _async_handle_show_service,
+        schema=vol.Schema(
+            {
+                vol.Required("entity_id"): cv.entity_ids,
+                vol.Required("prompt"): vol.All(cv.string, vol.Length(min=1)),
+                vol.Optional("silent", default=True): cv.boolean,
+                vol.Optional("pipeline", default=1): vol.Any(
+                    vol.All(vol.Coerce(int), vol.In([1, 2])),
+                    cv.string,
+                ),
+                vol.Optional("duration", default=0): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=86400)
+                ),
             }
         ),
     )
@@ -547,6 +604,13 @@ async def ws_question_answered(
         vol.Optional("extra_system_prompt"): str,
         vol.Optional("wake_word_phrase"): str,
         vol.Optional("wake_word_slot"): vol.All(int, vol.In([1, 2])),
+        # Text-input variant: when intent_input is set the run skips the
+        # audio queue / binary handler entirely and executes a PipelineInput
+        # directly with start_stage=intent. pipeline_id picks a specific
+        # pipeline (used by voice_satellite.show for slot/name overrides);
+        # omit to use the satellite's configured pipeline.
+        vol.Optional("intent_input"): str,
+        vol.Optional("pipeline_id"): str,
     }
 )
 @websocket_api.async_response
@@ -566,6 +630,8 @@ async def ws_run_pipeline(
     extra_system_prompt = msg.get("extra_system_prompt")
     wake_word_phrase = msg.get("wake_word_phrase")
     wake_word_slot = msg.get("wake_word_slot")
+    intent_input = msg.get("intent_input")
+    pipeline_id_override = msg.get("pipeline_id")
 
     entity = _find_entity(hass, entity_id)
     if entity is None:
@@ -604,6 +670,43 @@ async def ws_run_pipeline(
                 await old_task
             except (asyncio.CancelledError, Exception):
                 pass
+
+    # Text-input variant: no audio queue, no binary handler, no audio stream.
+    # Used by voice_satellite.show — pipeline runs from start_stage=intent
+    # with the prompt as intent_input. Pipeline events flow back through the
+    # same subscription via on_pipeline_event so the frontend renders bubbles,
+    # tool-call rich media, and TTS exactly like a wake-word turn.
+    if intent_input is not None:
+        try:
+            connection.send_result(msg["id"])
+            # No binary handler - signal that to the card with handler_id=null.
+            connection.send_event(
+                msg["id"],
+                {"type": "init", "handler_id": None},
+            )
+            task = hass.async_create_background_task(
+                entity.async_run_pipeline_text(
+                    connection,
+                    msg["id"],
+                    start_stage=start_stage,
+                    end_stage=end_stage,
+                    intent_input=intent_input,
+                    pipeline_id_override=pipeline_id_override,
+                    conversation_id=conversation_id,
+                    extra_system_prompt=extra_system_prompt,
+                ),
+                name=f"voice_satellite.{entity.satellite_name}_pipeline_text",
+            )
+            entity.pipeline_task = task
+
+            def unsub_text() -> None:
+                if not task.done():
+                    task.cancel()
+
+            connection.subscriptions[msg["id"]] = unsub_text
+        except Exception:
+            raise
+        return
 
     # Audio queue - card sends binary audio frames, empty bytes = stop
     audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
