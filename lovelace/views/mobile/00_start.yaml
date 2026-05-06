@@ -291,6 +291,7 @@ sections:
             template: navigation_card_template
             variables:
               - title: Hausbau
+              - nav_path: bau
               - icon: mdi:crane
               - icon_color: yellow
           - type: conditional
