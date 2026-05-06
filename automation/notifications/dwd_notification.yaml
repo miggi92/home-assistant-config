@@ -39,12 +39,12 @@ action:
           {% set weekday_end = (state_attr(warning_source, 'warning_' ~ index ~ '_end') | as_timestamp(now().timestamp())) | timestamp_custom('%w', true, now().weekday()) | int %}
           {% set last_update = (state_attr(warning_source, 'last_update') | as_timestamp(now())) | timestamp_custom('%d.%m.%Y, %R', true, 'N/A') %}
           {% set weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] %}
-          *{{ headline }}*
-          ⏰ _{{ weekdays[weekday_start-1] ~ ', ' ~ time_start ~ ' - ' ~ weekdays[weekday_end-1] ~ ', ' ~ time_end }}_
+          <b>{{ headline }}</b>
+          ⏰ <i>{{ weekdays[weekday_start-1] ~ ', ' ~ time_start ~ ' - ' ~ weekdays[weekday_end-1] ~ ', ' ~ time_end }}</i>
 
           {{ description | trim }}
           {% if instruction != none %}
-            *Handlungsempfehlung:*
+            <b>Handlungsempfehlung:</b>
             {{ instruction | trim }}
           {% endif %}
           Letzte Aktualisierung: {{ last_update }}

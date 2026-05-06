@@ -168,7 +168,7 @@ notify_engine:
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
-                                  caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
+                                  caption: "{{ photo.caption }}"
                                   url: "{{ photo.path }}"
                                   chat_id:
                                     - "{{ chatid }}"
@@ -178,7 +178,7 @@ notify_engine:
                                 data:
                                   verify_ssl: false
                                   config_entry_id: 01JZ6NS8C75P2K898VAJVFV86K
-                                  caption: "{{ photo.caption | replace('|', '\\|') | replace('-', '\\-') }}"
+                                  caption: "{{ photo.caption }}"
                                   file: "{{ photo.path }}"
                                   chat_id:
                                     - "{{ chatid }}"
