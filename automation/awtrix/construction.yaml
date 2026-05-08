@@ -1,0 +1,16 @@
+---
+alias: Show construction state on clock
+id: 5f2cc568-35a6-4dff-9b4c-0a0c7f37833d
+description: "Show bed state on clock"
+trigger:
+  - platform: state
+    entity_id: sensor.hausbau_fertigstellung
+condition: []
+action:
+  - action: script.awtrix3customapp
+    data:
+      app_id: construction
+      text: "{{ states('input_select.hausbau_aktuelle_phase') }}"
+      icon: "50401"
+      progress: "{{ (states('sensor.hausbau_fertigstellung') | float(0)) | round(2) }}"
+mode: single
