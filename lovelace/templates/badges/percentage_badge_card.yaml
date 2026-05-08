@@ -1,0 +1,17 @@
+---
+percentage_badge_template:
+  default:
+    name: "Progress"
+    icon: mdi:percent
+  card:
+    type: custom:entity-progress-badge-template
+    entity: "[[entity]]"
+    icon: "[[icon]]"
+    bar_effect: shimmer
+    percent: >
+      {{ states(entity) | float(0) }}
+    min_value: 0
+    max_value: 100
+    unit: "%"
+    name: >
+      [[name]] ({{ states(entity) | float(0) | round(0) }} %)

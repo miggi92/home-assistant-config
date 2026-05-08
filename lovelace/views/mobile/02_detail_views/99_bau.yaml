@@ -8,7 +8,13 @@ max_columns: 3
 header:
   layout: center
   badges_position: top
-badges: []
+badges:
+  - type: custom:decluttering-card
+    template: percentage_badge_template
+    variables:
+      - entity: sensor.hausbau_fertigstellung
+      - name: "Fertigstellung"
+      - icon: mdi:crane
 sections:
   - type: grid
     cards:
@@ -19,8 +25,7 @@ sections:
           {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
           {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
           {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
-          {% set ns = namespace(found=false, match_error=true, completed_count=0) %}
-          {% set total_phases = entities | length %}
+          {% set ns = namespace(found=false, match_error=true) %}
 
           | Date | Milestone | Status | Timeline |
           | :--- | :--- | :--- | :--- |
@@ -53,7 +58,6 @@ sections:
             {%- set is_current = true %}
           {%- elif not ns.found %}
             {%- set icon = '✅' %}
-            {%- set ns.completed_count = ns.completed_count + 1 %}
           {%- else %}
             {%- set icon = '⏳' %}
           {%- endif %}
@@ -67,7 +71,7 @@ sections:
 
           ***
 
-          {% set percent = (ns.completed_count / total_phases * 100) | round(0) %}
+          {% set percent = states('sensor.hausbau_fertigstellung') | float(0) | round(0) | int %}
           {% set blocks_filled = (percent / 10) | round(0) | int %}
           {% set blocks_empty = 10 - blocks_filled %}
 
@@ -93,11 +97,38 @@ sections:
                 "icon_color": "blue"
               },
               {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
+              {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
+              {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
+              {% set ns = namespace(found=false) %}
+
               {% for entity in entities %}
+              {% set phase_name = entity.attributes.friendly_name | replace('Hausbau ', '') %}
+              {% set phase_name_clean = phase_name | lower | trim %}
+              {% set date_val = entity.state %}
+
+              {% set is_current = false %}
+              {% if current_phase_clean == phase_name_clean %}
+                {% set ns.found = true %}
+                {% set is_current = true %}
+              {% endif %}
+
+              {% set icon_color_property = '' %}
+              {% if is_current %}
+                {% if date_val not in ['unknown', 'unavailable'] %}
+                  {% set dt = (date_val | as_datetime | as_local) %}
+                  {% if dt.date() < now().date() %}
+                    {% set icon_color_property = '"icon_color": "red",' %}
+                  {% endif %}
+                {% endif %}
+              {% elif not ns.found %}
+                {% set icon_color_property = '"icon_color": "green",' %}
+              {% endif %}
+
               {
                 "type": "custom:mushroom-entity-card",
                 "entity": "{{ entity.entity_id }}",
-                "name": "{{ entity.attributes.friendly_name | replace('Hausbau ', '') }}"
+                {{ icon_color_property }}
+                "name": "{{ phase_name }}"
               }{{ "," if not loop.last else "" }}
               {% endfor %}
             ]
