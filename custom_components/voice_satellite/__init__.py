@@ -50,62 +50,63 @@ _BUILTIN_MODELS = {"ok_nabu", "hey_jarvis", "alexa", "hey_mycroft", "hey_home_as
 _BUILTIN_SOUNDS = {"announce", "alert", "done", "error", "wake"}
 
 
-def _sync_custom_models(config_dir: str) -> None:
-    """Sync custom .tflite models between persistent storage and integration dir.
+def _load_user_custom_models(config_dir: str) -> None:
+    """Copy user-supplied .tflite models from the persistent drop folder
+    (/config/voice_satellite/models/) into the integration's models dir.
 
-    HACS replaces the entire integration directory on update, wiping any
-    user-added model files.  We use a persistent directory outside
-    custom_components/ to survive updates:
-
-      /config/voice_satellite/models/
-
-    On each startup this function:
-      1. Creates the persistent dir if it doesn't exist.
-      2. Saves any custom models found in the integration dir → persistent dir
-         (catches models placed directly in the integration dir).
-      3. Restores custom models from the persistent dir → integration dir
-         (restores models lost during a HACS update).
-
-    Built-in models that ship with the integration are never overwritten.
-    """
+    Strictly one-way: this function never creates or writes to the
+    persistent folder.  Users place their own models there; we pull them
+    in on startup so they survive HACS updates.  Files already present in
+    the integration dir are left alone (we never overwrite, including
+    bundled built-ins)."""
     persistent = Path(config_dir, "voice_satellite", "models")
-    persistent.mkdir(parents=True, exist_ok=True)
-
     integration_models = Path(__file__).parent / "models"
-    if not integration_models.is_dir():
+    if not persistent.is_dir() or not integration_models.is_dir():
         return
 
-    # Save: integration → persistent (backup custom models the user placed directly)
-    for src in integration_models.glob("*.tflite"):
-        if src.stem in _BUILTIN_MODELS:
-            continue
-        dest = persistent / src.name
-        if not dest.exists():
-            shutil.copy2(src, dest)
-            _LOGGER.info("Saved custom model to persistent storage: %s", src.name)
-        # Also sync companion .json manifest if present
-        json_src = src.with_suffix(".json")
-        if json_src.exists():
-            json_dest = persistent / json_src.name
-            if not json_dest.exists():
-                shutil.copy2(json_src, json_dest)
-                _LOGGER.info("Saved custom model manifest to persistent storage: %s", json_src.name)
-
-    # Restore: persistent → integration (recover after HACS update)
     for src in persistent.glob("*.tflite"):
         if src.stem in _BUILTIN_MODELS:
             continue
         dest = integration_models / src.name
         if not dest.exists():
             shutil.copy2(src, dest)
-            _LOGGER.info("Restored custom model from persistent storage: %s", src.name)
-        # Also restore companion .json manifest if present
+            _LOGGER.info("Loaded user model: %s", src.name)
         json_src = src.with_suffix(".json")
         if json_src.exists():
             json_dest = integration_models / json_src.name
             if not json_dest.exists():
                 shutil.copy2(json_src, json_dest)
-                _LOGGER.info("Restored custom model manifest from persistent storage: %s", json_src.name)
+                _LOGGER.info("Loaded user model manifest: %s", json_src.name)
+
+    # openWakeWord lives in models/openwakeword/.  Same one-way load.
+    _load_user_openwakeword_models(persistent, integration_models)
+
+
+_OWW_SUBDIR = "openwakeword"
+
+
+def _load_user_openwakeword_models(persistent_root: Path, integration_root: Path) -> None:
+    """Copy user-supplied OWW classifiers from the persistent drop folder
+    (/config/voice_satellite/models/openwakeword/) into the integration's
+    models dir.  One-way only: this function never creates or writes to
+    the persistent folder, so the user is in full control of what lives
+    there.  Files already present in the integration dir are left alone."""
+    persistent_oww = persistent_root / _OWW_SUBDIR
+    integration_oww = integration_root / _OWW_SUBDIR
+    if not persistent_oww.is_dir() or not integration_oww.is_dir():
+        return
+
+    for src in persistent_oww.glob("*.tflite"):
+        dest = integration_oww / src.name
+        if not dest.exists():
+            shutil.copy2(src, dest)
+            _LOGGER.info("Loaded user OWW model: %s", src.name)
+        json_src = src.with_suffix(".json")
+        if json_src.exists():
+            json_dest = integration_oww / json_src.name
+            if not json_dest.exists():
+                shutil.copy2(json_src, json_dest)
+                _LOGGER.info("Loaded user OWW model manifest: %s", json_src.name)
 
 
 _DURATIONS_FILENAME = "durations.json"
@@ -117,7 +118,7 @@ def _write_sound_durations(config_dir: str) -> None:
     Users can drop their own chime files into /config/voice_satellite/sounds/
     (synced into the integration dir by `_sync_custom_sounds()` just above).
     Those custom files can be any length; the client needs the true duration
-    so it can schedule the post-chime mic unmute / STT resume correctly —
+    so it can schedule the post-chime mic unmute / STT resume correctly -
     the hardcoded fallbacks in src/audio/chime.js are only safe for the
     shipped defaults.
 
@@ -127,11 +128,11 @@ def _write_sound_durations(config_dir: str) -> None:
     and user-replaced files are probed identically.
     """
     try:
-        # mutagen is listed in manifest.json "requirements" — always present.
+        # mutagen is listed in manifest.json "requirements" - always present.
         from mutagen.mp3 import MP3
     except ImportError:
         _LOGGER.warning(
-            "mutagen not available — skipping chime duration probe; "
+            "mutagen not available - skipping chime duration probe; "
             "client will use hardcoded fallbacks"
         )
         return
@@ -144,7 +145,7 @@ def _write_sound_durations(config_dir: str) -> None:
     for mp3 in sorted(sounds_dir.glob("*.mp3")):
         try:
             length = MP3(str(mp3)).info.length
-        except Exception as e:  # noqa: BLE001 — any probe failure is non-fatal
+        except Exception as e:  # noqa: BLE001 - any probe failure is non-fatal
             _LOGGER.warning("Failed to probe duration of %s: %s", mp3.name, e)
             continue
         if isinstance(length, (int, float)) and length > 0:
@@ -287,7 +288,7 @@ async def _async_handle_start_timer_service(call: ServiceCall) -> None:
 
 
 async def _async_handle_show_service(call: ServiceCall) -> None:
-    """Handle voice_satellite.show — run a prompt through the LLM and display the result.
+    """Handle voice_satellite.show - run a prompt through the LLM and display the result.
 
     Resolves the requested pipeline (slot 1, slot 2, or by name), runs the
     prompt through that pipeline's conversation agent, optionally renders
@@ -314,7 +315,7 @@ async def _async_handle_show_service(call: ServiceCall) -> None:
                 duration=duration,
                 context=call.context,
             )
-        except Exception as err:  # noqa: BLE001 — surface as warning, do not abort other entities
+        except Exception as err:  # noqa: BLE001 - surface as warning, do not abort other entities
             _LOGGER.warning(
                 "voice_satellite.show: failed for %s: %s",
                 entity_id,
@@ -325,8 +326,9 @@ async def _async_handle_show_service(call: ServiceCall) -> None:
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up integration-wide resources: frontend JS + WebSocket commands."""
-    # Sync custom wake word models and custom sounds with persistent storage
-    await hass.async_add_executor_job(_sync_custom_models, hass.config.config_dir)
+    # Pull any user-added wake word models from the persistent drop folder,
+    # and sync custom sounds with persistent storage.
+    await hass.async_add_executor_job(_load_user_custom_models, hass.config.config_dir)
     await hass.async_add_executor_job(_sync_custom_sounds, hass.config.config_dir)
     # Probe actual MP3 durations AFTER the sync so user-replaced files are
     # measured correctly, then write a manifest the client fetches at
@@ -672,7 +674,7 @@ async def ws_run_pipeline(
                 pass
 
     # Text-input variant: no audio queue, no binary handler, no audio stream.
-    # Used by voice_satellite.show — pipeline runs from start_stage=intent
+    # Used by voice_satellite.show - pipeline runs from start_stage=intent
     # with the prompt as intent_input. Pipeline events flow back through the
     # same subscription via on_pipeline_event so the frontend renders bubbles,
     # tool-call rich media, and TTS exactly like a wake-word turn.
