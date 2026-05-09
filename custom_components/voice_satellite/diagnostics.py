@@ -75,7 +75,12 @@ async def ws_run_diagnostics(
         results.extend(_check_version(bundle_version))
         results.extend(await _check_entity_and_pipeline(hass, entity_id))
         results.extend(_check_frontend_resource(hass))
-        results.extend(_check_wake_word_assets(hass))
+        results.extend(
+            await hass.async_add_executor_job(
+                _check_wake_word_assets,
+                hass.config.config_dir,
+            )
+        )
     except Exception as err:  # noqa: BLE001 - surface as a single result
         _LOGGER.exception("run_diagnostics crashed")
         results.append(
@@ -668,8 +673,8 @@ def _check_frontend_resource(hass: HomeAssistant) -> list[dict[str, Any]]:
 # ── Wake word assets ────────────────────────────────────────────────
 
 
-def _check_wake_word_assets(hass: HomeAssistant) -> list[dict[str, Any]]:
-    persistent = Path(hass.config.config_dir, "voice_satellite", "models")
+def _check_wake_word_assets(config_dir: str) -> list[dict[str, Any]]:
+    persistent = Path(config_dir, "voice_satellite", "models")
     if not persistent.exists():
         return [_result(
             "srv.wake.persistent_dir",
