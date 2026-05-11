@@ -636,8 +636,9 @@ class OptionsFlowHandler(OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         """Initialize options flow."""
-        # super().__init__(config_entry)
-        self.config_entry = config_entry
+        # HA 2025.12+ exposes ``config_entry`` as a read-only property on
+        # ``OptionsFlow`` and injects it automatically, so we must not
+        # assign it here anymore (was deprecated since HA 2024.12).
         self.current_config: dict = dict(config_entry.data)
         self.options = dict(config_entry.options)
         self.sensor_type: SensorType = (
