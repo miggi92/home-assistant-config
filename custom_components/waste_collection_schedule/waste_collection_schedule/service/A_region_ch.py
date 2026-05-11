@@ -39,6 +39,7 @@ class A_region_ch:
         region_url: str,
         district: str | None = None,
         regex: str | None = None,
+        session: requests.Session | None = None,
     ):
         if service not in SERVICES:
             raise Exception(f"service '{service}' not found")
@@ -48,6 +49,7 @@ class A_region_ch:
 
         self._municipality_url = region_url
         self._district = district
+        self._session = session or _session()
 
     def fetch(self) -> list[ICS]:
         waste_types = self.get_waste_types(self._municipality_url)
@@ -107,7 +109,7 @@ class A_region_ch:
     def get_waste_types(self, link: str) -> dict[str, str]:
         if not link.startswith("http"):
             link = f"{self._base_url}{link}"
-        r = _session().get(link)
+        r = self._session.get(link)
         r.raise_for_status()
 
         waste_types = {}
@@ -117,8 +119,10 @@ class A_region_ch:
         for download in downloads:
             # href ::= "/index.php?apid=12731252&amp;apparentid=5011362"
             href = download.get("href")
-            if download.find("div", class_="badgeIcon") or download.find(
-                "img", class_="rowImg"
+            if (
+                download.find("div", class_="badgeIcon")
+                or download.find("img", class_="rowImg")
+                or download.find("img", class_="svgIconImg")
             ):
                 titles = download.find_all("div", class_="title")
                 if "PDF" in titles:
@@ -135,7 +139,7 @@ class A_region_ch:
     def get_ICS_sources(self, link: str, tour: str) -> list[ICS]:
         if not link.startswith("http"):
             link = f"{self._base_url}{link}"
-        r = _session().get(link)
+        r = self._session.get(link)
         r.raise_for_status()
 
         soup = BeautifulSoup(r.text, features="html.parser")
@@ -188,7 +192,8 @@ def get_region_url_by_street(
     district: str | None = None,
     regex: str | None = None,
 ) -> A_region_ch:
-    r = _session().get(search_url, params={"q": street})
+    session = _session()
+    r = session.get(search_url, params={"q": street})
     r.raise_for_status()
 
     soup = BeautifulSoup(r.text, features="html.parser")
@@ -205,6 +210,6 @@ def get_region_url_by_street(
         if a.get_text(strip=True).lower().replace(" ", "") == street.lower().replace(
             " ", ""
         ):
-            return A_region_ch(service, href, district, regex)
+            return A_region_ch(service, href, district, regex, session=session)
 
     raise SourceArgumentNotFoundWithSuggestions("street", street, streets)
