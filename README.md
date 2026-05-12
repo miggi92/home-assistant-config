@@ -44,10 +44,10 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3877
+- 🧩 Entitäten: 3879
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 550
-- 📍 Geräte-Tracker: 130
+- 📱 Geräte: 551
+- 📍 Geräte-Tracker: 131
 - 🔌 Integrationen: 197
 - 🗓️ Kalender: 28
 - 📷 Kameras: 11
@@ -58,7 +58,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎵 Mediaplayer: 47
 - 🔟 Nummern: 115
 - 👤 Personen: 9
-- 🔌 Schalter: 366
+- 🔌 Schalter: 367
 - 🔒 Schlösser: 2
 - 📟 Sensoren: 1813
 - 📢 Sirenen: 0
