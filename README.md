@@ -38,13 +38,13 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🛠️ Custom Integrationen: 57
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
-- 🔡 Eingabe-Auswahlen: 10
+- 🔡 Eingabe-Auswahlen: 11
 - ☑️ Eingabe-Booleans: 51
 - 📅 Eingabe-Datum/Zeit: 28
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3921
+- 🧩 Entitäten: 3922
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 552
 - 📍 Geräte-Tracker: 132
