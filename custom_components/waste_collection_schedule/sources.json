@@ -4479,6 +4479,12 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Brossard, Qu\u00e9bec",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_brossard_ca"
+    },
+    {
       "title": "Burlington (ON)",
       "module": "recyclecoach_com",
       "default_params": {
@@ -4883,6 +4889,12 @@
       "id": "publidata_ca"
     },
     {
+      "title": "MRC Matawinie (QC)",
+      "module": "gmrmatawinie_qc_ca",
+      "default_params": {},
+      "id": "gmrmatawinie_qc_ca"
+    },
+    {
       "title": "Muskoka District (Huntsville, ON)",
       "module": "ics",
       "default_params": {
@@ -5013,6 +5025,12 @@
       "id": "ics_recollect"
     },
     {
+      "title": "RMR Lac-Saint-Jean (QC)",
+      "module": "rmrlac_qc_ca",
+      "default_params": {},
+      "id": "rmrlac_qc_ca"
+    },
+    {
       "title": "Saint-Jean-Sur-Richelieu, QC",
       "module": "ics",
       "default_params": {
@@ -5033,6 +5051,12 @@
         "split_at": "\\, (?:and )?|(?: and )"
       },
       "id": "ics_recollect"
+    },
+    {
+      "title": "Shawinigan",
+      "module": "shawinigan_ca",
+      "default_params": {},
+      "id": "shawinigan_ca"
     },
     {
       "title": "Sherbrooke (QC)",
@@ -5752,6 +5776,12 @@
         "commune": "Martillac"
       },
       "id": "cc-montesquieu_fr"
+    },
+    {
+      "title": "Montpellier M\u00e9diterran\u00e9e M\u00e9tropole",
+      "module": "data_montpellier3m_fr",
+      "default_params": {},
+      "id": "data_montpellier3m_fr"
     },
     {
       "title": "Morschwiller-le-Bas",
@@ -10795,6 +10825,12 @@
       "id": "abfuhrplan_schwabach_de"
     },
     {
+      "title": "Schwalbach am Taunus",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_schwalbach_am_taunus_de"
+    },
+    {
       "title": "Schwarze Elster",
       "module": "app_abfallplus_de",
       "default_params": {
@@ -11888,7 +11924,7 @@
       "id": "mohu_bp_hu"
     },
     {
-      "title": "\u00c9TH (\u00c9rd, Di\u00f3sd, Nagytarcsa, S\u00f3sk\u00fat, T\u00e1rnok)",
+      "title": "\u00c9TH (\u00c9rd, Di\u00f3sd, R\u00e1ckereszt\u00far, S\u00f3sk\u00fat, T\u00e1rnok)",
       "module": "eth_erd_hu",
       "default_params": {},
       "id": "eth_erd_hu"
@@ -12227,6 +12263,12 @@
     },
     {
       "title": "Brixen/Bressanone - Stadtwerke Brixen AG/ASM Bressanone SpA",
+      "module": "junker_app",
+      "default_params": {},
+      "id": "junker_app"
+    },
+    {
+      "title": "Broni",
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
@@ -13774,6 +13816,12 @@
       "id": "aliaserviziambientali_it"
     },
     {
+      "title": "San Cipriano Po",
+      "module": "junker_app",
+      "default_params": {},
+      "id": "junker_app"
+    },
+    {
       "title": "San Marcello Piteglio",
       "module": "aliaserviziambientali_it",
       "default_params": {
@@ -13856,6 +13904,12 @@
         "municipality": "Scarperia e San Piero"
       },
       "id": "aliaserviziambientali_it"
+    },
+    {
+      "title": "SEAB Biella",
+      "module": "seab_biella_it",
+      "default_params": {},
+      "id": "seab_biella_it"
     },
     {
       "title": "Seab SPA Bolzano",
@@ -13961,6 +14015,12 @@
     },
     {
       "title": "Stefanaconi",
+      "module": "junker_app",
+      "default_params": {},
+      "id": "junker_app"
+    },
+    {
+      "title": "Stradella",
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
@@ -15772,10 +15832,24 @@
       "id": "sims_pl"
     },
     {
+      "title": "Hemar (ichisystem.eu)",
+      "module": "ichisystem_eu",
+      "default_params": {},
+      "id": "ichisystem_eu"
+    },
+    {
       "title": "Kiedy \u015bmieci",
       "module": "kiedysmieci_info",
       "default_params": {},
       "id": "kiedysmieci_info"
+    },
+    {
+      "title": "Kiszkowo",
+      "module": "ichisystem_eu",
+      "default_params": {
+        "city": "Kiszkowo"
+      },
+      "id": "ichisystem_eu"
     },
     {
       "title": "Kleszczewo/Kostrzyn",
@@ -15894,6 +15968,14 @@
         "owner": "Parafia \u015bw. Wojciecha Biskupa i M\u0119czennika w Nidzicy"
       },
       "id": "sims_pl"
+    },
+    {
+      "title": "Pobiedziska",
+      "module": "ichisystem_eu",
+      "default_params": {
+        "city": "Pobiedziska"
+      },
+      "id": "ichisystem_eu"
     },
     {
       "title": "Polkowice",
@@ -16310,6 +16392,14 @@
       "module": "nsr_se",
       "default_params": {},
       "id": "nsr_se"
+    },
+    {
+      "title": "NVOA - Nacka Vatten och Avfall",
+      "module": "edpevent_se",
+      "default_params": {
+        "service_provider": "nvoa"
+      },
+      "id": "edpevent_se"
     },
     {
       "title": "N\u00e5rab - Norra \u00c5sbo Renh\u00e5llnings AB",
@@ -16860,6 +16950,12 @@
         "municipality": "Rehetobel"
       },
       "id": "a_region_ch"
+    },
+    {
+      "title": "Reinach BL",
+      "module": "reinach_bl_ch",
+      "default_params": {},
+      "id": "reinach_bl_ch"
     },
     {
       "title": "Rorschach",
@@ -17945,6 +18041,12 @@
       "id": "iapp_itouchvision_com"
     },
     {
+      "title": "Ipswich Borough Council",
+      "module": "ipswich_gov_uk",
+      "default_params": {},
+      "id": "ipswich_gov_uk"
+    },
+    {
       "title": "Islington Council",
       "module": "islington_gov_uk",
       "default_params": {},
@@ -18443,6 +18545,12 @@
       "id": "portsmouth_gov_uk"
     },
     {
+      "title": "Powys County Council",
+      "module": "powys_gov_uk",
+      "default_params": {},
+      "id": "powys_gov_uk"
+    },
+    {
       "title": "Preston City Council",
       "module": "preston_gov_uk",
       "default_params": {},
@@ -18587,6 +18695,12 @@
       "id": "shropshire_gov_uk"
     },
     {
+      "title": "Slough Borough Council",
+      "module": "slough_gov_uk",
+      "default_params": {},
+      "id": "slough_gov_uk"
+    },
+    {
       "title": "Solihull Council",
       "module": "solihull_gov_uk",
       "default_params": {},
@@ -18679,6 +18793,12 @@
       "id": "binzone_uk"
     },
     {
+      "title": "South Ribble Borough Council",
+      "module": "southribble_gov_uk",
+      "default_params": {},
+      "id": "southribble_gov_uk"
+    },
+    {
       "title": "South Somerset District Council",
       "module": "iapp_itouchvision_com",
       "default_params": {
@@ -18727,6 +18847,12 @@
       "module": "staffordbc_gov_uk",
       "default_params": {},
       "id": "staffordbc_gov_uk"
+    },
+    {
+      "title": "Staffordshire Moorlands District Council",
+      "module": "staffsmoorlands_gov_uk",
+      "default_params": {},
+      "id": "staffsmoorlands_gov_uk"
     },
     {
       "title": "Stevenage Borough Council",
@@ -19140,6 +19266,12 @@
       "id": "baton_rouge_la_us"
     },
     {
+      "title": "Chesapeake, VA",
+      "module": "chesapeake_va_us",
+      "default_params": {},
+      "id": "chesapeake_va_us"
+    },
+    {
       "title": "City of Austin, TX",
       "module": "ics",
       "default_params": {
@@ -19343,6 +19475,12 @@
         "state": "Washington"
       },
       "id": "recyclecoach_com"
+    },
+    {
+      "title": "Palm Coast, FL",
+      "module": "palmcoast_fl_gov",
+      "default_params": {},
+      "id": "palmcoast_fl_gov"
     },
     {
       "title": "Plainville (CT)",

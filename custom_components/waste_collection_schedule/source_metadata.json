@@ -981,6 +981,14 @@
     "howto": {},
     "urls": {}
   },
+  "ics_brossard_ca": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/ics/brossard_ca.md",
+    "howto": {
+      "en": "- Visit https://brossard.ca/calendrier-des-collectes/ and select your sector (A, B, C, E, I, J, L, M, N, O, P, R, S, T, V, X, or Y).\n- Scroll to the \"Collection schedule for your residence\" section.\n- Right-click on \"Add the 2026 collection schedule to my calendar (ICS)\" and select `Copy link address`.\n- Use this copied URL as the `url` parameter.\n",
+      "fr": "- Visitez https://brossard.ca/calendrier-des-collectes/ et sélectionnez votre secteur (A, B, C, E, I, J, L, M, N, O, P, R, S, T, V, X ou Y).\n- Faites défiler jusqu'à la section \"Horaire de collecte pour votre résidence\".\n- Faites un clic droit sur \"Ajouter l'horaire des collectes 2026 à mon calendrier (ics)\" et sélectionnez `Copier l'adresse du lien`.\n- Utilisez cette URL comme paramètre `url`.\n"
+    },
+    "urls": {}
+  },
   "calgary_ca": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/calgary_ca.md",
     "howto": {},
@@ -1069,6 +1077,14 @@
     "howto": {},
     "urls": {}
   },
+  "gmrmatawinie_qc_ca": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/gmrmatawinie_qc_ca.md",
+    "howto": {
+      "en": "Find your sector on the <a href=\"https://gmrmatawinie.org/calendriers-collectes/\" target=\"_blank\">MRC Matawinie collection calendar</a>.",
+      "fr": "Trouvez votre secteur sur la <a href=\"https://gmrmatawinie.org/calendriers-collectes/\" target=\"_blank\">carte des collectes de la MRC Matawinie</a>."
+    },
+    "urls": {}
+  },
   "pointe_claire_qc_ca": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/pointe_claire_qc_ca.md",
     "howto": {
@@ -1093,12 +1109,25 @@
     },
     "urls": {}
   },
+  "rmrlac_qc_ca": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/rmrlac_qc_ca.md",
+    "howto": {
+      "en": "Enter your street number and name along with your municipality.",
+      "fr": "Entrez votre numéro et nom de rue ainsi que votre municipalite."
+    },
+    "urls": {}
+  },
   "ics_vsj_ca": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/ics/vsj_ca.md",
     "howto": {
       "en": "- If you don't know your sector, go to `https://www.vsj.ca/carte-interactive/` and open the \"Collectes\" section to find it.\n- Visit `https://www.vsj.ca/collectes/` to figure out your collection day.\n- Scroll down to `Synchronisez votre calendrier des collectes avec votre agenda numérique` section.\n- Right-click on your sector and select `Copy link`.\n- Use this copied URL as the `url` parameter.\n",
       "fr": "- Si vous ne connaissez pas votre secteur, allez sur `https://www.vsj.ca/carte-interactive/` et ouvrez la section Collectes pour le trouver.\n- Visitez `https://www.vsj.ca/collectes/` pour trouver votre jour de collecte.\n- Faites défiler jusqu'à la section `Synchronisez votre calendrier des collectes avec votre agenda numérique`.\n- Cliquez droit sur votre secteur et sélectionnez `Copier l'url`.      \n- Utilisez cette URL copiée comme paramètre `url`.    \n"
     },
+    "urls": {}
+  },
+  "shawinigan_ca": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/shawinigan_ca.md",
+    "howto": {},
     "urls": {}
   },
   "ics_sherbrooke_ca": {
@@ -1301,6 +1330,11 @@
   },
   "mamirolle_info": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/mamirolle_info.md",
+    "howto": {},
+    "urls": {}
+  },
+  "data_montpellier3m_fr": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/data_montpellier3m_fr.md",
     "howto": {},
     "urls": {}
   },
@@ -2502,6 +2536,14 @@
     "howto": {},
     "urls": {}
   },
+  "ics_schwalbach_am_taunus_de": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/ics/schwalbach_am_taunus_de.md",
+    "howto": {
+      "de": "- Öffnen Sie <https://www.schwalbach.de/Rathaus-und-Buergerservice/Buergerservice/Abfallentsorgung/Digitaler-Abfallkalender.htm> und navigieren Sie zum digitalen Abfallkalender.\n- Wählen Sie Ihre Straße aus dem Dropdown-Menü. Notieren Sie Ihren **Abfuhrbezirk** (1–4), der neben der Straße angezeigt wird.\n- Klicken Sie mit der rechten Maustaste auf den gelben Download-Button (z. B. \"Termine mit wöchentlicher Restmüll-Abholung für den Abfuhrbezirk 1 - 2026\") und kopieren Sie die Link-Adresse.\n- Der Link sieht so aus: `https://www.schwalbach.de/city_data/assets/431/ical/2026_Abfuhrbezirk-1_woechentlich.ics`\n- Ersetzen Sie die Jahreszahl (`2026`) durch `{%Y}` und fügen Sie `version: 1` zur Konfiguration hinzu, damit das Jahr automatisch aktualisiert wird.\n- Verwenden Sie diesen angepassten Link als `url`-Parameter.\n",
+      "en": "- Go to <https://www.schwalbach.de/Rathaus-und-Buergerservice/Buergerservice/Abfallentsorgung/Digitaler-Abfallkalender.htm> and navigate to the digital waste calendar.\n- Select your street from the dropdown. Note your **Abfuhrbezirk** number (1–4) shown next to the street.\n- Right-click on the yellow calendar download button (e.g. \"Termine mit wöchentlicher Restmüll-Abholung für den Abfuhrbezirk 1 - 2026\") and copy the link address.\n- The link will look like: `https://www.schwalbach.de/city_data/assets/431/ical/2026_Abfuhrbezirk-1_woechentlich.ics`\n- Replace the year (`2026`) with `{%Y}` and add `version: 1` to your config so the year is updated automatically.\n- Use this modified link as the `url` parameter.\n"
+    },
+    "urls": {}
+  },
   "ics_sds_schwerin_de": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/ics/sds_schwerin_de.md",
     "howto": {
@@ -2920,6 +2962,16 @@
     },
     "urls": {}
   },
+  "seab_biella_it": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/seab_biella_it.md",
+    "howto": {
+      "en": "Visit https://www.seab.biella.it/aree-servite, select your municipality and copy the link to the PDF calendar file.",
+      "it": "Visita https://www.seab.biella.it/aree-servite, seleziona il tuo comune e copia il link al file PDF del calendario."
+    },
+    "urls": {
+      "url_www_seab_biella_it_wp_content_uploads_2026_05_ailoche_ii_semestre_pdf": "https://www.seab.biella.it/wp-content/uploads/2026/05/Ailoche-II-semestre.pdf)"
+    }
+  },
   "silea_it": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/silea_it.md",
     "howto": {},
@@ -3278,6 +3330,13 @@
     },
     "urls": {}
   },
+  "ichisystem_eu": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/ichisystem_eu.md",
+    "howto": {
+      "en": "Open https://harmonogram.ichisystem.eu/hemar/ and pick your city, street, and house number from the dropdowns. Use those exact values for the city, street, and house_number arguments (matching is case-insensitive)."
+    },
+    "urls": {}
+  },
   "kiedysmieci_info": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/kiedysmieci_info.md",
     "howto": {},
@@ -3323,7 +3382,7 @@
   "rybnik_pl": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/rybnik_pl.md",
     "howto": {
-      "en": "Download the current schedule PDF for your district from the Rybnik city website: https://www.rybnik.eu/dla-mieszkancow/odpady-komunalne/ (navigate to the current year's schedules). Open page 2 of the PDF and note your Rejon (sub-district zone) name from the leftmost column of the schedule table."
+      "en": "Download the current schedule PDF for your district from the Rybnik city website: https://www.rybnik.eu/dla-mieszkancow/odpady-komunalne/ (navigate to the current year's schedules). Open page 1 of the PDF and find your Rejon (sub-district zone) name in the left column of the table."
     },
     "urls": {}
   },
@@ -3731,6 +3790,14 @@
   "sammelkalender_ch": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/sammelkalender_ch.md",
     "howto": {},
+    "urls": {}
+  },
+  "reinach_bl_ch": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/reinach_bl_ch.md",
+    "howto": {
+      "de": "Wählen Sie Ihren Abfuhrkreis (Kreis Ost oder Kreis West). Den Kreis finden Sie auf dem Abfallkalender der Gemeinde Reinach BL unter https://www.reinach-bl.ch/de/abfallwirtschaft/abfallkalender.",
+      "en": "Select your collection zone (Kreis Ost or Kreis West). You can find your zone on the official Reinach BL waste calendar page at https://www.reinach-bl.ch/de/abfallwirtschaft/abfallkalender."
+    },
     "urls": {}
   },
   "ics_seon_ch": {
@@ -4612,6 +4679,13 @@
       "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
     }
   },
+  "ipswich_gov_uk": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/ipswich_gov_uk.md",
+    "howto": {
+      "en": "Visit https://app.ipswich.gov.uk/bin-collection-better-recycling/ and search for your street. Once your schedule is displayed the URL will end with /weeks/<number> — use that number as the `location_id` argument."
+    },
+    "urls": {}
+  },
   "islington_gov_uk": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/islington_gov_uk.md",
     "howto": {},
@@ -5114,6 +5188,13 @@
       "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
     }
   },
+  "powys_gov_uk": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/powys_gov_uk.md",
+    "howto": {},
+    "urls": {
+      "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
+    }
+  },
   "preston_gov_uk": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/preston_gov_uk.md",
     "howto": {},
@@ -5252,6 +5333,13 @@
       "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
     }
   },
+  "slough_gov_uk": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/slough_gov_uk.md",
+    "howto": {
+      "en": "Search for your street at https://www.slough.gov.uk/bin-collections and note the number from the URL of your matching result (e.g. /directory-record/34771/...). Use that number as record_id, or pass the exact street name as the street argument."
+    },
+    "urls": {}
+  },
   "solihull_gov_uk": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/solihull_gov_uk.md",
     "howto": {},
@@ -5296,6 +5384,15 @@
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/southkesteven_gov_uk.md",
     "howto": {},
     "urls": {}
+  },
+  "southribble_gov_uk": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/southribble_gov_uk.md",
+    "howto": {
+      "en": "Go to https://www.southribble.gov.uk/bincollectiondays and enter your postcode. Use browser dev tools to find the UPRN (the option value in the address dropdown)."
+    },
+    "urls": {
+      "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
+    }
   },
   "sstaffs_gov_uk": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/sstaffs_gov_uk.md",
@@ -5345,6 +5442,13 @@
     "urls": {
       "url_www_findmyaddress_co_uk": "https://www.findmyaddress.co.uk/"
     }
+  },
+  "staffsmoorlands_gov_uk": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/staffsmoorlands_gov_uk.md",
+    "howto": {
+      "en": "Your UPRN can be found by searching your postcode at https://www.staffsmoorlands.gov.uk/findyourbinday and selecting your address. The value shown in the address dropdown is your UPRN. Alternatively, find your UPRN at https://www.findmyaddress.co.uk/"
+    },
+    "urls": {}
   },
   "stevenage_gov_uk": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/stevenage_gov_uk.md",
@@ -5707,6 +5811,11 @@
     "howto": {},
     "urls": {}
   },
+  "chesapeake_va_us": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/chesapeake_va_us.md",
+    "howto": {},
+    "urls": {}
+  },
   "ics_recyclebycity_com": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/ics/recyclebycity_com.md",
     "howto": {
@@ -5788,6 +5897,11 @@
   },
   "northville_township_mi_us": {
     "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/northville_township_mi_us.md",
+    "howto": {},
+    "urls": {}
+  },
+  "palmcoast_fl_gov": {
+    "docs_url": "https://github.com/mampfes/hacs_waste_collection_schedule/blob/master/doc/source/palmcoast_fl_gov.md",
     "howto": {},
     "urls": {}
   },
