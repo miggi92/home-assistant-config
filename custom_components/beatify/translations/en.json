@@ -1,0 +1,16 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Set up Beatify",
+                "description": "Beatify is a party game integration for Home Assistant that plays music through your media players.\n\n{warning}"
+            }
+        },
+        "error": {
+            "unknown": "An unknown error occurred."
+        },
+        "abort": {
+            "already_configured": "Beatify is already configured."
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Configurer Beatify",
+                "description": "Beatify est une intégration de jeu de fête pour Home Assistant qui diffuse de la musique via vos lecteurs multimédias.\n\n{warning}"
+            }
+        },
+        "error": {
+            "unknown": "Une erreur inconnue s'est produite."
+        },
+        "abort": {
+            "already_configured": "Beatify est déjà configuré."
+        }
+    }
+}
