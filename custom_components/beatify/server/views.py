@@ -8,10 +8,12 @@ views from sub-modules for backward compatibility.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
-from html import escape as html_escape
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import urlencode
 
 from aiohttp import ClientError, ClientTimeout, web
 from homeassistant.components.http import HomeAssistantView
@@ -46,6 +48,7 @@ from custom_components.beatify.server.game_views import (  # noqa: F401
 # Re-export playlist views
 from custom_components.beatify.server.playlist_views import (  # noqa: F401
     PlaylistRequestsView,
+    SavePlaylistView,
 )
 
 # Re-export stats views
@@ -90,49 +93,25 @@ class AdminView(HomeAssistantView):
 
     url = "/beatify/admin"
     name = "beatify:admin"
-    requires_auth = False  # Frictionless access per PRD
+    # Served unauthenticated on purpose: a browser navigation carries no HA
+    # bearer token, so the page itself must load before its JS can run the
+    # Home Assistant login flow. The shell embeds no secrets — every admin
+    # action and the admin token are obtained over authenticated requests
+    # (see ha-auth.js), so an unauthenticated visitor gets an inert page (#998).
+    requires_auth = False
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the admin view."""
         self.hass = hass
 
     async def get(self, request: web.Request) -> web.Response:  # noqa: ARG002
-        """Serve the admin HTML page.
-
-        When a game is active, the current admin token is embedded into the
-        page as a <meta> tag. The token is otherwise handed back only once,
-        in the start-game response — so an admin page that *reconnects* to an
-        existing game (after a reload, or in a second tab) had no token, and
-        every token-gated REST call (e.g. start-gameplay) 403'd. Embedding it
-        here gives the admin page its token regardless of how it reached the
-        lobby. The /beatify/admin page is the host surface (it already serves
-        tokenless create + reset), so the token belongs with it.
-        """
+        """Serve the admin HTML page as a static, secret-free shell (#998)."""
         html_path = Path(__file__).parent.parent / "www" / "admin.html"
         html_content = await _get_html(self.hass, html_path)
         if html_content is None:
             _LOGGER.error("Admin page not found: %s", html_path)
             return web.Response(text="Admin page not found", status=500)
-        return _html_response(self._inject_admin_token(html_content))
-
-    def _inject_admin_token(self, html: str) -> str:
-        """Embed the active game's admin token into the page, if a game is live."""
-        game_state = self.hass.data.get(DOMAIN, {}).get("game")
-        token = getattr(game_state, "admin_token", None)
-        if not token or not getattr(game_state, "game_id", None):
-            return html
-        meta = (
-            f'<meta name="beatify-admin-token" '
-            f'content="{html_escape(str(token), quote=True)}">'
-        )
-        # Inject just before the version meta so it lands inside <head>.
-        if '<meta name="beatify-version"' in html:
-            return html.replace(
-                '<meta name="beatify-version"',
-                meta + '\n    <meta name="beatify-version"',
-                1,
-            )
-        return html.replace("<head>", "<head>\n    " + meta, 1)
+        return _html_response(html_content)
 
 
 class LauncherView(HomeAssistantView):
@@ -175,6 +154,305 @@ class PlayerView(HomeAssistantView):
             _LOGGER.error("Player page not found: %s", html_path)
             return web.Response(text="Player page not found", status=500)
         return _html_response(html_content)
+
+
+# ---------------------------------------------------------------------------
+# Auth flow (rc15+) — server-side OAuth, no browser POSTs
+# ---------------------------------------------------------------------------
+#
+# Safari 18 (macOS Sequoia / iOS 18) silently refuses certain same-origin
+# POSTs from the OAuth-callback page state — fetch (FormData and
+# urlencoded), XHR, both /auth/token and /beatify/auth/exchange. Three
+# RCs of frontend transport workarounds (rc11–rc14) failed because the
+# browser was never the right layer to fix this. Chrome and other
+# engines are unaffected.
+#
+# Solution: the browser only does GETs and redirects. The OAuth code
+# exchange and refresh both run server-side, with tokens delivered via
+# cookies. ``BeatifyAuthCallbackView`` is the new ``redirect_uri`` for
+# ``/auth/authorize``; it exchanges the code over loopback HTTP and sets
+# two cookies (JS-readable ``beatify_access`` + HttpOnly
+# ``beatify_refresh``) before redirecting back to /beatify/admin.
+# ``BeatifyAuthRefreshView`` handles silent refreshes the same way, via
+# fetch-GET, so the frontend never needs to POST.
+#
+# Cookies: Path=/beatify (so they only ride along on Beatify requests),
+# SameSite=Lax (enough for the same-origin OAuth redirect + fetch GET
+# flows; tighter Strict would break the post-login redirect), and
+# Secure when the page was loaded over HTTPS (so Nabu Casa users get
+# the cookie-security upgrade for free, and LAN HTTP users still work).
+
+
+_ACCESS_COOKIE = "beatify_access"
+_REFRESH_COOKIE = "beatify_refresh"
+
+# Belt + suspenders: HA access tokens are short (~30 min by default), but
+# refresh tokens are long-lived. 30 days lines up with HA's own refresh-
+# token rotation window and means a user who hits the admin once a month
+# never has to re-do the full OAuth dance.
+_REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
+
+
+def _ssl_kwargs(hass: HomeAssistant) -> dict:
+    """Build aiohttp ssl kwargs for the loopback /auth/token call.
+
+    HA on HTTPS still listens on localhost only with its own cert. We
+    don't verify (the cert almost certainly doesn't SAN 127.0.0.1) —
+    no security loss because the call never leaves the process.
+    """
+    if getattr(hass.http, "ssl_certificate", None):
+        return {"ssl": False}
+    return {}
+
+
+def _loopback_url(hass: HomeAssistant) -> str:
+    """Compose the loopback URL for HA's own /auth/token."""
+    scheme = "https" if getattr(hass.http, "ssl_certificate", None) else "http"
+    return f"{scheme}://127.0.0.1:{hass.http.server_port}/auth/token"
+
+
+def _origin_from_request(request: web.Request) -> str:
+    """Return the scheme+host the browser sees, for client_id/redirect_uri.
+
+    The browser sent ``/auth/authorize`` with client_id and redirect_uri
+    derived from ``window.location.origin``; the exchange request must
+    use byte-identical values (per RFC 6749 §4.1.3). Reconstruct from
+    Forwarded headers when present (Nabu Casa terminates TLS upstream
+    and proxies plain HTTP to HA, so request.scheme alone says "http").
+    """
+    forwarded_proto = request.headers.get("X-Forwarded-Proto")
+    forwarded_host = request.headers.get("X-Forwarded-Host") or request.headers.get(
+        "Host"
+    )
+    scheme = forwarded_proto or request.scheme
+    host = forwarded_host or request.host
+    return f"{scheme}://{host}"
+
+
+def _is_secure_origin(request: web.Request) -> bool:
+    """True if the browser loaded the page over HTTPS — drives cookie Secure."""
+    forwarded_proto = request.headers.get("X-Forwarded-Proto")
+    if forwarded_proto:
+        return forwarded_proto.lower() == "https"
+    return request.scheme == "https"
+
+
+def _set_session_cookies(
+    response: web.Response,
+    request: web.Request,
+    *,
+    access_token: str,
+    expires_in: int,
+    refresh_token: str | None,
+) -> None:
+    """Write the two-cookie pair onto an outgoing response."""
+    secure = _is_secure_origin(request)
+    # Render ``expires_at`` as an absolute Unix timestamp (seconds) so the
+    # frontend doesn't have to know when the cookie was actually set.
+    expires_at = int(time.time()) + max(0, int(expires_in) - 30)
+    access_payload = json.dumps(
+        {"access_token": access_token, "expires_at": expires_at}
+    )
+    response.set_cookie(
+        _ACCESS_COOKIE,
+        access_payload,
+        path="/beatify",
+        # Match HA's own token lifetime — when the cookie expires the
+        # frontend re-fetches a fresh access via /beatify/auth/refresh.
+        max_age=max(60, int(expires_in) - 30),
+        samesite="Lax",
+        secure=secure,
+        httponly=False,  # JS reads this to populate Authorization header
+    )
+    if refresh_token is not None:
+        response.set_cookie(
+            _REFRESH_COOKIE,
+            refresh_token,
+            path="/beatify",
+            max_age=_REFRESH_COOKIE_MAX_AGE,
+            samesite="Lax",
+            secure=secure,
+            httponly=True,  # JS cannot read; only ever sent to refresh view
+        )
+
+
+def _clear_session_cookies(response: web.Response) -> None:
+    """Wipe both cookies — call on refresh failure or explicit logout."""
+    response.del_cookie(_ACCESS_COOKIE, path="/beatify")
+    response.del_cookie(_REFRESH_COOKIE, path="/beatify")
+
+
+async def _exchange_with_ha(
+    hass: HomeAssistant, body: str
+) -> tuple[int, dict | None, str]:
+    """POST the urlencoded body to HA's loopback /auth/token.
+
+    Returns ``(status, parsed_json_or_None, raw_text)``. ``parsed_json``
+    is None when HA returned non-JSON (HTTP error pages, mostly), which
+    callers should treat as an exchange failure.
+    """
+    session = async_get_clientsession(hass)
+    try:
+        async with session.post(
+            _loopback_url(hass),
+            data=body,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=ClientTimeout(total=10),
+            **_ssl_kwargs(hass),
+        ) as resp:
+            text = await resp.text()
+            try:
+                parsed = json.loads(text)
+            except ValueError:
+                parsed = None
+            return resp.status, parsed, text
+    except (ClientError, asyncio.TimeoutError) as err:
+        _LOGGER.error("Loopback /auth/token call failed: %s", err)
+        return 502, None, str(err)
+
+
+class BeatifyAuthCallbackView(HomeAssistantView):
+    """OAuth ``redirect_uri`` target — server-side code exchange.
+
+    Replaces the rc11–rc14 frontend POST exchange path. The browser
+    arrives here via ``/auth/authorize``'s redirect, hands us ``?code=``
+    and ``?state=``; we exchange the code over loopback HTTP and set
+    the two session cookies before redirecting to /beatify/admin (with
+    state echoed so the frontend can CSRF-validate against its
+    sessionStorage entry on the next load).
+
+    Failures redirect to /beatify/admin?auth_error=<reason> so the
+    frontend can surface a clean message instead of a silent loop.
+    """
+
+    url = "/beatify/auth/callback"
+    name = "beatify:auth_callback"
+    requires_auth = False  # this *is* the auth entry point
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the callback view."""
+        self.hass = hass
+
+    def _redirect_to_admin(
+        self,
+        request: web.Request,
+        *,
+        state: str | None = None,
+        error: str | None = None,
+    ) -> web.Response:
+        """Build the post-exchange redirect back to the admin page."""
+        params: list[tuple[str, str]] = []
+        if state:
+            params.append(("auth_state", state))
+        if error:
+            params.append(("auth_error", error))
+        suffix = ("?" + urlencode(params)) if params else ""
+        return web.HTTPFound(f"/beatify/admin{suffix}")
+
+    async def get(self, request: web.Request) -> web.Response:
+        """Handle the OAuth code redirect from HA."""
+        code = request.query.get("code")
+        state = request.query.get("state", "")
+        if not code:
+            return self._redirect_to_admin(request, error="missing_code")
+
+        origin = _origin_from_request(request)
+        # rc18: ha-auth.js's redirect_uri is /beatify/auth/callback again
+        # (rc15 architecture restored — the rc16 detour was unnecessary
+        # once the rc17 launcher started opening Beatify in external
+        # Safari via target="_blank", so HA Companion's interception of
+        # /auth/authorize is no longer a concern). client_id and
+        # redirect_uri MUST match what ha-auth.js sent to /auth/authorize
+        # per RFC 6749 §4.1.3.
+        body = urlencode(
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "client_id": f"{origin}/beatify/",
+                "redirect_uri": f"{origin}/beatify/auth/callback",
+            }
+        )
+
+        status, parsed, raw = await _exchange_with_ha(self.hass, body)
+        if status != 200 or not parsed or not parsed.get("access_token"):
+            _LOGGER.warning(
+                "OAuth code exchange failed (status=%s body=%s)", status, raw[:200]
+            )
+            return self._redirect_to_admin(request, error="exchange_failed")
+
+        response = self._redirect_to_admin(request, state=state)
+        _set_session_cookies(
+            response,
+            request,
+            access_token=parsed["access_token"],
+            expires_in=parsed.get("expires_in", 1800),
+            refresh_token=parsed.get("refresh_token"),
+        )
+        return response
+
+
+class BeatifyAuthRefreshView(HomeAssistantView):
+    """Silent refresh endpoint — keeps the frontend off ``/auth/token``.
+
+    Reads the HttpOnly ``beatify_refresh`` cookie, posts the refresh
+    grant to HA over loopback, updates the access cookie, and returns
+    JSON with the fresh access token so ha-auth.js can populate its
+    in-memory cache. On refresh failure both cookies are wiped — the
+    frontend then redirects to ``/auth/authorize`` for a full re-login.
+    """
+
+    url = "/beatify/auth/refresh"
+    name = "beatify:auth_refresh"
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the refresh view."""
+        self.hass = hass
+
+    async def get(self, request: web.Request) -> web.Response:
+        """Refresh the access token using the HttpOnly refresh cookie."""
+        refresh_token = request.cookies.get(_REFRESH_COOKIE)
+        if not refresh_token:
+            response = web.json_response({"error": "no_refresh_token"}, status=401)
+            _clear_session_cookies(response)
+            return response
+
+        origin = _origin_from_request(request)
+        body = urlencode(
+            {
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": f"{origin}/beatify/",
+            }
+        )
+        status, parsed, raw = await _exchange_with_ha(self.hass, body)
+        if status != 200 or not parsed or not parsed.get("access_token"):
+            _LOGGER.info("Refresh failed (status=%s) — clearing session", status)
+            response = web.json_response(
+                {"error": "refresh_failed", "ha_status": status}, status=401
+            )
+            _clear_session_cookies(response)
+            return response
+
+        # HA's refresh-token grant does NOT return a new refresh_token —
+        # it stays the long-lived one already in the HttpOnly cookie.
+        # Reissue ONLY the access cookie.
+        response = web.json_response(
+            {
+                "access_token": parsed["access_token"],
+                "expires_in": parsed.get("expires_in", 1800),
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+        _set_session_cookies(
+            response,
+            request,
+            access_token=parsed["access_token"],
+            expires_in=parsed.get("expires_in", 1800),
+            # Don't overwrite the long-lived refresh cookie.
+            refresh_token=None,
+        )
+        return response
 
 
 class SwJsView(HomeAssistantView):
@@ -252,7 +530,7 @@ class CapabilitiesView(HomeAssistantView):
 
     url = "/beatify/api/capabilities"
     name = "beatify:api:capabilities"
-    requires_auth = False
+    requires_auth = True  # #998 — leaks light/TTS inventory; admin-only
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the capabilities view."""
@@ -277,7 +555,7 @@ class LightsView(HomeAssistantView):
 
     url = "/beatify/api/lights"
     name = "beatify:api:lights"
-    requires_auth = False
+    requires_auth = True  # #998 — leaks light entity inventory; admin-only
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the lights view."""
@@ -310,6 +588,36 @@ class LightsView(HomeAssistantView):
             )
 
         return web.json_response({"lights": lights})
+
+
+class TtsEntitiesView(HomeAssistantView):
+    """API endpoint for available TTS entities (#1073).
+
+    Backs the dropdown picker that replaced the legacy free-text
+    ``tts.*`` entity_id field in the admin TTS panel and the setup
+    wizard's voice-announcements card. Listing real entities removes
+    the typo class that was the most common TTS setup failure.
+    """
+
+    url = "/beatify/api/tts-entities"
+    name = "beatify:api:tts-entities"
+    requires_auth = True  # #998 — leaks TTS entity inventory; admin-only
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the TTS entities view."""
+        self.hass = hass
+
+    async def get(self, request: web.Request) -> web.Response:  # noqa: ARG002
+        """Return registered TTS entities sorted by friendly name."""
+        entities = [
+            {
+                "entity_id": state.entity_id,
+                "friendly_name": state.attributes.get("friendly_name", state.entity_id),
+            }
+            for state in self.hass.states.async_all("tts")
+        ]
+        entities.sort(key=lambda e: e["friendly_name"].lower())
+        return web.json_response({"entities": entities})
 
 
 class AlbumArtView(HomeAssistantView):
@@ -360,7 +668,7 @@ class PreviewLightsView(HomeAssistantView):
 
     url = "/beatify/api/preview-lights"
     name = "beatify:api:preview-lights"
-    requires_auth = False
+    requires_auth = True  # #998 — actuates the host's lights; admin-only
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize view."""
@@ -402,7 +710,7 @@ class TtsTestView(RateLimitMixin, HomeAssistantView):
 
     url = "/beatify/api/tts-test"
     name = "beatify:api:tts-test"
-    requires_auth = False
+    requires_auth = True  # #998 — actuates the host's speakers; admin-only
 
     MAX_TTS_MESSAGE_LENGTH = 500
 

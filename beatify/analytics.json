@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "games": [
+    {
+      "game_id": "bf89cd04",
+      "started_at": 1779377341,
+      "ended_at": 1779377517,
+      "duration_seconds": 176,
+      "player_count": 1,
+      "playlist_names": [
+        "80er-hits"
+      ],
+      "rounds_played": 8,
+      "average_score": 13.88,
+      "difficulty": "normal",
+      "error_count": 0,
+      "streak_3_count": 2,
+      "streak_5_count": 0,
+      "streak_10_count": 0,
+      "total_bets": 0,
+      "bets_won": 0
+    },
+    {
+      "game_id": "940907ca",
+      "started_at": 1779377562,
+      "ended_at": 1779383053,
+      "duration_seconds": 5491,
+      "player_count": 2,
+      "playlist_names": [
+        "80er-hits"
+      ],
+      "rounds_played": 1,
+      "average_score": 0.0,
+      "difficulty": "normal",
+      "error_count": 0,
+      "streak_3_count": 0,
+      "streak_5_count": 0,
+      "streak_10_count": 0,
+      "total_bets": 0,
+      "bets_won": 0
+    }
+  ],
+  "errors": [],
+  "monthly_summaries": []
+}

@@ -119,11 +119,23 @@ let adminSessionId = null;    // Set on join_ack — passed to /play so it can
                               // fresh {type:'join'} (which races ERR_NAME_TAKEN).
 let isPlaying = false;        // Whether admin is participating as a player
 let adminReconnectAttempts = 0;
+// Zombie-auth recovery state. The HA access token in localStorage can pass
+// the local expiry check while being dead server-side (HA restart, refresh-
+// token revoke). When the admin WS responds UNAUTHORIZED we force a refresh
+// and reconnect; the recovery flow owns the reconnect during that window,
+// so onclose must not double-schedule. The counter prevents an infinite
+// loop if the refreshed token is *also* rejected — bounce to HA login.
+let adminWsAuthRecovering = false;
+let adminWsAuthRecoveryAttempts = 0;
+const MAX_ADMIN_WS_AUTH_RECOVERIES = 2;
 // #949: the home "Start game" button's pre-"Starting…" HTML, stashed so a WS
 // start-failure error (MEDIA_PLAYER_UNAVAILABLE etc.) can un-stick the button.
 let _homeStartBtnHTML = null;
 const MAX_ADMIN_RECONNECT = 10;
 let countdownInterval = null;
+// #1048: REVEAL auto-advance countdown on the sticky Next button
+let revealAdvanceInterval = null;
+let revealAdvanceOrigIcon = null;
 
 // LocalStorage keys
 const STORAGE_LAST_PLAYER = 'beatify_last_player';
@@ -144,6 +156,11 @@ const PLATFORM_LABELS = {
 const utils = window.BeatifyUtils || {};
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // #998: the admin console requires a logged-in Home Assistant user.
+    // If not authenticated this redirects to HA login and never resolves,
+    // so nothing below runs for an unauthenticated visitor.
+    await BeatifyAuth.init({ requireAuth: true });
+
     // Initialize i18n based on browser language (Story 12.4)
     // Guard clause: wait for BeatifyI18n in case fallback script is loading
     const i18nAvailable = await utils.waitForI18n();
@@ -1952,7 +1969,7 @@ async function startGame() {
     }
 
     try {
-        const response = await fetch('/beatify/api/start-game', {
+        const response = await BeatifyAuth.fetch('/beatify/api/start-game', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2066,7 +2083,7 @@ async function startGameplay() {
 
     // Fallback to REST
     try {
-        const response = await fetch('/beatify/api/start-gameplay', { method: 'POST', headers: _adminHeaders() });
+        const response = await BeatifyAuth.fetch('/beatify/api/start-gameplay', { method: 'POST' });
         const data = await response.json();
 
         if (!response.ok) {
@@ -2133,7 +2150,7 @@ async function confirmEndGame() {
     }
 
     try {
-        const response = await fetch('/beatify/api/end-game', { method: 'POST', headers: _adminHeaders() });
+        const response = await BeatifyAuth.fetch('/beatify/api/end-game', { method: 'POST' });
         if (response.ok) {
             cachedQRUrl = null;
             showSetupView();
@@ -2199,7 +2216,7 @@ async function confirmReset() {
 
     // 1. Hit the server, but don't block local cleanup on its result.
     try {
-        await fetch('/beatify/api/force-reset', { method: 'POST' });
+        await BeatifyAuth.fetch('/beatify/api/force-reset', { method: 'POST' });
     } catch (err) {
         console.warn('[Reset] force-reset POST failed (continuing with local cleanup):', err);
     }
@@ -2286,7 +2303,7 @@ async function confirmRematch() {
     }
 
     try {
-        var response = await fetch('/beatify/api/rematch-game', { method: 'POST', headers: _adminHeaders() });
+        var response = await BeatifyAuth.fetch('/beatify/api/rematch-game', { method: 'POST' });
         if (response.ok) {
             var data = await response.json();
             await loadStatus();
@@ -2463,15 +2480,24 @@ function handleAdminJoin() {
     // through handleAdminStateUpdate → showLobbyView → BeatifyHome.renderSession
     // so the admin shows up in the player list without navigating away.
     if (inHomeMode) {
-        const sendJoin = () => {
+        const sendJoin = async () => {
             try {
                 sessionStorage.setItem('beatify_admin_name', name);
                 sessionStorage.setItem('beatify_is_admin', 'true');
                 adminPlayerName = name;
+                // #998: server validates ha_token before granting the admin
+                // claim. Without this field handle_join returns ERR_UNAUTHORIZED
+                // ("Home Assistant login required to host") and the host's
+                // name never appears in the player list — even with a fresh
+                // OAuth login, because admin_connect's ha_token doesn't carry
+                // over to subsequent messages on the same socket. Match the
+                // pattern player-core.js:459 uses.
+                const token = await BeatifyAuth.ensureAuthenticated();
                 adminWs.send(JSON.stringify({
                     type: 'join',
                     name: name,
                     is_admin: true,
+                    ha_token: token,
                 }));
                 closeAdminJoinModal();
             } catch (err) {
@@ -3305,10 +3331,12 @@ function escapeHtml(text) {
 
 /**
  * Connect admin WebSocket for real-time game state updates.
- * Authenticates via admin_connect with the stored admin token.
+ * #998: authenticates via admin_connect with a Home Assistant access token.
  */
-function connectAdminWebSocket() {
-    var token = _getAdminToken();
+async function connectAdminWebSocket() {
+    // #998: the admin WS is gated by HA login. getAccessToken() refreshes a
+    // stale token transparently; null means the host is not logged in.
+    var token = await BeatifyAuth.getAccessToken();
     if (!token) return;
 
     // Close existing connection if any
@@ -3331,7 +3359,7 @@ function connectAdminWebSocket() {
         adminReconnectAttempts = 0;
         adminWs.send(JSON.stringify({
             type: 'admin_connect',
-            admin_token: token
+            ha_token: token
         }));
     };
 
@@ -3352,6 +3380,9 @@ function connectAdminWebSocket() {
         if (currentView === 'lobby') {
             startLobbyPolling();
         }
+        // Zombie-auth recovery owns the reconnect during refresh — skipping
+        // the backoff path here avoids two parallel WSes racing admin_connect.
+        if (adminWsAuthRecovering) return;
         // Auto-reconnect with backoff
         if (adminReconnectAttempts < MAX_ADMIN_RECONNECT && currentGame) {
             adminReconnectAttempts++;
@@ -3372,6 +3403,9 @@ function handleAdminWsMessage(data) {
     switch (data.type) {
         case 'admin_connect_ack':
             console.log('[Admin WS] Authenticated, game_id:', data.game_id);
+            // Authenticated cleanly — reset the zombie-auth recovery budget
+            // so future revocations get their full attempt allowance.
+            adminWsAuthRecoveryAttempts = 0;
             // Stop REST polling — WS pushes are active
             stopLobbyPolling();
             break;
@@ -3413,7 +3447,37 @@ function handleAdminWsMessage(data) {
         case 'error':
             console.error('[Admin WS] Error:', data.code, data.message);
             if (data.code === 'UNAUTHORIZED') {
-                adminWs?.close();
+                // Server rejected ha_token even though BeatifyAuth's local
+                // expiry says it's fresh — HA wiped the session (restart,
+                // refresh-token revoke). Without recovery the onclose path
+                // reconnects with the same dead token forever. Force a
+                // token refresh; on success, reconnect. If refresh also
+                // fails handleServerRejection() navigates to HA login. The
+                // attempt counter prevents an infinite loop if the
+                // refreshed token is also rejected.
+                if (adminWsAuthRecovering) {
+                    // Already recovering — let the in-flight refresh finish.
+                    break;
+                }
+                if (adminWsAuthRecoveryAttempts >= MAX_ADMIN_WS_AUTH_RECOVERIES) {
+                    // Refreshed access token still rejected. Sessions are
+                    // wedged — bounce to HA login.
+                    console.warn('[Admin WS] Auth recovery exhausted; forcing re-login');
+                    BeatifyAuth.logout();
+                    BeatifyAuth.login();
+                    break;
+                }
+                adminWsAuthRecovering = true;
+                adminWsAuthRecoveryAttempts++;
+                var deadWs = adminWs;
+                adminWs = null;
+                try { deadWs?.close(); } catch (e) { /* ignore */ }
+                BeatifyAuth.handleServerRejection().then(function (token) {
+                    adminWsAuthRecovering = false;
+                    if (!token) return; // handleServerRejection navigated away
+                    adminReconnectAttempts = 0;
+                    connectAdminWebSocket();
+                });
             } else if (data.code === 'NAME_TAKEN' || data.code === 'NAME_INVALID') {
                 showError(data.message);
                 isPlaying = false;
@@ -3474,6 +3538,12 @@ function handleAdminStateUpdate(data) {
         var el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
+
+    // #1048: leaving REVEAL — make sure the auto-advance countdown is torn
+    // down so the sticky Next button restores its icon for other phases.
+    if (data.phase !== 'REVEAL') {
+        _stopRevealAdvanceCountdown();
+    }
 
     // Also hide setup sections
     setupSections.forEach(function(id) {
@@ -3739,6 +3809,10 @@ function showAdminRevealView(data) {
     var controlBar = document.getElementById('admin-control-bar');
     if (controlBar) controlBar.classList.remove('hidden');
 
+    // #1048: replace the Next button icon with a 1-Hz auto-advance countdown
+    // when one is running. Idle-halt and Off both keep the plain icon.
+    _updateRevealAdvanceCountdown(data);
+
     // Emotion display (summary for spectator admin)
     var emotionEl = document.getElementById('admin-reveal-emotion');
     if (emotionEl && data.players) {
@@ -3867,6 +3941,61 @@ function showAdminRevealView(data) {
 
     // Leaderboard (player-style entries)
     renderAdminLeaderboard(data.leaderboard);
+}
+
+/**
+ * #1048: 1-Hz countdown on the sticky Next button while REVEAL auto-advance
+ * runs. Replaces the ⏭️ icon with the remaining seconds; falls back to the
+ * icon when auto-advance is Off, idle-halt is active, or the deadline is
+ * missing from the state payload.
+ */
+function _stopRevealAdvanceCountdown() {
+    if (revealAdvanceInterval) {
+        clearInterval(revealAdvanceInterval);
+        revealAdvanceInterval = null;
+    }
+    var iconEl = document.querySelector('#admin-skip-round .control-icon');
+    if (iconEl) {
+        iconEl.classList.remove('is-countdown');
+        if (revealAdvanceOrigIcon !== null) {
+            iconEl.textContent = revealAdvanceOrigIcon;
+        }
+    }
+}
+
+function _updateRevealAdvanceCountdown(data) {
+    var iconEl = document.querySelector('#admin-skip-round .control-icon');
+    if (!iconEl) return;
+
+    var advance = data.reveal_auto_advance || 0;
+    var startedAt = data.reveal_started_at;
+    if (advance <= 0 || data.idle_halt || !startedAt) {
+        _stopRevealAdvanceCountdown();
+        return;
+    }
+
+    if (revealAdvanceOrigIcon === null) {
+        revealAdvanceOrigIcon = iconEl.textContent;
+    }
+
+    var deadline = startedAt + advance * 1000;
+
+    function tick() {
+        var remainingMs = deadline - Date.now();
+        var remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+        iconEl.textContent = String(remaining);
+        iconEl.classList.add('is-countdown');
+        if (remaining <= 0 && revealAdvanceInterval) {
+            // Stop ticking; the server will broadcast PLAYING shortly and
+            // showAdminPlayingView's setup tears the countdown down.
+            clearInterval(revealAdvanceInterval);
+            revealAdvanceInterval = null;
+        }
+    }
+
+    if (revealAdvanceInterval) clearInterval(revealAdvanceInterval);
+    tick();
+    revealAdvanceInterval = setInterval(tick, 1000);
 }
 
 /**
@@ -4152,9 +4281,17 @@ function adminDismissGame() {
     cachedQRUrl = null;
     isPlaying = false;
     adminPlayerName = null;
-    // "Start New Game" at end-of-game sends the host back through onboarding.
-    // Wizard re-hydrates from localStorage so previous picks stay pre-selected —
-    // user can change anything or click straight through to Done.
+    // #1080: "Start New Game" gives Restart semantics — a fresh wizard with
+    // no pre-selected speaker or playlists. The Rematch button is the
+    // keep-state path (same players, same setup, back to lobby); this is
+    // the fresh path. Without clearing the wizard re-hydrates speaker +
+    // playlists from localStorage and the user sees their old picks
+    // pre-selected, which reads as "the reset didn't work."
+    try {
+        localStorage.removeItem(STORAGE_LAST_PLAYER);
+        localStorage.removeItem(STORAGE_GAME_SETTINGS);
+        localStorage.removeItem('beatify_wizard_state');
+    } catch (e) { /* private mode */ }
     if (window.BeatifyHome) window.BeatifyHome.exit();
     if (window.BeatifyWizard && typeof window.BeatifyWizard.show === 'function') {
         window.BeatifyWizard.show(1);

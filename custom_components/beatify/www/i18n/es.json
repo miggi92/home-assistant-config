@@ -452,6 +452,9 @@
     "ttsEnabled": "Activar TTS",
     "ttsEntityId": "Entidad TTS",
     "ttsEntityIdHint": "p.ej. tts.google_es_com",
+    "ttsEntityPlaceholder": "— Selecciona entidad TTS —",
+    "ttsEntityNone": "Sin entidades TTS — añade una en HA primero",
+    "ttsEntityStale": "(actualmente no registrada)",
     "ttsVerbosity": "Nivel de detalle",
     "ttsVerbosityHint": "Cuánto anuncia el juego — elige un preajuste o ajusta los interruptores abajo",
     "ttsPresetMinimal": "Mínimo",
@@ -761,6 +764,7 @@
     "GAME_ALREADY_STARTED": "Ya hay una partida en curso. Termínala antes de empezar una nueva.",
     "GAME_ENDED": "El juego ha terminado",
     "GAME_FULL": "El juego esta lleno",
+    "GAME_IN_LOBBY": "Ya hay un juego esperando en el lobby — comienza a jugar directamente.",
     "GAME_NOT_STARTED": "El juego no ha comenzado",
     "GITHUB_ERROR": "El backend no esta disponible ahora mismo — intentalo de nuevo en un momento.",
     "INVALID_ACTION": "Accion invalida",
@@ -906,7 +910,10 @@
         "desc": "TTS anuncia número de ronda, ganadores y datos curiosos.",
         "unavailable": "No hay servicio TTS registrado en Home Assistant.",
         "entityLabel": "Servicio TTS (ID de entidad)",
-        "entityHint": "¿Aún no tienes servicio TTS? En Home Assistant: Ajustes → Dispositivos y servicios → Añadir integración → 'Google Translate text-to-speech' (gratis, sin clave API). Luego introduce aquí la entidad tts.* creada.",
+        "entityHint": "¿Aún no tienes servicio TTS? En Home Assistant: Ajustes → Dispositivos y servicios → Añadir integración → 'Google Translate text-to-speech' (gratis, sin clave API). Entonces aparecerá en esta lista.",
+        "entityPlaceholder": "— Selecciona entidad TTS —",
+        "entityNone": "Sin entidades TTS — añade una en HA primero",
+        "entityStale": "(actualmente no registrada)",
         "verbosity": "Nivel de detalle",
         "verbosityHint": "Cuánto anuncia el juego. Ajusta eventos individuales más tarde en la configuración de administrador.",
         "presetMinimal": "Mínimo",
@@ -953,5 +960,52 @@
     "learningWarningPlural": "⚠️ {count} jugadores aún aprenden las reglas",
     "startAnyway": "{count} jugador aún aprende las reglas. ¿Empezar igualmente?",
     "startAnywayPlural": "{count} jugadores aún aprenden las reglas. ¿Empezar igualmente?"
+  },
+  "playlistGenerator": {
+    "title": "Generador de listas",
+    "intro": "Pega una URL de lista de Spotify → copia un prompt → ejecútalo en tu propio LLM (ChatGPT, Claude.ai, local) → pega el JSON de vuelta → valida → envía. <b>Beatify no realiza ninguna llamada a un LLM.</b>",
+    "fields": {
+      "spotifyUrl": "URL de la lista de Spotify",
+      "jsonPaste": "Pega aquí el JSON devuelto por el LLM"
+    },
+    "placeholders": {
+      "spotifyUrl": "https://open.spotify.com/playlist/…",
+      "json": "{\"name\": \"…\", \"version\": \"1.0\", \"songs\": [ … ]}"
+    },
+    "actions": {
+      "copyPrompt": "Copiar prompt",
+      "validate": "Validar",
+      "clear": "Limpiar",
+      "submitIssue": "Enviar como issue de GitHub",
+      "copyJson": "Copiar JSON validado",
+      "saveLocal": "Guardar localmente (v1.1)",
+      "copyResult": "Copiar resultado para el LLM",
+      "close": "Cerrar"
+    },
+    "hints": {
+      "promptCopied": "Prompt copiado al portapapeles — pégalo en tu LLM.",
+      "clipboardUnavailable": "No se pudo acceder al portapapeles — selecciona el prompt manualmente debajo.",
+      "jsonCopied": "JSON con formato copiado.",
+      "clipboardError": "No se pudo acceder al portapapeles.",
+      "resultCopied": "Feedback de validación copiado — pégalo de vuelta en tu LLM.",
+      "copyResultHint": "Pega esto de vuelta en tu LLM para pedir un JSON corregido.",
+      "submitTooltip": "Abrir un nuevo issue de GitHub con el JSON precargado",
+      "submitDisabledTooltip": "Valida primero",
+      "saveLocalTooltip": "Próximamente en v1.1 — requiere soporte del backend",
+      "sanitized": "Se limpiaron automáticamente {n} envoltorio(s) de URL antes de validar (artefactos de autoenlace Markdown).",
+      "sanitizedBoth": "Limpieza automática: se eliminó un envoltorio Markdown alrededor del JSON y {n} envoltorio(s) de URL antes de validar.",
+      "sanitizedWrapper": "Limpieza automática: se eliminó un envoltorio Markdown alrededor del JSON antes de validar."
+    },
+    "verdict": {
+      "ok": "✓ Validación correcta — listo para enviar.",
+      "fail": "✗ Validación fallida — corrige las filas marcadas arriba y vuelve a validar."
+    },
+    "results": {
+      "topErrors": "Errores de nivel superior",
+      "perSong": "Validación por canción ({n} canciones)",
+      "parseFailed": "Fallo al analizar JSON: {error}",
+      "songLabel": "Canción #{n}",
+      "songIssues": "Canciones con problemas ({n})"
+    }
   }
 }

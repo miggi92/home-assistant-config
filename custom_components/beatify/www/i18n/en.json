@@ -452,6 +452,9 @@
     "ttsEnabled": "Enable TTS",
     "ttsEntityId": "TTS Entity",
     "ttsEntityIdHint": "e.g. tts.google_en_com",
+    "ttsEntityPlaceholder": "— Select TTS entity —",
+    "ttsEntityNone": "No TTS entities — add one in HA first",
+    "ttsEntityStale": "(not currently registered)",
     "ttsVerbosity": "Verbosity",
     "ttsVerbosityHint": "How much the game announces — pick a preset, or fine-tune the toggles below",
     "ttsPresetMinimal": "Minimal",
@@ -761,6 +764,7 @@
     "GAME_ALREADY_STARTED": "A game is already in progress. End the current game before starting a new one.",
     "GAME_ENDED": "Game has ended",
     "GAME_FULL": "Game is full",
+    "GAME_IN_LOBBY": "A game is already waiting in the lobby — start gameplay instead.",
     "GAME_NOT_STARTED": "Game has not started",
     "GITHUB_ERROR": "Backend is unavailable right now — please try again in a moment.",
     "INVALID_ACTION": "Invalid action",
@@ -906,7 +910,10 @@
         "desc": "TTS calls out round numbers, winners, and fun facts.",
         "unavailable": "No TTS service registered in Home Assistant.",
         "entityLabel": "TTS service (entity ID)",
-        "entityHint": "No TTS service yet? In Home Assistant: Settings → Devices & Services → Add Integration → 'Google Translate text-to-speech' (free, no API key). Then enter the tts.* entity it creates here.",
+        "entityHint": "No TTS service yet? In Home Assistant: Settings → Devices & Services → Add Integration → 'Google Translate text-to-speech' (free, no API key). It will then appear in this list.",
+        "entityPlaceholder": "— Select TTS entity —",
+        "entityNone": "No TTS entities — add one in HA first",
+        "entityStale": "(not currently registered)",
         "verbosity": "Verbosity",
         "verbosityHint": "How much the game announces. Fine-tune individual events later in admin settings.",
         "presetMinimal": "Minimal",
@@ -1028,6 +1035,11 @@
         "title": "Meanwhile, browse community playlists",
         "sub": "User-contributed picks, installable in one tap."
       },
+      "generator": {
+        "title": "Or generate your own with an LLM",
+        "sub": "Spotify URL → copy prompt → run it in your LLM → paste back → validate → submit.",
+        "subShort": "Spotify URL → prompt → JSON → validate → submit."
+      },
       "step": {
         "submitted": "Submitted",
         "reviewed": "Reviewed",
@@ -1096,6 +1108,61 @@
     "sections": {
       "byCountry": "By Country",
       "countries": "countries"
+    },
+    "selected": {
+      "title": "Your selected playlists",
+      "subtitleOne": "1 playlist selected — tap × to remove",
+      "subtitleN": "{n} playlists selected — tap × to remove",
+      "empty": "No playlists selected yet",
+      "removeAria": "Remove {name}",
+      "openAria": "Show selected playlists"
+    }
+  },
+  "playlistGenerator": {
+    "title": "Playlist Generator",
+    "intro": "Paste a Spotify playlist URL → copy a prompt → run it in your own LLM (ChatGPT, Claude.ai, local) → paste the JSON back → validate → submit. <b>No LLM calls leave Beatify.</b>",
+    "fields": {
+      "spotifyUrl": "Spotify playlist URL",
+      "jsonPaste": "Paste the LLM's JSON output here"
+    },
+    "placeholders": {
+      "spotifyUrl": "https://open.spotify.com/playlist/…",
+      "json": "{\"name\": \"…\", \"version\": \"1.0\", \"songs\": [ … ]}"
+    },
+    "actions": {
+      "copyPrompt": "Copy prompt",
+      "validate": "Validate",
+      "clear": "Clear",
+      "submitIssue": "Submit as GitHub issue",
+      "copyJson": "Copy validated JSON",
+      "saveLocal": "Save locally (v1.1)",
+      "copyResult": "Copy result for LLM",
+      "close": "Close"
+    },
+    "hints": {
+      "promptCopied": "Prompt copied to clipboard — paste it into your LLM.",
+      "clipboardUnavailable": "Could not access clipboard — select the prompt manually below.",
+      "jsonCopied": "Pretty-printed JSON copied.",
+      "clipboardError": "Could not access clipboard.",
+      "resultCopied": "Validation feedback copied — paste it back into your LLM.",
+      "copyResultHint": "Paste this back into your LLM to ask for a corrected JSON.",
+      "submitTooltip": "Open a new GitHub issue with the JSON pre-filled",
+      "submitDisabledTooltip": "Validate first",
+      "saveLocalTooltip": "Coming in v1.1 — needs backend support",
+      "sanitized": "Auto-cleaned {n} URL wrapper(s) before validating (Markdown autolink artifacts).",
+      "sanitizedBoth": "Auto-cleaned: stripped a Markdown wrapper around the JSON and {n} URL wrapper(s) before validating.",
+      "sanitizedWrapper": "Auto-cleaned: stripped a Markdown wrapper around the JSON before validating."
+    },
+    "verdict": {
+      "ok": "✓ Validation passed — ready to submit.",
+      "fail": "✗ Validation failed — fix the rows highlighted above and re-validate."
+    },
+    "results": {
+      "topErrors": "Top-level errors",
+      "perSong": "Per-song validation ({n} songs)",
+      "parseFailed": "JSON parse failed: {error}",
+      "songLabel": "Song #{n}",
+      "songIssues": "Songs with issues ({n})"
     }
   }
 }

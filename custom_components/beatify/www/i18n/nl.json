@@ -452,6 +452,9 @@
     "ttsEnabled": "TTS inschakelen",
     "ttsEntityId": "TTS-entiteit",
     "ttsEntityIdHint": "bijv. tts.google_nl_com",
+    "ttsEntityPlaceholder": "— Kies TTS-entiteit —",
+    "ttsEntityNone": "Geen TTS-entiteiten — voeg er eerst een toe in HA",
+    "ttsEntityStale": "(momenteel niet geregistreerd)",
     "ttsVerbosity": "Uitgebreidheid",
     "ttsVerbosityHint": "Hoeveel het spel aankondigt — kies een voorinstelling of stel hieronder fijn af",
     "ttsPresetMinimal": "Minimaal",
@@ -761,6 +764,7 @@
     "GAME_ALREADY_STARTED": "Er is al een spel bezig. Beëindig het voordat je een nieuwe start.",
     "GAME_ENDED": "Het spel is afgelopen",
     "GAME_FULL": "Het spel zit vol",
+    "GAME_IN_LOBBY": "Er wacht al een spel in de lobby — start het gameplay direct.",
     "GAME_NOT_STARTED": "Het spel is nog niet gestart",
     "GITHUB_ERROR": "Backend is op dit moment niet bereikbaar — probeer het zo nog eens.",
     "INVALID_ACTION": "Ongeldige actie",
@@ -906,7 +910,10 @@
         "desc": "TTS roept rondenummers, winnaars en weetjes uit.",
         "unavailable": "Geen TTS-service geregistreerd in Home Assistant.",
         "entityLabel": "TTS-service (entity ID)",
-        "entityHint": "Nog geen TTS-dienst? In Home Assistant: Instellingen → Apparaten en diensten → Integratie toevoegen → 'Google Translate text-to-speech' (gratis, geen API-sleutel). Voer daarna de aangemaakte tts.*-entiteit hier in.",
+        "entityHint": "Nog geen TTS-dienst? In Home Assistant: Instellingen → Apparaten en diensten → Integratie toevoegen → 'Google Translate text-to-speech' (gratis, geen API-sleutel). Die verschijnt dan in deze lijst.",
+        "entityPlaceholder": "— Kies TTS-entiteit —",
+        "entityNone": "Geen TTS-entiteiten — voeg er eerst een toe in HA",
+        "entityStale": "(momenteel niet geregistreerd)",
         "verbosity": "Uitgebreidheid",
         "verbosityHint": "Hoeveel het spel aankondigt. Stel afzonderlijke gebeurtenissen later af in de beheerdersinstellingen.",
         "presetMinimal": "Minimaal",
@@ -953,5 +960,52 @@
     "learningWarningPlural": "⚠️ {count} spelers leren nog de regels",
     "startAnyway": "{count} speler leert nog de regels. Toch beginnen?",
     "startAnywayPlural": "{count} spelers leren nog de regels. Toch beginnen?"
+  },
+  "playlistGenerator": {
+    "title": "Playlist-generator",
+    "intro": "Plak een Spotify-playlist-URL → kopieer een prompt → voer hem uit in je eigen LLM (ChatGPT, Claude.ai, lokaal) → plak het JSON terug → valideer → indienen. <b>Geen LLM-aanroepen verlaten Beatify.</b>",
+    "fields": {
+      "spotifyUrl": "Spotify-playlist-URL",
+      "jsonPaste": "Plak hier de JSON-output van het LLM"
+    },
+    "placeholders": {
+      "spotifyUrl": "https://open.spotify.com/playlist/…",
+      "json": "{\"name\": \"…\", \"version\": \"1.0\", \"songs\": [ … ]}"
+    },
+    "actions": {
+      "copyPrompt": "Prompt kopiëren",
+      "validate": "Valideren",
+      "clear": "Wissen",
+      "submitIssue": "Indienen als GitHub-issue",
+      "copyJson": "Gevalideerde JSON kopiëren",
+      "saveLocal": "Lokaal opslaan (v1.1)",
+      "copyResult": "Resultaat voor LLM kopiëren",
+      "close": "Sluiten"
+    },
+    "hints": {
+      "promptCopied": "Prompt naar klembord gekopieerd — plak hem in je LLM.",
+      "clipboardUnavailable": "Geen toegang tot klembord — selecteer de prompt handmatig hieronder.",
+      "jsonCopied": "Geformatteerde JSON gekopieerd.",
+      "clipboardError": "Geen toegang tot klembord.",
+      "resultCopied": "Validatiefeedback gekopieerd — plak het terug in je LLM.",
+      "copyResultHint": "Plak dit terug in je LLM om een gecorrigeerde JSON te vragen.",
+      "submitTooltip": "Een nieuw GitHub-issue openen met het JSON vooringevuld",
+      "submitDisabledTooltip": "Eerst valideren",
+      "saveLocalTooltip": "Komt in v1.1 — vereist backend-ondersteuning",
+      "sanitized": "{n} URL-omhulsel(s) automatisch opgeschoond vóór validatie (Markdown-autolink-artefacten).",
+      "sanitizedBoth": "Automatisch opgeschoond: een Markdown-omhulsel rond het JSON en {n} URL-omhulsel(s) verwijderd vóór validatie.",
+      "sanitizedWrapper": "Automatisch opgeschoond: een Markdown-omhulsel rond het JSON verwijderd vóór validatie."
+    },
+    "verdict": {
+      "ok": "✓ Validatie geslaagd — klaar om in te dienen.",
+      "fail": "✗ Validatie mislukt — corrigeer de hierboven gemarkeerde rijen en valideer opnieuw."
+    },
+    "results": {
+      "topErrors": "Fouten op topniveau",
+      "perSong": "Validatie per nummer ({n} nummers)",
+      "parseFailed": "JSON-parsing mislukt: {error}",
+      "songLabel": "Nummer #{n}",
+      "songIssues": "Nummers met problemen ({n})"
+    }
   }
 }

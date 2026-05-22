@@ -31,6 +31,8 @@ from .server.views import (
     AlbumArtView,
     AnalyticsPageView,
     AnalyticsView,
+    BeatifyAuthCallbackView,
+    BeatifyAuthRefreshView,
     CapabilitiesView,
     DashboardView,
     EndGameView,
@@ -39,9 +41,11 @@ from .server.views import (
     LauncherView,
     LightsView,
     PreviewLightsView,
+    TtsEntitiesView,
     TtsTestView,
     PlayerView,
     PlaylistRequestsView,
+    SavePlaylistView,
     SwJsView,
     RematchGameView,
     SongStatsView,
@@ -167,11 +171,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register HTTP views
     hass.http.register_view(AdminView(hass))
     hass.http.register_view(LauncherView(hass))
+    # Safari 18 /auth/token workaround — server-side OAuth handling, the
+    # frontend never POSTs to auth endpoints (rc15+).
+    hass.http.register_view(BeatifyAuthCallbackView(hass))
+    hass.http.register_view(BeatifyAuthRefreshView(hass))
     hass.http.register_view(StatusView(hass))
     hass.http.register_view(CapabilitiesView(hass))
     hass.http.register_view(LightsView(hass))  # Issue #331
     hass.http.register_view(AlbumArtView(hass))  # Issue #933 — remote album art
     hass.http.register_view(PreviewLightsView(hass))  # Issue #408
+    hass.http.register_view(TtsEntitiesView(hass))  # Issue #1073
     hass.http.register_view(TtsTestView(hass))
     hass.http.register_view(StartGameView(hass))
     hass.http.register_view(StartGameplayView(hass))
@@ -191,6 +200,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.http.register_view(AnalyticsPageView(hass))
     hass.http.register_view(SongStatsView(hass))  # Story 19.7
     hass.http.register_view(PlaylistRequestsView(hass))  # Story 44
+    hass.http.register_view(SavePlaylistView(hass))  # #1057
     hass.http.register_view(UsageView(hass))  # v3.3 Playlist Hub local stats
 
     # Register WebSocket endpoint

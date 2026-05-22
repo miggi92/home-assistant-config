@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hmac
 import logging
 import time
 from pathlib import Path
@@ -69,28 +68,26 @@ async def _get_html(hass: HomeAssistant, path: Path) -> str | None:
 
 
 def _json_error(message: str, status: int, *, code: str = "ERROR") -> web.Response:
-    """Return a consistent JSON error response."""
-    return web.json_response({"error": code, "message": message}, status=status)
+    """Return a consistent JSON error response.
 
+    rc16 (#1097): the body now puts the machine-readable code under
+    ``code`` (matching the WebSocket error shape — see ws_handlers.py).
+    Before rc16 this used the key ``error``, which caused two regressions:
 
-def _verify_admin_token(request: web.Request, game_state: Any) -> bool:
-    """Verify admin token from Authorization header or query param (#386).
+    1. ``admin.js`` checks ``data.code === 'GAME_IN_LOBBY'`` to silently
+       recover when a LOBBY game already exists; with the old key the
+       check was dead code and the user got dropped into a modal with
+       the raw English message instead of the seamless gameplay start.
+    2. The ``errors.<CODE>`` i18n lookup (also reading ``data.code``)
+       never fired, so German / Spanish / French / Dutch users saw the
+       raw English ``message`` for every REST-side error response.
 
-    Accepts:
-    - Header: Authorization: Bearer <token>
-    - Query: ?admin_token=<token>
+    The ``error`` key is kept too so anything still reading it from
+    older builds doesn't break — drop after a few releases.
     """
-    if not game_state or not game_state.admin_token:
-        return False
-    token = None
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        token = auth[7:]
-    if not token:
-        token = request.query.get("admin_token")
-    if not token:
-        return False
-    return hmac.compare_digest(token, game_state.admin_token)
+    return web.json_response(
+        {"code": code, "error": code, "message": message}, status=status
+    )
 
 
 class RateLimitMixin:
@@ -124,9 +121,15 @@ class RateLimitMixin:
 
 
 class BeatifyAdminView(HomeAssistantView):
-    """Base class for admin-protected Beatify views."""
+    """Base class for admin-protected Beatify views.
 
-    requires_auth = False
+    #998: gating is delegated to Home Assistant's own auth — ``requires_auth``
+    makes HA's middleware reject any request without a valid HA bearer token
+    before the handler runs. The former per-game ``admin_token`` check is
+    retired: a logged-in HA user *is* the admin.
+    """
+
+    requires_auth = True
 
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the view with hass reference."""
@@ -137,10 +140,3 @@ class BeatifyAdminView(HomeAssistantView):
     def _get_game_state(self) -> Any | None:
         """Return the current GameState or None."""
         return self.hass.data.get(DOMAIN, {}).get("game")
-
-    def _verify_admin(self, request: web.Request) -> web.Response | None:
-        """Verify admin token; return an error response if invalid, else None."""
-        game_state = self._get_game_state()
-        if not _verify_admin_token(request, game_state):
-            return _json_error("Admin token required", 403, code="UNAUTHORIZED")
-        return None

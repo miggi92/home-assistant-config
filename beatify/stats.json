@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "games": [
+    {
+      "id": "bf89cd04",
+      "date": "2026-05-21T15:31:57.898390+00:00",
+      "playlist": "80er-hits",
+      "rounds": 8,
+      "player_count": 1,
+      "winner": "Miguel",
+      "winner_score": 111,
+      "avg_score_per_round": 13.88,
+      "total_points": 111
+    },
+    {
+      "id": "940907ca",
+      "date": "2026-05-21T17:04:13.407727+00:00",
+      "playlist": "80er-hits",
+      "rounds": 1,
+      "player_count": 2,
+      "winner": "Miguel, Silke",
+      "winner_score": 0,
+      "avg_score_per_round": 0.0,
+      "total_points": 0
+    }
+  ],
+  "playlists": {
+    "80er-hits": {
+      "times_played": 2,
+      "total_rounds": 9,
+      "avg_score_per_round": 0.0
+    }
+  },
+  "all_time": {
+    "games_played": 2,
+    "highest_avg_score": 13.88,
+    "highest_avg_game_id": "bf89cd04"
+  },
+  "songs": {
+    "spotify_track_2BgWv15eKCDfiubKo6o76k": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 1,
+      "total_years_off": 1,
+      "exact_matches": 0,
+      "close_matches": 1,
+      "title": "Two Hearts",
+      "artist": "Phil Collins",
+      "year": 1988,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377384
+    },
+    "spotify_track_2iWTHXaFtRSMhd5OLpYD7f": {
+      "times_played": 1,
+      "correct_guesses": 0,
+      "total_guesses": 1,
+      "total_years_off": 5,
+      "exact_matches": 0,
+      "close_matches": 0,
+      "title": "Life's What You Make It",
+      "artist": "Talk Talk",
+      "year": 1985,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377413
+    },
+    "spotify_track_3ShEGKdskF0ke7iW2u9gjD": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 1,
+      "total_years_off": 1,
+      "exact_matches": 0,
+      "close_matches": 1,
+      "title": "Senza Una Donna",
+      "artist": "Zucchero",
+      "year": 1991,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377424
+    },
+    "spotify_track_79hX0z70ufkP63Ocr4Jz4K": {
+      "times_played": 1,
+      "correct_guesses": 0,
+      "total_guesses": 1,
+      "total_years_off": 8,
+      "exact_matches": 0,
+      "close_matches": 0,
+      "title": "Sternenhimmel",
+      "artist": "Hubert Kah",
+      "year": 1982,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377445
+    },
+    "spotify_track_67iAlVNDDdddxqSD2EZhFs": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 1,
+      "total_years_off": 2,
+      "exact_matches": 0,
+      "close_matches": 1,
+      "title": "I'm Gonna Be (500 Miles)",
+      "artist": "The Proclaimers",
+      "year": 1988,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377467
+    },
+    "spotify_track_6tASfEUyB7lE2r6DLzURji": {
+      "times_played": 1,
+      "correct_guesses": 0,
+      "total_guesses": 1,
+      "total_years_off": 5,
+      "exact_matches": 0,
+      "close_matches": 0,
+      "title": "Club Tropicana",
+      "artist": "Wham!",
+      "year": 1983,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377495
+    },
+    "spotify_track_6COzABVCHQzyvc3rTMtrXn": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 1,
+      "total_years_off": 0,
+      "exact_matches": 1,
+      "close_matches": 0,
+      "title": "Er geh\u00f6rt zu mir",
+      "artist": "Marianne Rosenberg",
+      "year": 1975,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779377514
+    },
+    "spotify_track_7MnxdIXJd4N4mHCTPNKhkX": {
+      "times_played": 1,
+      "correct_guesses": 0,
+      "total_guesses": 2,
+      "total_years_off": 23,
+      "exact_matches": 0,
+      "close_matches": 0,
+      "title": "Ghostbusters",
+      "artist": "Ray Parker Jr.",
+      "year": 1984,
+      "playlists": {
+        "/Config/Beatify/Playlists/80Er Hits": 1
+      },
+      "last_played": 1779383031
+    }
+  }
+}

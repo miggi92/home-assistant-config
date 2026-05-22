@@ -225,6 +225,7 @@ const state = {
     searchQuery: '',
     selectedPaths: new Set(),
     detailFor: null,
+    showSelectedSheet: false,
     requestModalOpen: false,
     loading: true,
     error: null,
@@ -381,7 +382,40 @@ function _onClick(e) {
     if (card && !e.target.closest('[data-plh-check]')) {
         const path = card.dataset.plhCard;
         const pl = state.playlists.find((p) => p.path === path);
-        if (pl) { state.detailFor = pl; _renderDetailSheet(); }
+        if (pl) {
+            state.showSelectedSheet = false;
+            state.detailFor = pl;
+            _renderDetailSheet();
+        }
+        return;
+    }
+    const openSelected = e.target.closest('[data-plh-action="open-selected"]');
+    if (openSelected) {
+        state.detailFor = null;
+        state.showSelectedSheet = true;
+        _renderDetailSheet();
+        return;
+    }
+    const closeSelected = e.target.closest('[data-plh-action="close-selected"]');
+    if (closeSelected) {
+        state.showSelectedSheet = false;
+        _renderDetailSheet();
+        return;
+    }
+    const removeSelected = e.target.closest('[data-plh-action="remove-selected"]');
+    if (removeSelected) {
+        e.stopPropagation();
+        const path = removeSelected.dataset.plhPath;
+        if (state.selectedPaths.has(path)) {
+            state.selectedPaths.delete(path);
+            _emitSelectionChange();
+        }
+        if (state.selectedPaths.size === 0) {
+            state.showSelectedSheet = false;
+        }
+        _renderTabBody();
+        _renderCtaBar();
+        _renderDetailSheet();
         return;
     }
     const check = e.target.closest('[data-plh-check]');
@@ -409,6 +443,13 @@ function _onClick(e) {
     if (requestNew) {
         if (state.options && typeof state.options.onRequestClick === 'function') {
             state.options.onRequestClick();
+        }
+        return;
+    }
+    const openGenerator = e.target.closest('[data-plh-action="open-generator"]');
+    if (openGenerator) {
+        if (window.PlaylistGenerator && typeof window.PlaylistGenerator.open === 'function') {
+            window.PlaylistGenerator.open();
         }
         return;
     }
@@ -458,7 +499,8 @@ function _onInput(e) {
 
 function _onKeyDown(e) {
     if (e.key === 'Escape') {
-        if (state.detailFor) { state.detailFor = null; _renderDetailSheet(); }
+        if (state.detailFor) { state.detailFor = null; _renderDetailSheet(); return; }
+        if (state.showSelectedSheet) { state.showSelectedSheet = false; _renderDetailSheet(); }
     }
 }
 
@@ -809,6 +851,14 @@ function _renderMine(host) {
                         ${_escape(_t('playlistHub.mine.request.cta', 'Start a request'))}
                     </button>
                 </div>
+                <div class="plh-meanwhile" data-plh-action="open-generator" role="button" tabindex="0">
+                    <div class="plh-meanwhile-icon">🪄</div>
+                    <div class="plh-meanwhile-body">
+                        <div class="plh-meanwhile-t1">${_escape(_t('playlistHub.mine.generator.title', 'Or generate your own with an LLM'))}</div>
+                        <div class="plh-meanwhile-t2">${_escape(_t('playlistHub.mine.generator.sub', 'Spotify URL → copy prompt → run it in your LLM → paste back → validate → submit.'))}</div>
+                    </div>
+                    <div class="plh-meanwhile-arrow">›</div>
+                </div>
                 <div class="plh-meanwhile" data-plh-action="switch-tab" data-plh-tab="community">
                     <div class="plh-meanwhile-icon">✨</div>
                     <div class="plh-meanwhile-body">
@@ -835,6 +885,13 @@ function _renderMine(host) {
             <div>
                 <div class="plh-new-t1">${_escape(_t('playlistHub.mine.newRequest.title', 'Request another playlist'))}</div>
                 <div class="plh-new-t2">${_escape(_t('playlistHub.mine.newRequest.sub', 'Paste a Spotify URL, we take it from there.'))}</div>
+            </div>
+        </div>
+        <div class="plh-new-request" data-plh-action="open-generator" role="button" tabindex="0">
+            <div class="plh-new-plus">🪄</div>
+            <div>
+                <div class="plh-new-t1">${_escape(_t('playlistHub.mine.generator.title', 'Or generate your own with an LLM'))}</div>
+                <div class="plh-new-t2">${_escape(_t('playlistHub.mine.generator.subShort', 'Spotify URL → prompt → JSON → validate → submit.'))}</div>
             </div>
         </div>
         <div class="plh-req-list">${rows}</div>
@@ -999,6 +1056,10 @@ function _renderNoFilterResults() {
 function _renderDetailSheet() {
     const host = state.root && state.root.querySelector('[data-plh-sheet]');
     if (!host) return;
+    if (state.showSelectedSheet) {
+        _renderSelectedSheetInto(host);
+        return;
+    }
     if (!state.detailFor) {
         host.innerHTML = '';
         host.classList.remove('open');
@@ -1071,6 +1132,66 @@ function _renderDetailSheet() {
     host.classList.add('open');
 }
 
+// ---------- Selected playlists sheet (issue #1074) ----------
+
+function _renderSelectedSheetInto(host) {
+    const selectedItems = Array.from(state.selectedPaths).map((path) => {
+        const pl = (state.playlists || []).find((p) => (p.path || p.filename || p.name) === path);
+        return { path, playlist: pl };
+    });
+    const title = _t('playlistHub.selected.title', 'Your selected playlists');
+    const subtitle = selectedItems.length === 1
+        ? _t('playlistHub.selected.subtitleOne', '1 playlist selected — tap × to remove')
+        : (_t('playlistHub.selected.subtitleN', '{n} playlists selected — tap × to remove').replace('{n}', String(selectedItems.length)));
+    const closeLabel = _t('playlistHub.close', 'Close');
+    const empty = `
+        <div class="plh-selected-empty">
+            <div class="plh-selected-empty-icon" aria-hidden="true">🎵</div>
+            <div class="plh-selected-empty-title">${_escape(_t('playlistHub.selected.empty', 'No playlists selected yet'))}</div>
+        </div>
+    `;
+    const rows = selectedItems.map(({ path, playlist }) => {
+        const name = playlist ? playlist.name : path;
+        const glyph = playlist ? _coverGlyph(playlist) : '🎵';
+        const tint = playlist ? _coverTint(playlist) : '';
+        const author = playlist && playlist.author
+            ? `${_escape(_t('playlistHub.by', 'by'))} ${_escape(playlist.author)}`
+            : (playlist && playlist.source === 'community'
+                ? _escape(_t('playlistHub.sources.community', 'Community'))
+                : _escape(_t('playlistHub.sources.bundled', 'Bundled')));
+        const songCount = (playlist && playlist.song_count) || 0;
+        const removeAria = _t('playlistHub.selected.removeAria', 'Remove {name}').replace('{name}', name || '');
+        return `
+            <div class="plh-selected-row">
+                <div class="plh-selected-thumb ${tint}">
+                    <span class="plh-selected-glyph" aria-hidden="true">${_escape(glyph)}</span>
+                </div>
+                <div class="plh-selected-meta">
+                    <div class="plh-selected-name">${_escape(name)}</div>
+                    <div class="plh-selected-sub">${author} · <b>${songCount}</b> ${_escape(_t('playlistHub.songs', 'songs'))}</div>
+                </div>
+                <button class="plh-selected-remove" data-plh-action="remove-selected" data-plh-path="${_escape(path)}" aria-label="${_escape(removeAria)}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+    host.innerHTML = `
+        <div class="plh-scrim" data-plh-action="close-selected"></div>
+        <div class="plh-sheet plh-sheet-selected" role="dialog" aria-modal="true" aria-labelledby="plh-selected-title">
+            <button class="plh-sheet-close" data-plh-action="close-selected" aria-label="${_escape(closeLabel)}">✕</button>
+            <div class="plh-selected-head">
+                <h2 class="plh-selected-title" id="plh-selected-title">${_escape(title)}</h2>
+                <div class="plh-selected-subtitle">${_escape(subtitle)}</div>
+            </div>
+            <div class="plh-selected-scroll">
+                ${selectedItems.length === 0 ? empty : rows}
+            </div>
+        </div>
+    `;
+    host.classList.add('open');
+}
+
 // ---------- CTA bar ----------
 
 function _renderCtaBar() {
@@ -1101,10 +1222,11 @@ function _renderCtaBar() {
         `;
         return;
     }
+    const openSelectedAria = _t('playlistHub.selected.openAria', 'Show selected playlists');
     host.innerHTML = `
         ${fab}
         ${backBtn}
-        <div class="plh-cta-count">${count} ✓</div>
+        <button class="plh-cta-count plh-cta-count-btn" data-plh-action="open-selected" aria-label="${_escape(openSelectedAria)}">${count} ✓</button>
         <button class="plh-cta-start" data-plh-action="start">
             <span class="plh-cta-start-label">${_escape(_t('playlistHub.cta.start', 'Continue'))}</span>
             <svg class="plh-cta-start-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
