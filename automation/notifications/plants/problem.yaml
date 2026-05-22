@@ -8,6 +8,18 @@ trigger:
     entity_id:
       - plant.blaubeere
       - plant.drachenbaum
+    to:
+      - ok
+    from:
+      - problem
+  - platform: state
+    entity_id:
+      - plant.blaubeere
+      - plant.drachenbaum
+    to:
+      - problem
+    from:
+      - ok
 condition:
   - condition: state
     entity_id: input_boolean.holiday_mode
