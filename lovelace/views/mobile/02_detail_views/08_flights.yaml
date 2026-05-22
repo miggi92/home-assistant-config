@@ -33,7 +33,7 @@ sections:
         entities:
           - entity: sensor.flightradar24_current_in_area
             name: In area
-          - entity: sensor.flightradar24_additional_tracked
+          - entity: sensor.flightradar24_zusatzlich_verfolgt
             name: Additional tracked
       - type: iframe
         url: !secret flight_radar_map
@@ -49,13 +49,13 @@ sections:
                 entity: sensor.flightradar24_current_in_area
                 above: 0
               - condition: numeric_state
-                entity: sensor.flightradar24_additional_tracked
+                entity: sensor.flightradar24_zusatzlich_verfolgt
                 above: 0
         card:
           type: markdown
           content: >-
             {% set currentData = state_attr('sensor.flightradar24_current_in_area', 'flights') %}
-            {% set additionalData = state_attr('sensor.flightradar24_additional_tracked', 'flights') %}
+            {% set additionalData = state_attr('sensor.flightradar24_zusatzlich_verfolgt', 'flights') %}
             {% set flights = currentData | list + additionalData | list %}
             {% for flight in flights %}
               <ha-icon icon="mdi:airplane"></ha-icon>{{ flight.flight_number }}({{ flight.aircraft_registration }}) - {{ flight.airline_short }} - {{ flight.aircraft_model }}
