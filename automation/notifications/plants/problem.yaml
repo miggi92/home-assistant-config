@@ -1,0 +1,52 @@
+---
+# Plant got a problem.
+alias: Pflanzenbenachrichtigung
+id: 20f39a8b-975b-4406-99c2-91833f03dbfc
+description: "Benachrichtigt wenn eine Pflanze ein problem hat oder wieder in ordnung ist"
+trigger:
+  - platform: state
+    entity_id:
+      - plant.blaubeere
+      - plant.drachenbaum
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
+action:
+  - action: ai_task.generate_data
+    data:
+      entity_id: ai_task.google_ai_task
+      task_name: plant state
+      instructions: |
+        You are a smart home gardening assistant. Analyze the following plant sensor data. Values are 'ok', 'Low', or 'High'.
+
+        Rules:
+        1. Ignore any sensors with status 'ok' or 'null'.
+        2. If all sensors are 'ok', write a short, friendly message that the plant has recovered and is doing perfectly well.
+        3. For any 'Low' or 'High' sensor, provide a short, actionable recommendation (e.g., 'Low Moisture' -> water the plant; 'Low Conductivity' -> add fertilizer).
+        4. Keep the language extremely simple and family-friendly. Never use technical terms or abbreviations like 'DLI', 'VPD', 'Conductivity', or 'Illuminance' in the output. Translate the issue into everyday practical needs (e.g., 'braucht mehr Licht', 'Raumklima ist zu trocken', 'benötigt Dünger').
+        5. Do not use markdown headers or bold text. Keep the output very concise, max 2 sentences, as it will be used for a mobile push notification.
+        6. Write the final response in German.
+
+        Data to analyze:
+          Moisture: {{ state_attr(trigger.entity_id, 'moisture_status') }}
+          Temperature: {{ state_attr(trigger.entity_id, 'temperature_status') }}
+          Conductivity: {{ state_attr(trigger.entity_id, 'conductivity_status') }}
+          Illuminance: {{ state_attr(trigger.entity_id, 'illuminance_status') }}
+          Humidity: {{ state_attr(trigger.entity_id, 'humidity_status') }}
+          CO2: {{ state_attr(trigger.entity_id, 'co2_status') }}
+          Soil temperature: {{ state_attr(trigger.entity_id, 'soil_temperature_status') }}
+          DLI: {{ state_attr(trigger.entity_id, 'dli_status') }}
+          VPD: {{ state_attr(trigger.entity_id, 'vpd_status') }}
+    response_variable: response
+  - action: script.notify_engine
+    data:
+      title: |
+        🪴 Pflanze - {{ trigger.to_state.attributes.friendly_name }} 🪴
+      value1: |
+        {{ response.data }}
+        Standort: {{ area_name(trigger.entity_id) | default('Zuhause', true) }}
+      who: "home"
+      tag_id: "information"
+      group: "Pflanzen"
+mode: parallel
