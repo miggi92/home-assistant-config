@@ -657,16 +657,11 @@ function _renderBundled(host) {
         }));
     }
 
-    // Editor's Picks — featured (sorted by song_count desc, top 5)
-    const featured = [...filtered].sort((a, b) => (b.song_count || 0) - (a.song_count || 0)).slice(0, 5);
-    if (featured.length > 0) {
-        html.push(_shelfHtml({
-            title: `✨ ${_t('playlistHub.shelves.editorsPicks', "Editor's Picks")}`,
-            featured: true,
-            see: _t('playlistHub.seeAll', 'See all'),
-            cards: featured.map((p) => _cardHtml(p, { featured: true })),
-        }));
-    }
+    // #1108: "Editor's Picks" was just top-5-by-song-count on the Bundled
+    // tab — not actual curation, and the song-count proxy is misleading.
+    // Removed from Bundled. The Community tab keeps its equivalent shelf
+    // where "popular by song-count" is a more defensible signal for
+    // user-contributed content.
 
     // Genre shelves (up to 4)
     const genreShelves = groupByGenreShelves(filtered, 4);
@@ -788,6 +783,36 @@ function _renderCommunity(host) {
                     see: `${items.length}`,
                     cards: items.slice(0, 8).map((p) => _cardHtml(p, { community: true, showAuthor: true })),
                 }));
+            }
+        }
+
+        // #1108: By Style — same idea as By Country, but for community
+        // playlists that have no language label (instrumental, electronic,
+        // movie soundtracks, etc.). Without this section those playlists
+        // are invisible in the structured view and only show up in
+        // Editor's Picks / Recently added / Regional & Specialty (if any).
+        const noLang = all.filter((p) => !(p.language || '').trim());
+        if (noLang.length >= 2) {
+            const styleShelves = groupByGenreShelves(noLang, 4);
+            if (styleShelves.length >= 1) {
+                const totalStyles = styleShelves.length;
+                const totalPlaylists = styleShelves.reduce((n, s) => n + s.items.length, 0);
+                html.push(`
+                    <div class="plh-section-head">
+                        <div class="plh-section-head-title">
+                            <span class="plh-section-head-emoji">🎨</span>
+                            <span>${_escape(_t('playlistHub.sections.byStyle', 'By Style'))}</span>
+                        </div>
+                        <div class="plh-section-head-meta">${totalStyles} ${_escape(_t('playlistHub.sections.styles', 'styles'))} · ${totalPlaylists} ${_escape(_t('playlistHub.songs', 'playlists'))}</div>
+                    </div>
+                `);
+                for (const g of styleShelves) {
+                    html.push(_shelfHtml({
+                        title: _t(g.genre.key, g.genre.fallback),
+                        see: `${g.items.length}`,
+                        cards: g.items.slice(0, 8).map((p) => _cardHtml(p, { community: true, showAuthor: true })),
+                    }));
+                }
             }
         }
 
@@ -1141,8 +1166,9 @@ function _renderSelectedSheetInto(host) {
     });
     const title = _t('playlistHub.selected.title', 'Your selected playlists');
     const subtitle = selectedItems.length === 1
-        ? _t('playlistHub.selected.subtitleOne', '1 playlist selected — tap × to remove')
-        : (_t('playlistHub.selected.subtitleN', '{n} playlists selected — tap × to remove').replace('{n}', String(selectedItems.length)));
+        ? _t('playlistHub.selected.subtitleOne', '1 playlist selected')
+        : (_t('playlistHub.selected.subtitleN', '{n} playlists selected').replace('{n}', String(selectedItems.length)));
+    const removeLabel = _t('playlistHub.selected.remove', 'Remove');
     const closeLabel = _t('playlistHub.close', 'Close');
     const empty = `
         <div class="plh-selected-empty">
@@ -1171,7 +1197,8 @@ function _renderSelectedSheetInto(host) {
                     <div class="plh-selected-sub">${author} · <b>${songCount}</b> ${_escape(_t('playlistHub.songs', 'songs'))}</div>
                 </div>
                 <button class="plh-selected-remove" data-plh-action="remove-selected" data-plh-path="${_escape(path)}" aria-label="${_escape(removeAria)}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <span class="plh-selected-remove-label">${_escape(removeLabel)}</span>
                 </button>
             </div>
         `;
