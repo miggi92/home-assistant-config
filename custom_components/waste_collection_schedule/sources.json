@@ -333,6 +333,12 @@
       "id": "kwinana_wa_gov_au"
     },
     {
+      "title": "City of Mandurah",
+      "module": "mandurah_wa_gov_au",
+      "default_params": {},
+      "id": "mandurah_wa_gov_au"
+    },
+    {
       "title": "City of Manningham",
       "module": "manningham_vic_gov_au",
       "default_params": {},
@@ -866,6 +872,12 @@
       "module": "app_my_local_services_au",
       "default_params": {},
       "id": "app_my_local_services_au"
+    },
+    {
+      "title": "Mid-Western Regional Council",
+      "module": "midwestern_nsw_gov_au",
+      "default_params": {},
+      "id": "midwestern_nsw_gov_au"
     },
     {
       "title": "MidCoast Council",
@@ -2012,6 +2024,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_gem2go_dev"
+    },
+    {
+      "title": "Gemeinde Aspang-Markt",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_aspangmarkt_at"
     },
     {
       "title": "Gemeinde Sulz",
@@ -4452,6 +4470,12 @@
   ],
   "Canada": [
     {
+      "title": "Airdrie (AB)",
+      "module": "airdrie_ca",
+      "default_params": {},
+      "id": "airdrie_ca"
+    },
+    {
       "title": "Aurora (ON)",
       "module": "recyclecoach_com",
       "default_params": {
@@ -4787,6 +4811,15 @@
       "default_params": {
         "district_id": "Kelowna",
         "project_id": "502"
+      },
+      "id": "recyclecoach_com"
+    },
+    {
+      "title": "Lakeshore (ON)",
+      "module": "recyclecoach_com",
+      "default_params": {
+        "district_id": "LAK",
+        "project_id": "583"
       },
       "id": "recyclecoach_com"
     },
@@ -6730,6 +6763,14 @@
       "id": "ahk_heidekreis_de"
     },
     {
+      "title": "Aholfing",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "aholfing"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "ALBA Berlin",
       "module": "abfall_io",
       "default_params": {
@@ -6819,6 +6860,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_kreis_alzey_worms_de"
+    },
+    {
+      "title": "Amberg",
+      "module": "amberg_de",
+      "default_params": {},
+      "id": "amberg_de"
     },
     {
       "title": "AMBnet",
@@ -7287,6 +7334,14 @@
       "id": "ics_bee_emden_de"
     },
     {
+      "title": "Bellenberg",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "bellenberg"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Beltershausen",
       "module": "123abfallkalender_de",
       "default_params": {
@@ -7493,6 +7548,14 @@
         "customer": "ebe"
       },
       "id": "awido_de"
+    },
+    {
+      "title": "Buch",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "buch"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Burgenland (Landkreis)",
@@ -7827,6 +7890,20 @@
       "id": "hausmuell_info"
     },
     {
+      "title": "Eilenburg",
+      "module": "eilenburg_de",
+      "default_params": {},
+      "id": "eilenburg_de"
+    },
+    {
+      "title": "Eisingen",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "eisingen"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "EKM Mittelsachsen GmbH",
       "module": "ics",
       "default_params": {},
@@ -8013,6 +8090,14 @@
       "id": "muellmax_de"
     },
     {
+      "title": "Feichten a. d. Alz",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "feichten-alz"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "FES Frankfurter Entsorgungs- und Service GmbH",
       "module": "ics",
       "default_params": {
@@ -8114,6 +8199,14 @@
       "id": "reso_gmbh_de"
     },
     {
+      "title": "Gaimersheim",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "gaimersheim"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Gelber Sack Stuttgart",
       "module": "ics",
       "default_params": {},
@@ -8148,6 +8241,14 @@
         "hpid": 225
       },
       "id": "cmcitymedia_de"
+    },
+    {
+      "title": "Gemeinde Gr\u00fcndau",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "gruendau"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Gemeinde Kalletal",
@@ -8327,6 +8428,14 @@
       "id": "ics_hws_halle_de"
     },
     {
+      "title": "Halsbach",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "halsbach"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Halver",
       "module": "abfallnavi_de",
       "default_params": {
@@ -8385,6 +8494,12 @@
       "module": "heilbronn_de",
       "default_params": {},
       "id": "heilbronn_de"
+    },
+    {
+      "title": "Heimat-Info",
+      "module": "heimat_info_de",
+      "default_params": {},
+      "id": "heimat_info_de"
     },
     {
       "title": "Heimbach",
@@ -8503,6 +8618,14 @@
       "id": "jumomind_de"
     },
     {
+      "title": "H\u00fcrtgenwald",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "hurtgenwald"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Ilm-Kreis",
       "module": "app_abfallplus_de",
       "default_params": {
@@ -8585,6 +8708,14 @@
       "id": "ics_mein_abfallkalender_online"
     },
     {
+      "title": "Kastl (Lkr. A\u00d6)",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "kastl"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "KECL Kommunalentsorgung Chemnitzer Land",
       "module": "ics",
       "default_params": {},
@@ -8621,6 +8752,14 @@
         "customer": "ebe"
       },
       "id": "awido_de"
+    },
+    {
+      "title": "Kirchweidach",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "kirchweidach"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Knittel Entsorgung",
@@ -9212,6 +9351,14 @@
       "id": "abfallnavi_de"
     },
     {
+      "title": "Kupferberg",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "kupferberg"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "KV Cochem-Zell",
       "module": "buergerportal_de",
       "default_params": {
@@ -9585,6 +9732,12 @@
         "app_id": "de.k4systems.abfallmsp"
       },
       "id": "app_abfallplus_de"
+    },
+    {
+      "title": "Landkreis Mecklenburgische Seenplatte",
+      "module": "lk_mecklenburgische_seenplatte_de",
+      "default_params": {},
+      "id": "lk_mecklenburgische_seenplatte_de"
     },
     {
       "title": "Landkreis Mettmann (MyMuell App)",
@@ -10019,6 +10172,14 @@
       "id": "lobbe_app"
     },
     {
+      "title": "Loiching",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "loiching"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Ludwigshafen",
       "module": "app_abfallplus_de",
       "default_params": {
@@ -10092,6 +10253,14 @@
         "state": "Nordrhein-Westfalen"
       },
       "id": "lobbe_app"
+    },
+    {
+      "title": "Markt Kastl (Lauterachtal)",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "kastl-lauterachtal"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Markt Schwaben",
@@ -10429,6 +10598,22 @@
       "id": "awido_de"
     },
     {
+      "title": "Oberrieden",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "oberrieden"
+      },
+      "id": "heimat_info_de"
+    },
+    {
+      "title": "Oberroth",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "oberroth"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Obertshausen",
       "module": "ics",
       "default_params": {},
@@ -10490,10 +10675,26 @@
       "id": "app_abfallplus_de"
     },
     {
+      "title": "Pastetten",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "pastetten"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Petershagen",
       "module": "ics",
       "default_params": {},
       "id": "ics_mein_abfallkalender_online"
+    },
+    {
+      "title": "Pfaffenhausen",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "pfaffenhausen"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Pirmasens",
@@ -10702,6 +10903,14 @@
       "id": "app_abfallplus_de"
     },
     {
+      "title": "Roggenburg",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "roggenburg"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Rosbach Vor Der H\u00f6he",
       "module": "jumomind_de",
       "default_params": {
@@ -10757,6 +10966,14 @@
       "id": "ics_mein_abfallkalender_online"
     },
     {
+      "title": "R\u00f6ttenbach",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "rottenbach"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "R\u00fcthen",
       "module": "lobbe_app",
       "default_params": {
@@ -10778,6 +10995,14 @@
       "module": "magdeburg_de",
       "default_params": {},
       "id": "magdeburg_de"
+    },
+    {
+      "title": "Salgen",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "salgen"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Salzgitter (MyMuell App)",
@@ -10845,6 +11070,14 @@
         "app_id": "de.k4systems.abfallsbk"
       },
       "id": "app_abfallplus_de"
+    },
+    {
+      "title": "Sch\u00e4ftlarn",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "schaftlarn"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "Sch\u00f6neck (MyMuell App)",
@@ -11039,6 +11272,12 @@
         "service": "His"
       },
       "id": "muellmax_de"
+    },
+    {
+      "title": "Stadt Hilchenbach",
+      "module": "hilchenbach_de",
+      "default_params": {},
+      "id": "hilchenbach_de"
     },
     {
       "title": "Stadt Kaufbeuren",
@@ -11372,6 +11611,14 @@
       "id": "tonnenticker_pro_de"
     },
     {
+      "title": "Trausnitz",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "trausnitz"
+      },
+      "id": "heimat_info_de"
+    },
+    {
       "title": "Tuttlingen",
       "module": "app_abfallplus_de",
       "default_params": {
@@ -11441,6 +11688,14 @@
         "operator": "klevestadt"
       },
       "id": "buergerportal_de"
+    },
+    {
+      "title": "Unterroth",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "unterroth"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "USB Bochum",
@@ -11735,6 +11990,14 @@
       "module": "was_wolfsburg_de",
       "default_params": {},
       "id": "was_wolfsburg_de"
+    },
+    {
+      "title": "Wutach",
+      "module": "heimat_info_de",
+      "default_params": {
+        "commune": "wutach"
+      },
+      "id": "heimat_info_de"
     },
     {
       "title": "WZV Kreis Segeberg",
@@ -12048,6 +12311,12 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Aprica S.p.A.",
+      "module": "apricaspa_it",
+      "default_params": {},
+      "id": "apricaspa_it"
     },
     {
       "title": "Aprilia - Progetto Ambiente Spa",
@@ -14770,6 +15039,12 @@
       "id": "hvcgroep_nl"
     },
     {
+      "title": "Rova",
+      "module": "rova_nl",
+      "default_params": {},
+      "id": "rova_nl"
+    },
+    {
       "title": "Saver",
       "module": "saver_nl",
       "default_params": {},
@@ -14902,6 +15177,12 @@
       "id": "rotorua_lakes_council_nz"
     },
     {
+      "title": "Taup\u014d District Council",
+      "module": "taupodc_govt_nz",
+      "default_params": {},
+      "id": "taupodc_govt_nz"
+    },
+    {
       "title": "Tauranga City Council",
       "module": "tauranga_govt_nz",
       "default_params": {},
@@ -14986,6 +15267,17 @@
       "module": "remidt_no",
       "default_params": {},
       "id": "remidt_no"
+    },
+    {
+      "title": "ROAF (Romerike Avfallsforedling IKS)",
+      "module": "minrenovasjon_no",
+      "default_params": {
+        "county_id": 3205,
+        "house_number": 2,
+        "street_code": 12950,
+        "street_name": "Solvangen"
+      },
+      "id": "minrenovasjon_no"
     },
     {
       "title": "Sandnes Kommune",
@@ -16516,6 +16808,14 @@
       "id": "telge_se"
     },
     {
+      "title": "Upplands-Bro",
+      "module": "avfallsapp_se",
+      "default_params": {
+        "service_provider": "upplands-bro"
+      },
+      "id": "avfallsapp_se"
+    },
+    {
       "title": "Uppsala Vatten",
       "module": "edpevent_se",
       "default_params": {
@@ -16640,6 +16940,15 @@
       "module": "data_bs_ch",
       "default_params": {},
       "id": "data_bs_ch"
+    },
+    {
+      "title": "Beinwil am See",
+      "module": "localcities_ch",
+      "default_params": {
+        "municipality": "beinwil-am-see",
+        "municipality_id": "5313"
+      },
+      "id": "localcities_ch"
     },
     {
       "title": "Berg",
@@ -17563,6 +17872,12 @@
       "id": "chelmsford_gov_uk"
     },
     {
+      "title": "Cheltenham Borough Council",
+      "module": "cheltenham_gov_uk",
+      "default_params": {},
+      "id": "cheltenham_gov_uk"
+    },
+    {
       "title": "Cherwell District Council",
       "module": "cherwell_gov_uk",
       "default_params": {},
@@ -17693,6 +18008,12 @@
       "module": "derby_gov_uk",
       "default_params": {},
       "id": "derby_gov_uk"
+    },
+    {
+      "title": "Derbyshire Dales District Council",
+      "module": "derbyshiredales_gov_uk",
+      "default_params": {},
+      "id": "derbyshiredales_gov_uk"
     },
     {
       "title": "Dorset Council",
@@ -17927,6 +18248,12 @@
       "module": "gosport_gov_uk",
       "default_params": {},
       "id": "gosport_gov_uk"
+    },
+    {
+      "title": "Great Yarmouth Borough Council",
+      "module": "great_yarmouth_gov_uk",
+      "default_params": {},
+      "id": "great_yarmouth_gov_uk"
     },
     {
       "title": "Greater Cambridge Waste, UK",
@@ -18351,6 +18678,12 @@
       "id": "neath_port_talbot_gov_uk"
     },
     {
+      "title": "New Forest District Council",
+      "module": "newforest_gov_uk",
+      "default_params": {},
+      "id": "newforest_gov_uk"
+    },
+    {
       "title": "Newark & Sherwood District Council",
       "module": "newark_sherwooddc_gov_uk",
       "default_params": {},
@@ -18483,6 +18816,12 @@
       "module": "northyorks_selby_gov_uk",
       "default_params": {},
       "id": "northyorks_selby_gov_uk"
+    },
+    {
+      "title": "Northumberland County Council",
+      "module": "northumberland_gov_uk",
+      "default_params": {},
+      "id": "northumberland_gov_uk"
     },
     {
       "title": "Norwich City Council",
@@ -18781,6 +19120,12 @@
       "id": "southkesteven_gov_uk"
     },
     {
+      "title": "South Lanarkshire Council",
+      "module": "southlanarkshire_gov_uk",
+      "default_params": {},
+      "id": "southlanarkshire_gov_uk"
+    },
+    {
       "title": "South Norfolk Council",
       "module": "south_norfolk_and_broadland_gov_uk",
       "default_params": {},
@@ -18953,6 +19298,12 @@
       "module": "telford_gov_uk",
       "default_params": {},
       "id": "telford_gov_uk"
+    },
+    {
+      "title": "Tendring District Council",
+      "module": "tendring_gov_uk",
+      "default_params": {},
+      "id": "tendring_gov_uk"
     },
     {
       "title": "Test Valley Borough Council",
