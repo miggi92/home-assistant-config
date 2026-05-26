@@ -6,50 +6,56 @@ awtrix3customapp:
   max: 10
   fields:
     app_id:
-      selector:
-        text: null
       name: AppId
       description: App ID der Benachrichtigung
       required: true
-    text:
       selector:
         text: null
+    text:
       name: Text
       description: Text Benachrichtigung
+      selector:
+        text: null
     icon:
+      name: Icon Id
+      description: Icon ID
+      default: 2883
       selector:
         number:
           min: 0
           max: 100000
-      default: 2883
-      name: Icon Id
-      description: Icon ID
     duration:
+      name: Duration
+      description: Duration
+      default: 15
       selector:
         number:
           min: 1
           max: 180
           step: 1
-      default: 15
     repeat:
+      name: Repeat
+      description: Repeat count
+      default: 2
       selector:
         number:
           min: 1
           max: 10
           step: 1
-      default: 2
     overlay:
-      selector:
-        text: null
       name: Overlayeffekt
       description: Overlayeffekt der Benachrichtigung
+      selector:
+        text: null
     progress:
+      name: Progress
+      description: Progress value
+      default: -1
       selector:
         number:
           min: -1
           max: 100
           step: 1
-      default: -1
     device_prefix:
       name: DevicePrefix
       description: MQTT Prefix der Awtrix
