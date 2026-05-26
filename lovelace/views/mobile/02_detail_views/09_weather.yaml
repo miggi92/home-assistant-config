@@ -50,7 +50,11 @@ sections:
         forecast_slots: 7
 
   - type: grid
-    cards: []
+    cards:
+      - type: picture-entity
+        entity: camera.wetter_radar_dwd
+        show_state: false
+        show_name: false
   - type: grid
     cards:
       - type: conditional
