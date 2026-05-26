@@ -2,7 +2,6 @@
 # Notiy if tasks due
 alias: TasksNotif
 id: afa5aa6b-7cf4-43bb-bb47-d37601433dea
-description: "Benachrichtigt, wenn ToDo's anstehen."
 trigger:
   - platform: time
     at: input_datetime.chores_notif_time
@@ -13,32 +12,33 @@ condition:
         entity_id: sensor.grocy_tasks
         state: "0"
 action:
-  - variables:
+  - alias: CalculateFilteredTasks
+    variables:
       filtered_tasks: >
-        {% set todos = state_attr("sensor.grocy_tasks", "tasks") %}
-        {% set now = now().astimezone() %}
-        {% set upcoming = now + timedelta(days=10) %}
+        {% set todos = state_attr('sensor.grocy_tasks', 'tasks') | default([], true) %}
+        {% set now_date = now().date() %}
+        {% set upcoming_date = (now() + timedelta(days=10)).date() %}
 
         {% set filtered = namespace(tasks=[]) %}
         {% for task in todos %}
           {% if task.due_date is defined and task.due_date %}
-            {% set due = as_datetime(task.due_date) %}
-            {% if due.tzinfo is none %}
-              {% set due = due.replace(tzinfo=now.tzinfo) %}
-            {% endif %}
-            {% if due.date() >= now.date() and due.date() <= upcoming.date() %}
+            {% set due_date = as_datetime(task.due_date).date() %}
+            {% if due_date >= now_date and due_date <= upcoming_date %}
               {% set filtered.tasks = filtered.tasks + [task] %}
             {% endif %}
           {% endif %}
         {% endfor %}
-        {% set sorted_tasks = filtered.tasks | sort(attribute='category.name') %}
-        {{ sorted_tasks }}
-  - service: script.notify_engine
+
+        {{ filtered.tasks | sort(attribute='category.name') }}
+  - alias: StopIfNoTasksDue
+    condition: template
+    value_template: "{{ filtered_tasks | length > 0 }}"
+  - alias: SendNotification
+    service: script.notify_engine
     data:
       title: "📑 ToDo's in den nächsten Tagen 📑"
       value1: >
         {% set current_cat = '' %}
-        {% if filtered_tasks %}
         Folgende ToDo's stehen in den nächsten 10 Tagen an:
 
         {%- for task in filtered_tasks %}
@@ -51,12 +51,7 @@ action:
           📝 {{ task.description or '' }}
           👤 {{ task.assigned_to_user.display_name if task.assigned_to_user is defined and task.assigned_to_user.display_name is defined else 'Unbekannt' }}
           🗓️ {{ as_timestamp(task.due_date) | timestamp_custom('%d.%m.%Y %H:%M') }}
-
         {%- endfor %}
-        {% else %}
-        ✅ Es stehen keine ToDo's in den nächsten 10 Tagen an.
-        {% endif %}
-
       who: "home"
       tag_id: "information"
       group: "Hausarbeiten"
