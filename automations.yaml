@@ -49,12 +49,12 @@
   alias: Lichthelligkeit per Rad steuern
   description: ''
   triggers:
-  - event_type: zha_event
-    event_data:
-      device_id: 84b7775dd55f7215f4bb0f0925be9e65
-      command: move_to_level
-    alias: Trigger when wheel is rotated
-    trigger: event
+  - domain: mqtt
+    device_id: aec37ed37b3eb90d7aaed0a989c61def
+    type: action
+    subtype: brightness_move_to_level
+    metadata: {}
+    trigger: device
   conditions: []
   actions:
   - alias: Update light brightness
@@ -62,5 +62,5 @@
     target:
       entity_id: light.tv_licht
     data:
-      brightness: '{{ trigger.event.data.params.level }}'
+      brightness_step: 10
   mode: restart
