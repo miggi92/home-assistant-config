@@ -142,6 +142,15 @@ sections:
         layout: vertical
         tap_action:
           action: toggle
+      - type: custom:mushroom-fan-card
+        entity: fan.buro_ventilator
+        layout: vertical
+        icon_animation: true
+        show_percentage_control: true
+        show_oscillate_control: true
+        collapsible_controls: true
+        tap_action:
+          action: more-info
       - type: gauge
         entity: sensor.buroluftqualitatssensor_pm25
         name: Feinstaub
