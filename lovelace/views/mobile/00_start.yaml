@@ -20,20 +20,15 @@ badges:
   - type: custom:mushroom-template-badge
     entity: alarm_control_panel.alarmo
     icon: |-
-      {% set alarm_mode = states(entity) %}
-      {% if alarm_mode == 'armed_home' %}
-        mdi:shield-account
-      {% elif alarm_mode == 'armed_away' %}
-        mdi:shield-lock
-      {% elif alarm_mode == 'armed_vacation' %}
-        mdi:palm-tree
-      {% elif alarm_mode == 'armed_night' %}
-        mdi:shield-moon
-      {% elif alarm_mode == 'arming' %}
-        mdi:shield
-      {% else %}
-        mdi:shield-off
-      {% endif %}
+      {% set mode = states(entity) %}
+      {% set icons = {
+        'armed_home': 'mdi:shield-account',
+        'armed_away': 'mdi:shield-lock',
+        'armed_vacation': 'mdi:palm-tree',
+        'armed_night': 'mdi:shield-moon',
+        'arming': 'mdi:shield'
+      } %}
+      {{ icons.get(mode, 'mdi:shield-off') }}
     tap_action:
       action: more-info
   - type: custom:mushroom-template-badge
@@ -75,7 +70,7 @@ badges:
   - type: custom:mushroom-template-badge
     icon: mdi:lightbulb
     color: >
-      {% if states(entity) | int == 0 %}
+      {% if states(entity) | int(0) == 0 %}
         grey
       {% else %}
         yellow
@@ -101,86 +96,56 @@ badges:
     variables:
       - entity: sensor.restmull
     visibility:
-      - condition: or
-        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
-        conditions:
-          - condition: state
-            entity: sensor.restmull
-            state: "Restabfall in 2 days"
-          - condition: state
-            entity: sensor.restmull
-            state: "Restabfall in 1 days"
-          - condition: state
-            entity: sensor.restmull
-            state: "Restabfall in 0 days"
+      - condition: state
+        entity: sensor.restmull
+        state:
+          - "Restabfall in 2 days"
+          - "Restabfall in 1 days"
+          - "Restabfall in 0 days"
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
       - entity: sensor.papier
     visibility:
-      - condition: or
-        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
-        conditions:
-          - condition: state
-            entity: sensor.papier
-            state: "Papiertonne in 1 days"
-          - condition: state
-            entity: sensor.papier
-            state: "Papiertonne in 2 days"
-          - condition: state
-            entity: sensor.papier
-            state: "Papiertonne in 0 days"
+      - condition: state
+        entity: sensor.papier
+        state:
+          - "Papiertonne in 2 days"
+          - "Papiertonne in 1 days"
+          - "Papiertonne in 0 days"
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
       - entity: sensor.gelbe_tonne
     visibility:
-      - condition: or
-        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
-        conditions:
-          - condition: state
-            entity: sensor.gelbe_tonne
-            state: "Gelbe Tonne in 2 days"
-          - condition: state
-            entity: sensor.gelbe_tonne
-            state: "Gelbe Tonne in 1 days"
-          - condition: state
-            entity: sensor.gelbe_tonne
-            state: "Gelbe Tonne in 0 days"
+      - condition: state
+        entity: sensor.gelbe_tonne
+        state:
+          - "Gelbe Tonne in 2 days"
+          - "Gelbe Tonne in 1 days"
+          - "Gelbe Tonne in 0 days"
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
       - entity: sensor.bio
     visibility:
-      - condition: or
-        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
-        conditions:
-          - condition: state
-            entity: sensor.bio
-            state: "Bioabfall in 2 days"
-          - condition: state
-            entity: sensor.bio
-            state: "Bioabfall in 1 days"
-          - condition: state
-            entity: sensor.bio
-            state: "Bioabfall in 0 days"
+      - condition: state
+        entity: sensor.bio
+        state:
+          - "Bioabfall in 2 days"
+          - "Bioabfall in 1 days"
+          - "Bioabfall in 0 days"
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
       - entity: sensor.schadstoffe
     visibility:
-      - condition: or
-        alias: "Zeigen wenn 0, 1 oder 2 Tage übrig"
-        conditions:
-          - condition: state
-            entity: sensor.schadstoffe
-            state: "Schadstoffe in 2 days"
-          - condition: state
-            entity: sensor.schadstoffe
-            state: "Schadstoffe in 1 days"
-          - condition: state
-            entity: sensor.schadstoffe
-            state: "Schadstoffe in 0 days"
+      - condition: state
+        entity: sensor.schadstoffe
+        state:
+          - "Schadstoffe in 2 days"
+          - "Schadstoffe in 1 days"
+          - "Schadstoffe in 0 days"
   - type: custom:decluttering-card
     template: timer_badge_template
     variables:
@@ -431,48 +396,41 @@ sections:
         card_param: cards
         filter:
           template: >-
-            {% set ns = namespace(cards=[]) %} {% set is_workday =
-            is_state('schedule.buro_tage', 'on') %} {% set weekdays = ['montag',
-            'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag']
-            %} {% set today_weekday = weekdays[now().weekday()] %}
+            {% set ns = namespace(cards=[]) %}
+            {% set is_workday = is_state('schedule.buro_tage', 'on') %}
+            {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
+            {% set today_weekday = weekdays[now().weekday()] %}
+            {% set target_keywords = ['meal', 'kita', 'mittag', 'fruhstuck', 'abendessen'] %}
 
-            {% for image_state in states.image | rejectattr('state', 'in',
-            ['unavailable', 'unknown']) %}
-              {% set entity_id = image_state.entity_id %}
+            {% for img in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
+              {% set eid = img.entity_id %}
 
-              {% if 'meal' in entity_id or 'kita' in entity_id or 'mittag' in entity_id or 'fruhstuck' in entity_id or 'abendessen' in entity_id %}
-                {% set is_work_entity = 'work' in entity_id %}
-                {% set is_today_entity = today_weekday in entity_id %}
+              {% if target_keywords | select('in', eid) | list | length > 0 %}
+                {% set is_work = 'work' in eid %}
+                {% set is_today = today_weekday in eid %}
 
-                {% if (is_work_entity and is_workday) or (not is_work_entity and is_today_entity) %}
-                  {% set text_entity = entity_id | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
-                  {% set current_text = states(text_entity) %}
+                {% if (is_work and is_workday) or (not is_work and is_today) %}
+                  {% set text_id = eid | replace('image.', 'input_text.') | replace('sensor.', 'input_text.') %}
+                  {% set text_val = states(text_id) %}
 
-                  {% if current_text and current_text | trim != '' and current_text not in ['unknown', 'unavailable'] %}
+                  {% if text_val and text_val | trim != '' and text_val not in ['unknown', 'unavailable'] %}
 
-                    {% if is_work_entity %}
-                      {% set entity_icon = 'mdi:briefcase' %}
-                    {% elif 'kita' in entity_id %}
-                      {% set entity_icon = 'mdi:baby-bottle' %}
-                    {% else %}
-                      {% set entity_icon = 'mdi:food' %}
-                    {% endif %}
+                    {% set icon = 'mdi:briefcase' if is_work else ('mdi:baby-bottle' if 'kita' in eid else 'mdi:food') %}
 
                     {% set ns.cards = ns.cards + [{
                       "type": "picture-glance",
-                      "title": current_text,
-                      "image_entity": entity_id,
+                      "title": text_val,
+                      "image_entity": eid,
                       "fit_mode": "cover",
                       "aspect_ratio": "16:9",
                       "entities": [{
-                        "entity": text_entity,
-                        "name": "Gericht",
-                        "icon": entity_icon,
+                        "entity": text_id,
+                        "name": "Dish",
+                        "icon": icon,
                         "show_state": "false"
                       }]
                     }] %}
                   {% endif %}
-
                 {% endif %}
               {% endif %}
             {% endfor %}
