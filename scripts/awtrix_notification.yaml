@@ -40,7 +40,7 @@ awtrix3notif:
       required: false
       default: "awtrix_50ccb4"
       selector:
-        text: {}
+        text: null
   sequence:
     - action: mqtt.publish
       metadata: {}

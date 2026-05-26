@@ -56,7 +56,7 @@ awtrix3customapp:
       required: false
       default: "awtrix_50ccb4"
       selector:
-        text: {}
+        text: null
   sequence:
     - alias: AssignDefaultVariables
       variables:

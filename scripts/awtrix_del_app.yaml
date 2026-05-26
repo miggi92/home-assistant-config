@@ -12,13 +12,13 @@ awtrix3delapp:
       required: false
       default: "awtrix_50ccb4"
       selector:
-        text: {}
+        text: null
     app_id:
       name: AppId
       description: App ID der Benachrichtigung
       required: true
       selector:
-        text: {}
+        text: null
   sequence:
     - alias: PublishEmptyPayloadToDeleteApp
       action: mqtt.publish
