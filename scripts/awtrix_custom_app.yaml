@@ -1,6 +1,9 @@
 ---
 # AWTRIX 3 Notifications
 awtrix3customapp:
+  alias: awtrix3CustomApp
+  mode: parallel
+  max: 10
   fields:
     app_id:
       selector:
@@ -47,28 +50,34 @@ awtrix3customapp:
           max: 100
           step: 1
       default: -1
+    device_prefix:
+      name: DevicePrefix
+      description: MQTT Prefix der Awtrix
+      required: false
+      default: "awtrix_50ccb4"
+      selector:
+        text: {}
   sequence:
-    - variables:
-        icon: "{{ icon | default(2883) }}"
-        repeat: "{{ repeat | default(2) }}"
-        progress: "{{ progress | default(-1) }}"
-        duration: "{{ duration | default(15) }}"
-
-    - action: mqtt.publish
-      metadata: {}
+    - alias: AssignDefaultVariables
+      variables:
+        icon: "{{ icon | default(2883) | int }}"
+        repeat: "{{ repeat | default(2) | int }}"
+        progress: "{{ progress | default(-1) | int }}"
+        duration: "{{ duration | default(15) | int }}"
+    - alias: PublishMqttPayload
+      action: mqtt.publish
       data:
-        topic: "awtrix_50ccb4/custom/{{ app_id }}"
-        payload: |-
-          {
-            "text": "{{ text }}",
-            "duration": "{{ duration }}",
+        topic: "{{ device_prefix }}/custom/{{ app_id }}"
+        payload: >-
+          {% set payload_data = {
+            "text": text | default(''),
+            "duration": duration,
             "rainbow": false,
-            "icon": "{{ icon }}",
-            "repeat": "{{ repeat }}",
-            "overlay" : "{{ overlay }}",
-            "progress" : "{{ progress }}"
-          }
-  alias: awtrix3CustomApp
-  description: ""
-  mode: parallel
-  max: 10
+            "icon": icon,
+            "repeat": repeat,
+            "progress": progress
+          } %}
+          {% if overlay is defined and overlay %}
+            {% set payload_data = dict(payload_data, overlay=overlay) %}
+          {% endif %}
+          {{ payload_data | to_json }}
