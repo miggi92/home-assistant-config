@@ -1,13 +1,12 @@
 ---
 most_tracked_popup:
   card:
-    type: vertical-stack
+    type: custom:bubble-card
+    card_type: pop-up
+    hash: "#mostTracked"
+    name: "Top 10"
+    icon: "mdi:airplane-search"
     cards:
-      - type: custom:bubble-card
-        card_type: pop-up
-        hash: "#mostTracked"
-        name: "Top 10"
-        icon: "mdi:airplane-search"
       - type: markdown
         content: >-
           {% set flights = state_attr('sensor.flightradar24_most_tracked', 'flights') %}

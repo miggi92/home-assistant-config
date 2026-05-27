@@ -1,13 +1,12 @@
 ---
 grocy_popup:
   card:
-    type: vertical-stack
+    type: custom:bubble-card
+    card_type: pop-up
+    hash: "[[hash]]"
+    name: "[[name]]"
+    icon: "[[icon]]"
     cards:
-      - type: custom:bubble-card
-        card_type: pop-up
-        hash: "[[hash]]"
-        name: "[[name]]"
-        icon: "[[icon]]"
       - type: markdown
         content: >
           {% set group_mapping = {
