@@ -32,26 +32,72 @@ function _adminHeaders() {
     return headers;
 }
 
-// Screen Wake Lock (#622)
-// Prevents screen from dimming/locking while the admin is running a game.
+// Screen Wake Lock (#622, #1122)
+// Layer 1: navigator.wakeLock — Safari ≥16.4, Chrome, Edge, Firefox.
+// Layer 2: NoSleep.js silent-video fallback — iOS HA Companion WKWebView,
+//          older Safari, anywhere Layer 1 is unavailable or rejected.
+// NoSleep dependency loaded via /beatify/static/js/vendor/no-sleep.min.js
+// in admin.html before this script runs.
 var _wakeLock = null;
+var _noSleep = null;
+var _noSleepActive = false;
+
+function _ensureNoSleep() {
+    if (_noSleep) return _noSleep;
+    if (typeof window !== 'undefined' && typeof window.NoSleep === 'function') {
+        try { _noSleep = new window.NoSleep(); } catch (err) {
+            console.debug('[BeatifyWakeLock] NoSleep instantiation failed:', err);
+        }
+    }
+    return _noSleep;
+}
 
 async function _requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
+    if ('wakeLock' in navigator) {
+        try {
+            _wakeLock = await navigator.wakeLock.request('screen');
+            _wakeLock.addEventListener('release', function() {
+                console.debug('[BeatifyWakeLock] Layer 1 released by browser');
+                _wakeLock = null;
+            });
+            console.debug('[BeatifyWakeLock] Layer 1 (native wakeLock) acquired');
+            return;
+        } catch (err) {
+            console.debug('[BeatifyWakeLock] Layer 1 request failed:', err, '— trying Layer 2');
+        }
+    } else {
+        console.debug('[BeatifyWakeLock] Layer 1 unavailable — using Layer 2');
+    }
+    var ns = _ensureNoSleep();
+    if (!ns) {
+        console.debug('[BeatifyWakeLock] Layer 2 unavailable (NoSleep vendor not loaded)');
+        return;
+    }
+    if (_noSleepActive) return;
     try {
-        _wakeLock = await navigator.wakeLock.request('screen');
-        _wakeLock.addEventListener('release', function() {
-            _wakeLock = null;
-        });
+        var p = ns.enable();
+        _noSleepActive = true;
+        if (p && typeof p.catch === 'function') {
+            p.catch(function(err) {
+                console.debug('[BeatifyWakeLock] Layer 2 enable promise rejected:', err);
+            });
+        }
+        console.debug('[BeatifyWakeLock] Layer 2 (NoSleep video) enabled');
     } catch (err) {
-        // Silently fail — browser may deny if page is not visible
+        console.debug('[BeatifyWakeLock] Layer 2 enable failed:', err);
+        _noSleepActive = false;
     }
 }
 
 function _releaseWakeLock() {
     if (_wakeLock) {
-        _wakeLock.release();
+        try { _wakeLock.release(); } catch (e) { /* may already be released */ }
         _wakeLock = null;
+    }
+    if (_noSleepActive && _noSleep) {
+        try { _noSleep.disable(); } catch (e) { /* defensive */ }
+        _noSleepActive = false;
+        console.debug('[BeatifyWakeLock] Layer 2 (NoSleep) disabled');
     }
 }
 
@@ -1830,7 +1876,17 @@ function updateStartButtonState() {
 // ==========================================
 
 /**
- * Show setup view (initial state)
+ * Reset admin to no-game state.
+ *
+ * #1138: this used to "show the setup view" — the legacy flat layout with
+ * Media Players, Music Service, Playlists, Game Settings sections. That
+ * surface was superseded by the wizard + home-view post-rc15, but the
+ * function kept calling `setupSections.forEach(removeClass('hidden'))`,
+ * leaving returning users with no `LS_WIZARD_STATE` (the wizard never
+ * auto-triggers for them) staring at the old layout instead of the
+ * polished home-view. rc11 strips the legacy reveal; the function now
+ * only does the cleanup (close WS, stop polling, hide game phases) and
+ * the caller is expected to route into wizard or home-view next.
  */
 function showSetupView() {
     currentView = 'setup';
@@ -1841,17 +1897,9 @@ function showSetupView() {
     stopLobbyPolling();
     previousLobbyPlayers = [];
 
-    // Show setup sections
-    setupSections.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('hidden');
-    });
-
-    // Show start button if there are valid playlists (Story 9.10)
-    const hasValidPlaylists = playlistData.some(p => p.is_valid);
-    if (hasValidPlaylists) {
-        document.getElementById('start-game')?.classList.remove('hidden');
-    }
+    // #1138: do NOT unhide the legacy flat setup sections — let CSS keep
+    // them hidden via body.home-mode (set by BeatifyHome.enter() below).
+    // The flat layout is dead UI in rc11+; the wizard + home-view replace it.
 
     // Hide other views
     // Issue #477: Hide game phase views
@@ -1866,6 +1914,16 @@ function showSetupView() {
     }
     isPlaying = false;
     adminPlayerName = null;
+
+    // #1138: route into the home-view (or its setup-prompt sub-mode if the
+    // user isn't configured). The function above is now pure cleanup; this
+    // call hands the screen back to BeatifyHome which decides between
+    // "configured: QR + Start game" vs "unconfigured: tap to launch wizard".
+    if (window.BeatifyHome && typeof window.BeatifyHome.enter === 'function') {
+        try { window.BeatifyHome.enter(); } catch (e) {
+            console.warn('[Beatify] BeatifyHome.enter failed in showSetupView:', e);
+        }
+    }
 }
 
 /**
@@ -3346,7 +3404,12 @@ async function connectAdminWebSocket() {
     // #998: the admin WS is gated by HA login. getAccessToken() refreshes a
     // stale token transparently; null means the host is not logged in.
     var token = await BeatifyAuth.getAccessToken();
-    if (!token) return;
+    // rc13 (#1131): in Companion bypass mode there is no OAuth token but the
+    // WS must still open — server-side admin_connect accepts the request on
+    // UA+RFC1918 signature when ha_token is falsy. Without this short-circuit
+    // the admin WS never opens on Android Companion (no `[WS-Debug] upgrade`
+    // log fires either, which is what surfaced the bug on rc12).
+    if (!token && !BeatifyAuth.isCompanionBypassMode()) return;
 
     // Close existing connection if any
     if (adminWs && adminWs.readyState === WebSocket.OPEN) {
@@ -3364,7 +3427,19 @@ async function connectAdminWebSocket() {
     }
 
     adminWs.onopen = function() {
-        console.log('[Admin WS] Connected, sending admin_connect');
+        // rc6 (#1120 diagnostics): log token characteristics so chrome://inspect
+        // captures whether force=true bridge calls actually return different
+        // tokens across recovery cycles. Prefix only — first 12 chars, safe
+        // to share; HA tokens are JWT so prefix is just the header.
+        console.log(
+            '[Admin WS] Connected, sending admin_connect (token: len=' +
+            (token ? token.length : 0) +
+            ', prefix=' +
+            (token ? token.slice(0, 12) : 'null') +
+            ', recoveryAttempt=' +
+            adminWsAuthRecoveryAttempts + '/' + MAX_ADMIN_WS_AUTH_RECOVERIES +
+            ')'
+        );
         adminReconnectAttempts = 0;
         adminWs.send(JSON.stringify({
             type: 'admin_connect',
@@ -3470,14 +3545,31 @@ function handleAdminWsMessage(data) {
                 }
                 if (adminWsAuthRecoveryAttempts >= MAX_ADMIN_WS_AUTH_RECOVERIES) {
                     // Refreshed access token still rejected. Sessions are
-                    // wedged — bounce to HA login.
-                    console.warn('[Admin WS] Auth recovery exhausted; forcing re-login');
+                    // wedged — bounce to HA login. rc6 (#1120): surface a
+                    // visible toast first so the user knows what's
+                    // happening instead of silently watching the admin
+                    // page reload after ~20s of dead WebSocket.
+                    console.warn(
+                        '[Admin WS] Auth recovery exhausted after ' +
+                        MAX_ADMIN_WS_AUTH_RECOVERIES +
+                        ' attempts; HA rejected every bridge-supplied token. ' +
+                        'Forcing re-login.'
+                    );
+                    var exhaustedMsg =
+                        (window.BeatifyI18n && BeatifyI18n.t('admin.wsAuthFailed')) ||
+                        'Home Assistant rejected the access token. Re-authenticating…';
+                    try { showError(exhaustedMsg); } catch (e) { /* showError may not be in scope on early load */ }
                     BeatifyAuth.logout();
                     BeatifyAuth.login();
                     break;
                 }
                 adminWsAuthRecovering = true;
                 adminWsAuthRecoveryAttempts++;
+                console.warn(
+                    '[Admin WS] UNAUTHORIZED — recovery attempt ' +
+                    adminWsAuthRecoveryAttempts + '/' + MAX_ADMIN_WS_AUTH_RECOVERIES +
+                    ' (server message: ' + (data.message || '') + ')'
+                );
                 var deadWs = adminWs;
                 adminWs = null;
                 try { deadWs?.close(); } catch (e) { /* ignore */ }

@@ -21,7 +21,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_PATH = join(__dirname, '..', 'ha-auth.js');
 const SRC = readFileSync(SRC_PATH, 'utf8');
 
-function loadHaAuth({ fetchFn, cookie = '', localStorageData = {} } = {}) {
+function loadHaAuth({
+    fetchFn,
+    cookie = '',
+    localStorageData = {},
+    userAgent = '',
+    externalApp = null,
+    externalAppV2 = null,
+} = {}) {
     const storage = (initial) => {
         const map = new Map(Object.entries(initial));
         return {
@@ -66,10 +73,14 @@ function loadHaAuth({ fetchFn, cookie = '', localStorageData = {} } = {}) {
         sessionStorage: ss,
         crypto: { getRandomValues: (buf) => { for (let i = 0; i < buf.length; i++) buf[i] = i; return buf; } },
         history: { replaceState: () => {} },
+        externalApp: externalApp || undefined,
+        externalAppV2: externalAppV2 || undefined,
     };
+    const navigatorShim = { userAgent: userAgent };
     const ctx = {
         window: sandboxWindow,
         document: documentShim,
+        navigator: navigatorShim,
         localStorage: ls,
         sessionStorage: ss,
         location: sandboxWindow.location,
@@ -87,6 +98,9 @@ function loadHaAuth({ fetchFn, cookie = '', localStorageData = {} } = {}) {
         encodeURIComponent,
         decodeURIComponent,
         setTimeout,
+        clearTimeout,
+        Math,
+        JSON,
     };
     vm.createContext(ctx);
     vm.runInContext(SRC, ctx);
@@ -251,6 +265,275 @@ describe('init() auth callback handling', () => {
         ]);
         expect(result).toBe('LOGIN_NAVIGATED');
         expect(cookieJar.value).not.toContain('beatify_access=');
+    });
+});
+
+describe('Android Companion auth bridge (#1114, #1120 — rc5)', () => {
+    const COMPANION_UA =
+        'Mozilla/5.0 (Linux; Android 16; Pixel 7 Pro) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/Mobile Safari Home Assistant/2026.4.4-full';
+
+    // externalAppV2 is the modern, origin-checked Companion bridge added in
+    // 2026.4.2 alongside the security fix GHSA-7jp2-p2fw-mgvf. JS → native:
+    // postMessage({type:"getExternalAuth"}). Native → JS: invokes the fixed
+    // global function window.externalAuthSetToken(success, payload).
+    function externalAppV2Bridge({
+        respondWithToken = 'v2-fresh',
+        respondSuccess = true,
+        expiresIn = 1800,
+    } = {}) {
+        const calls = [];
+        const bridge = {
+            calls,
+            externalAppV2: {
+                postMessage(json) {
+                    calls.push(JSON.parse(json));
+                    setTimeout(() => {
+                        const fn = bridge.window?.externalAuthSetToken;
+                        if (typeof fn !== 'function') return;
+                        if (respondSuccess) {
+                            fn(true, { access_token: respondWithToken, expires_in: expiresIn });
+                        } else {
+                            fn(false, { message: 'auth_denied' });
+                        }
+                    }, 0);
+                },
+            },
+        };
+        return bridge;
+    }
+
+    // externalApp (V1) is the legacy direct method, retained for older
+    // Companion builds. Same fixed callback name; security fix whitelisted
+    // it so randomised callback names no longer work.
+    function legacyGetExternalAuthBridge({
+        respondWithToken = 'v1-fresh',
+        respondSuccess = true,
+        expiresIn = 1800,
+    } = {}) {
+        const calls = [];
+        const bridge = {
+            calls,
+            externalApp: {
+                getExternalAuth(json) {
+                    calls.push(JSON.parse(json));
+                    setTimeout(() => {
+                        const fn = bridge.window?.externalAuthSetToken;
+                        if (typeof fn !== 'function') return;
+                        if (respondSuccess) {
+                            fn(true, { access_token: respondWithToken, expires_in: expiresIn });
+                        } else {
+                            fn(false, { message: 'auth_denied' });
+                        }
+                    }, 0);
+                },
+            },
+        };
+        return bridge;
+    }
+
+    it('refreshAccess() uses externalAppV2.postMessage on modern Companion (no /beatify/auth/refresh fetch)', async () => {
+        const bridge = externalAppV2Bridge({ respondWithToken: 'v2-token' });
+        const fetchFn = async () => { throw new Error('should not fetch — Companion V2 path active'); };
+        const { BeatifyAuth, sandboxWindow, cookieJar } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+            externalAppV2: bridge.externalAppV2,
+        });
+        bridge.window = sandboxWindow;
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('v2-token');
+        // The cookie was planted by _setSessionCookieFromCompanion.
+        expect(cookieJar.value).toContain('beatify_access=');
+        // V2 message shape: {id, type: "getExternalAuth", payload: {callback, force}}
+        expect(bridge.calls).toHaveLength(1);
+        expect(bridge.calls[0].type).toBe('getExternalAuth');
+        expect(bridge.calls[0].payload.callback).toBe('externalAuthSetToken');
+        expect(bridge.calls[0].payload.force).toBe(true);
+        // The whitelisted callback is required by Companion ≥ 2026.4.4.
+    });
+
+    it('refreshAccess() uses legacy externalApp.getExternalAuth when V2 is unavailable', async () => {
+        const bridge = legacyGetExternalAuthBridge({ respondWithToken: 'v1-token' });
+        const fetchFn = async () => { throw new Error('should not fetch — Companion V1 path active'); };
+        const { BeatifyAuth, sandboxWindow, cookieJar } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+            externalApp: bridge.externalApp,
+        });
+        bridge.window = sandboxWindow;
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('v1-token');
+        expect(cookieJar.value).toContain('beatify_access=');
+        // V1 message shape: {callback, force}. The callback MUST be the
+        // fixed string "externalAuthSetToken" — Companion ≥ 2026.4.4 silently
+        // rejects any other name (security fix GHSA-7jp2-p2fw-mgvf).
+        expect(bridge.calls).toHaveLength(1);
+        expect(bridge.calls[0].callback).toBe('externalAuthSetToken');
+        expect(bridge.calls[0].force).toBe(true);
+    });
+
+    it('falls back from failing V2 to legacy V1 when both are present', async () => {
+        // V2 rejects, V1 succeeds. Should land on the V1 token.
+        const calls = { v2: [], v1: [] };
+        const bridge = {
+            externalAppV2: {
+                postMessage(json) {
+                    calls.v2.push(JSON.parse(json));
+                    setTimeout(() => {
+                        sandbox.externalAuthSetToken(false, { message: 'v2_failure' });
+                    }, 0);
+                },
+            },
+            externalApp: {
+                getExternalAuth(json) {
+                    calls.v1.push(JSON.parse(json));
+                    setTimeout(() => {
+                        sandbox.externalAuthSetToken(true, {
+                            access_token: 'fallback-token',
+                            expires_in: 1800,
+                        });
+                    }, 0);
+                },
+            },
+        };
+        const fetchFn = async () => { throw new Error('should not fetch'); };
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+            externalApp: bridge.externalApp,
+            externalAppV2: bridge.externalAppV2,
+        });
+        const sandbox = sandboxWindow;
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('fallback-token');
+        expect(calls.v2).toHaveLength(1);
+        expect(calls.v1).toHaveLength(1);
+    });
+
+    it('detects Companion via injected externalAppV2 even when UA does not match', async () => {
+        // No Companion UA, but externalAppV2 is injected — should still take the bridge path.
+        const bridge = externalAppV2Bridge({ respondWithToken: 'ua-fallback-token' });
+        const fetchFn = async () => { throw new Error('should not fetch'); };
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            fetchFn,
+            userAgent: 'Mozilla/5.0 (Linux; Android 16) Chrome/Mobile Safari', // no "Home Assistant"
+            externalAppV2: bridge.externalAppV2,
+        });
+        bridge.window = sandboxWindow;
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('ua-fallback-token');
+    });
+
+    it('still uses /beatify/auth/refresh when no Companion bridge is present (regression guard)', async () => {
+        const fetchCalls = [];
+        const fetchFn = async (url) => {
+            fetchCalls.push(url);
+            return { ok: true, status: 200, json: async () => ({ access_token: 'web-token', expires_in: 1800 }) };
+        };
+        const { BeatifyAuth } = loadHaAuth({
+            fetchFn,
+            userAgent: 'Mozilla/5.0 (Macintosh) Safari/605.1.15', // desktop browser, no Companion
+        });
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('web-token');
+        expect(fetchCalls[0]).toBe('https://ha.example/beatify/auth/refresh');
+    });
+});
+
+describe('Companion bypass mode (#1131 — UA + RFC1918 trust on server)', () => {
+    const COMPANION_UA =
+        'Mozilla/5.0 (Linux; Android 16; Pixel 7 Pro) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/Mobile Safari Home Assistant/2026.4.4-full';
+
+    it('isCompanionBypassMode() returns true when Companion UA is set and no bridge is exposed', () => {
+        const { BeatifyAuth } = loadHaAuth({
+            userAgent: COMPANION_UA,
+            // neither externalApp nor externalAppV2 — older Companion build
+            // that hides the bridge or has the security fix not deployed.
+        });
+        expect(BeatifyAuth.isCompanionBypassMode()).toBe(true);
+    });
+
+    it('isCompanionBypassMode() returns true even when externalAppV2 is exposed (rc10: bridge unreliable)', () => {
+        // rc10 (#1131): field data shows recent Companion builds advertise the
+        // bridge but it either never replies or replies with a token HA rejects.
+        // The bypass therefore ignores bridge presence and trusts the
+        // server-side UA+RFC1918 check unconditionally.
+        const { BeatifyAuth } = loadHaAuth({
+            userAgent: COMPANION_UA,
+            externalAppV2: { postMessage() {} },
+        });
+        expect(BeatifyAuth.isCompanionBypassMode()).toBe(true);
+    });
+
+    it('isCompanionBypassMode() returns false on desktop browsers', () => {
+        const { BeatifyAuth } = loadHaAuth({
+            userAgent: 'Mozilla/5.0 (Macintosh) Safari/605',
+        });
+        expect(BeatifyAuth.isCompanionBypassMode()).toBe(false);
+    });
+
+    it('init() resolves true and skips OAuth flow in Companion bypass mode', async () => {
+        const fetchCalls = [];
+        const fetchFn = async (url) => {
+            fetchCalls.push(url);
+            // Should never be called — but if init regresses to call refresh,
+            // we want the test to fail loudly with a clear assertion below.
+            return { ok: true, status: 200, json: async () => ({}) };
+        };
+        const { BeatifyAuth } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+        });
+        const ok = await BeatifyAuth.init({ requireAuth: true });
+        expect(ok).toBe(true);
+        // No /beatify/auth/refresh call, no /auth/authorize redirect.
+        expect(fetchCalls).toHaveLength(0);
+    });
+
+    it('authedFetch() in Companion bypass mode sends NO Authorization header (server detects via UA+IP)', async () => {
+        const observedHeaders = [];
+        const fetchFn = async (url, opts) => {
+            observedHeaders.push({ url, headers: opts?.headers });
+            return { ok: true, status: 200 };
+        };
+        const { BeatifyAuth } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+        });
+        await BeatifyAuth.fetch('/beatify/api/lights');
+        expect(observedHeaders).toHaveLength(1);
+        // Either undefined headers (no opts passed) or no Authorization key.
+        const h = observedHeaders[0].headers;
+        expect(h?.Authorization).toBeUndefined();
+    });
+
+    it('ensureAuthenticated() resolves null in Companion bypass mode (rc12: no OAuth attempt)', async () => {
+        // rc11 admin → "join as host" hung on Android Companion because
+        // ensureAuthenticated() called login() → /auth/authorize → blocked
+        // by Companion's WebView ("Invalid redirect URI"). The returned
+        // promise never resolved and `adminWs.send({...ha_token: token})`
+        // never fired. rc12 short-circuits to null so the WS send proceeds
+        // and the server-side bypass kicks in on UA+RFC1918.
+        let loginCalls = 0;
+        const fetchFn = async () => {
+            // refreshAccess should NOT be called either — bypass mode means
+            // there is no OAuth to refresh.
+            return { ok: false, status: 401 };
+        };
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+        });
+        const _originalReplace = sandboxWindow.location.replace;
+        sandboxWindow.location.replace = function (url) {
+            loginCalls += 1;
+            return _originalReplace.call(this, url);
+        };
+        const token = await BeatifyAuth.ensureAuthenticated();
+        expect(token).toBeNull();
+        expect(loginCalls).toBe(0); // no /auth/authorize navigation
     });
 });
 
