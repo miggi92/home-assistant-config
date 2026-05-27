@@ -7,7 +7,11 @@ trigger:
     entity_id: binary_sensor.sonne_im_wohnzimmer
     to: "on"
     alias: Sun hits living room
-condition: []
+condition:
+  - alias: "Check outside temperature"
+    condition: numeric_state
+    entity_id: sensor.temperatur
+    above: "23"
 action:
   - action: scene.turn_on
     target:
