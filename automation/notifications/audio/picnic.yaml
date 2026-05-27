@@ -1,0 +1,22 @@
+---
+# Picnic notif
+alias: PicnicNotif
+id: 6d9165e9-490d-44cf-b725-166dec3db61c
+description: "Benachrichtigen wenn picnic kommt"
+trigger:
+  - platform: template
+    value_template: >
+      {{ now().timestamp() >= as_timestamp( states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung'), now().timestamp() + 301 ) - 300 }}
+condition: []
+action:
+  - delay:
+      seconds: 1
+  - service: script.notify_engine
+    data:
+      title: "🚚 Picnic 🚚"
+      value1: "Picnic kommt in ca. 5 Minuten."
+      who: "home, home_audio"
+      tag_id: "information"
+      group: "Shopping"
+
+mode: single
