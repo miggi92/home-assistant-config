@@ -70,6 +70,7 @@ awtrix3customapp:
         repeat: "{{ repeat | default(2) | int }}"
         progress: "{{ progress | default(-1) | int }}"
         duration: "{{ duration | default(15) | int }}"
+        device_prefix: "{{ device_prefix | default('awtrix_50ccb4') }}"
     - alias: PublishMqttPayload
       action: mqtt.publish
       data:

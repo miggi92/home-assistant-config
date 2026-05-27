@@ -20,6 +20,8 @@ awtrix3delapp:
       selector:
         text: null
   sequence:
+    - variables:
+        device_prefix: "{{ device_prefix | default('awtrix_50ccb4') }}"
     - alias: PublishEmptyPayloadToDeleteApp
       action: mqtt.publish
       data:

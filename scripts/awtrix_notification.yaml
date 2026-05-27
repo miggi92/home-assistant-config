@@ -42,6 +42,8 @@ awtrix3notif:
       selector:
         text: null
   sequence:
+    - variables:
+        device_prefix: "{{ device_prefix | default('awtrix_50ccb4') }}"
     - action: mqtt.publish
       metadata: {}
       data:
