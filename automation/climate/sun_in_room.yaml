@@ -1,0 +1,16 @@
+---
+alias: sunInRoom
+id: 52bb62b0-9e87-4a6f-bbe1-e4213c60f4ea
+description: ""
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sonne_im_wohnzimmer
+    to: "on"
+    alias: Sun hits living room
+condition: []
+action:
+  - action: scene.turn_on
+    target:
+      entity_id: scene.rolladen_sonnenschutz
+    data: {}
+mode: single
