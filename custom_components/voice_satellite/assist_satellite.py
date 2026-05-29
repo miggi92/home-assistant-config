@@ -251,6 +251,7 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
             ("_wake_word_model_2", "wake_word_model_2"),
             ("_wake_word_sensitivity", "wake_word_sensitivity"),
             ("_pipeline_2", "pipeline_2"),
+            ("_tts_output_mode_remote", "tts_output_mode_remote"),
         ):
             s = self._get_child_state(registry, "select", suffix)
             if s and s.state not in ("unknown", "unavailable"):

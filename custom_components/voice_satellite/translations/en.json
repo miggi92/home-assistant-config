@@ -38,6 +38,13 @@
       "tts_output": {
         "name": "TTS output"
       },
+      "tts_output_mode_remote": {
+        "name": "TTS Output behavior (remote)",
+        "state": {
+          "announcement": "Announcement",
+          "normal_playback": "Normal Playback"
+        }
+      },
       "wake_word_detection": {
         "name": "Wake word detection"
       },
