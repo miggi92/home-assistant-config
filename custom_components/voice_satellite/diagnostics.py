@@ -401,7 +401,16 @@ async def _check_pipeline_2(hass: HomeAssistant, entity, pipeline_1) -> list[dic
 
 WAKE_MODE_HA = "Home Assistant"
 WAKE_MODE_LOCAL = "On Device"
+WAKE_MODE_LOCAL_MWW = "On Device (microWakeWord)"
+WAKE_MODE_LOCAL_OWW = "On Device (openWakeWord)"
+WAKE_MODE_LOCAL_VWW = "On Device (vsWakeWord)"
 WAKE_MODE_DISABLED = "Disabled"
+WAKE_MODE_LOCAL_VALUES = {
+    WAKE_MODE_LOCAL,
+    WAKE_MODE_LOCAL_MWW,
+    WAKE_MODE_LOCAL_OWW,
+    WAKE_MODE_LOCAL_VWW,
+}
 
 
 def _check_wake_word_mode(hass: HomeAssistant, entity, pipeline) -> list[dict[str, Any]]:
@@ -443,7 +452,7 @@ def _check_wake_word_mode(hass: HomeAssistant, entity, pipeline) -> list[dict[st
     if mode == WAKE_MODE_DISABLED:
         return out
 
-    if mode == WAKE_MODE_LOCAL:
+    if mode in WAKE_MODE_LOCAL_VALUES:
         # Inference runs in the browser; server-side checks are limited to
         # the persistent models folder (already covered by a top-level check).
         return out
