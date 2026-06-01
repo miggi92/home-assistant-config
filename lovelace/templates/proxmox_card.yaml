@@ -2,7 +2,9 @@
 # Proxmox card
 proxmox_card_template:
   defaults:
-    title: "Proxmox Server"
+    - title: "Proxmox Server"
+    - disk01: "dummy_disk_1"
+    - disk02: "dummy_disk_2"
   card:
     type: grid
     title: "[[title]]"

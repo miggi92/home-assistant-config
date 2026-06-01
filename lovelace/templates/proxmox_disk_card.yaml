@@ -2,7 +2,7 @@
 # Proxmox card
 proxmox_disk_card_template:
   defaults:
-    title: "Disk"
+    - title: "Disk"
   card:
     type: conditional
     conditions:
