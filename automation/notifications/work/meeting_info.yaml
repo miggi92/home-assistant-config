@@ -40,5 +40,6 @@ action:
             shape: rounded
             iconColor: "#880808"
           message: "null"
+          title: "Meeting"
 mode: queued
 max: 5

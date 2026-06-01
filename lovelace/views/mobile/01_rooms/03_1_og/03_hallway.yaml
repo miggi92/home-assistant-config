@@ -11,7 +11,7 @@ badges:
     variables:
       - entity: binary_sensor.hausture
   - type: entity
-    entity: switch.pi_hole
+    entity: switch.adguard_home_schutz
     icon: mdi:pi-hole
     tap_action:
       action: more-info
@@ -22,7 +22,7 @@ sections:
       - type: custom:mushroom-lock-card
         entity: lock.hausture
       - type: custom:timer-bar-card
-        entity: timer.pihole_disabled
+        entity: timer.werbeblocker_aus
         mushroom:
           layout: vertical
       - type: custom:mushroom-entity-card

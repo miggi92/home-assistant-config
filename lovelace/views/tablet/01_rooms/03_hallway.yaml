@@ -39,15 +39,15 @@ sections:
         show_oscillate_control: true
         layout: vertical
       - type: custom:mushroom-template-card
-        primary: Pi-Hole
+        primary: Werbeblocker
         secondary: >-
-          {% if states("timer.pihole_disabled") == "active" %}
-            {{ state_attr('timer.pihole_disabled', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
+          {% if states("timer.werbeblocker_aus") == "active" %}
+            {{ state_attr('timer.werbeblocker_aus', 'finishes_at') | as_datetime - now().replace(microsecond=0) }}
           {% endif %}
-        entity: switch.pi_hole
+        entity: switch.adguard_home_schutz
         icon: mdi:pi-hole
         icon_color: |-
-          {% if states("switch.pi_hole") == "on" %}
+          {% if states("switch.adguard_home_schutz") == "on" %}
             green
           {% else %}
             red

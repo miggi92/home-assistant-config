@@ -41,13 +41,13 @@ sections:
         show_forecast: true
         entity: weather.home
         forecast_type: daily
-        forecast_slots: 7
+        forecast_slots: 5
       - type: weather-forecast
         show_current: false
         show_forecast: true
         entity: weather.home
         forecast_type: hourly
-        forecast_slots: 7
+        forecast_slots: 5
 
   - type: grid
     cards:
