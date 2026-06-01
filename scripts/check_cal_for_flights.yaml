@@ -7,7 +7,7 @@ check_cal4flights:
     - variables:
         lookahead_hours: "{{ lookahead_hours | default(3) }}"
         calendar_entities: |
-          {{ states.calendar | map(attribute='entity_id') | list }}
+          {{ states.calendar | rejectattr('state', 'in', ['unavailable', 'unknown']) | map(attribute='entity_id') | list }}
         regex_pattern: ([A-Z]{2,3}\d{2,4})
         now_ts: "{{ as_timestamp(now()) }}"
         later_ts: "{{ as_timestamp(now() + timedelta(hours=lookahead_hours | int)) }}"
