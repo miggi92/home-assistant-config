@@ -30,7 +30,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🏁 Abdeckungen: 4
 - 🆙 Aktualisierung: 191
 - 🚨 Alarmbedienfelder: 2
-- ↕️ Auswahlen: 81
+- ↕️ Auswahlen: 82
 - 🤖 Automatisierungen: 205
 - 🏘️ Bereiche: 19
 - 🖼️ Bilder: 43
@@ -44,11 +44,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3949
+- 🧩 Entitäten: 3952
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 556
-- 📍 Geräte-Tracker: 132
-- 🔌 Integrationen: 196
+- 📱 Geräte: 557
+- 📍 Geräte-Tracker: 133
+- 🔌 Integrationen: 194
 - 🗓️ Kalender: 29
 - 📷 Kameras: 18
 - 🌡️ Klima: 2
@@ -58,7 +58,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎵 Mediaplayer: 47
 - 🔟 Nummern: 115
 - 👤 Personen: 9
-- 🔌 Schalter: 367
+- 🔌 Schalter: 368
 - 🔒 Schlösser: 2
 - 📟 Sensoren: 1861
 - 📢 Sirenen: 0
