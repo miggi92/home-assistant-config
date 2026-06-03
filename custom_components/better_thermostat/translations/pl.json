@@ -102,6 +102,30 @@
           }
         }
       }
+    },
+    "degraded_mode": {
+      "title": "BT: {name} - błąd czujnika: {sensors} działa w trybie ograniczonym",
+      "description": "Better Thermostat działa w trybie ograniczonym, ponieważ niektóre czujniki są niedostępne: {sensors}\n\nTermostat będzie nadal działać z ograniczoną funkcjonalnością. Na przykład:\n- Jeśli czujnik temperatury pokojowej jest niedostępny, zostanie użyty wewnętrzny czujnik TRV.\n- Jeśli czujniki okien są niedostępne, okna są uznawane za zamknięte.\n- Jeśli czujniki zewnętrzne/pogodowe są niedostępne, ogrzewanie będzie zawsze włączone.\n\nSprawdź, czy dotknięte urządzenia mają problemy z baterią lub łącznością."
+    },
+    "invalid_window_state": {
+      "title": "BT: {name} - nieprawidłowy stan czujnika okna",
+      "description": "Czujnik okna dla Better Thermostat {name} zgłosił nierozpoznany stan: {state}.\n\nOczekiwane stany to: 'on', 'off', 'true', 'false', 'open', 'closed'.\n\nSprawdź konfigurację czujnika okna."
+    }
+  },
+  "services": {},
+  "device_automation": {
+    "trigger_type": {
+      "heating_active": "Termostat przełącza się na ogrzewanie",
+      "heating_stopped": "Termostat zatrzymuje ogrzewanie",
+      "humidity_high": "Wilgotność przekracza próg",
+      "window_opened": "Okno otwarte",
+      "window_closed": "Okno zamknięte",
+      "battery_low": "Niski poziom baterii",
+      "device_error": "Wykryto błąd urządzenia",
+      "target_temp_reached": "Docelowa temperatura osiągnięta",
+      "hvac_mode_changed": "Tryb HVAC zmieniony",
+      "current_temperature_changed": "Aktualna temperatura zmieniona",
+      "current_humidity_changed": "Aktualna wilgotność zmieniona"
     }
   }
 }

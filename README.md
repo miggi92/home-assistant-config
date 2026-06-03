@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.5.4%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.5.4)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.0%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.0)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -44,7 +44,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3912
+- 🧩 Entitäten: 3935
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 555
 - 📍 Geräte-Tracker: 133
@@ -55,10 +55,10 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 💡 Lichter: 35
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
-- 🎵 Mediaplayer: 47
+- 🎵 Mediaplayer: 56
 - 🔟 Nummern: 115
 - 👤 Personen: 9
-- 🔌 Schalter: 362
+- 🔌 Schalter: 364
 - 🔒 Schlösser: 2
 - 📟 Sensoren: 1844
 - 📢 Sirenen: 0
@@ -67,7 +67,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 143
+- 🔘 Tasten: 145
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 47
 - 🚁 Ventilatoren: 4

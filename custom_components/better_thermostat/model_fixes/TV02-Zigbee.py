@@ -1,28 +1,34 @@
-# Quirks for TV02-Zigbee
+"""Quirks for TV02-Zigbee thermostats."""
+
 import logging
+
 from homeassistant.components.climate.const import HVACMode
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def fix_local_calibration(self, entity_id, offset):
+    """Return local calibration offset unchanged for TRV02 devices."""
     return offset
 
 
 def fix_target_temperature_calibration(self, entity_id, temperature):
+    """Return target temperature unchanged for TRV02 devices."""
     return temperature
 
 
 async def override_set_hvac_mode(self, entity_id, hvac_mode):
-    """Enable specific device quirks while setting hvac mode
+    """Enable device quirks while setting HVAC mode.
+
     Parameters
     ----------
     self :
-            self instance of better_thermostat
+        self instance of better_thermostat
     entity_id :
-            Entity id of the TRV.
+        Entity id of the TRV.
     hvac_mode:
-            HVAC mode to be set.
+        HVAC mode to be set.
+
     Returns
     -------
     None
@@ -37,7 +43,9 @@ async def override_set_hvac_mode(self, entity_id, hvac_mode):
     model = self.real_trvs[entity_id]["model"]
     if model == "TV02-Zigbee" and hvac_mode != HVACMode.OFF:
         _LOGGER.debug(
-            f"better_thermostat {self.device_name}: TRV {entity_id} device quirk hvac trv02-zigbee active"
+            "better_thermostat %s: TRV %s device quirk hvac trv02-zigbee active",
+            self.device_name,
+            entity_id,
         )
         await self.hass.services.async_call(
             "climate",
@@ -50,15 +58,17 @@ async def override_set_hvac_mode(self, entity_id, hvac_mode):
 
 
 async def override_set_temperature(self, entity_id, temperature):
-    """Enable specific device quirks while setting temperature
+    """Enable device quirks while setting temperature.
+
     Parameters
     ----------
     self :
-            self instance of better_thermostat
+        self instance of better_thermostat
     entity_id :
-            Entity id of the TRV.
+        Entity id of the TRV.
     temperature:
-            Temperature to be set.
+        Temperature to be set.
+
     Returns
     -------
     None
@@ -66,7 +76,9 @@ async def override_set_temperature(self, entity_id, temperature):
     model = self.real_trvs[entity_id]["model"]
     if model == "TV02-Zigbee":
         _LOGGER.debug(
-            f"better_thermostat {self.device_name}: TRV {entity_id} device quirk trv02-zigbee active"
+            "better_thermostat %s: TRV %s device quirk trv02-zigbee active",
+            self.device_name,
+            entity_id,
         )
         await self.hass.services.async_call(
             "climate",

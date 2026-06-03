@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-import voluptuous as vol
+from collections.abc import Mapping
 
+from homeassistant.components.climate.const import (
+    ATTR_HVAC_ACTION,
+    ATTR_HVAC_MODE,
+    HVACAction,
+    HVACMode,
+)
 from homeassistant.const import (
     CONF_CONDITION,
     CONF_DEVICE_ID,
@@ -14,14 +20,9 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import condition, config_validation as cv, entity_registry
 from homeassistant.helpers.typing import ConfigType
+import voluptuous as vol
 
 from . import DOMAIN
-from homeassistant.components.climate.const import (
-    ATTR_HVAC_ACTION,
-    ATTR_HVAC_MODE,
-    HVACAction,
-    HVACMode,
-)
 
 CONDITION_TYPES = {"is_hvac_mode", "is_hvac_action"}
 
@@ -82,7 +83,9 @@ def async_condition_from_config(
     if config[CONF_TYPE] == "is_hvac_mode":
         hvac_mode = config[ATTR_HVAC_MODE]
 
-        def test_is_hvac_mode(hass: HomeAssistant, variables: dict) -> bool:
+        def test_is_hvac_mode(
+            hass: HomeAssistant, variables: Mapping[str, object] | None
+        ) -> bool:
             """Test if an HVAC mode condition is met."""
             state = hass.states.get(config[CONF_ENTITY_ID])
             return (
@@ -94,7 +97,9 @@ def async_condition_from_config(
     if config[CONF_TYPE] == "is_hvac_action":
         hvac_action = config[ATTR_HVAC_ACTION]
 
-        def test_is_hvac_action(hass: HomeAssistant, variables: dict) -> bool:
+        def test_is_hvac_action(
+            hass: HomeAssistant, variables: Mapping[str, object] | None
+        ) -> bool:
             """Test if an HVAC action condition is met."""
             state = hass.states.get(config[CONF_ENTITY_ID])
             return (

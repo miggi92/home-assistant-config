@@ -1,27 +1,139 @@
 """Helper functions for the Better Thermostat component."""
 
-import re
+from collections.abc import Callable
+from datetime import datetime
 import logging
 import math
-from datetime import datetime
-from enum import Enum
-from homeassistant.helpers import device_registry as dr, entity_registry as er
-from homeassistant.helpers.entity_registry import async_entries_for_config_entry
+import re
+from typing import Any
 
 from homeassistant.components.climate.const import HVACMode
+from homeassistant.const import UnitOfTemperature
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.entity_registry import async_entries_for_config_entry
+from homeassistant.util import dt as dt_util
+from homeassistant.util.unit_conversion import TemperatureConverter
 
-from custom_components.better_thermostat.utils.const import CONF_HEAT_AUTO_SWAPPED
-
+from custom_components.better_thermostat.utils.const import (
+    CONF_HEAT_AUTO_SWAPPED,
+    MAX_HEATING_POWER,
+    MAX_REASONABLE_TEMPERATURE,
+    MIN_HEATING_POWER,
+    MIN_REASONABLE_TEMPERATURE,
+    VALVE_MIN_BASE,
+    VALVE_MIN_OPENING_LARGE_DIFF,
+    VALVE_MIN_PROPORTIONAL_SLOPE,
+    VALVE_MIN_SMALL_DIFF_THRESHOLD,
+    VALVE_MIN_THRESHOLD_TEMP_DIFF,
+    CalibrationMode,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
+def normalize_calibration_mode(
+    mode: CalibrationMode | str | None,
+) -> CalibrationMode | str | None:
+    """Normalize a calibration_mode field from TRV advanced data."""
+
+    # Backwards compatibility: older configs stored numeric calibration modes
+    # (e.g. 0 for DEFAULT). Only map known values.
+    if isinstance(mode, (int, float)):
+        try:
+            numeric = int(mode)
+        except (TypeError, ValueError):
+            numeric = None
+        if numeric == 0:
+            return CalibrationMode.DEFAULT
+        return None
+
+    if isinstance(mode, CalibrationMode):
+        return mode
+    if isinstance(mode, str):
+        value = mode.strip().lower()
+        try:
+            return CalibrationMode(value)
+        except ValueError:
+            return value
+    return None
+
+
+def is_calibration_mode(
+    mode: CalibrationMode | str | None, expected: CalibrationMode
+) -> bool:
+    """Return True if ``mode`` is the expected CalibrationMode."""
+
+    normalized = normalize_calibration_mode(mode)
+    if isinstance(normalized, CalibrationMode):
+        return normalized == expected
+    if isinstance(normalized, str):
+        return normalized == expected.value
+    return False
+
+
+def entity_uses_calibration_mode(bt, entity_id: str, expected: CalibrationMode) -> bool:
+    """Check if the given TRV has ``expected`` calibration mode configured."""
+
+    try:
+        advanced = (bt.real_trvs.get(entity_id, {}) or {}).get("advanced", {}) or {}
+    except AttributeError:
+        return False
+    mode = advanced.get("calibration_mode")
+    return is_calibration_mode(mode, expected)
+
+
+def entity_uses_mpc_calibration(bt, entity_id: str) -> bool:
+    """Check if entity uses MPC calibration mode."""
+    return entity_uses_calibration_mode(bt, entity_id, CalibrationMode.MPC_CALIBRATION)
+
+
 def get_hvac_bt_mode(self, mode: str) -> str:
+    """Return the main HVAC mode mapping for the Better Thermostat.
+
+    The function handles simple mapping from HVACMode.HEAT to configured
+    internal modes used by the integration.
+    """
     if mode == HVACMode.HEAT:
         mode = self.map_on_hvac_mode
     elif mode == HVACMode.HEAT_COOL:
         mode = HVACMode.HEAT
     return mode
+
+
+def normalize_hvac_mode(value: HVACMode | str) -> HVACMode | str:
+    """Normalize a hvac_mode value to a proper HVACMode enum when possible.
+
+    Accepts
+    -------
+    value : HVACMode | str
+        - HVACMode enum: returned as-is
+        - Strings like 'heat', 'off', 'heat_cool', 'auto', 'dry', 'fan_only'
+        - Strings like 'HVACMode.HEAT' (will be converted to HVACMode.HEAT)
+
+    Returns
+    -------
+    HVACMode | str
+        HVACMode if recognized, otherwise the lowercased string without prefix.
+    """
+    if isinstance(value, HVACMode):
+        return value
+    if isinstance(value, str):
+        raw = value.strip()
+        # Strip enum-like prefix if present
+        if raw.lower().startswith("hvacmode."):
+            raw = raw.split(".", 1)[1]
+        key = raw.lower()
+        mapping = {
+            "off": HVACMode.OFF,
+            "heat": HVACMode.HEAT,
+            "cool": HVACMode.COOL,
+            "heat_cool": HVACMode.HEAT_COOL,
+            "auto": HVACMode.AUTO,
+            "dry": HVACMode.DRY,
+            "fan_only": HVACMode.FAN_ONLY,
+        }
+        return mapping.get(key, key)
+    return value
 
 
 def mode_remap(self, entity_id, hvac_mode: str, inbound: bool = False) -> str:
@@ -60,32 +172,81 @@ def mode_remap(self, entity_id, hvac_mode: str, inbound: bool = False) -> str:
             return HVACMode.HEAT_COOL
         if inbound and hvac_mode == HVACMode.HEAT_COOL:
             return HVACMode.HEAT
+    if HVACMode.HEAT_COOL not in trv_modes and HVACMode.HEAT in trv_modes:
+        # entity only supports HEAT, but not HEAT_COOL - need to translate
+        if not inbound and hvac_mode == HVACMode.HEAT_COOL:
+            return HVACMode.HEAT
+        if inbound and hvac_mode == HVACMode.HEAT:
+            return HVACMode.HEAT_COOL
 
     if hvac_mode != HVACMode.AUTO:
         return hvac_mode
 
     _LOGGER.error(
-        f"better_thermostat {self.device_name}: {entity_id} HVAC mode {
-            hvac_mode} is not supported by this device, is it possible that you forgot to set the heat auto swapped option?"
+        "better_thermostat %s: %s HVAC mode %s is not supported by this device, "
+        "is it possible that you forgot to set the heat auto swapped option?",
+        self.device_name,
+        entity_id,
+        hvac_mode,
     )
     return HVACMode.OFF
 
 
 def heating_power_valve_position(self, entity_id):
+    """Compute an expected valve position from the heating power.
+
+    Given the global `heating_power` estimate and the target/current
+    temperature, a heuristic mapping to valve opening percentage is
+    returned (between 0.0 and 1.0).
+    """
     _temp_diff = float(float(self.bt_target_temp) - float(self.cur_temp))
 
+    # Guard against negative temp_diff (room warmer than target)
+    # This can occur in TRV override edge case when temperature rises
+    # above target but TRV still reports heating (delayed update)
+    if _temp_diff <= 0:
+        _LOGGER.debug(
+            f"better_thermostat {self.device_name}: {entity_id} "
+            f"cur_temp >= target_temp ({self.cur_temp} >= {self.bt_target_temp}), "
+            f"setting valve to 0%"
+        )
+        return 0.0
+
+    # Ensure heating_power is bounded to realistic values
+    # This protects against incorrectly learned high values
+    heating_power = max(
+        MIN_HEATING_POWER, min(MAX_HEATING_POWER, float(self.heating_power))
+    )
+
+    # Original formula with improved robustness
     a = 0.019
     b = 0.946
-    valve_pos = a * (_temp_diff / self.heating_power) ** b
+    valve_pos = a * (_temp_diff / heating_power) ** b
 
-    if valve_pos < 0.0:
-        valve_pos = 0.0
-    if valve_pos > 1.0:
-        valve_pos = 1.0
+    # Apply minimum valve position when heating is actively needed
+    # If temp_diff > threshold, ensure minimum valve opening
+    # This prevents the system from getting stuck with too-low valve positions
+    if _temp_diff > VALVE_MIN_THRESHOLD_TEMP_DIFF:
+        valve_pos = max(VALVE_MIN_OPENING_LARGE_DIFF, valve_pos)
+    elif _temp_diff >= VALVE_MIN_SMALL_DIFF_THRESHOLD:
+        # For smaller differences, use a proportional minimum
+        min_valve = (
+            VALVE_MIN_BASE
+            + (_temp_diff - VALVE_MIN_SMALL_DIFF_THRESHOLD)
+            * VALVE_MIN_PROPORTIONAL_SLOPE
+        )
+        valve_pos = max(min_valve, valve_pos)
+
+    # Bound to valid range
+    valve_pos = max(0.0, min(1.0, valve_pos))
 
     _LOGGER.debug(
-        f"better_thermostat {self.device_name}: {entity_id} / heating_power_valve_position - temp diff: {round(
-            _temp_diff, 1)} - heating power: {round(self.heating_power, 4)} - expected valve position: {round(valve_pos * 100)}%"
+        "better_thermostat %s: %s / heating_power_valve_position - temp diff: %s - heating power: %s (bounded) - expected valve position: %s%%",
+        self.device_name,
+        entity_id,
+        round(_temp_diff, 1),
+        round(heating_power, 4),
+        round(valve_pos * 100),
     )
     return valve_pos
 
@@ -118,14 +279,28 @@ def heating_power_valve_position(self, entity_id):
     # | 0.5       | 1.0000     |
 
 
+def is_reasonable_temperature(value: float | None) -> bool:
+    """Return ``True`` iff ``value`` is a plausible indoor temperature in °C.
+
+    Rejects ``None`` and any value outside ``MIN_REASONABLE_TEMPERATURE`` ..
+    ``MAX_REASONABLE_TEMPERATURE``. Out-of-range values are typically
+    marker / garbage readings produced by upstream integrations (for
+    example, AVM Fritz!DECT exposes 126.5 / 127 °C when the thermostat is
+    in OFF / ON mode).
+    """
+    if value is None:
+        return False
+    return MIN_REASONABLE_TEMPERATURE <= value <= MAX_REASONABLE_TEMPERATURE
+
+
 def convert_to_float(
-    value: str | float, instance_name: str, context: str
+    value: str | int | float | None, instance_name: str, context: str
 ) -> float | None:
     """Convert value to float or print error message.
 
     Parameters
     ----------
-    value : str, int, float
+    value : str | int | float | None
             the value to convert to float
     instance_name : str
             the name of the instance thermostat
@@ -134,38 +309,89 @@ def convert_to_float(
 
     Returns
     -------
-    float
-            the converted value
-    None
-            If error occurred and cannot convert the value.
+    float | None
+            the converted value, or None if conversion failed
     """
     if value is None or value == "None":
         return None
     try:
-        return round_by_step(float(value), 0.1)
+        # Use 0.01 step (2 decimal places) to preserve sensor precision.
+        # Rounding to 0.1 caused issues where 19.97 became 20.0, leading to
+        # incorrect HVAC action decisions (see issues #1792, #1789, #1785).
+        return round_by_step(float(value), 0.01)
     except (ValueError, TypeError, AttributeError, KeyError):
         _LOGGER.debug(
-            f"better thermostat {instance_name}: Could not convert '{
-                value}' to float in {context}"
+            "better thermostat %s: Could not convert '%s' to float in %s",
+            instance_name,
+            value,
+            context,
         )
         return None
 
 
-class rounding(Enum):
-    # rounding functions that avoid errors due to using floats
+def convert_to_float_celsius(
+    value: str | int | float | None,
+    instance_name: str,
+    context: str,
+    unit_of_measurement: str | None = None,
+) -> float | None:
+    """Convert value to float and ensure it is in Celsius.
 
+    If *unit_of_measurement* indicates Fahrenheit the value is converted to
+    Celsius after the initial float conversion.
+
+    Parameters
+    ----------
+    value : str | int | float | None
+            the value to convert
+    instance_name : str
+            thermostat instance name (for logging)
+    context : str
+            calling function context (for logging)
+    unit_of_measurement : str | None
+            the unit of the incoming value (e.g. ``UnitOfTemperature.FAHRENHEIT``)
+
+    Returns
+    -------
+    float | None
+            the value in Celsius, or None if conversion failed
+    """
+    result = convert_to_float(value, instance_name, context)
+    if result is not None and unit_of_measurement == UnitOfTemperature.FAHRENHEIT:
+        result = TemperatureConverter.convert(
+            result, UnitOfTemperature.FAHRENHEIT, UnitOfTemperature.CELSIUS
+        )
+        result = round(result, 2)
+    return result
+
+
+class rounding:
+    """Rounding helpers for stable step-based rounding.
+
+    Provides minor offsets to avoid floating point rounding artifacts when
+    converting values to integer steps.
+    """
+
+    @staticmethod
     def up(x: float) -> float:
+        """Round up with a tiny epsilon to avoid FP artifacts."""
         return math.ceil(x - 0.0001)
 
+    @staticmethod
     def down(x: float) -> float:
+        """Round down with a tiny epsilon to avoid FP artifacts."""
         return math.floor(x + 0.0001)
 
+    @staticmethod
     def nearest(x: float) -> float:
+        """Round to nearest step with a small epsilon to avoid up-rounding."""
         return round(x - 0.0001)
 
 
 def round_by_step(
-    value: float | None, step: float | None, f_rounding: rounding = rounding.nearest
+    value: float | None,
+    step: float | None,
+    f_rounding: Callable[[float], float] = rounding.nearest,
 ) -> float | None:
     """Round the value based on the allowed decimal 'step' size.
 
@@ -175,6 +401,8 @@ def round_by_step(
             the value to round
     step : float
             size of one step
+    f_rounding : callable
+            rounding function (default: rounding.nearest)
 
     Returns
     -------
@@ -184,6 +412,9 @@ def round_by_step(
 
     if value is None or step is None:
         return None
+    # Use default rounding function if none provided
+    if f_rounding is None:
+        f_rounding = rounding.nearest
     # convert to integer number of steps for rounding, then convert back to decimal
     return f_rounding(value / step) * step
 
@@ -205,7 +436,7 @@ def check_float(potential_float):
     try:
         float(potential_float)
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
@@ -225,7 +456,7 @@ def convert_time(time_string):
             If the time string is not a valid time.
     """
     try:
-        _current_time = datetime.now()
+        _current_time = dt_util.now()
         _get_hours_minutes = datetime.strptime(time_string, "%H:%M")
         return _current_time.replace(
             hour=_get_hours_minutes.hour,
@@ -238,49 +469,183 @@ def convert_time(time_string):
 
 
 async def find_valve_entity(self, entity_id):
-    """Find the local calibration entity for the TRV.
+    """Locate a per-TRV valve position helper entity, if available.
 
-    This is a hacky way to find the local calibration entity for the TRV. It is not possible to find the entity
-    automatically, because the entity_id is not the same as the friendly_name. The friendly_name is the same for all
-    thermostats of the same brand, but the entity_id is different.
-
-    Parameters
-    ----------
-    self :
-            self instance of better_thermostat
-
-    Returns
-    -------
-    str
-            the entity_id of the local calibration entity
-    None
-            if no local calibration entity was found
+    Returns a mapping with the entity_id, whether it appears writable, and the
+    detection reason. ``None`` if no related entity could be found.
     """
     entity_registry = er.async_get(self.hass)
     reg_entity = entity_registry.async_get(entity_id)
     if reg_entity is None:
         return None
-    entity_entries = async_entries_for_config_entry(
-        entity_registry, reg_entity.config_entry_id
-    )
+
+    # Some integrations (notably certain Zigbee stacks) may expose valve helpers
+    # under a different Home Assistant device_id than the climate entity.
+    # To support these, also match candidates by shared device identifiers.
+    dev_reg = None
+    base_identifiers: set[tuple[str, str]] = set()
+    try:
+        dev_reg = dr.async_get(self.hass)
+        device_id = getattr(reg_entity, "device_id", None)
+        base_device = dev_reg.async_get(device_id) if device_id is not None else None
+        base_identifiers = set(getattr(base_device, "identifiers", set()) or set())
+    except Exception:
+        dev_reg = None
+        base_identifiers = set()
+
+    config_entry_id = reg_entity.config_entry_id
+    if config_entry_id is None:
+        return None
+    entity_entries = async_entries_for_config_entry(entity_registry, config_entry_id)
+    preferred_domains = {"number", "input_number"}
+    readonly_candidate: dict[str, Any] | None = None
+
+    def _device_matches(candidate) -> bool:
+        # Strong match: same device
+        if getattr(candidate, "device_id", None) == getattr(
+            reg_entity, "device_id", None
+        ):
+            return True
+        # Fallback: match by shared identifiers if device registry is available
+        if dev_reg is None or not base_identifiers:
+            return False
+        cand_device_id = getattr(candidate, "device_id", None)
+        if not cand_device_id:
+            return False
+        try:
+            cand_device = dev_reg.async_get(cand_device_id)
+        except Exception:
+            return False
+        cand_identifiers = set(getattr(cand_device, "identifiers", set()) or set())
+        return bool(base_identifiers.intersection(cand_identifiers))
+
+    # Known translation_key values used by TRV integrations for valve-related entities.
+    # These are stable, language-independent identifiers set by the integration.
+    _VALVE_TRANSLATION_KEYS: dict[str, str] = {
+        "valve_position": "valve_position",
+        "valve_opening_degree": "valve_opening_degree",
+        "valve_closing_degree": "valve_closing_degree",
+        "pi_heating_demand": "pi_heating_demand",
+        "heating_demand": "pi_heating_demand",
+        # Shelly BLU TRV uses this translation_key
+        "valve": "valve_position",
+    }
+
+    def _classify_by_translation_key(entity) -> str | None:
+        """Classify entity by its translation_key (stable, language-independent)."""
+        tk = getattr(entity, "translation_key", None)
+        if tk and tk in _VALVE_TRANSLATION_KEYS:
+            return _VALVE_TRANSLATION_KEYS[tk]
+        return None
+
+    def _classify(uid: str, ent_id: str, original_name: str) -> str | None:
+        """Classify by string matching (fallback for integrations without translation_key)."""
+        descriptor = f"{uid} {ent_id} {original_name}".lower()
+        # Sonoff TRVZB (and some others) expose explicit valve degree entities
+        if "valve_opening_degree" in descriptor:
+            return "valve_opening_degree"
+        if "valve_closing_degree" in descriptor:
+            return "valve_closing_degree"
+
+        # Existing patterns
+        if "pi_heating_demand" in descriptor:
+            return "pi_heating_demand"
+        if "valve_position" in descriptor:
+            return "valve_position"
+
+        # Generic fallbacks: try to catch "valve ... position/opening/degree"
+        if "valve" in descriptor and (
+            "position" in descriptor
+            or "opening" in descriptor
+            or "degree" in descriptor
+        ):
+            return "valve_generic"
+
+        if descriptor.endswith("_position") or descriptor.endswith(" position"):
+            return "position"
+        return None
+
+    def _score(reason: str, writable: bool, domain: str) -> tuple[int, int, int]:
+        # Higher is better.
+        reason_score = {
+            "valve_opening_degree": 100,
+            "valve_closing_degree": 95,
+            "valve_position": 90,
+            "pi_heating_demand": 80,
+            "valve_generic": 60,
+            "position": 50,
+        }.get(reason, 0)
+        writable_score = 10 if writable else 0
+        domain_score = 1 if domain in preferred_domains else 0
+        return (reason_score, writable_score, domain_score)
+
+    best: dict[str, Any] | None = None
+    best_score: tuple[int, int, int] = (-1, -1, -1)
+
     for entity in entity_entries:
-        uid = entity.unique_id
-        # Make sure we use the correct device entities
-        if entity.device_id == reg_entity.device_id:
-            if "_valve_position" in uid or "_position" in uid:
-                _LOGGER.debug(
-                    f"better thermostat: Found valve position entity {
-                        entity.entity_id} for {entity_id}"
-                )
-                return entity.entity_id
+        uid = entity.unique_id or ""
+        if not _device_matches(entity):
+            continue
+
+        # Prefer translation_key (stable, language-independent) over string matching
+        reason = _classify_by_translation_key(entity)
+        if reason is None:
+            reason = _classify(
+                uid,
+                entity.entity_id or "",
+                getattr(entity, "original_name", None) or "",
+            )
+        if reason is None:
+            continue
+        domain = (entity.entity_id or "").split(".", 1)[0]
+        writable = domain in preferred_domains
+        info = {
+            "entity_id": entity.entity_id,
+            "writable": writable,
+            "reason": reason,
+            "domain": domain,
+        }
+
+        score = _score(reason, writable, domain)
+        if best is None or score > best_score:
+            best = info
+            best_score = score
+        if not writable and readonly_candidate is None:
+            readonly_candidate = info
+
+    if best is not None and best.get("writable"):
+        _LOGGER.debug(
+            "better thermostat: Found writable valve helper %s for %s (reason=%s)",
+            best.get("entity_id"),
+            entity_id,
+            best.get("reason"),
+        )
+        return best
+
+    if readonly_candidate is not None:
+        _LOGGER.debug(
+            "better thermostat: Found read-only valve helper %s for %s (reason=%s)",
+            readonly_candidate.get("entity_id"),
+            entity_id,
+            readonly_candidate.get("reason"),
+        )
+        return readonly_candidate
 
     _LOGGER.debug(
-        f"better thermostat: Could not find valve position entity for {entity_id}"
+        "better thermostat: Could not find valve position entity for %s", entity_id
     )
     return None
 
 
-async def find_battery_entity(self, entity_id):
+async def find_battery_entity(self, entity_id, _visited=None):
+    """Find the battery entity related to the given entity's device.
+
+    Returns the `entity_id` of the battery sensor attached to the same device
+    as `entity_id`, or None if none found.
+
+    For groups, returns the battery entity with the lowest battery level
+    among all group members.
+    """
     entity_registry = er.async_get(self.hass)
 
     entity_info = entity_registry.entities.get(entity_id)
@@ -289,6 +654,17 @@ async def find_battery_entity(self, entity_id):
         return None
 
     device_id = entity_info.device_id
+
+    # Groups and virtual entities have no device_id
+    # Check if this is a group and resolve member batteries
+    if device_id is None:
+        state = self.hass.states.get(entity_id)
+        if state and "entity_id" in state.attributes:
+            # It's a group - find battery with lowest level among members
+            return await _find_lowest_battery_in_group(
+                self, state.attributes["entity_id"], _visited
+            )
+        return None
 
     for entity in entity_registry.entities.values():
         if entity.device_id == device_id and (
@@ -300,12 +676,75 @@ async def find_battery_entity(self, entity_id):
     return None
 
 
+async def _find_lowest_battery_in_group(self, member_ids, visited=None):
+    """Find the battery entity with the lowest level among group members.
+
+    Parameters
+    ----------
+    self : BetterThermostat instance
+    member_ids : list of entity_id strings
+    visited : set of already visited entity_ids to prevent infinite recursion
+
+    Returns
+    -------
+    entity_id of the battery with lowest level, or None if no batteries found
+    """
+    if visited is None:
+        visited = set()
+
+    lowest_battery_id = None
+    lowest_battery_level = None
+
+    for member_id in member_ids:
+        # Skip already visited entities to prevent infinite recursion
+        if member_id in visited:
+            continue
+        visited.add(member_id)
+
+        battery_id = await find_battery_entity(self, member_id, visited)
+        if battery_id is None:
+            continue
+
+        battery_state = self.hass.states.get(battery_id)
+        if battery_state is None:
+            continue
+
+        try:
+            level = float(battery_state.state)
+        except (ValueError, TypeError):
+            _LOGGER.debug(
+                "better_thermostat: non-numeric battery state '%s' for %s",
+                battery_state.state,
+                battery_id,
+            )
+            continue
+
+        if lowest_battery_level is None or level < lowest_battery_level:
+            lowest_battery_level = level
+            lowest_battery_id = battery_id
+
+    return lowest_battery_id
+
+
+# Known translation_key values used by TRV integrations for calibration entities.
+# These are stable, language-independent identifiers set by the integration.
+_CALIBRATION_TRANSLATION_KEYS: set[str] = {
+    "local_temperature_calibration",
+    "temperature_calibration",
+    "temperature_offset",
+    "calibration_temperature",
+    "local_temperature_offset",
+    # eq3btsmart uses "offset" as translation_key for its temperature offset
+    "offset",
+}
+
+
 async def find_local_calibration_entity(self, entity_id):
     """Find the local calibration entity for the TRV.
 
-    This is a hacky way to find the local calibration entity for the TRV. It is not possible to find the entity
-    automatically, because the entity_id is not the same as the friendly_name. The friendly_name is the same for all
-    thermostats of the same brand, but the entity_id is different.
+    Uses the entity registry's ``translation_key`` and ``original_name``
+    for a stable, language-independent lookup.  Falls back to the legacy
+    unique_id / entity_id string matching for older integrations.
 
     Parameters
     ----------
@@ -323,24 +762,52 @@ async def find_local_calibration_entity(self, entity_id):
     reg_entity = entity_registry.async_get(entity_id)
     if reg_entity is None:
         return None
-    entity_entries = async_entries_for_config_entry(
-        entity_registry, reg_entity.config_entry_id
-    )
+    config_entry_id = reg_entity.config_entry_id
+    if config_entry_id is None:
+        return None
+    entity_entries = async_entries_for_config_entry(entity_registry, config_entry_id)
+    calibration_entity = None
+    # First pass: match by translation_key (preferred, stable approach)
     for entity in entity_entries:
-        uid = entity.unique_id + " " + entity.entity_id
-        # Make sure we use the correct device entities
-        if entity.device_id == reg_entity.device_id:
-            if "temperature_calibration" in uid or "temperature_offset" in uid:
-                _LOGGER.debug(
-                    f"better thermostat: Found local calibration entity {
-                        entity.entity_id} for {entity_id}"
-                )
-                return entity.entity_id
+        if entity.device_id != reg_entity.device_id:
+            continue
+        tk = getattr(entity, "translation_key", None)
+        if tk and tk in _CALIBRATION_TRANSLATION_KEYS:
+            _LOGGER.debug(
+                "better thermostat: Found local calibration entity %s for %s (translation_key=%s)",
+                entity.entity_id,
+                entity_id,
+                tk,
+            )
+            calibration_entity = entity.entity_id
+            break
 
-    _LOGGER.debug(
-        f"better thermostat: Could not find local calibration entity for {entity_id}"
-    )
-    return None
+    # Second pass: fallback to string matching on unique_id / entity_id / original_name
+    if calibration_entity is None:
+        for entity in entity_entries:
+            if entity.device_id != reg_entity.device_id:
+                continue
+            descriptor = f"{entity.unique_id} {entity.entity_id} {getattr(entity, 'original_name', '') or ''}".lower()
+            if (
+                "temperature_calibration" in descriptor
+                or "temperature_offset" in descriptor
+                or "temperatur_offset" in descriptor
+                or "local_temperature" in descriptor
+            ):
+                _LOGGER.debug(
+                    "better thermostat: Found local calibration entity %s for %s (string match)",
+                    entity.entity_id,
+                    entity_id,
+                )
+                calibration_entity = entity.entity_id
+
+    if calibration_entity is None:
+        _LOGGER.debug(
+            "better thermostat: Could not find local calibration entity for %s",
+            entity_id,
+        )
+
+    return calibration_entity
 
 
 async def get_trv_intigration(self, entity_id):
@@ -358,6 +825,8 @@ async def get_trv_intigration(self, entity_id):
     """
     entity_reg = er.async_get(self.hass)
     entry = entity_reg.async_get(entity_id)
+    if entry is None:
+        return "generic_thermostat"
     try:
         return entry.platform
     except AttributeError:
@@ -372,7 +841,7 @@ def get_max_value(obj, value, default):
             _temp = obj[key].get(value, 0)
             if _temp is not None:
                 _raw.append(_temp)
-        return max(_raw, key=lambda x: float(x))
+        return max(_raw, key=float)
     except (KeyError, ValueError):
         return default
 
@@ -385,61 +854,81 @@ def get_min_value(obj, value, default):
             _temp = obj[key].get(value, 999)
             if _temp is not None:
                 _raw.append(_temp)
-        return min(_raw, key=lambda x: float(x))
+        return min(_raw, key=float)
     except (KeyError, ValueError):
         return default
 
 
-async def get_device_model(self, entity_id):
-    """Fetches the device model from HA.
-    Parameters
-    ----------
-    self :
-            self instance of better_thermostat
-    Returns
-    -------
-    string
-            the name of the thermostat model
+async def get_device_model(self, entity_id: str) -> str:
+    """Determine the device model from the Device Registry entry.
+
+    Priority: model_id > model (before parens) > model > config > "generic"
     """
-    if self.model is None:
+    selected: str | None = None
+    source: str = "none"
+
+    try:
+        entity_reg = er.async_get(self.hass)
+        entry = entity_reg.async_get(entity_id)
+        dev_reg = dr.async_get(self.hass)
+        device = None
         try:
-            entity_reg = er.async_get(self.hass)
-            entry = entity_reg.async_get(entity_id)
-            dev_reg = dr.async_get(self.hass)
-            device = dev_reg.async_get(entry.device_id)
-            _LOGGER.debug(f"better_thermostat {self.device_name}: found device:")
-            _LOGGER.debug(device)
-            try:
-                # Z2M reports the device name as a long string with the actual model name in braces, we need to extract it
-                matches = re.findall(r"\((.+?)\)", device.model)
-                return matches[-1]
-            except IndexError:
-                # Other climate integrations might report the model name plainly, need more infos on this
-                return device.model
-        except (
-            RuntimeError,
-            ValueError,
-            AttributeError,
-            KeyError,
-            TypeError,
-            NameError,
-            IndexError,
-        ):
-            try:
-                return (
-                    self.hass.states.get(entity_id)
-                    .attributes.get("device")
-                    .get("model", "generic")
-                )
-            except (
-                RuntimeError,
-                ValueError,
-                AttributeError,
-                KeyError,
-                TypeError,
-                NameError,
-                IndexError,
-            ):
-                return "generic"
-    else:
-        return self.model
+            dev_id = getattr(entry, "device_id", None)
+            if isinstance(dev_id, str) and dev_id:
+                device = dev_reg.async_get(dev_id)
+        except Exception:
+            device = None
+        # Selection exclusively via Device-Registry
+        try:
+            _LOGGER.debug(
+                "better_thermostat %s: device registry -> manufacturer=%s model=%s model_id=%s name=%s identifiers=%s",
+                self.device_name,
+                getattr(device, "manufacturer", None),
+                getattr(device, "model", None),
+                getattr(device, "model_id", None),
+                getattr(device, "name", None),
+                list(getattr(device, "identifiers", []) or []),
+            )
+        except Exception:
+            pass
+
+        dev_model_id = getattr(device, "model_id", None)
+        if isinstance(dev_model_id, str) and len(dev_model_id.strip()) >= 2:
+            selected = dev_model_id.strip()
+            source = "devreg.model_id"
+        else:
+            model_str = getattr(device, "model", None)
+            _LOGGER.debug(
+                "better_thermostat %s: device.model raw='%s'",
+                self.device_name,
+                model_str,
+            )
+            if isinstance(model_str, str) and model_str.strip():
+                # Extract model before parentheses: "MODEL (Desc)" -> "MODEL"
+                model_clean: str = re.sub(r"\s*\(.*\)\s*$", "", model_str).strip()
+                if len(model_clean) >= 2:
+                    selected = model_clean
+                    source = "devreg.model(before_parens)"
+                elif len(model_str.strip()) >= 2:
+                    selected = model_str.strip()
+                    source = "devreg.model"
+    except Exception:
+        # swallow registry access issues and continue to fallback
+        pass
+
+    # Final fallback: configured model, then generic
+    if not selected and isinstance(self.model, str) and len(self.model.strip()) >= 2:
+        selected = self.model.strip()
+        source = "config.model"
+    if not selected:
+        selected = "generic"
+        source = "default"
+
+    _LOGGER.debug(
+        "better_thermostat %s: get_device_model(%s) selected='%s' via %s",
+        self.device_name,
+        entity_id,
+        selected,
+        source,
+    )
+    return selected
