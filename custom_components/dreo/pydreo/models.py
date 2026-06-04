@@ -20,6 +20,7 @@ from .constant import (
     VERTICAL_ANGLE_RANGE,
     DreoACMode,
     DreoACFanMode,
+    FANON_KEY,
     POWERON_KEY,
 )
 
@@ -198,8 +199,14 @@ def _htf007s_mcu_override(device) -> None:
 
 
 def _hpf017s_power_override(device) -> None:
-    """Use poweron commands for DR-HPF017S even though REST state reports fanon."""
+    """Use poweron commands for DR-HPF017S even though REST state reports fanon.
+
+    This device sends fanon in both REST state and websocket updates, but must
+    be commanded via poweron.  Set _power_on_key for commands and
+    _power_state_key so websocket state updates are read from fanon.
+    """
     device._power_on_key = POWERON_KEY  # pylint: disable=protected-access
+    device._power_state_key = FANON_KEY  # pylint: disable=protected-access
 
 
 SUPPORTED_DEVICES = {
@@ -258,6 +265,16 @@ SUPPORTED_DEVICES = {
         ],
         device_ranges={SPEED_RANGE: (1, 12)},
     ),
+    "DR-HTF518S": DreoDeviceDetails(
+        device_type=DreoDeviceType.TOWER_FAN,
+        preset_modes=[
+            ("normal", 1),
+            ("natural", 2),
+            ("sleep", 3),
+            ("auto", 4),
+        ],
+        device_ranges={SPEED_RANGE: (1, 9)},
+    ),
     # Air Circulators
     "DR-HAF": DreoDeviceDetails(device_type=DreoDeviceType.AIR_CIRCULATOR),
     "DR-HAF004S": DreoDeviceDetails(
@@ -288,6 +305,7 @@ SUPPORTED_DEVICES = {
     ),
     "DR-HPF017S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
+        device_ranges={SPEED_RANGE: (1, 12)},
         override_fn=_hpf017s_power_override,
     ),
     "DR-HPF007S": DreoDeviceDetails(
@@ -316,6 +334,7 @@ SUPPORTED_DEVICES = {
     # Ceiling Fans
     "DR-HCF": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN),
     "DR-HCF002S": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN, device_ranges={SPEED_RANGE: (1, 12)}),
+    "DR-HCF521S": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN, device_ranges={SPEED_RANGE: (1, 12)}),
     # Air Purifiers
     "DR-HAP": DreoDeviceDetails(device_type=DreoDeviceType.AIR_PURIFIER),
     # Heaters

@@ -12,7 +12,7 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.1"
+VERSION = "0.5.2"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -21,7 +21,7 @@ COORDINATOR = "coordinator_mail"
 OVERLAY = ["overlay.png", "vignette.png", "white.png"]
 SERVICE_UPDATE_FILE_PATH = "update_file_path"
 CAMERA = "cameras"
-CONFIG_VER = 18
+CONFIG_VER = 19
 
 # Attributes
 ATTR_AMAZON_IMAGE = "amazon_image"
@@ -85,7 +85,7 @@ CONF_CUSTOM_DAYS = "custom_days"
 DEFAULT_CAMERA_NAME = "Mail USPS Camera"
 DEFAULT_NAME = "Mail And Packages"
 DEFAULT_PORT = "993"
-DEFAULT_FOLDER = '"INBOX"'
+DEFAULT_FOLDER = "INBOX"
 DEFAULT_PATH = "custom_components/mail_and_packages/images/"
 DEFAULT_IMAGE_SECURITY = True
 DEFAULT_IMAP_TIMEOUT = 60
@@ -283,20 +283,20 @@ AMAZON_DELIEVERED_BY_OTHERS_SEARCH_TEXT = ["AMAZON"]
 SENSOR_DATA = {
     # USPS
     "usps_delivered": {
-        "email": ["auto-reply@usps.com"],
+        "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
         "subject": ["Item Delivered"],
     },
     "usps_delivering": {
-        "email": ["auto-reply@usps.com"],
+        "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
         "subject": ["Expected Delivery on", "Out for Delivery"],
         "body": ["Your item is out for delivery"],
     },
     "usps_exception": {
-        "email": ["auto-reply@usps.com"],
+        "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
         "subject": ["Delivery Exception"],
     },
     "usps_packages": {
-        "email": ["auto-reply@usps.com"],
+        "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
         "subject": ["Expected Delivery by"],
     },
     "usps_tracking": {"pattern": ["9[2345]\\d{15,26}"]},
