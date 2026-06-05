@@ -11,19 +11,22 @@ condition:
     entity_id: group.parents
     state: "home"
 action:
-  - if:
+  - alias: Check if Spotify is playing
+    if:
       - condition: state
         entity_id: media_player.spotify_miguel
         state: "playing"
     then:
-      - action: script.awtrix3customapp
+      - alias: Send current song to Awtrix
+        action: script.awtrix3customapp
         data:
           app_id: spotify
           text: "{{states.media_player.spotify_miguel.attributes.media_title}}"
           icon: "12676"
           repeat: 1
     else:
-      - action: script.awtrix3delapp
+      - alias: Remove app from Awtrix
+        action: script.awtrix3delapp
         data:
           app_id: spotify
-mode: single
+mode: restart
