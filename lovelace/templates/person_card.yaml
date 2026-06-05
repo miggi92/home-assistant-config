@@ -5,68 +5,72 @@ person_card_template:
     - title: Person Info
     - id: miguel
     - watch: default
+    - watch_beacon: default
     - korbchen: default
+    - beacon: default
+    - eta_work: default
+    - eta_home: default
   card:
     type: custom:mushroom-template-card
     entity_id: "[[entity]]"
     icon: mdi:account
     layout: horizontal
-    primary: |-
-      {{ state_attr("[[entity]]","friendly_name") }}
+    primary: '{{ state_attr("[[entity]]", "friendly_name") }}'
     secondary: |-
-      {% set koerbchen = states("[[korbchen]]") %}
-      {% set state =  states("[[entity]]")  | slugify %}
-      {% set roomState =  states("[[beacon]]") %}
-      {% set floor = state_attr("[[beacon]]", 'floor_name') %}
-      {% set lastChanged = states["[[entity]]"].last_changed %}
-      {% if state == "home" %}
-        {%- if roomState != "unknown" and roomState != "not_home" %}
-        {{ roomState }} - {{ floor }}
-        {%- elif koerbchen == "on" %}
+      {% set basket_state = states("[[korbchen]]") %}
+      {% set current_state = states("[[entity]]") | slugify %}
+      {% set room_state = states("[[beacon]]") %}
+      {% set floor_name = state_attr("[[beacon]]", "floor_name") %}
+      {% set last_changed_time = states["[[entity]]"].last_changed %}
+      {% if current_state == "home" %}
+        {%- if room_state not in ["unknown", "not_home"] %}
+          {{ room_state }} - {{ floor_name }}
+        {%- elif basket_state == "on" %}
           Körbchen
         {%- endif %}
-      Zu Hause seit {{ relative_time(lastChanged) }}
-      {% elif state == "work_silke" or state == "work_miguel" %}
-        Arbeiten seit {{ relative_time(lastChanged) }}
-      {% elif "handball" in state %}
-        Beim Handball seit {{ relative_time(lastChanged) }}
-      {% elif state == "not_home" %}
-        Abwesend seit {{ relative_time(lastChanged) }}
+        Zu Hause seit {{ relative_time(last_changed_time) }}
+      {% elif current_state in ["work_silke", "work_miguel"] %}
+        Arbeiten seit {{ relative_time(last_changed_time) }}
+      {% elif "handball" in current_state %}
+        Beim Handball seit {{ relative_time(last_changed_time) }}
+      {% elif current_state == "not_home" %}
+        Abwesend seit {{ relative_time(last_changed_time) }}
       {% else %}
-        {{ states("[[entity]]") }} seit {{ relative_time(lastChanged) }}
+        {{ states("[[entity]]") }} seit {{ relative_time(last_changed_time) }}
       {% endif %}
     multiline_secondary: true
     picture: |-
-      {% set driving = states("binary_sensor.[[phone]]_android_auto") %}
-      {% set activity = states("sensor.[[phone]]_detected_activity") %}
-      {% set state =  states("[[entity]]") %}
-      {% if driving == "on" or activity == "in_vehicle" %}
-        /local/images/persons/{{"[[id]]"}}/auto.png
-      {% elif state == "work_silke" or state == "work_miguel" %}
-        /local/images/persons/{{"[[id]]"}}/work.png
-      {% elif "handball" in state %}
-        /local/images/persons/{{"[[id]]"}}/sport.png
-      {% elif state == "rewe" or "dm" in state  or "getranke" in state %}
-        /local/images/persons/{{"[[id]]"}}/shopping.png
+      {% set is_driving = states("binary_sensor.[[phone]]_android_auto") %}
+      {% set current_activity = states("sensor.[[phone]]_detected_activity") %}
+      {% set current_state = states("[[entity]]") %}
+      {% if is_driving == "on" or current_activity == "in_vehicle" %}
+        /local/images/persons/[[id]]/auto.png
+      {% elif current_state in ["work_silke", "work_miguel"] %}
+        /local/images/persons/[[id]]/work.png
+      {% elif "handball" in current_state %}
+        /local/images/persons/[[id]]/sport.png
+      {% elif current_state == "rewe" or "dm" in current_state or "getranke" in current_state %}
+        /local/images/persons/[[id]]/shopping.png
       {% else %}
-        /local/images/persons/{{"[[id]]"}}.jpg
+        /local/images/persons/[[id]].jpg
       {% endif %}
     badge_icon: |-
-      {% set state = states("[[entity]]") | slugify %}
-      {% set zoneIcon = state_attr("zone." + state, "icon") %}
-      {% if state == "home" %}
+      {% set current_state = states("[[entity]]") | slugify %}
+      {% set zone_icon = state_attr("zone." ~ current_state, "icon") %}
+      {% if current_state == "home" %}
         mdi:home
-      {% elif state == "not_home" %}
+      {% elif current_state == "not_home" %}
         mdi:run
+      {% elif zone_icon %}
+        {{ zone_icon }}
       {% else %}
-        {{ zoneIcon }}
+        mdi:map-marker
       {% endif %}
     badge_color: |-
-      {% set state = states("[[entity]]") | slugify %}
-      {% set zoneIcon = state_attr("zone." + state, "icon") %}
-      {% if state == "home" %}
+      {% set current_state = states("[[entity]]") | slugify %}
+      {% if current_state == "home" %}
         green
-      {% elif state == "not_home" %}
+      {% elif current_state == "not_home" %}
         red
       {% else %}
         grey
@@ -95,44 +99,115 @@ person_card_template:
                 conditions:
                   - entity: "[[entity]]"
                     state: home
-                  - entity: "device_tracker.[[phone]]_gps"
+                  - entity: "device_tracker.[[phone]]"
                     state: home
                 card:
-                  type: glance
-                  entities:
-                    - entity: "[[beacon]]"
-                      name: Raum
-                    - entity: "[[eta_work]]"
-                      name: ETA Work
-                    - entity: "sensor.[[phone]]_geocoded_location"
-                      name: Location
-                    - entity: "sensor.[[phone]]_battery_level"
-                      name: Battery
-                    - entity: "sensor.[[phone]]_wi_fi_connection"
-                      name: WiFi
-                  show_name: true
-                  show_icon: true
-                  show_state: true
+                  type: custom:mushroom-chips-card
+                  alignment: center
+                  chips:
+                    - type: entity
+                      entity: "[[beacon]]"
+                      icon: mdi:bluetooth
+                    - type: entity
+                      entity: "[[eta_work]]"
+                      icon: mdi:car-clock
+                    - type: template
+                      entity: "sensor.[[phone]]_battery_level"
+                      content: '{{ states("sensor.[[phone]]_battery_level") }} %'
+                      icon: |-
+                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                        {% if bat >= 90 %} mdi:battery
+                        {% elif bat >= 80 %} mdi:battery-80
+                        {% elif bat >= 60 %} mdi:battery-60
+                        {% elif bat >= 40 %} mdi:battery-40
+                        {% elif bat >= 20 %} mdi:battery-20
+                        {% else %} mdi:battery-outline
+                        {% endif %}
+                      icon_color: |-
+                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                        {% if bat >= 50 %}
+                          green
+                        {% elif bat >= 20 %}
+                          orange
+                        {% elif bat >= 0 %}
+                          red
+                        {% else %}
+                          grey
+                        {% endif %}
+                      tap_action:
+                        action: more-info
+                    - type: template
+                      entity: "sensor.[[phone]]_wi_fi_connection"
+                      content: |-
+                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                        {% if wifi == "<not connected>" or wifi == "unknown" %}
+                          Off
+                        {% else %}
+                          {{ wifi | truncate(10, true, '...') }}
+                        {% endif %}
+                      icon: |-
+                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                        {% if wifi == "<not connected>" or wifi == "unknown" %}
+                          mdi:wifi-off
+                        {% else %}
+                          mdi:wifi
+                        {% endif %}
               - type: conditional
                 conditions:
                   - entity: "[[entity]]"
                     state_not: home
-                  - entity: "device_tracker.[[phone]]_gps"
+                  - entity: "device_tracker.[[phone]]"
                     state: not_home
                 card:
-                  type: glance
-                  entities:
-                    - entity: "[[eta_home]]"
-                      name: ETA Home
-                    - entity: "sensor.[[phone]]_geocoded_location"
-                      name: Location
-                    - entity: "sensor.[[phone]]_battery_level"
-                      name: Battery
-                    - entity: "sensor.[[phone]]_wifi_connection"
-                      name: WiFi
-                  show_name: true
-                  show_icon: true
-                  show_state: true
+                  type: custom:mushroom-chips-card
+                  alignment: center
+                  chips:
+                    - type: entity
+                      entity: "[[eta_home]]"
+                      icon: mdi:home-clock
+                    - type: entity
+                      entity: "sensor.[[phone]]_geocoded_location"
+                    - type: template
+                      entity: "sensor.[[phone]]_battery_level"
+                      content: '{{ states("sensor.[[phone]]_battery_level") }} %'
+                      icon: |-
+                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                        {% if bat >= 90 %} mdi:battery
+                        {% elif bat >= 80 %} mdi:battery-80
+                        {% elif bat >= 60 %} mdi:battery-60
+                        {% elif bat >= 40 %} mdi:battery-40
+                        {% elif bat >= 20 %} mdi:battery-20
+                        {% else %} mdi:battery-outline
+                        {% endif %}
+                      icon_color: |-
+                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                        {% if bat >= 50 %}
+                          green
+                        {% elif bat >= 20 %}
+                          orange
+                        {% elif bat >= 0 %}
+                          red
+                        {% else %}
+                          grey
+                        {% endif %}
+                      tap_action:
+                        action: more-info
+                    - type: template
+                      entity: "sensor.[[phone]]_wi_fi_connection"
+                      content: |-
+                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                        {% if wifi == "<not connected>" or wifi == "unknown" %}
+                          Off
+                        {% else %}
+                          {{ wifi | truncate(10, true, '...') }}
+                        {% endif %}
+                      icon: |-
+                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                        {% if wifi == "<not connected>" or wifi == "unknown" %}
+                          mdi:wifi-off
+                        {% else %}
+                          mdi:wifi
+                        {% endif %}
               - type: conditional
                 conditions:
                   - entity: "input_boolean.[[id]]_has_swatch"
@@ -142,19 +217,41 @@ person_card_template:
                   cards:
                     - type: custom:mushroom-title-card
                       subtitle: Smartwatch
-                    - type: glance
-                      entities:
-                        - entity: "[[watch_beacon]]"
-                          name: Raum
-                        - entity: "sensor.[[watch]]_heart_rate"
-                          name: BPM
-                        - entity: "sensor.[[watch]]_daily_steps"
-                          name: Steps
-                        - entity: "sensor.[[watch]]_battery_level"
-                          name: Battery
-                      show_name: true
-                      show_icon: true
-                      show_state: true
+                    - type: custom:mushroom-chips-card
+                      alignment: center
+                      chips:
+                        - type: entity
+                          entity: "[[watch_beacon]]"
+                          icon: mdi:bluetooth
+                        - type: entity
+                          entity: "sensor.[[watch]]_heart_rate"
+                        - type: entity
+                          entity: "sensor.[[watch]]_daily_steps"
+                        - type: template
+                          entity: "sensor.[[watch]]_battery_level"
+                          content: '{{ states("sensor.[[watch]]_battery_level") }} %'
+                          icon: |-
+                            {% set bat = states("sensor.[[watch]]_battery_level") | int(-1) %}
+                            {% if bat >= 90 %} mdi:battery
+                            {% elif bat >= 80 %} mdi:battery-80
+                            {% elif bat >= 60 %} mdi:battery-60
+                            {% elif bat >= 40 %} mdi:battery-40
+                            {% elif bat >= 20 %} mdi:battery-20
+                            {% else %} mdi:battery-outline
+                            {% endif %}
+                          icon_color: |-
+                            {% set bat = states("sensor.[[watch]]_battery_level") | int(-1) %}
+                            {% if bat >= 50 %}
+                              green
+                            {% elif bat >= 20 %}
+                              orange
+                            {% elif bat >= 0 %}
+                              red
+                            {% else %}
+                              grey
+                            {% endif %}
+                          tap_action:
+                            action: more-info
               - type: map
                 entities:
                   - entity: "[[entity]]"
