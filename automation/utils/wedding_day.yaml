@@ -12,15 +12,15 @@ condition:
     conditions:
       - condition: template
         value_template: |-
-          {{ states(trigger.entity_id) == 0 }}
+          {{ states(trigger.entity_id) | int(0) == 0 }}
       - condition: template
         value_template: |-
-          {{ states(trigger.entity_id) >= 363 }}
+          {{ states(trigger.entity_id) | int(0) >= 363 }}
 action:
   - if:
       - condition: template
         value_template: |-
-          {{ states(trigger.entity_id) == 0 }}
+          {{ states(trigger.entity_id) | int(0) == 0 }}
     then:
       - service: switch.turn_on
         data: {}
