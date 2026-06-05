@@ -5,42 +5,34 @@ trigger:
   - platform: state
     entity_id:
       - weather.home
-condition: []
+condition:
+  - alias: Check if TV is turned on
+    condition: state
+    entity_id: media_player.fernseher_im_wohnzimmer
+    state: "on"
 action:
   - service: notify.tvoverlaynotifyfixed
     data:
       data:
         id: fixed_weather
         icon: >-
-          {% if is_state("weather.home","sunny") %}
-          mdi:weather-sunny
-          {% elif is_state("weather.home","clear-night") %}
-          mdi:weather-night
-          {% elif is_state("weather.home","rainy") %}
-          mdi:weather-rainy
-          {% elif is_state("weather.home","snowy") %}
-          mdi:weather-snowy
-          {% elif is_state("weather.home", "snowy-rainy") %}
-          mdi:weather-snowy-rainy
-          {% elif is_state("weather.home","fog") %}
-          mdi:weather-fog
-          {% elif is_state("weather.home","sleet") %}
-          mdi:weather-partly-snowy-rainy
-          {% elif is_state("weather.home","wind") %}
-          mdi:weather-windy
-          {% elif is_state("weather.home","cloudy") %}
-          mdi:weather-cloudy
-          {% elif is_state("weather.home","partlycloudy") %}
-          mdi:weather-partly-cloudy
-          {% elif is_state("weather.home","partlycloudy-night") %}
-          mdi:weather-night-partly-cloudy
-          {% elif is_state("weather.home","hail") %}
-          mdi:weather-hail
-          {% elif is_state("weather.home","lightning") %}
-          mdi:weather-lightning
-          {% elif is_state("weather.home","thunderstorm") %}
-          mdi:weather-lightning-rainy
-          {% endif %}
+          {% set weather_icons = {
+            'sunny': 'mdi:weather-sunny',
+            'clear-night': 'mdi:weather-night',
+            'rainy': 'mdi:weather-rainy',
+            'snowy': 'mdi:weather-snowy',
+            'snowy-rainy': 'mdi:weather-snowy-rainy',
+            'fog': 'mdi:weather-fog',
+            'sleet': 'mdi:weather-partly-snowy-rainy',
+            'wind': 'mdi:weather-windy',
+            'cloudy': 'mdi:weather-cloudy',
+            'partlycloudy': 'mdi:weather-partly-cloudy',
+            'partlycloudy-night': 'mdi:weather-night-partly-cloudy',
+            'hail': 'mdi:weather-hail',
+            'lightning': 'mdi:weather-lightning',
+            'thunderstorm': 'mdi:weather-lightning-rainy'
+          } %}
+          {{ weather_icons.get(states('weather.home'), 'mdi:weather-cloudy') }}
         expiration: 12h
         shape: circle
       message: "{{ state_attr('weather.home', 'temperature')  | round }}°"
