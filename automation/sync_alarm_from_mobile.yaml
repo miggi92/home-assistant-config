@@ -8,7 +8,7 @@ trigger:
     entity_id: sensor.pixel_9_pro_next_alarm
     id: miguel
   - platform: state
-    entity_id: sensor.silke_handy_next_alarm
+    entity_id: sensor.pixel_10_pro_next_alarm
     id: silke
 condition:
   - alias: "Prüfen ob der Status nicht 'unavailable' oder 'unknown' ist"

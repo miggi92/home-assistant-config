@@ -26,10 +26,10 @@ cards:
           - work_zone: zone.work_silke
           - eta_work: sensor.silke_eta_work
           - eta_home: sensor.silke_eta_home
-          - phone: silke_handy
+          - phone: pixel_10_pro
           - watch: silke_uhr
           - id: silke
-          - beacon: sensor.ibeacon_silke_handy_area
+          - beacon: sensor.ibeacon_pixel_10_pro_area
   - type: horizontal-stack
     cards:
       - type: custom:decluttering-card

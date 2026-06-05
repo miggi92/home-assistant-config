@@ -12,7 +12,7 @@ trigger:
   - platform: state
     entity_id:
       - binary_sensor.pixel_9_pro_android_auto
-      - binary_sensor.silke_handy_android_auto
+      - binary_sensor.pixel_10_pro_android_auto
     to: "on"
     id: "trigger_car_active"
     alias: "Immediate trigger when Android Auto connects"
@@ -36,7 +36,7 @@ action:
         {% set dt = states('sensor.fordpass_tourneo_lastrefresh') | as_datetime %}
         {% set last = dt if dt != None else (now() - timedelta(days=1)) %}
         {{ (now() - last).total_seconds() }}
-      is_driving: "{{ is_state('binary_sensor.pixel_9_pro_android_auto', 'on') or is_state('binary_sensor.silke_handy_android_auto', 'on') }}"
+      is_driving: "{{ is_state('binary_sensor.pixel_9_pro_android_auto', 'on') or is_state('binary_sensor.pixel_10_pro_android_auto', 'on') }}"
       is_away: "{{ not is_state('device_tracker.fordpass_tourneo', 'home') }}"
       is_charging: "{{ is_state('sensor.fordpass_tourneo_elvehcharging','IN_PROGRESS') }}"
       interval_active: 15
