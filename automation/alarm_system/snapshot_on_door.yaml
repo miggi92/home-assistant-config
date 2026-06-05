@@ -63,4 +63,5 @@ action:
       duration: 5
       filename: "{{ file_path }}"
 
-mode: single
+mode: queued
+max: 5

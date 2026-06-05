@@ -16,4 +16,5 @@ action:
       text: "{{ trigger.event.data.airport_origin_city }} -> {{ trigger.event.data.airport_destination_city }}"
       icon: "8879"
       repeat: 2
-mode: single
+mode: queued
+max: 5
