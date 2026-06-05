@@ -7,11 +7,6 @@ subview: true
 type: sections
 max_columns: 3
 badges:
-  - type: custom:mushroom-template-badge
-    icon: mdi:arrow-left
-    tap_action:
-      action: navigate
-      navigation_path: start
   - type: entity
     entity: sensor.calendar_location_time
     name: Fahrzeit
