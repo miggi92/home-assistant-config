@@ -284,7 +284,8 @@
     "weeksOnChart": "Wochen in den Charts",
     "weeksShort": "Wo.",
     "moreAwards": "weitere",
-    "playerNotFound": "Spieler nicht gefunden"
+    "playerNotFound": "Spieler nicht gefunden",
+    "autoAdvanceAria": "Countdown bis zur nächsten Runde"
   },
   "leaderboard": {
     "title": "Rangliste",
@@ -646,6 +647,7 @@
     "pagination": "Seite {current} von {total}"
   },
   "dashboard": {
+    "autoAdvance": "Auto-Weiter",
     "title": "Beatify - Dashboard",
     "connecting": "Verbinde zum Spiel...",
     "noActiveGame": "Kein aktives Spiel",
@@ -685,7 +687,9 @@
     "furthestGuess": "Am weitesten daneben",
     "noSubmissions": "Keine Antworten in dieser Runde",
     "noGuesses": "Keine Tipps",
-    "histogram": "Antwort-Verteilung"
+    "histogram": "Antwort-Verteilung",
+    "guessAxis": "Wo alle getippt haben",
+    "youMarker": "(DU)"
   },
   "artistChallenge": {
     "whoSings": "Wer singt diesen Song?",
@@ -884,7 +888,7 @@
       "sub": "Optional. Beatify funktioniert auch ohne.",
       "lights": {
         "title": "Party-Licht",
-        "desc": "Synchronisiere deine Hue-Lampen zum Beat. Puls bei Rundenwechsel, Blitz beim Sieger.",
+        "desc": "Synchronisiere deine smarten Lampen zum Beat. Puls bei Rundenwechsel, Blitz beim Sieger.",
         "unavailable": "Keine Lampen in Home Assistant gefunden.",
         "pickLabel": "Lampen zum Synchronisieren",
         "searchPlaceholder": "Lampen suchen…",

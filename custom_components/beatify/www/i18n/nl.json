@@ -284,7 +284,8 @@
     "weeksOnChart": "weken in de hitlijst",
     "weeksShort": "wk",
     "moreAwards": "meer",
-    "playerNotFound": "Speler niet gevonden"
+    "playerNotFound": "Speler niet gevonden",
+    "autoAdvanceAria": "Aftellen tot de volgende ronde"
   },
   "leaderboard": {
     "title": "Scorebord",
@@ -646,6 +647,7 @@
     "pagination": "Pagina {current} van {total}"
   },
   "dashboard": {
+    "autoAdvance": "Auto-volgende",
     "title": "Beatify - Dashboard",
     "connecting": "Verbinden met spel...",
     "noActiveGame": "Geen actief spel",
@@ -685,7 +687,9 @@
     "furthestGuess": "Meest ernaast",
     "noSubmissions": "Geen inzendingen deze ronde",
     "noGuesses": "Geen gokken",
-    "histogram": "Verdeling van gokken"
+    "histogram": "Verdeling van gokken",
+    "guessAxis": "Waar iedereen gokte",
+    "youMarker": "(JIJ)"
   },
   "artistChallenge": {
     "whoSings": "Wie zingt dit nummer?",
@@ -884,7 +888,7 @@
       "sub": "Optioneel. Beatify werkt ook zonder.",
       "lights": {
         "title": "Partylicht",
-        "desc": "Synchroniseer je Hue-lampen op het ritme. Puls bij ronde-wissel, flits bij winnaar.",
+        "desc": "Synchroniseer je slimme lampen op het ritme. Puls bij ronde-wissel, flits bij winnaar.",
         "unavailable": "Geen lampen gevonden in Home Assistant.",
         "pickLabel": "Lampen om te synchroniseren",
         "searchPlaceholder": "Lampen zoeken…",

@@ -284,7 +284,8 @@
     "weeksOnChart": "weeks on chart",
     "weeksShort": "wks",
     "moreAwards": "more",
-    "playerNotFound": "Player not found"
+    "playerNotFound": "Player not found",
+    "autoAdvanceAria": "Next round countdown"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -646,6 +647,7 @@
     "pagination": "Page {current} of {total}"
   },
   "dashboard": {
+    "autoAdvance": "Auto-advance",
     "title": "Beatify - Dashboard",
     "connecting": "Connecting to game...",
     "noActiveGame": "No active game",
@@ -685,7 +687,9 @@
     "furthestGuess": "Most off",
     "noSubmissions": "No submissions this round",
     "noGuesses": "No guesses",
-    "histogram": "Guess distribution"
+    "histogram": "Guess distribution",
+    "guessAxis": "Where everyone guessed",
+    "youMarker": "(YOU)"
   },
   "artistChallenge": {
     "whoSings": "Who sings this song?",
@@ -884,7 +888,7 @@
       "sub": "Optional. Skip all of this and Beatify still works.",
       "lights": {
         "title": "Party lights",
-        "desc": "Sync your Hue lights to the beat. Pulse on round changes, flash on winner.",
+        "desc": "Sync your smart lights to the beat. Pulse on round changes, flash on winner.",
         "unavailable": "No lights found in Home Assistant.",
         "pickLabel": "Lights to sync",
         "searchPlaceholder": "Search lights…",
