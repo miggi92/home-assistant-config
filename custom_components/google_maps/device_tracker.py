@@ -10,8 +10,7 @@ from functools import partial
 import logging
 from typing import Any, cast
 
-from homeassistant.components.device_tracker import DOMAIN as DT_DOMAIN
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker import DOMAIN as DT_DOMAIN, TrackerEntity
 from homeassistant.const import ATTR_BATTERY_CHARGING
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
