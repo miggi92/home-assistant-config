@@ -33,7 +33,7 @@ badges:
       action: navigate
       navigation_path: dwd
   - type: entity
-    entity: sensor.aussen_leingarten_kleindungsempfehlung
+    entity: sensor.aussen_home_kleidungsempfehlung
 sections:
   - type: grid
     cards:
