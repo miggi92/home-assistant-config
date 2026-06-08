@@ -61,6 +61,19 @@ sections:
       - type: conditional
         conditions:
           - condition: state
+            entity: sensor.fifa_wm
+            state_not: "NOT_FOUND"
+        card:
+          type: custom:teamtracker-card
+          entity: sensor.fifa_wm
+          outline: true
+          outline_color: lightgray
+          show_timeouts: false
+          show_rank: true
+          home_side: left
+      - type: conditional
+        conditions:
+          - condition: state
             entity: sensor.team_tracker_vfb
             state_not: "NOT_FOUND"
         card:
