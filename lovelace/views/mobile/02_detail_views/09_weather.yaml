@@ -65,14 +65,19 @@ sections:
           {% else %}
           🟣 Extrem - Vermeide die Sonne, LSF 50+
           {% endif %}
+
+          Zeit ohne Schutz zwischen {{ states('sensor.openuv_hauttyp_1_eigenschutzzeit') }} und {{ states('sensor.openuv_hauttyp_3_eigenschutzzeit') }} min
         icon: mdi:white-balance-sunny
         multiline_secondary: true
+        layout: vertical
         color: >
           {% set uv = states('sensor.openuv_aktueller_uv_index') | float(0) %} {% if uv
           < 3 %} green {% elif uv < 6 %} yellow {% elif uv < 8 %} orange {% elif uv < 11
           %} red {% else %} purple {% endif %}
-        vertical: true
         entity: sensor.openuv_aktueller_uv_index
+        grid_options:
+          columns: full
+          rows: auto
 
   - type: grid
     cards:
