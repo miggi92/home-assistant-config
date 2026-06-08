@@ -9,7 +9,7 @@ condition:
   - alias: Check if TV is turned on
     condition: state
     entity_id: media_player.fernseher_im_wohnzimmer
-    state: "on"
+    state: "playing"
 action:
   - service: notify.tvoverlaynotifyfixed
     data:
