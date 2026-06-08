@@ -1,0 +1,17 @@
+---
+#
+title: Keller
+path: room-ug-keller
+icon: mdi:home-floor-b
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []
