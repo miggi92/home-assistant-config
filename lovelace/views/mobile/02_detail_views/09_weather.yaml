@@ -32,6 +32,8 @@ badges:
     tap_action:
       action: navigate
       navigation_path: dwd
+  - type: entity
+    entity: sensor.aussen_leingarten_kleindungsempfehlung
 sections:
   - type: grid
     cards:
