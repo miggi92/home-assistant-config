@@ -50,6 +50,29 @@ sections:
         entity: weather.home
         forecast_type: hourly
         forecast_slots: 5
+      - type: custom:mushroom-template-card
+        primary: "UV Index: {{ states('sensor.openuv_aktueller_uv_index') }}"
+        secondary: >
+          {% set uv = states('sensor.openuv_aktueller_uv_index') | float(0) %}
+          {% if uv < 3 %}
+          🟢 Niedrig - Kein Schutz notwendig
+          {% elif uv < 6 %}
+          🟡 Mittel - Bleib im Schatten, benutze LSF 30
+          {% elif uv < 8 %}
+          🟠 Hoch - LSF 30+, zieh Hut und Sonnenbrille an
+          {% elif uv < 11 %}
+          🔴 Sehr hoch - LSF 50+, Schutzkleidung
+          {% else %}
+          🟣 Extrem - Vermeide die Sonne, LSF 50+
+          {% endif %}
+        icon: mdi:white-balance-sunny
+        multiline_secondary: true
+        color: >
+          {% set uv = states('sensor.openuv_aktueller_uv_index') | float(0) %} {% if uv
+          < 3 %} green {% elif uv < 6 %} yellow {% elif uv < 8 %} orange {% elif uv < 11
+          %} red {% else %} purple {% endif %}
+        vertical: true
+        entity: sensor.openuv_aktueller_uv_index
 
   - type: grid
     cards:
