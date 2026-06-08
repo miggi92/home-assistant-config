@@ -133,6 +133,25 @@ routes:
       [[[
         return window.innerWidth <= 768;
       ]]]
+  - icon: mdi:devices
+    tap_action: { action: open-popup }
+    label: Details
+    popup:
+      - icon: mdi:crane
+        url: /lovelace-mobile/details-bau
+        label: Hausbau
+      - icon: mdi:weather-partly-snowy-rainy
+        url: /lovelace-mobile/details-weather
+        label: Wetter
+    selected: |
+      [[[
+        const path = window.location.pathname;
+        return path.startsWith('/lovelace-mobile/details-');
+      ]]]
+    hidden: |
+      [[[
+        return window.innerWidth <= 768;
+      ]]]
   - url: /lovelace-mobile/miguel
     icon: mdi:cog
     label: "Profil"

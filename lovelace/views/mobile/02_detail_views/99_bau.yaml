@@ -1,6 +1,6 @@
 ---
 title: Hausbau
-path: bau
+path: details-bau
 icon: mdi:home
 subview: true
 type: sections

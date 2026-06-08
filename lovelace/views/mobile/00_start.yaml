@@ -256,7 +256,7 @@ sections:
             template: navigation_card_template
             variables:
               - title: Hausbau
-              - nav_path: bau
+              - nav_path: details-bau
               - icon: mdi:crane
               - icon_color: yellow
           - type: conditional
@@ -276,7 +276,7 @@ sections:
             variables:
               - title: Wetter
               - icon: mdi:weather-partly-snowy-rainy
-              - nav_path: weather
+              - nav_path: details-weather
           - type: custom:decluttering-card
             template: navigation_card_template
             variables:
