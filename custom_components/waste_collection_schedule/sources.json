@@ -1762,6 +1762,12 @@
       "id": "umweltverbaende_at"
     },
     {
+      "title": "Dienten am Hochk\u00f6nig",
+      "module": "dienten_gv_at",
+      "default_params": {},
+      "id": "dienten_gv_at"
+    },
+    {
       "title": "Dobl-Zwaring",
       "module": "citiesapps_com",
       "default_params": {},
@@ -1790,6 +1796,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Ebergassing",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Eberndorf",
@@ -1888,6 +1900,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Feld am See",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Feldbach",
       "module": "citiesapps_com",
       "default_params": {},
@@ -1931,6 +1949,18 @@
     },
     {
       "title": "Finkenstein am Faaker See",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Fischamend",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Flattach",
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
@@ -1988,6 +2018,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Fresach",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Friedberg",
@@ -2092,6 +2128,12 @@
       "id": "umweltverbaende_at"
     },
     {
+      "title": "Gerasdorf bei Wien",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Gersdorf an der Feistritz",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2168,6 +2210,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Gramatneusiedl",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Gratkorn",
@@ -2384,6 +2432,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Haslau-Maria Ellend",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Hausmannst\u00e4tten",
       "module": "hausmannstaetten_gv_at",
       "default_params": {},
@@ -2444,6 +2498,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Himberg",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Hirm",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2472,6 +2532,14 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_abfallv_zerowaste_io"
+    },
+    {
+      "title": "Holding Graz",
+      "module": "abfall_io_graphql",
+      "default_params": {
+        "key": "1c230a689579b6d3ddb9ceb5a56c6072"
+      },
+      "id": "abfall_io_graphql"
     },
     {
       "title": "Hopfgarten im Brixental",
@@ -2656,6 +2724,12 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "Klein-Neusiedl",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Kleinm\u00fcrbisch",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2812,6 +2886,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Lanzendorf",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Leibnitz",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2840,6 +2920,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_gem2go_dev"
+    },
+    {
+      "title": "Leopoldsdorf",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Lesachtal",
@@ -2936,6 +3022,12 @@
       "module": "lipizzanerheimat_at",
       "default_params": {},
       "id": "lipizzanerheimat_at"
+    },
+    {
+      "title": "Maria Lanzendorf",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Maria Rain",
@@ -3094,6 +3186,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Moosbrunn",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Moosburg",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3239,6 +3337,12 @@
     },
     {
       "title": "Obertrum am See",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Obervellach",
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
@@ -3484,6 +3588,12 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "Rauchenwarth",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
       "title": "Rechnitz",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3647,6 +3757,12 @@
     },
     {
       "title": "Schwadorf",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Schwadorf",
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
@@ -3659,6 +3775,12 @@
     },
     {
       "title": "Schwaz",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Schwechat",
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
@@ -3704,6 +3826,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Seyring",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "Siegendorf",
@@ -3860,6 +3988,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "St. P\u00f6lten",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "St. Radegund bei Graz",
@@ -4462,6 +4596,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Zw\u00f6lfaxing",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_muellapp_com"
     },
     {
       "title": "\u00dcbelbach",
@@ -6126,6 +6266,12 @@
       "id": "sictom_lons_le_saunier_fr"
     },
     {
+      "title": "SIVOM de la Vall\u00e9e de l'Yerres et des S\u00e9narts",
+      "module": "sivom_com",
+      "default_params": {},
+      "id": "sivom_com"
+    },
+    {
       "title": "SIVOM Rive Droite",
       "module": "publidata_fr",
       "default_params": {
@@ -6837,6 +6983,12 @@
       "id": "heimat_info_de"
     },
     {
+      "title": "AJL - Abfallwirtschaftsgesellschaft Jerichower Land mbH",
+      "module": "ajl_mbh_de",
+      "default_params": {},
+      "id": "ajl_mbh_de"
+    },
+    {
       "title": "ALBA Berlin",
       "module": "abfall_io",
       "default_params": {
@@ -7205,6 +7357,14 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_mein_abfallkalender_online"
+    },
+    {
+      "title": "AWG Abfallwirtschaft Landkreis Calw",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "0813ea99f520c462373386564a99a51e"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "AWG Bassum",
@@ -12162,6 +12322,12 @@
       "id": "123abfallkalender_de"
     },
     {
+      "title": "RSAG Rhein-Sieg Abfallwirtschaftsgesellschaft",
+      "module": "rsag_de",
+      "default_params": {},
+      "id": "rsag_de"
+    },
+    {
       "title": "RSAG Rhein-Sieg-Kreis",
       "module": "muellmax_de",
       "default_params": {
@@ -12658,6 +12824,14 @@
         "regex": "OSB (.*)"
       },
       "id": "ics_osnabrueck_de"
+    },
+    {
+      "title": "Stadt Porta Westfalica",
+      "module": "abfallnavi_de",
+      "default_params": {
+        "service": "portawestfalica"
+      },
+      "id": "abfallnavi_de"
     },
     {
       "title": "Stadt Regensburg",
@@ -14479,6 +14653,12 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Comune.Digital",
+      "module": "comune_digital_it",
+      "default_params": {},
+      "id": "comune_digital_it"
     },
     {
       "title": "Comuni della Convenzione di Sesto Calende - Econord",
@@ -16777,6 +16957,12 @@
       "id": "napier_govt_nz"
     },
     {
+      "title": "New Plymouth District Council",
+      "module": "npdc_govt_nz",
+      "default_params": {},
+      "id": "npdc_govt_nz"
+    },
+    {
       "title": "Porirua City",
       "module": "poriruacity_govt_nz",
       "default_params": {},
@@ -18450,6 +18636,14 @@
       "id": "avfallsapp_se"
     },
     {
+      "title": "Teknik i V\u00e4st (Arvika/Eda)",
+      "module": "avfallsapp_se",
+      "default_params": {
+        "service_provider": "teknikivast"
+      },
+      "id": "avfallsapp_se"
+    },
+    {
       "title": "Telge \u00c5tervinning",
       "module": "telge_se",
       "default_params": {},
@@ -19542,6 +19736,20 @@
       "id": "iapp_itouchvision_com"
     },
     {
+      "title": "Babergh and Mid Suffolk District Councils",
+      "module": "babergh_midsuffolk_gov_uk",
+      "default_params": {},
+      "id": "babergh_midsuffolk_gov_uk"
+    },
+    {
+      "title": "Babergh District Council",
+      "module": "babergh_midsuffolk_gov_uk",
+      "default_params": {
+        "council": "babergh"
+      },
+      "id": "babergh_midsuffolk_gov_uk"
+    },
+    {
       "title": "Barnsley Metropolitan Borough Council",
       "module": "barnsley_gov_uk",
       "default_params": {},
@@ -20576,6 +20784,14 @@
       "id": "mid_devon_gov_uk"
     },
     {
+      "title": "Mid Suffolk District Council",
+      "module": "babergh_midsuffolk_gov_uk",
+      "default_params": {
+        "council": "midsuffolk"
+      },
+      "id": "babergh_midsuffolk_gov_uk"
+    },
+    {
       "title": "Mid Sussex District Council (Whitespace WRP)",
       "module": "midsussex_gov_uk",
       "default_params": {},
@@ -21304,6 +21520,12 @@
       "id": "tmbc_gov_uk"
     },
     {
+      "title": "Torbay Council",
+      "module": "torbay_council_gov_uk",
+      "default_params": {},
+      "id": "torbay_council_gov_uk"
+    },
+    {
       "title": "Torridge Council",
       "module": "torridge_gov_uk",
       "default_params": {},
@@ -21561,6 +21783,12 @@
     }
   ],
   "United States of America": [
+    {
+      "title": "Abilene, TX",
+      "module": "abilene_tx_us",
+      "default_params": {},
+      "id": "abilene_tx_us"
+    },
     {
       "title": "Albuquerque, New Mexico, USA",
       "module": "recyclecoach_com",

@@ -3,7 +3,7 @@ ignore: |
   automations.yaml
   skyqDefaultRoom.yaml
   blueprints/*/homeassistant/*.yaml
-  custom_components/
+  custom_components/*
   esphomeyaml/*/
   ip_bans.yaml
   notebooks/
