@@ -51,7 +51,7 @@ sections:
         forecast_type: hourly
         forecast_slots: 5
       - type: custom:mushroom-template-card
-        primary: "UV Index: {{ states('sensor.openuv_aktueller_uv_index') }}"
+        primary: "UV Index: {{ states('sensor.openuv_aktueller_uv_index') | float(0) | round(1) }}"
         secondary: >
           {% set uv = states('sensor.openuv_aktueller_uv_index') | float(0) %}
           {% if uv < 3 %}
