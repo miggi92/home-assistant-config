@@ -10,3 +10,4 @@ recorder:
       - sensor.sun*
       - weather.*
       - sensor.flightradar24*
+      - sensor.team_tracker*

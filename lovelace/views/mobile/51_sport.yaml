@@ -65,7 +65,7 @@ sections:
             state_not: "NOT_FOUND"
         card:
           type: custom:teamtracker-card
-          entity: sensor.fifa_wm
+          entity: sensor.team_tracker_fifa_wm
           outline: true
           outline_color: lightgray
           show_timeouts: false
