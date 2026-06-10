@@ -10,6 +10,7 @@ person_card_template:
     - beacon: default
     - eta_work: default
     - eta_home: default
+    - phone: default
   card:
     type: custom:mushroom-template-card
     entity_id: "[[entity]]"
@@ -101,26 +102,40 @@ person_card_template:
                       entity: "[[eta_work]]"
                       icon: mdi:car-clock
                     - &phone_battery
-                      type: template
-                      entity: "sensor.[[phone]]_battery_level"
-                      content: '{{ states("sensor.[[phone]]_battery_level") }} %'
-                      icon: |-
-                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {{ 'mdi:battery' if bat >= 90 else 'mdi:battery-outline' if bat < 20 else 'mdi:battery-' ~ (bat // 20 * 20) }}
-                      icon_color: |-
-                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {{ 'green' if bat >= 50 else 'orange' if bat >= 20 else 'red' if bat >= 0 else 'grey' }}
-                      tap_action:
-                        action: more-info
+                      type: conditional
+                      conditions:
+                        - entity: "sensor.[[phone]]_battery_level"
+                          state_not: "unavailable"
+                        - entity: "sensor.[[phone]]_battery_level"
+                          state_not: "unknown"
+                      chip:
+                        type: template
+                        entity: "sensor.[[phone]]_battery_level"
+                        content: '{{ states("sensor.[[phone]]_battery_level") }} %'
+                        icon: |-
+                          {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                          {{ 'mdi:battery' if bat >= 90 else 'mdi:battery-outline' if bat < 20 else 'mdi:battery-' ~ (bat // 20 * 20) }}
+                        icon_color: |-
+                          {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
+                          {{ 'green' if bat >= 50 else 'orange' if bat >= 20 else 'red' if bat >= 0 else 'grey' }}
+                        tap_action:
+                          action: more-info
                     - &phone_wifi
-                      type: template
-                      entity: "sensor.[[phone]]_wi_fi_connection"
-                      content: |-
-                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {{ 'Off' if wifi in ['<not connected>', 'unknown'] else wifi | truncate(10, true, '...') }}
-                      icon: |-
-                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {{ 'mdi:wifi-off' if wifi in ['<not connected>', 'unknown'] else 'mdi:wifi' }}
+                      type: conditional
+                      conditions:
+                        - entity: "sensor.[[phone]]_wi_fi_connection"
+                          state_not: "unavailable"
+                        - entity: "sensor.[[phone]]_wi_fi_connection"
+                          state_not: "unknown"
+                      chip:
+                        type: template
+                        entity: "sensor.[[phone]]_wi_fi_connection"
+                        content: |-
+                          {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                          {{ 'Off' if wifi in ['<not connected>', 'unknown'] else wifi | truncate(10, true, '...') }}
+                        icon: |-
+                          {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
+                          {{ 'mdi:wifi-off' if wifi in ['<not connected>', 'unknown'] else 'mdi:wifi' }}
               - type: conditional
                 conditions:
                   - entity: "[[entity]]"
@@ -132,8 +147,16 @@ person_card_template:
                     - type: entity
                       entity: "[[eta_home]]"
                       icon: mdi:home-clock
-                    - type: entity
-                      entity: "sensor.[[phone]]_geocoded_location"
+                    - &phone_location
+                      type: conditional
+                      conditions:
+                        - entity: "sensor.[[phone]]_geocoded_location"
+                          state_not: "unavailable"
+                        - entity: "sensor.[[phone]]_geocoded_location"
+                          state_not: "unknown"
+                      chip:
+                        type: entity
+                        entity: "sensor.[[phone]]_geocoded_location"
                     - *phone_battery
                     - *phone_wifi
               - type: conditional
