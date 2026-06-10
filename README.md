@@ -28,7 +28,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 183
+- 🆙 Aktualisierung: 185
 - 🚨 Alarmbedienfelder: 2
 - ↕️ Auswahlen: 82
 - 🤖 Automatisierungen: 204
@@ -38,15 +38,15 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🛠️ Custom Integrationen: 56
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
-- 🔡 Eingabe-Auswahlen: 11
-- ☑️ Eingabe-Booleans: 51
-- 📅 Eingabe-Datum/Zeit: 29
+- 🔡 Eingabe-Auswahlen: 10
+- ☑️ Eingabe-Booleans: 70
+- 📅 Eingabe-Datum/Zeit: 30
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3839
+- 🧩 Entitäten: 3899
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 548
+- 📱 Geräte: 552
 - 📍 Geräte-Tracker: 132
 - 🔌 Integrationen: 195
 - 🗓️ Kalender: 31
@@ -56,11 +56,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
 - 🎵 Mediaplayer: 46
-- 🔟 Nummern: 115
+- 🔟 Nummern: 135
 - 👤 Personen: 9
 - 🔌 Schalter: 336
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1791
+- 📟 Sensoren: 1804
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
