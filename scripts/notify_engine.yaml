@@ -89,7 +89,7 @@ notify_engine:
           tv: notify.gtv
           tv_overlay: notify.tvoverlaynotify
           family: notify.signalfamily
-          home_audio: notify.wohnung_durchsagen
+          home_audio: notify.wohnungsaudio
         user_channel_selectors:
           miguel: input_select.miguel_notification_channel
           silke: input_select.silke_notification_channel
