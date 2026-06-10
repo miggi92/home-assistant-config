@@ -262,7 +262,7 @@
           "start_time": "Hora de inicio de cada día; antes de esta hora, la cubierta permanecerá fija.",
           "start_entity": "Entidad que representa el estado de la hora de inicio, que anula la hora de inicio fija establecida anteriormente. Útil para automatizar la hora de inicio con una entidad.",
           "manual_override_duration": "La duración del control manual antes de restablecer el control automático",
-          "Opción para restablecer la duración de la anulación manual después de cada ajuste manual; si está deshabilitada, la duración solo se aplica al primer ajuste manual",
+          "manual_override_reset": "Opción para restablecer la duración de la anulación manual después de cada ajuste manual; si está deshabilitada, la duración solo se aplica al primer ajuste manual",
           "end_time": "Hora de finalización de cada día; después de esta hora, la cubierta permanecerá fija.",
           "end_entity": "Asegúrese de que la posición se ajuste a la configuración predeterminada del Ocaso antes de la hora de finalización. Esto es especialmente beneficioso cuando la hora de finalización precede a la del Ocaso real."
         }

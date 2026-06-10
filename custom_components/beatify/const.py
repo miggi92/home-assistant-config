@@ -30,6 +30,36 @@ ARTIST_BONUS_POINTS = 5
 # Index 0 = fastest correct, index 1 = 2nd fastest, etc.
 MOVIE_BONUS_TIERS: list[int] = [5, 3, 1]
 
+# Title & Artist guessing mode (Issue #1180)
+# Full-credit points for an exact or fuzzy match per field.
+TITLE_POINTS = 10
+ARTIST_POINTS = 5
+# Partial-credit points for a vote-accepted near-miss per field.
+TITLE_PARTIAL_POINTS = 5
+ARTIST_PARTIAL_POINTS = 3
+# Fuzzy matching: base Levenshtein budget to auto-accept as a typo, for
+# normalized truths in the short range (FUZZY_MIN_LEN up to the first
+# FUZZY_EXTRA_EDIT_LENGTHS threshold).
+FUZZY_MAX_EDITS = 3
+# Guard: only apply fuzzy matching when the normalized truth is at least
+# this long, to avoid edit-slack false positives on short words.
+FUZZY_MIN_LEN = 5
+# Longer titles can absorb more slips: each normalized-length threshold here
+# grants +1 to the fuzzy edit budget. With base 3 and (12, 20): 12-19 -> 4,
+# 20+ -> 5. Tune by adjusting the base or thresholds.
+FUZZY_EXTRA_EDIT_LENGTHS = (12, 20)
+# Hard cap so short titles stay strict: the budget never exceeds one edit per
+# this many characters. With 3: a 5-char title tolerates 1 edit, 6-8 -> 2,
+# 9-11 -> 3 (where the scaled budget takes over). Stops "Queen" matching 3 typos.
+FUZZY_BUDGET_LEN_DIVISOR = 3
+# Near-miss band: beyond the fuzzy auto-accept, a guess is still "debatable"
+# (-> community vote) if its edit distance is within this fraction of the longer
+# string, or it shares a significant word with the truth. Anything further is
+# just wrong (no vote, 0 points). Keeps "Beatles" for "Queen" out of the vote.
+NEAR_MISS_MAX_RATIO = 0.5
+# Conditional near-miss community-vote window (REVEAL phase), in seconds.
+TITLE_ARTIST_VOTE_WINDOW_SECONDS = 30
+
 # Intro mode constants (Issue #23)
 INTRO_DURATION_SECONDS = 15
 INTRO_ROUND_CHANCE = 0.20  # 20% chance per round
@@ -94,6 +124,7 @@ ERR_TARGET_NOT_SUBMITTED = (
 ERR_CANNOT_STEAL_SELF = "CANNOT_STEAL_SELF"  # Story 15.3 - cannot target self
 ERR_NO_ARTIST_CHALLENGE = "NO_ARTIST_CHALLENGE"  # Story 20.3 - no artist challenge
 ERR_NO_MOVIE_CHALLENGE = "NO_MOVIE_CHALLENGE"  # Issue #28 - no movie quiz this round
+ERR_NO_TITLE_ARTIST_CHALLENGE = "NO_TITLE_ARTIST_CHALLENGE"  # #1180 - no T&A this round
 ERR_UNAUTHORIZED = "UNAUTHORIZED"  # Issue #477 - invalid admin token
 
 # Song difficulty rating constants (Story 15.1)
@@ -121,6 +152,16 @@ MIN_ROUNDS_FOR_COMEBACK = 6  # Minimum rounds played for Comeback King (Issue #1
 MIN_COMEBACK_IMPROVEMENT = (
     2.0  # Minimum avg score improvement for Comeback King (Issue #143)
 )
+# Title & Artist mode superlatives (#1180). These award off cumulative per-field
+# correctness counters tracked only while title_artist_mode is on.
+MIN_EXACT_TITLES_FOR_AWARD = 2  # Minimum exact titles to qualify for Name Dropper
+MIN_CORRECT_ARTISTS_FOR_AWARD = (
+    2  # Minimum artists named to qualify for Artist Whisperer
+)
+MIN_PERFECT_PAIRS_FOR_AWARD = (
+    2  # Minimum title+artist rounds to qualify for Perfect Pair
+)
+MIN_NEAR_MISSES_FOR_AWARD = 2  # Minimum near misses to qualify for So Close
 MAX_SUPERLATIVES = 6  # Maximum number of superlatives to display
 
 # External URLs

@@ -15,6 +15,9 @@ import { updateLeaderboard, renderArtistReveal, renderMovieReveal } from './play
 
 var utils = window.BeatifyUtils || {};
 
+var VOTE_WINDOW_SECONDS = 30;  // mirrors TITLE_ARTIST_VOTE_WINDOW_SECONDS
+var _taVoteCountdownTimer = null;
+
 // ============================================
 // Reveal View (Story 4.6)
 // ============================================
@@ -128,11 +131,22 @@ export function updateRevealView(data) {
         }
     }
 
-    showRevealEmotion(currentPlayer, song.year);
-
-    // Round-reveal v2: duel + chips + score row replace the old personal result + all-guesses cards.
-    renderDuel(currentPlayer, song.year);
-    renderChipRow(currentPlayer, data);
+    // #1180: in Title & Artist mode there is no year, so the year duel /
+    // emotion ("BINGO" + "You said × N years × Actually <year>") and the
+    // year chip row don't apply — hide them and let the Title & Artist reveal
+    // carry the round result. The mode-agnostic score row stays.
+    var taMode = !!(data.title_artist_challenge && data.title_artist_challenge.correct_title);
+    var duelEl = document.querySelector('#reveal-view .duel');
+    if (duelEl) duelEl.classList.toggle('hidden', taMode);
+    if (taMode) {
+        var chipRowEl = document.getElementById('reveal-chip-row');
+        if (chipRowEl) chipRowEl.classList.add('hidden');
+    } else {
+        showRevealEmotion(currentPlayer, song.year);
+        // Round-reveal v2: duel + chips + score row replace the old personal result + all-guesses cards.
+        renderDuel(currentPlayer, song.year);
+        renderChipRow(currentPlayer, data);
+    }
     renderScoreRow(currentPlayer);
 
     // Cache context for bottom-sheet renderers that run on demand.
@@ -143,10 +157,12 @@ export function updateRevealView(data) {
         analytics: data.round_analytics || null,
         difficulty: data.song_difficulty || null,
         closestWinsMode: !!data.closest_wins_mode,
+        revealStartedAt: data.reveal_started_at || Date.now(),
     };
 
     renderArtistReveal(data.artist_challenge || null, state.playerName);
     renderMovieReveal(data.movie_challenge || null, state.playerName);
+    renderTitleArtistReveal(data.title_artist_challenge || null, currentPlayer);
 
     _resetReportBtn();
 
@@ -1387,5 +1403,384 @@ export function setupRevealReportBtn() {
 
         btn.textContent = utils.t('reveal.reportBtnDone') || '✓ Reported — thanks!';
         btn.disabled = true;
+    });
+}
+
+// ============================================
+// Title & Artist Reveal + Voting (#1180)
+// ============================================
+
+/**
+ * Build the status pill HTML for a per-field result.
+ * @param {string} status - exact|fuzzy|near_miss|near_miss_accepted|skipped
+ * @returns {string} HTML
+ */
+function _taStatusPill(status) {
+    var cls = 'ta-pill ta-pill--' + (status || 'skipped').replace(/_/g, '-');
+    var label;
+    switch (status) {
+        case 'exact': label = utils.t('titleArtist.statusExact') || 'Correct'; break;
+        case 'fuzzy': label = utils.t('titleArtist.statusFuzzy') || 'Close enough'; break;
+        case 'near_miss_accepted': label = utils.t('titleArtist.statusAccepted') || 'Accepted'; break;
+        case 'near_miss': label = utils.t('titleArtist.statusNearMiss') || 'Near miss'; break;
+        case 'wrong': label = utils.t('titleArtist.statusWrong') || 'Wrong'; break;
+        default: label = utils.t('titleArtist.statusSkipped') || 'Skipped';
+    }
+    return '<span class="' + cls + '">' + escapeHtml(label) + '</span>';
+}
+
+/**
+ * Classify the current player's own Title & Artist result into an emotional
+ * verdict for the reveal banner (#1180). Honest about pending votes: while the
+ * window is open and a field is still a near-miss, it shows "awaiting the
+ * verdict" rather than calling a miss the room might still accept.
+ * @param {Object|null} own - the player's own results entry
+ * @param {boolean} votingOpen - whether the community vote is still open
+ * @returns {{tier:string,text:string}|null}
+ */
+function _taOwnVerdict(own, votingOpen) {
+    if (!own) return null;
+    var GOT = { exact: 1, fuzzy: 1, near_miss_accepted: 1 };
+    var ts = own.title_status;
+    var as = own.artist_status;
+    if (votingOpen && (ts === 'near_miss' || as === 'near_miss')) {
+        return { tier: 'pending', text: utils.t('titleArtist.verdictPending') || 'Awaiting the room’s verdict…' };
+    }
+    var got = (GOT[ts] ? 1 : 0) + (GOT[as] ? 1 : 0);
+    if (got === 2) return { tier: 'win', text: utils.t('titleArtist.verdictWin') || 'Nailed it!' };
+    if (got === 1) return { tier: 'partial', text: utils.t('titleArtist.verdictPartial') || 'Got one!' };
+    return { tier: 'miss', text: utils.t('titleArtist.verdictMiss') || 'Not this time' };
+}
+
+/**
+ * Render one resolved near-miss verdict card for the post-voting "decided"
+ * view: avatar, who · field, the guess, the final 👍/👎 tally, and a verdict
+ * badge (green ✓ +points when accepted, red ✗ when rejected). (#1180, #1243)
+ * @param {Object} o - a near_miss_outcomes entry
+ * @param {function} fieldLabel - maps "title"/"artist" to a localized label
+ */
+function _taOutcomeCard(o, fieldLabel) {
+    var accepted = !!o.accepted;
+    var initial = ((o.player || '?').trim().charAt(0) || '?').toUpperCase();
+    var verdict = accepted
+        ? '✓ +' + (o.points || 0)
+        : '✗';
+    return '<div class="ta-outcome-card ta-outcome-card--' + (accepted ? 'accepted' : 'rejected') + '">' +
+        '<span class="ta-outcome-avatar" aria-hidden="true">' + escapeHtml(initial) + '</span>' +
+        '<div class="ta-outcome-main">' +
+            '<div class="ta-outcome-who">' + escapeHtml(o.player) +
+                ' <span class="ta-outcome-field">· ' + escapeHtml(fieldLabel(o.field)) + '</span></div>' +
+            '<div class="ta-outcome-guess">“' + escapeHtml(o.guess || '—') + '”</div>' +
+            '<div class="ta-outcome-tally">👍 ' + (o.votes_yes || 0) + ' · 👎 ' + (o.votes_no || 0) + '</div>' +
+        '</div>' +
+        '<span class="ta-outcome-verdict ta-outcome-verdict--' + (accepted ? 'accepted' : 'rejected') + '">' +
+            verdict + '</span>' +
+    '</div>';
+}
+
+/**
+ * Render the Title & Artist reveal: the truth, the current player's own
+ * per-field result, the 👍/👎 voting cards for OTHER players' near-misses
+ * (a player never votes on their own), and — for the host — Accept/Reject
+ * override buttons. Drives a display-only 30s countdown off voting_open.
+ *
+ * @param {Object|null} ta - data.title_artist_challenge (REVEAL shape) or null
+ * @param {Object|null} currentPlayer - resolved current player object
+ */
+export function renderTitleArtistReveal(ta, currentPlayer) {
+    var section = document.getElementById('ta-reveal-section');
+    if (!section) return;
+
+    if (!ta || !ta.correct_title) {
+        section.classList.add('hidden');
+        _stopTaVoteCountdown();
+        return;
+    }
+    section.classList.remove('hidden');
+
+    // Remember this player's own 👍/👎 per near-miss so the "voted" state
+    // survives the innerHTML rebuild on every state broadcast. The server only
+    // sends aggregate tallies, not who voted — but our own vote is known
+    // locally. Reset the memory whenever a new song is revealed.
+    if (state._taRevealTruth !== ta.correct_title) {
+        state._taRevealTruth = ta.correct_title;
+        state.taMyVotes = {};
+    }
+    state.taMyVotes = state.taMyVotes || {};
+
+    // 1) Truth
+    var truthEl = document.getElementById('ta-reveal-truth');
+    if (truthEl) {
+        truthEl.innerHTML =
+            '<span class="ta-truth-title">' + escapeHtml(ta.correct_title) + '</span>' +
+            '<span class="ta-truth-sep" aria-hidden="true">—</span>' +
+            '<span class="ta-truth-artist">' + escapeHtml(ta.correct_artist || '') + '</span>';
+    }
+
+    // 2) Own per-field result
+    var ownEl = document.getElementById('ta-reveal-own');
+    var results = ta.results || [];
+    var own = null;
+    for (var i = 0; i < results.length; i++) {
+        if (results[i].player === state.playerName) { own = results[i]; break; }
+    }
+    if (ownEl) {
+        if (own) {
+            var verdict = _taOwnVerdict(own, !!ta.voting_open);
+            var verdictHtml = verdict
+                ? '<div class="ta-verdict ta-verdict--' + verdict.tier + '">' +
+                    escapeHtml(verdict.text) + '</div>'
+                : '';
+            ownEl.innerHTML =
+                verdictHtml +
+                '<div class="ta-own-row">' +
+                    '<span class="ta-own-label">' + escapeHtml(utils.t('titleArtist.yourTitle') || 'Your title') + '</span>' +
+                    '<span class="ta-own-guess">' + escapeHtml(own.title || '—') + '</span>' +
+                    _taStatusPill(own.title_status) +
+                '</div>' +
+                '<div class="ta-own-row">' +
+                    '<span class="ta-own-label">' + escapeHtml(utils.t('titleArtist.yourArtist') || 'Your artist') + '</span>' +
+                    '<span class="ta-own-guess">' + escapeHtml(own.artist || '—') + '</span>' +
+                    _taStatusPill(own.artist_status) +
+                '</div>';
+        } else {
+            ownEl.innerHTML = '<div class="ta-own-row ta-own-row--none">' +
+                escapeHtml(utils.t('titleArtist.noGuess') || 'No guess this round') + '</div>';
+        }
+    }
+
+    // 3) Voting cards (while open) or resolved outcomes (once decided)
+    var votingWrap = document.getElementById('ta-voting');
+    var cardsEl = document.getElementById('ta-voting-cards');
+    var titleEl = document.getElementById('ta-voting-title');
+    var countdownEl = document.getElementById('ta-voting-countdown');
+    var nearMisses = ta.near_misses || [];
+    var outcomes = ta.near_miss_outcomes || [];
+    var votingOpen = !!ta.voting_open;
+    var isHost = !!(currentPlayer && currentPlayer.is_admin);
+
+    if (!votingWrap || !cardsEl) { _stopTaVoteCountdown(); return; }
+
+    var fieldLabel = function(field) {
+        return field === 'artist'
+            ? (utils.t('titleArtist.artistLabel') || 'Artist')
+            : (utils.t('titleArtist.titleLabel') || 'Song title');
+    };
+
+    // Voting closed + verdicts available → the resolution moment: each near-miss
+    // shown as accepted ✓ +points / rejected ✗, with its final tally.
+    if (!votingOpen && outcomes.length > 0) {
+        _stopTaVoteCountdown();
+        votingWrap.classList.remove('hidden');
+        if (titleEl) {
+            titleEl.textContent = utils.t('titleArtist.closeCallsDecided') || 'Close calls — decided';
+        }
+        if (countdownEl) { countdownEl.textContent = ''; countdownEl.classList.add('hidden'); }
+        cardsEl.innerHTML = outcomes.map(function(o) { return _taOutcomeCard(o, fieldLabel); }).join('');
+        return;
+    }
+
+    if (nearMisses.length === 0) {
+        votingWrap.classList.add('hidden');
+        cardsEl.innerHTML = '';
+        _stopTaVoteCountdown();
+        return;
+    }
+
+    votingWrap.classList.remove('hidden');
+    // Reset header to the live-vote state (a prior round may have set "decided").
+    if (titleEl) {
+        titleEl.textContent = utils.t('titleArtist.voteHeader') || 'Close calls — vote 👍/👎';
+    }
+    if (countdownEl) { countdownEl.classList.remove('hidden'); }
+
+    var html = '';
+    nearMisses.forEach(function(nm) {
+        // The owner of the near-miss never votes on it.
+        var isOwn = nm.player === state.playerName;
+        var yes = nm.votes_yes || 0;
+        var no = nm.votes_no || 0;
+        // Crowd Court tally bars: split the track by share of votes cast.
+        var total = yes + no;
+        var yesPct = total ? Math.round((yes / total) * 100) : 0;
+        var noPct = total ? 100 - yesPct : 0;
+        var initial = ((nm.player || '?').trim().charAt(0) || '?').toUpperCase();
+
+        html += '<div class="ta-vote-card' + (isOwn ? ' ta-vote-card--mine' : '') +
+            '" data-nearmiss-id="' + escapeHtml(nm.id) + '">' +
+            '<div class="ta-vote-card-head">' +
+                '<span class="ta-vote-avatar" aria-hidden="true">' + escapeHtml(initial) + '</span>' +
+                '<span class="ta-vote-who">' + escapeHtml(nm.player) + '</span>' +
+                '<span class="ta-vote-field">' + escapeHtml(fieldLabel(nm.field)) + '</span>' +
+            '</div>' +
+            '<div class="ta-vote-guess">“' + escapeHtml(nm.guess || '—') + '”</div>' +
+            '<div class="ta-vote-tally">' +
+                '<div class="ta-tally-row">' +
+                    '<span class="ta-tally-yes">👍 ' + yes + '</span>' +
+                    '<span class="ta-tally-track"><span class="ta-tally-fill ta-tally-fill--yes" style="width:' + yesPct + '%"></span></span>' +
+                '</div>' +
+                '<div class="ta-tally-row">' +
+                    '<span class="ta-tally-no">👎 ' + no + '</span>' +
+                    '<span class="ta-tally-track"><span class="ta-tally-fill ta-tally-fill--no" style="width:' + noPct + '%"></span></span>' +
+                '</div>' +
+            '</div>';
+
+        if (isOwn) {
+            html += '<div class="ta-vote-own-note">' +
+                escapeHtml(utils.t('titleArtist.yourCloseCall') || 'Your close call — others decide') + '</div>';
+        } else if (votingOpen) {
+            // Restore this player's choice across re-renders: chosen button
+            // stays lit, the other dims, and a caption confirms (re-voting is
+            // allowed, so both buttons remain tappable).
+            var myVote = state.taMyVotes[nm.id];
+            var hasVoted = (myVote === true || myVote === false);
+            html += '<div class="ta-vote-actions' + (hasVoted ? ' ta-vote-actions--voted' : '') + '">' +
+                '<button type="button" class="ta-vote-btn ta-vote-btn--yes' + (myVote === true ? ' is-chosen' : '') + '" ' +
+                    'data-nearmiss-id="' + escapeHtml(nm.id) + '" data-accept="1">👍</button>' +
+                '<button type="button" class="ta-vote-btn ta-vote-btn--no' + (myVote === false ? ' is-chosen' : '') + '" ' +
+                    'data-nearmiss-id="' + escapeHtml(nm.id) + '" data-accept="0">👎</button>' +
+            '</div>';
+            if (hasVoted) {
+                html += '<div class="ta-voted-caption">' +
+                    escapeHtml(utils.t('titleArtist.youVoted') || 'You voted') + ' ' +
+                    (myVote ? '👍' : '👎') + ' · ' +
+                    escapeHtml(utils.t('titleArtist.tapToChange') || 'tap to change') + '</div>';
+            }
+        }
+
+        // Host override row (always shown to host while voting is open).
+        if (isHost && votingOpen) {
+            html += '<div class="ta-override-actions">' +
+                '<span class="ta-override-label">' + escapeHtml(utils.t('titleArtist.hostOverride') || 'Host decides') + '</span>' +
+                '<button type="button" class="ta-override-btn ta-override-btn--accept" ' +
+                    'data-nearmiss-id="' + escapeHtml(nm.id) + '" data-accept="1" ' +
+                    'data-i18n="titleArtist.accept">Accept</button>' +
+                '<button type="button" class="ta-override-btn ta-override-btn--reject" ' +
+                    'data-nearmiss-id="' + escapeHtml(nm.id) + '" data-accept="0" ' +
+                    'data-i18n="titleArtist.reject">Reject</button>' +
+            '</div>';
+        }
+
+        html += '</div>';
+    });
+    cardsEl.innerHTML = html;
+
+    // 4) Countdown — ticks from the server's authoritative vote_seconds_remaining.
+    if (votingOpen) {
+        _startTaVoteCountdown(ta);
+    } else {
+        _stopTaVoteCountdown();
+        var cd = document.getElementById('ta-voting-countdown');
+        if (cd) {
+            cd.textContent = utils.t('titleArtist.voteClosed') || 'Voting closed';
+            cd.removeAttribute('aria-label');
+            cd.classList.add('ta-voting-countdown--closed');
+        }
+    }
+}
+
+/**
+ * Start the voting countdown from the server's authoritative
+ * ``vote_seconds_remaining`` (re-synced on every broadcast), ticking down
+ * locally between broadcasts. Anchoring to a server-computed remaining instead
+ * of comparing a server epoch to the client clock avoids clock-skew drift.
+ * Falls back to VOTE_WINDOW_SECONDS only if the field is absent.
+ * @param {Object} ta - title_artist_challenge dict
+ */
+function _startTaVoteCountdown(ta) {
+    _stopTaVoteCountdown();
+    var cd = document.getElementById('ta-voting-countdown');
+    if (!cd) return;
+
+    var serverRemaining = (ta && typeof ta.vote_seconds_remaining === 'number')
+        ? ta.vote_seconds_remaining
+        : VOTE_WINDOW_SECONDS;
+    // Anchor to the client's own clock from the moment we received the server's
+    // remaining — purely relative, so no cross-machine epoch comparison.
+    var endAt = Date.now() + serverRemaining * 1000;
+
+    function paint() {
+        var remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        // Crowd Court ring: bare number inside the circle, with a conic arc that
+        // drains as the window closes. aria-label keeps the full phrase for SR.
+        cd.textContent = String(remaining);
+        cd.setAttribute('aria-label', utils.t('titleArtist.voteCountdown', { seconds: remaining })
+            || (remaining + 's'));
+        cd.style.setProperty('--ta-vote-progress',
+            (remaining / VOTE_WINDOW_SECONDS * 360) + 'deg');
+        cd.classList.remove('ta-voting-countdown--closed');
+        if (remaining <= 0) {
+            _stopTaVoteCountdown();
+        }
+    }
+    paint();
+    _taVoteCountdownTimer = setInterval(paint, 500);
+}
+
+function _stopTaVoteCountdown() {
+    if (_taVoteCountdownTimer) {
+        clearInterval(_taVoteCountdownTimer);
+        _taVoteCountdownTimer = null;
+    }
+}
+
+/**
+ * Wire vote and host-override clicks via event delegation on #ta-voting-cards.
+ * Called once from player-core's initAll. Buttons re-render from each state
+ * broadcast, so delegation survives the innerHTML rebuilds.
+ */
+export function setupTitleArtistVoting() {
+    var cardsEl = document.getElementById('ta-voting-cards');
+    if (!cardsEl) return;
+
+    cardsEl.addEventListener('click', function(e) {
+        var voteBtn = e.target.closest('.ta-vote-btn');
+        var overrideBtn = e.target.closest('.ta-override-btn');
+
+        if (voteBtn) {
+            var voteId = voteBtn.getAttribute('data-nearmiss-id');
+            var voteAccept = voteBtn.getAttribute('data-accept') === '1';
+            if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                state.ws.send(JSON.stringify({
+                    type: 'title_artist_vote',
+                    nearmiss_id: voteId,
+                    accept: voteAccept
+                }));
+            }
+            // Remember the choice so it persists through the next re-render.
+            state.taMyVotes = state.taMyVotes || {};
+            state.taMyVotes[voteId] = voteAccept;
+            // Optimistic feedback: light the chosen button + dim the other now;
+            // tally and caption fill in on the next broadcast.
+            var card = voteBtn.closest('.ta-vote-card');
+            if (card) {
+                var actions = card.querySelector('.ta-vote-actions');
+                if (actions) actions.classList.add('ta-vote-actions--voted');
+                card.querySelectorAll('.ta-vote-btn').forEach(function(b) {
+                    b.classList.remove('is-chosen');
+                });
+                voteBtn.classList.add('is-chosen');
+            }
+            return;
+        }
+
+        if (overrideBtn) {
+            var ovId = overrideBtn.getAttribute('data-nearmiss-id');
+            var ovAccept = overrideBtn.getAttribute('data-accept') === '1';
+            if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+                state.ws.send(JSON.stringify({
+                    type: 'title_artist_override',
+                    nearmiss_id: ovId,
+                    accept: ovAccept
+                }));
+            }
+            var ovCard = overrideBtn.closest('.ta-vote-card');
+            if (ovCard) {
+                ovCard.querySelectorAll('.ta-override-btn').forEach(function(b) {
+                    b.classList.remove('is-chosen');
+                });
+                overrideBtn.classList.add('is-chosen');
+            }
+        }
     });
 }

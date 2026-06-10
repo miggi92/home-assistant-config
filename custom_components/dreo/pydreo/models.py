@@ -294,7 +294,8 @@ SUPPORTED_DEVICES = {
     ),
     "DR-HPF017S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
-        device_ranges={SPEED_RANGE: (1, 12)},
+        preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5), ("custom", 6)],
+        device_ranges={SPEED_RANGE: (1, 12), HORIZONTAL_ANGLE_RANGE: (-75, 75), VERTICAL_ANGLE_RANGE: (-30, 90)},
     ),
     "DR-HPF007S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
@@ -453,6 +454,7 @@ SUPPORTED_DEVICES = {
     # Dehumidifiers
     "DR-HDH001S": DreoDeviceDetails(device_type=DreoDeviceType.DEHUMIDIFIER, device_ranges={HUMIDITY_RANGE: (30, 85), SPEED_RANGE: (1, 3)}),
     "DR-HDH002S": DreoDeviceDetails(device_type=DreoDeviceType.DEHUMIDIFIER, device_ranges={HUMIDITY_RANGE: (30, 85), SPEED_RANGE: (1, 3)}),
+    "DR-HDH003S": DreoDeviceDetails(device_type=DreoDeviceType.DEHUMIDIFIER, device_ranges={HUMIDITY_RANGE: (30, 85), SPEED_RANGE: (1, 3)}),
     "DR-HDH005S": DreoDeviceDetails(device_type=DreoDeviceType.DEHUMIDIFIER, device_ranges={HUMIDITY_RANGE: (30, 85), SPEED_RANGE: (1, 3)}),
     # Evaporative Coolers
     "DR-HEC": DreoDeviceDetails(
