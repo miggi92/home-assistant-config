@@ -99,8 +99,6 @@ person_card_template:
                 conditions:
                   - entity: "[[entity]]"
                     state: home
-                  - entity: "device_tracker.[[phone]]"
-                    state: home
                 card:
                   type: custom:mushroom-chips-card
                   alignment: center
@@ -156,8 +154,6 @@ person_card_template:
                 conditions:
                   - entity: "[[entity]]"
                     state_not: home
-                  - entity: "device_tracker.[[phone]]"
-                    state: not_home
                 card:
                   type: custom:mushroom-chips-card
                   alignment: center
