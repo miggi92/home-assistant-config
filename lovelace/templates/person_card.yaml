@@ -21,60 +21,51 @@ person_card_template:
       {% set current_state = states("[[entity]]") | slugify %}
       {% set room_state = states("[[beacon]]") %}
       {% set floor_name = state_attr("[[beacon]]", "floor_name") %}
-      {% set last_changed_time = states["[[entity]]"].last_changed %}
+      {% set time_str = "seit " ~ relative_time(states["[[entity]]"].last_changed) %}
       {% if current_state == "home" %}
         {%- if room_state not in ["unknown", "not_home"] %}
           {{ room_state }} - {{ floor_name }}
         {%- elif basket_state == "on" %}
           Körbchen
         {%- endif %}
-        Zu Hause seit {{ relative_time(last_changed_time) }}
+        Zu Hause {{ time_str }}
       {% elif current_state in ["work_silke", "work_miguel"] %}
-        Arbeiten seit {{ relative_time(last_changed_time) }}
+        Arbeiten {{ time_str }}
       {% elif "handball" in current_state %}
-        Beim Handball seit {{ relative_time(last_changed_time) }}
+        Beim Handball {{ time_str }}
       {% elif current_state == "not_home" %}
-        Abwesend seit {{ relative_time(last_changed_time) }}
+        Abwesend {{ time_str }}
       {% else %}
-        {{ states("[[entity]]") }} seit {{ relative_time(last_changed_time) }}
+        {{ states("[[entity]]") }} {{ time_str }}
       {% endif %}
     multiline_secondary: true
     picture: |-
       {% set is_driving = states("binary_sensor.[[phone]]_android_auto") %}
       {% set current_activity = states("sensor.[[phone]]_detected_activity") %}
-      {% set current_state = states("[[entity]]") %}
+      {% set current_state = states("[[entity]]") | slugify %}
+      {% set img_path = "/local/images/persons/[[id]]/" %}
       {% if is_driving == "on" or current_activity == "in_vehicle" %}
-        /local/images/persons/[[id]]/auto.png
+        {{ img_path }}auto.png
       {% elif current_state in ["work_silke", "work_miguel"] %}
-        /local/images/persons/[[id]]/work.png
+        {{ img_path }}work.png
       {% elif "handball" in current_state %}
-        /local/images/persons/[[id]]/sport.png
+        {{ img_path }}sport.png
       {% elif current_state == "rewe" or "dm" in current_state or "getranke" in current_state %}
-        /local/images/persons/[[id]]/shopping.png
+        {{ img_path }}shopping.png
       {% else %}
         /local/images/persons/[[id]].jpg
       {% endif %}
     badge_icon: |-
       {% set current_state = states("[[entity]]") | slugify %}
       {% set zone_icon = state_attr("zone." ~ current_state, "icon") %}
-      {% if current_state == "home" %}
-        mdi:home
-      {% elif current_state == "not_home" %}
-        mdi:run
-      {% elif zone_icon %}
-        {{ zone_icon }}
-      {% else %}
-        mdi:map-marker
+      {% if current_state == "home" %} mdi:home
+      {% elif current_state == "not_home" %} mdi:run
+      {% elif zone_icon %} {{ zone_icon }}
+      {% else %} mdi:map-marker
       {% endif %}
     badge_color: |-
       {% set current_state = states("[[entity]]") | slugify %}
-      {% if current_state == "home" %}
-        green
-      {% elif current_state == "not_home" %}
-        red
-      {% else %}
-        grey
-      {% endif %}
+      {{ 'green' if current_state == 'home' else 'red' if current_state == 'not_home' else 'grey' }}
     tap_action:
       action: fire-dom-event
       browser_mod:
@@ -109,47 +100,27 @@ person_card_template:
                     - type: entity
                       entity: "[[eta_work]]"
                       icon: mdi:car-clock
-                    - type: template
+                    - &phone_battery
+                      type: template
                       entity: "sensor.[[phone]]_battery_level"
                       content: '{{ states("sensor.[[phone]]_battery_level") }} %'
                       icon: |-
                         {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {% if bat >= 90 %} mdi:battery
-                        {% elif bat >= 80 %} mdi:battery-80
-                        {% elif bat >= 60 %} mdi:battery-60
-                        {% elif bat >= 40 %} mdi:battery-40
-                        {% elif bat >= 20 %} mdi:battery-20
-                        {% else %} mdi:battery-outline
-                        {% endif %}
+                        {{ 'mdi:battery' if bat >= 90 else 'mdi:battery-outline' if bat < 20 else 'mdi:battery-' ~ (bat // 20 * 20) }}
                       icon_color: |-
                         {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {% if bat >= 50 %}
-                          green
-                        {% elif bat >= 20 %}
-                          orange
-                        {% elif bat >= 0 %}
-                          red
-                        {% else %}
-                          grey
-                        {% endif %}
+                        {{ 'green' if bat >= 50 else 'orange' if bat >= 20 else 'red' if bat >= 0 else 'grey' }}
                       tap_action:
                         action: more-info
-                    - type: template
+                    - &phone_wifi
+                      type: template
                       entity: "sensor.[[phone]]_wi_fi_connection"
                       content: |-
                         {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {% if wifi == "<not connected>" or wifi == "unknown" %}
-                          Off
-                        {% else %}
-                          {{ wifi | truncate(10, true, '...') }}
-                        {% endif %}
+                        {{ 'Off' if wifi in ['<not connected>', 'unknown'] else wifi | truncate(10, true, '...') }}
                       icon: |-
                         {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {% if wifi == "<not connected>" or wifi == "unknown" %}
-                          mdi:wifi-off
-                        {% else %}
-                          mdi:wifi
-                        {% endif %}
+                        {{ 'mdi:wifi-off' if wifi in ['<not connected>', 'unknown'] else 'mdi:wifi' }}
               - type: conditional
                 conditions:
                   - entity: "[[entity]]"
@@ -163,47 +134,8 @@ person_card_template:
                       icon: mdi:home-clock
                     - type: entity
                       entity: "sensor.[[phone]]_geocoded_location"
-                    - type: template
-                      entity: "sensor.[[phone]]_battery_level"
-                      content: '{{ states("sensor.[[phone]]_battery_level") }} %'
-                      icon: |-
-                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {% if bat >= 90 %} mdi:battery
-                        {% elif bat >= 80 %} mdi:battery-80
-                        {% elif bat >= 60 %} mdi:battery-60
-                        {% elif bat >= 40 %} mdi:battery-40
-                        {% elif bat >= 20 %} mdi:battery-20
-                        {% else %} mdi:battery-outline
-                        {% endif %}
-                      icon_color: |-
-                        {% set bat = states("sensor.[[phone]]_battery_level") | int(-1) %}
-                        {% if bat >= 50 %}
-                          green
-                        {% elif bat >= 20 %}
-                          orange
-                        {% elif bat >= 0 %}
-                          red
-                        {% else %}
-                          grey
-                        {% endif %}
-                      tap_action:
-                        action: more-info
-                    - type: template
-                      entity: "sensor.[[phone]]_wi_fi_connection"
-                      content: |-
-                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {% if wifi == "<not connected>" or wifi == "unknown" %}
-                          Off
-                        {% else %}
-                          {{ wifi | truncate(10, true, '...') }}
-                        {% endif %}
-                      icon: |-
-                        {% set wifi = states("sensor.[[phone]]_wi_fi_connection") %}
-                        {% if wifi == "<not connected>" or wifi == "unknown" %}
-                          mdi:wifi-off
-                        {% else %}
-                          mdi:wifi
-                        {% endif %}
+                    - *phone_battery
+                    - *phone_wifi
               - type: conditional
                 conditions:
                   - entity: "input_boolean.[[id]]_has_swatch"
@@ -228,24 +160,10 @@ person_card_template:
                           content: '{{ states("sensor.[[watch]]_battery_level") }} %'
                           icon: |-
                             {% set bat = states("sensor.[[watch]]_battery_level") | int(-1) %}
-                            {% if bat >= 90 %} mdi:battery
-                            {% elif bat >= 80 %} mdi:battery-80
-                            {% elif bat >= 60 %} mdi:battery-60
-                            {% elif bat >= 40 %} mdi:battery-40
-                            {% elif bat >= 20 %} mdi:battery-20
-                            {% else %} mdi:battery-outline
-                            {% endif %}
+                            {{ 'mdi:battery' if bat >= 90 else 'mdi:battery-outline' if bat < 20 else 'mdi:battery-' ~ (bat // 20 * 20) }}
                           icon_color: |-
                             {% set bat = states("sensor.[[watch]]_battery_level") | int(-1) %}
-                            {% if bat >= 50 %}
-                              green
-                            {% elif bat >= 20 %}
-                              orange
-                            {% elif bat >= 0 %}
-                              red
-                            {% else %}
-                              grey
-                            {% endif %}
+                            {{ 'green' if bat >= 50 else 'orange' if bat >= 20 else 'red' if bat >= 0 else 'grey' }}
                           tap_action:
                             action: more-info
               - type: map
