@@ -48,15 +48,6 @@ sections:
           layout: vertical
   - type: grid
     cards:
-      - type: custom:flower-card
-        entity: plant.drachenbaum
-        show_bars:
-          - illuminance
-          - humidity
-          - moisture
-          - conductivity
-          - temperature
-        battery_sensor: sensor.drachenbaum_mi_battery
       - type: custom:mushroom-vacuum-card
         entity: vacuum.roomba
         commands:

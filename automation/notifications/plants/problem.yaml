@@ -8,7 +8,9 @@ trigger:
   - platform: state
     entity_id:
       - plant.blaubeere
-      - plant.drachenbaum
+      - plant.blaubeerbaum
+      - plant.olive_alt
+      - plant.erdbeere_mitte
     to:
       - ok
     from:
@@ -16,7 +18,9 @@ trigger:
   - platform: state
     entity_id:
       - plant.blaubeere
-      - plant.drachenbaum
+      - plant.blaubeerbaum
+      - plant.olive_alt
+      - plant.erdbeere_mitte
     to:
       - problem
     from:
@@ -31,25 +35,38 @@ action:
       entity_id: ai_task.google_ai_task
       task_name: plant state
       instructions: |
-        You are a smart home gardening assistant. Analyze the following plant sensor data. Values are 'ok', 'Low', or 'High'.
+        You are a smart home gardening assistant. Your task is to write a short push notification in German about a plant's status.
 
         Rules:
-        1. Ignore any sensors with status 'ok' or 'null'.
-        2. If all sensors are 'ok', write a short, friendly message that the plant has recovered and is doing perfectly well.
-        3. For any 'Low' or 'High' sensor, provide a short, actionable recommendation (e.g., 'Low Moisture' -> water the plant; 'Low Conductivity' -> add fertilizer).
-        4. Keep the language extremely simple and family-friendly. Never use technical terms or abbreviations like 'DLI', 'VPD', 'Conductivity', or 'Illuminance' in the output. Translate the issue into everyday practical needs (e.g., 'braucht mehr Licht', 'Raumklima ist zu trocken', 'benötigt Dünger').
-        5. Do not use markdown headers or bold text. Keep the output very concise, max 2 sentences, as it will be used for a mobile push notification.
-        6. Write the final response in German.
+        1. Output format: Strictly German, maximum 2 sentences. Absolutely no markdown, no headers, and no bold text.
+        2. Tone: Extremely simple and family-friendly. Translate technical issues into everyday practical needs (e.g., 'braucht mehr Licht', 'Raumklima ist zu trocken', 'benötigt Dünger'). Never use technical terms or abbreviations like 'DLI', 'VPD', 'Conductivity', or 'Illuminance'.
+        3. Logic:
+          - Ignore any sensors with status 'ok' or 'null'.
+          - If all sensors in <sensor_data> are 'ok' or 'null', write a short, friendly message that the plant has recovered and is doing perfectly well.
+          - For any 'Low' or 'High' sensor, provide a short, actionable recommendation based on the <care_data> (e.g., 'Die Pflanze braucht Wasser', 'Bitte etwas düngen').
 
-        Data to analyze:
-          Moisture: {{ state_attr(trigger.entity_id, 'moisture_status') }}
-          Temperature: {{ state_attr(trigger.entity_id, 'temperature_status') }}
-          Conductivity: {{ state_attr(trigger.entity_id, 'conductivity_status') }}
-          Illuminance: {{ state_attr(trigger.entity_id, 'illuminance_status') }}
-          Humidity: {{ state_attr(trigger.entity_id, 'humidity_status') }}
-          CO2: {{ state_attr(trigger.entity_id, 'co2_status') }}
-          Soil temperature: {{ state_attr(trigger.entity_id, 'soil_temperature_status') }}
-          VPD: {{ state_attr(trigger.entity_id, 'vpd_status') }}
+        Plant Name: {{ state_attr(trigger.entity_id, 'friendly_name') | default('Deine Pflanze') }}
+        Plant species: {{ state_attr(trigger.entity_id, 'species') | default('Unknown') }}
+
+        <sensor_data>
+        Moisture: {{ state_attr(trigger.entity_id, 'moisture_status') }}
+        Temperature: {{ state_attr(trigger.entity_id, 'temperature_status') }}
+        Conductivity: {{ state_attr(trigger.entity_id, 'conductivity_status') }}
+        Illuminance: {{ state_attr(trigger.entity_id, 'illuminance_status') }}
+        Humidity: {{ state_attr(trigger.entity_id, 'humidity_status') }}
+        CO2: {{ state_attr(trigger.entity_id, 'co2_status') }}
+        Soil temperature: {{ state_attr(trigger.entity_id, 'soil_temperature_status') }}
+        VPD: {{ state_attr(trigger.entity_id, 'vpd_status') }}
+        </sensor_data>
+
+        <care_data>
+        Fertilization: {{ state_attr(trigger.entity_id, 'care_fertilization') }}
+        Pruning: {{ state_attr(trigger.entity_id, 'care_pruning') }}
+        Soil: {{ state_attr(trigger.entity_id, 'care_soil') }}
+        Sunlight: {{ state_attr(trigger.entity_id, 'care_sunlight') }}
+        Watering: {{ state_attr(trigger.entity_id, 'care_watering') }}
+        </care_data>
+
     response_variable: response
   - action: script.notify_engine
     data:

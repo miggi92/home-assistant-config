@@ -15,6 +15,14 @@ badges:
       - entity: sensor.hausbau_fertigstellung
       - name: "Fertigstellung"
       - icon: mdi:crane
+  - type: custom:mushroom-template-badge
+    icon: mdi:crane
+    entity: sensor.hausbau_aktuelle_phase
+    label: "Aktuelle Phase"
+    content: "{{states(entity) }}"
+    tap_action:
+      action: more-info
+
 sections:
   - type: grid
     cards:
@@ -22,18 +30,21 @@ sections:
       - type: markdown
         title: Build Timeline
         content: |
-          {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
-          {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
-          {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
-          {% set ns = namespace(found=false, match_error=true) %}
+          {% set datetime_entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
+          {% set counts = namespace(completed=0) %}
+          {% set total_entities = datetime_entities | length %}
 
           | Date | Milestone | Status | Timeline |
           | :--- | :--- | :--- | :--- |
-          {%- for entity in entities %}
+          {%- for entity in datetime_entities %}
           {%- set phase_name = entity.attributes.friendly_name | replace('Hausbau ', '') %}
-          {%- set phase_name_clean = phase_name | lower | trim %}
           {%- set date_val = entity.state %}
-
+          {%- set boolean_id = entity.entity_id | replace('input_datetime.', 'input_boolean.') %}
+          {%- set is_done = is_state(boolean_id, 'on') %}
+          {%- if is_done %}
+            {%- set counts.completed = counts.completed + 1 %}
+          {%- endif %}
+          {%- set is_delayed = false %}
           {%- if date_val not in ['unknown', 'unavailable'] %}
             {%- set dt = (date_val | as_datetime | as_local) %}
             {%- set date_fmt = dt.strftime('%d.%m.%Y') %}
@@ -43,43 +54,40 @@ sections:
             {%- elif days_diff == 0 %}
               {%- set time_info = "Heute" %}
             {%- else %}
-              {%- set time_info = "vor " ~  (days_diff | abs) ~ " Tagen" %}
+              {%- set time_info = "vor " ~ (days_diff | abs) ~ " Tagen" %}
+            {%- endif %}
+            {%- if not is_done and days_diff < 0 %}
+              {%- set is_delayed = true %}
             {%- endif %}
           {%- else %}
             {%- set date_fmt = 'TBD' %}
             {%- set time_info = '-' %}
           {%- endif %}
 
-          {%- set is_current = false %}
-          {%- if current_phase_clean == phase_name_clean %}
-            {%- set icon = '🏗️' %}
-            {%- set ns.found = true %}
-            {%- set ns.match_error = false %}
-            {%- set is_current = true %}
-          {%- elif not ns.found %}
+          {%- if is_done %}
             {%- set icon = '✅' %}
+            {%- set row_style = '' %}
+          {%- elif is_delayed %}
+            {%- set icon = '⚠️' %}
+            {%- set row_style = 'color: var(--error-color); font-weight: bold;' %}
           {%- else %}
             {%- set icon = '⏳' %}
+            {%- set row_style = '' %}
           {%- endif %}
-
-          {%- if is_current %}
-          | **{{ date_fmt }}** | **<span style="color: var(--primary-color);">{{ phase_name }}</span>** | {{ icon }} | **{{ time_info }}** |
-          {%- else %}
-          | {{ date_fmt }} | {{ phase_name }} | {{ icon }} | {{ time_info }} |
-          {%- endif %}
+          | <span style="{{ row_style }}">{{ date_fmt }}</span> | <span style="{{ row_style }}">{{ phase_name }}</span> | {{ icon }} | <span style="{{ row_style }}">{{ time_info }}</span> |
           {%- endfor %}
 
           ***
 
-          {% set percent = states('sensor.hausbau_fertigstellung') | float(0) | round(0) | int %}
+          {% set percent = 0 %}
+          {% if total_entities > 0 %}
+            {% set percent = (counts.completed / total_entities * 100) | round(0) | int %}
+          {% endif %}
           {% set blocks_filled = (percent / 10) | round(0) | int %}
           {% set blocks_empty = 10 - blocks_filled %}
 
           **Progress:** `[{{ '█' * blocks_filled }}{{ '░' * blocks_empty }}]` {{ percent }}%
 
-          {% if ns.match_error %}
-          > ⚠️ **Fehler:** Die aktuelle Phase aus dem Dropdown (`{{ current_phase }}`) stimmt mit keinem der Helfer-Namen überein.
-          {% endif %}
   - type: grid
     cards:
       - type: custom:auto-entities
@@ -88,47 +96,68 @@ sections:
         card_param: cards
         filter:
           template: |
-            [
-              {
-                "type": "custom:mushroom-entity-card",
-                "entity": "input_select.hausbau_aktuelle_phase",
-                "name": "Aktuelle Phase",
-                "icon": "mdi:crane",
-                "icon_color": "blue"
-              },
-              {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
-              {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
-              {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
-              {% set ns = namespace(found=false) %}
-
-              {% for entity in entities %}
+            {% set datetime_entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | sort(attribute='state') | list %}
+            {% set ns = namespace(items=[]) %}
+            {% for entity in datetime_entities %}
               {% set phase_name = entity.attributes.friendly_name | replace('Hausbau ', '') %}
-              {% set phase_name_clean = phase_name | lower | trim %}
+              {% set boolean_id = entity.entity_id | replace('input_datetime.', 'input_boolean.') %}
+              {% set is_done = is_state(boolean_id, 'on') %}
               {% set date_val = entity.state %}
+              {% set is_delayed = false %}
+              {% set date_fmt = 'TBD' %}
+              {% set time_info = '-' %}
 
-              {% set is_current = false %}
-              {% if current_phase_clean == phase_name_clean %}
-                {% set ns.found = true %}
-                {% set is_current = true %}
-              {% endif %}
-
-              {% set icon_color_property = '' %}
-              {% if is_current %}
-                {% if date_val not in ['unknown', 'unavailable'] %}
-                  {% set dt = (date_val | as_datetime | as_local) %}
-                  {% if dt.date() < now().date() %}
-                    {% set icon_color_property = '"icon_color": "red",' %}
-                  {% endif %}
+              {% if date_val not in ['unknown', 'unavailable'] %}
+                {% set dt = (date_val | as_datetime | as_local) %}
+                {% set date_fmt = dt.strftime('%d.%m.%Y') %}
+                {% set days_diff = (dt.date() - now().date()).days %}
+                {% if days_diff > 0 %}
+                  {% set time_info = "in " ~ days_diff ~ " Tagen" %}
+                {% elif days_diff == 0 %}
+                  {% set time_info = "Heute" %}
+                {% else %}
+                  {% set time_info = "vor " ~ (days_diff | abs) ~ " Tagen" %}
                 {% endif %}
-              {% elif not ns.found %}
-                {% set icon_color_property = '"icon_color": "green",' %}
+                {% if not is_done and days_diff < 0 %}
+                  {% set is_delayed = true %}
+                {% endif %}
               {% endif %}
 
+              {% set icon_color = 'disabled' %}
+              {% if is_done %}
+                {% set icon_color = 'green' %}
+              {% elif is_delayed %}
+                {% set icon_color = 'red' %}
+              {% endif %}
+
+              {% set ns.items = ns.items + [{
+                "datetime_id": entity.entity_id,
+                "boolean_id": boolean_id,
+                "phase_name": phase_name,
+                "is_done": is_done,
+                "icon_color": icon_color,
+                "date_fmt": date_fmt,
+                "time_info": time_info
+              }] %}
+            {% endfor %}
+
+            {% set sorted_items = ns.items | sort(attribute='is_done') %}
+            [
+              {% for item in sorted_items %}
               {
-                "type": "custom:mushroom-entity-card",
-                "entity": "{{ entity.entity_id }}",
-                {{ icon_color_property }}
-                "name": "{{ phase_name }}"
+                "type": "custom:mushroom-template-card",
+                "primary": "{{ item.phase_name }}",
+                "secondary": "{{ item.date_fmt }} ({{ item.time_info }})",
+                "icon": "mdi:crane",
+                "icon_color": "{{ item.icon_color }}",
+                "tap_action": {
+                  "action": "more-info",
+                  "entity": "{{ item.datetime_id }}"
+                },
+                "hold_action": {
+                  "action": "more-info",
+                  "entity": "{{ item.boolean_id }}"
+                }
               }{{ "," if not loop.last else "" }}
               {% endfor %}
             ]

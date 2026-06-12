@@ -22,12 +22,17 @@ sections:
     cards: []
   - type: grid
     cards:
-      - type: custom:flower-card
-        entity: plant.blaubeere
-        show_bars:
-          - illuminance
-          - humidity
-          - moisture
-          - conductivity
-          - temperature
-        battery_sensor: sensor.groser_topf_balkon_battery
+      - type: "custom:auto-entities"
+        show_empty: false
+        card:
+          show_header_toggle: false
+          title: "Pflanzen"
+          type: entities
+        filter:
+          include:
+            - attributes:
+                device_class: plant
+              area: balkon
+              options:
+                type: custom:flower-card
+                display_type: compact
