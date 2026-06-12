@@ -5,27 +5,14 @@ description: "Show bed state on clock"
 trigger:
   - platform: state
     entity_id: sensor.hausbau_fertigstellung
+  - platform: state
+    entity_id: sensor.hausbau_aktuelle_phase
 condition: []
 action:
   - action: script.awtrix3customapp
     data:
       app_id: construction
-      text: >
-        {% set current_phase = states('input_select.hausbau_aktuelle_phase') %}
-        {% set current_phase_clean = current_phase | lower | replace('hausbau', '') | replace('_', ' ') | trim %}
-        {% set entities = states.input_datetime | selectattr('entity_id', 'search', 'input_datetime.hausbau_') | list %}
-        {% set ns = namespace(found_name=current_phase) %}
-
-        {% for entity in entities %}
-          {% set phase_name = entity.attributes.friendly_name | replace('Hausbau ', '') %}
-          {% set phase_name_clean = phase_name | lower | trim %}
-
-          {% if current_phase_clean == phase_name_clean %}
-            {% set ns.found_name = phase_name %}
-          {% endif %}
-        {% endfor %}
-
-        {{ ns.found_name }}
+      text: "{{ states('sensor.hausbau_aktuelle_phase') }}"
       icon: "50401"
       progress: "{{ (states('sensor.hausbau_fertigstellung') | float(0)) | round(2) }}"
 mode: single
