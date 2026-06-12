@@ -39,6 +39,29 @@
         "data": {
           "tournament_id": "Tournament ID"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Handball.net Team",
+        "description": "Update the team ID for this configured team, either manually or by searching for the team",
+        "data": {
+          "team_input_mode": "Input mode",
+          "team_id": "Team ID",
+          "club_query": "Club name (search)"
+        }
+      },
+      "reconfigure_select_club": {
+        "title": "Select club",
+        "description": "Choose a club from the search results",
+        "data": {
+          "club_id": "Club"
+        }
+      },
+      "reconfigure_select_team": {
+        "title": "Select team",
+        "description": "Choose the team to use for this reconfiguration",
+        "data": {
+          "selected_team_id": "Team"
+        }
       }
     },
     "error": {
@@ -55,7 +78,9 @@
       "already_configured": "This entity is already configured."
     },
     "abort": {
-      "already_configured": "This entity is already configured."
+      "already_configured": "This entity is already configured.",
+      "invalid_reconfigure_entry": "This entry cannot be reconfigured.",
+      "reconfigure_successful": "Team reconfigured successfully."
     }
   },
   "options": {
