@@ -5138,6 +5138,12 @@
       "id": "recyclecoach_com"
     },
     {
+      "title": "Notre-Dame-du-Bon-Conseil (Village)",
+      "module": "villagebonconseil_ca",
+      "default_params": {},
+      "id": "villagebonconseil_ca"
+    },
+    {
       "title": "Oak Bay (BC)",
       "module": "recyclecoach_com",
       "default_params": {},
@@ -5216,6 +5222,12 @@
         "split_at": "\\, (?:and )?|(?: and )"
       },
       "id": "ics_recollect"
+    },
+    {
+      "title": "Repentigny (QC)",
+      "module": "repentigny_ca",
+      "default_params": {},
+      "id": "repentigny_ca"
     },
     {
       "title": "Richmond Hill (ON)",
@@ -5769,6 +5781,14 @@
       "module": "cc-montesquieu_fr",
       "default_params": {},
       "id": "cc-montesquieu_fr"
+    },
+    {
+      "title": "Communaut\u00e9 de Communes P\u00e9v\u00e8le Carembault",
+      "module": "publidata_fr",
+      "default_params": {
+        "instance_id": 1141
+      },
+      "id": "publidata_fr"
     },
     {
       "title": "Dietwiller",
@@ -6873,7 +6893,7 @@
       "id": "ics_awb_landkreis_karlsruhe_de"
     },
     {
-      "title": "Abfallwirtschaftsbetrieb LK Mainz-Bingen",
+      "title": "Abfallwirtschaftsbetrieb LK Mainz-Bingen (Deprecated)",
       "module": "awb_mainz_bingen_de",
       "default_params": {},
       "id": "awb_mainz_bingen_de"
@@ -7130,6 +7150,38 @@
         "municipality": "Amelsen"
       },
       "id": "nerdbridge_de"
+    },
+    {
+      "title": "Amt Bad Wilsnack/Weisen (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "1e9592418582666e2a5d1c62b2683435"
+      },
+      "id": "abfall_io"
+    },
+    {
+      "title": "Amt Lenzen-Elbtalaue (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "bb937857acd951dfc8de5be8b8a49f6d"
+      },
+      "id": "abfall_io"
+    },
+    {
+      "title": "Amt Meyenburg (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "4638881e7bebe6869e2e86de5f8aa09e"
+      },
+      "id": "abfall_io"
+    },
+    {
+      "title": "Amt Putlitz/Berge (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "4f06df48f154246415e57ce12b26abe5"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Andershausen",
@@ -8949,12 +9001,28 @@
       "id": "cmcitymedia_de"
     },
     {
+      "title": "Gemeinde Gro\u00df Pankow (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "af91b65d2753a219309072837d8ea4e1"
+      },
+      "id": "abfall_io"
+    },
+    {
       "title": "Gemeinde Gr\u00fcndau",
       "module": "heimat_info_de",
       "default_params": {
         "commune": "gruendau"
       },
       "id": "heimat_info_de"
+    },
+    {
+      "title": "Gemeinde Gumtow (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "3cefa45ab357d231891bb497253c630f"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Gemeinde Kalletal",
@@ -8965,12 +9033,28 @@
       "id": "cmcitymedia_de"
     },
     {
+      "title": "Gemeinde Karst\u00e4dt (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "798f59a75627f5d7686dab0c7226c877"
+      },
+      "id": "abfall_io"
+    },
+    {
       "title": "Gemeinde Kranenburg",
       "module": "abfallnavi_de",
       "default_params": {
         "service": "kranenburg"
       },
       "id": "abfallnavi_de"
+    },
+    {
+      "title": "Gemeinde Plattenburg (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "a0461612534502273c518e28d4f6f1e4"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Gemeinde Roetgen",
@@ -9724,6 +9808,12 @@
         "municipality": "Katlenburg"
       },
       "id": "nerdbridge_de"
+    },
+    {
+      "title": "KAW Mainz und Mainz-Bingen A\u00f6R",
+      "module": "kaw_mainz_bingen_de",
+      "default_params": {},
+      "id": "kaw_mainz_bingen_de"
     },
     {
       "title": "KECL Kommunalentsorgung Chemnitzer Land",
@@ -11973,6 +12063,12 @@
       "id": "app_abfallplus_de"
     },
     {
+      "title": "Ostprignitz-Ruppin",
+      "module": "ostprignitz_ruppin_de",
+      "default_params": {},
+      "id": "ostprignitz_ruppin_de"
+    },
+    {
       "title": "Parensen",
       "module": "nerdbridge_de",
       "default_params": {
@@ -12326,14 +12422,6 @@
       "module": "rsag_de",
       "default_params": {},
       "id": "rsag_de"
-    },
-    {
-      "title": "RSAG Rhein-Sieg-Kreis",
-      "module": "muellmax_de",
-      "default_params": {
-        "service": "Rsa"
-      },
-      "id": "muellmax_de"
     },
     {
       "title": "R\u00f6dermark",
@@ -12714,6 +12802,12 @@
       "id": "awido_de"
     },
     {
+      "title": "Stadt Gem\u00fcnden (Wohra)",
+      "module": "gemuenden_wohra_de",
+      "default_params": {},
+      "id": "gemuenden_wohra_de"
+    },
+    {
       "title": "Stadt Haltern am See",
       "module": "muellmax_de",
       "default_params": {
@@ -12826,12 +12920,28 @@
       "id": "ics_osnabrueck_de"
     },
     {
+      "title": "Stadt Perleberg (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "9fb3e2e5498e825250105ee272102a7b"
+      },
+      "id": "abfall_io"
+    },
+    {
       "title": "Stadt Porta Westfalica",
       "module": "abfallnavi_de",
       "default_params": {
         "service": "portawestfalica"
       },
       "id": "abfallnavi_de"
+    },
+    {
+      "title": "Stadt Pritzwalk (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "d92f59ef4066ae6d299478996d1d8430"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Stadt Regensburg",
@@ -12882,6 +12992,14 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_wetzlar_de"
+    },
+    {
+      "title": "Stadt Wittenberge (Landkreis Prignitz)",
+      "module": "abfall_io",
+      "default_params": {
+        "key": "b870ecfa6e1f882680758d374ba3fa2d"
+      },
+      "id": "abfall_io"
     },
     {
       "title": "Stadtbetrieb Frechen",
@@ -14069,6 +14187,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Anzola dell'Emilia",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "7"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Aprica S.p.A.",
       "module": "apricaspa_it",
       "default_params": {},
@@ -14085,6 +14211,14 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Argelato",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "12"
+      },
+      "id": "geovest_it"
     },
     {
       "title": "ARO Figulinas - DLR Ambiente - Ciclat",
@@ -14343,6 +14477,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Calderara di Reno",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "8"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Calenzano",
       "module": "aliaserviziambientali_it",
       "default_params": {
@@ -14471,6 +14613,14 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Castel Maggiore",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "10"
+      },
+      "id": "geovest_it"
     },
     {
       "title": "Castel Volturno - WM Magenta Srl",
@@ -14749,6 +14899,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Crevalcore",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "2"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Cupello - Pulchra Ambiente Srl",
       "module": "junker_app",
       "default_params": {},
@@ -14851,6 +15009,14 @@
       "id": "aliaserviziambientali_it"
     },
     {
+      "title": "Finale Emilia",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "1"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Firenze",
       "module": "aliaserviziambientali_it",
       "default_params": {
@@ -14945,6 +15111,12 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Geovest",
+      "module": "geovest_it",
+      "default_params": {},
+      "id": "geovest_it"
     },
     {
       "title": "GESENU  Gestione Servizi Nettezza Urbana S.P.A",
@@ -15509,6 +15681,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Nonantola",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "6"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Novara",
       "module": "junker_app",
       "default_params": {},
@@ -15721,6 +15901,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Ravarino",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "9"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Ravello",
       "module": "junker_app",
       "default_params": {},
@@ -15825,6 +16013,14 @@
       "id": "junker_app"
     },
     {
+      "title": "Sala Bolognese",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "4"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "Sala Consilina - SuperEco SRL",
       "module": "junker_app",
       "default_params": {},
@@ -15871,6 +16067,14 @@
       "id": "junker_app"
     },
     {
+      "title": "San Giovanni in Persiceto",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "5"
+      },
+      "id": "geovest_it"
+    },
+    {
       "title": "San Marcello Piteglio",
       "module": "aliaserviziambientali_it",
       "default_params": {
@@ -15883,6 +16087,14 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    },
+    {
+      "title": "Sant'Agata Bolognese",
+      "module": "geovest_it",
+      "default_params": {
+        "town_id": "13"
+      },
+      "id": "geovest_it"
     },
     {
       "title": "Santa Lucia del Mela",
@@ -16379,6 +16591,110 @@
       "module": "junker_app",
       "default_params": {},
       "id": "junker_app"
+    }
+  ],
+  "Japan": [
+    {
+      "title": "ThreeR",
+      "module": "delight_system_com",
+      "default_params": {},
+      "id": "delight_system_com"
+    }
+  ],
+  "Liechtenstein": [
+    {
+      "title": "Balzers",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "balzers"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Eschen Nendeln",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "eschen-nendeln"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "FL Abfalltransport AG",
+      "module": "abfalltransport_li",
+      "default_params": {},
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Gamprin Bendern",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "gamprin-bendern"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Mauren Schaanwald",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "mauren-schaanwald"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Planken",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "planken"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Ruggell",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "ruggell"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Schaan",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "schaan"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Schellenberg",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "schellenberg"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Triesen",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "triesen"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Triesenberg",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "triesenberg"
+      },
+      "id": "abfalltransport_li"
+    },
+    {
+      "title": "Vaduz",
+      "module": "abfalltransport_li",
+      "default_params": {
+        "municipality": "vaduz"
+      },
+      "id": "abfalltransport_li"
     }
   ],
   "Lithuania": [
@@ -16975,6 +17291,12 @@
       "id": "rotorua_lakes_council_nz"
     },
     {
+      "title": "Selwyn District Council",
+      "module": "selwyn_govt_nz",
+      "default_params": {},
+      "id": "selwyn_govt_nz"
+    },
+    {
       "title": "Taup\u014d District Council",
       "module": "taupodc_govt_nz",
       "default_params": {},
@@ -17065,6 +17387,12 @@
       "module": "remidt_no",
       "default_params": {},
       "id": "remidt_no"
+    },
+    {
+      "title": "Renovasjonsselskapet for Drammensregionen IKS (RfD)",
+      "module": "rfd_no",
+      "default_params": {},
+      "id": "rfd_no"
     },
     {
       "title": "ROAF (Romerike Avfallsforedling IKS)",
@@ -18186,6 +18514,12 @@
       "id": "fcc_group_eu"
     },
     {
+      "title": "KOSIT EAST",
+      "module": "kositeast_sk",
+      "default_params": {},
+      "id": "kositeast_sk"
+    },
+    {
       "title": "Odvoz Odpadu",
       "module": "ics",
       "default_params": {},
@@ -18486,14 +18820,6 @@
       "module": "molndal_se",
       "default_params": {},
       "id": "molndal_se"
-    },
-    {
-      "title": "Nodra",
-      "module": "edpevent_se",
-      "default_params": {
-        "service_provider": "nodra"
-      },
-      "id": "edpevent_se"
     },
     {
       "title": "Norrtalje Vatten & Avfall",
@@ -19860,6 +20186,12 @@
       "module": "broxbourne_gov_uk",
       "default_params": {},
       "id": "broxbourne_gov_uk"
+    },
+    {
+      "title": "Boston Borough Council",
+      "module": "boston_gov_uk",
+      "default_params": {},
+      "id": "boston_gov_uk"
     },
     {
       "title": "Bracknell Forest Council",
@@ -21807,6 +22139,12 @@
       "id": "ics_recollect"
     },
     {
+      "title": "Baltimore County",
+      "module": "baltimore_county_md_us",
+      "default_params": {},
+      "id": "baltimore_county_md_us"
+    },
+    {
       "title": "Baton Rouge, LA",
       "module": "baton_rouge_la_us",
       "default_params": {},
@@ -22065,6 +22403,12 @@
       "module": "recyclecoach_com",
       "default_params": {},
       "id": "recyclecoach_com"
+    },
+    {
+      "title": "Red Bank, Tennessee",
+      "module": "red_bank_tn_us",
+      "default_params": {},
+      "id": "red_bank_tn_us"
     },
     {
       "title": "Republic Services",

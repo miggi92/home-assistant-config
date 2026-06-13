@@ -193,8 +193,22 @@ class VoiceSatelliteMediaPlayer(MediaPlayerEntity, RestoreEntity):
         **kwargs: Any,
     ) -> None:
         """Play media on the browser satellite."""
-        # Resolve media-source:// URIs to actual playable URLs
-        if media_id.startswith("media-source://"):
+        # Camera entities are pushed unresolved (entity_id, type "camera")
+        # so the browser can negotiate WebRTC over its authenticated WS
+        # connection (camera/webrtc/offer) for sub-second latency. The
+        # frontend checks camera/capabilities itself and falls back to
+        # resolving the HLS / MJPEG URL when WebRTC isn't available.
+        camera_entity: str | None = None
+        if media_id.startswith("media-source://camera/"):
+            camera_entity = media_id.removeprefix("media-source://camera/")
+        elif media_id.startswith("camera."):
+            camera_entity = media_id
+
+        if camera_entity is not None:
+            media_id = camera_entity
+            media_type = "camera"
+        # Resolve remaining media-source:// URIs to actual playable URLs
+        elif media_id.startswith("media-source://"):
             result = await async_resolve_media(
                 self.hass, media_id, self.entity_id
             )

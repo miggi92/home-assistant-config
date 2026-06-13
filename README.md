@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.1%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.2)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.2%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.2)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -34,7 +34,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🤖 Automatisierungen: 204
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 43
-- 🛡️ Binäre Sensoren: 255
+- 🛡️ Binäre Sensoren: 251
 - 🛠️ Custom Integrationen: 56
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
@@ -44,7 +44,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3896
+- 🧩 Entitäten: 3884
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 552
 - 📍 Geräte-Tracker: 132
@@ -58,9 +58,9 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎵 Mediaplayer: 46
 - 🔟 Nummern: 135
 - 👤 Personen: 9
-- 🔌 Schalter: 336
+- 🔌 Schalter: 338
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1804
+- 📟 Sensoren: 1794
 - 📢 Sirenen: 0
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
