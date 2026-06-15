@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.2%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.2)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.3%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.3)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -31,7 +31,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🆙 Aktualisierung: 185
 - 🚨 Alarmbedienfelder: 2
 - ↕️ Auswahlen: 82
-- 🤖 Automatisierungen: 204
+- 🤖 Automatisierungen: 205
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 43
 - 🛡️ Binäre Sensoren: 251
@@ -44,11 +44,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3884
+- 🧩 Entitäten: 3885
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 553
+- 📱 Geräte: 552
 - 📍 Geräte-Tracker: 132
-- 🔌 Integrationen: 195
+- 🔌 Integrationen: 194
 - 🗓️ Kalender: 31
 - 📷 Kameras: 18
 - 🌡️ Klima: 2
