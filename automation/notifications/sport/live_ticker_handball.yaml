@@ -2,35 +2,38 @@
 alias: LivetickerHandball
 id: da7da451-5434-4399-b5bc-8d6e3a78782e
 description: "Liveticker Handball"
+mode: parallel
 trigger:
   - trigger: state
     entity_id:
-      - sensor.sg_heuchelberg_live_events
-      - sensor.tv_1895_flein_2_live_events
-      - sensor.sg_heuchelberg_wja_live_events
-      - sensor.hsg_lauffen_neipperg_m_ll_1_bw_live_events
-
+      - sensor.sg_heuchelberg_f_live_events
+      - sensor.tv_1895_flein_m2_live_events
+      - sensor.sg_heuchelberg_wa_live_events
+      - sensor.sg_heuchelberg_wa_quali_live_events
+      - sensor.hsg_lauffen_neipperg_m_live_events
 condition:
   - condition: template
+    alias: CheckIfTotalEventsIncreased
     value_template: >
-      {% set from = trigger.from_state %}
-      {% set to = trigger.to_state %}
-      {% if from is none or to is none %}
+      {% set state_from = trigger.from_state %}
+      {% set state_to = trigger.to_state %}
+      {% if state_from is none or state_to is none %}
         false
       {% else %}
-        {{ to.attributes.total_events | int > from.attributes.total_events | int }}
+        {{ state_to.attributes.total_events | int(0) > state_from.attributes.total_events | int(0) }}
       {% endif %}
 action:
   - service: script.notify_engine
+    alias: SendNotificationWithLatestEvent
     data:
       title: >
-        {% set name = trigger.to_state.attributes.friendly_name %}
-        {% set name = name | replace('Live Events', '') | trim %}
-        Liveticker - {{ name }}
-      value1: |
-        {% set latest_event = trigger.to_state.attributes.events | sort(attribute='timestamp', reverse=true) | first %}
+        {% set entity_name = trigger.to_state.attributes.friendly_name %}
+        {% set formatted_name = entity_name | replace('Live Events', '') | trim %}
+        Liveticker - {{ formatted_name }}
+      value1: >
+        {% set events_list = trigger.to_state.attributes.events %}
+        {% set latest_event = events_list | sort(attribute='timestamp', reverse=true) | first %}
         {{ latest_event.message }} - {{ latest_event.score }} ({{ latest_event.time }})
       who: "home"
       tag_id: "information"
       group: "Sport"
-mode: parallel
