@@ -1,0 +1,41 @@
+---
+# add missing products 2 shopping list
+alias: AddMissingProd2ShoppingList
+id: 45bcb462-c9ec-429f-863d-cf3b807b3e99
+description: add missing products 2 shopping list
+trigger:
+  - trigger: state
+    entity_id:
+      - binary_sensor.grocy_missing_products
+    attribute: missing_products
+condition:
+  - alias: Prüfen ob wirklich ein neues Produkt hinzugekommen ist
+    condition: template
+    value_template: "{{ trigger.to_state.attributes.missing_products | map(attribute='id') | list | count > trigger.from_state.attributes.missing_products | map(attribute='id') | list | count }}"
+action:
+  - alias: Iteriere nur durch die neu hinzugefügten Produkte
+    repeat:
+      for_each: >-
+        {% set old_ids = trigger.from_state.attributes.missing_products | map(attribute='id') | list if trigger.from_state and trigger.from_state.attributes.missing_products else [] %}
+        {{ trigger.to_state.attributes.missing_products | rejectattr('id', 'in', old_ids) | list }}
+      sequence:
+        - alias: Weise das Produkt der richtigen Einkaufsliste zu
+          choose:
+            - alias: Produktgruppe 14 zur DM-Liste hinzufügen
+              conditions:
+                - condition: template
+                  value_template: "{{ repeat.item.product_group_id == 14 }}"
+              sequence:
+                - action: todo.add_item
+                  target:
+                    entity_id: todo.dm_einkaufen
+                  data:
+                    item: "{{ repeat.item.name }}"
+          default:
+            - alias: Alle anderen Produktgruppen zur Picnic-Liste hinzufügen
+              action: todo.add_item
+              target:
+                entity_id: todo.picnic_einkaufswagen
+              data:
+                item: "{{ repeat.item.name }}"
+mode: single
