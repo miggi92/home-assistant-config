@@ -10,7 +10,7 @@ homeassistant:
   longitude: !secret home_long
   elevation: !secret home_elevation
   # Lets me customize individual entities
-  customize: !include_dir_named ../customizations/entities
+  customize: !include_dir_merge_named ../customizations/entities
   media_dirs:
     haunted_sounds: /media/haunted_sounds
     music: /media/music

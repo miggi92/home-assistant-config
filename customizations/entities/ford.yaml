@@ -1,0 +1,4 @@
+---
+# ford
+device_tracker.fordpass_tourneo_tracker:
+  entity_picture: /local/images/ford_tourneo.png
