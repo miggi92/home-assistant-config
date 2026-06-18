@@ -9,7 +9,8 @@
       128,
       40
     ],
-    "dtype": "float32"
+    "dtype": "float32",
+    "feature": "log_mel"
   },
   "output": {
     "name": "log_probs",
@@ -18,7 +19,8 @@
       64,
       52
     ],
-    "dtype": "float32"
+    "dtype": "float32",
+    "meaning": "frame_level_phoneme_log_probabilities"
   },
   "feature_config": {
     "sample_rate": 16000,
@@ -109,6 +111,14 @@
         10,
         29,
         38
+      ],
+      [
+        6,
+        30,
+        10,
+        29,
+        38,
+        12
       ]
     ],
     "wake_word_target_phonemes": [
@@ -126,21 +136,41 @@
         "ɛ",
         "k",
         "s"
+      ],
+      [
+        "ɐ",
+        "l",
+        "ɛ",
+        "k",
+        "s",
+        "ə"
       ]
-    ],
-    "wake_word_target_anchors": [
-      [],
-      []
     ],
     "max_edit_distance": 1,
     "wake_word_trail_tolerance": 0,
-    "min_matched_confidence": 4.5
+    "min_matched_confidence": 4.5,
+    "wake_word_target_anchors": [
+      [],
+      [],
+      []
+    ],
+    "target_min_matched_confidence": [
+      4.5,
+      7.0,
+      4.0
+    ],
+    "wake_word_target_groups": [
+      "full_fast",
+      "trunc_strict",
+      "full_sustained_low_conf"
+    ]
   },
   "runtime": {
     "required_hits": 2,
     "target_required_hits": [
       2,
-      5
+      5,
+      4
     ],
     "cooldown_ms": 2000,
     "hit_mode": "consecutive",

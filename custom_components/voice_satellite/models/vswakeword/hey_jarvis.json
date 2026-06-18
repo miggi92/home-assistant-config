@@ -9,7 +9,8 @@
       128,
       40
     ],
-    "dtype": "float32"
+    "dtype": "float32",
+    "feature": "log_mel"
   },
   "output": {
     "name": "log_probs",
@@ -18,7 +19,8 @@
       64,
       52
     ],
-    "dtype": "float32"
+    "dtype": "float32",
+    "meaning": "frame_level_phoneme_log_probabilities"
   },
   "feature_config": {
     "sample_rate": 16000,
@@ -1110,7 +1112,7 @@
     "cooldown_ms": 2000,
     "hit_mode": "consecutive",
     "high_confidence_bypass": 5.8,
-    "high_confidence_bypass_min_hits": 1,
+    "high_confidence_bypass_min_hits": 2,
     "target_required_hits": [
       2,
       2,

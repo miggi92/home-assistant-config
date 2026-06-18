@@ -86,7 +86,8 @@ set_screensaver:
         solid dark overlay (combine with a low brightness percentage in
         the panel for the strongest thermal savings). "media" uses the
         image/video/folder selected in the panel. "website" embeds the
-        URL configured in the panel.
+        URL configured in the panel. "clock" shows a large digital time
+        and date.
       required: true
       example: black
       selector:
@@ -95,6 +96,7 @@ set_screensaver:
             - black
             - media
             - website
+            - clock
 
 start_timer:
   name: Start timer
