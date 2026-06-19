@@ -58,6 +58,7 @@ badges:
     tap_action:
       action: more-info
   - type: custom:mushroom-template-badge
+    entity: number.anzahl_der_ausstehenden_medikamente
     icon: mdi:medication
     color: >
       {% if states('number.anzahl_der_ausstehenden_medikamente') | int(0) > 0 %}
@@ -454,7 +455,7 @@ sections:
                         "entity": text_id,
                         "name": "Dish",
                         "icon": icon,
-                        "show_state": "false"
+                        "show_state": false
                       }]
                     }] %}
                   {% endif %}
