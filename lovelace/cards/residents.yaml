@@ -2,8 +2,12 @@
 # Residents
 type: vertical-stack
 cards:
-  - type: horizontal-stack
+  - type: custom:mushroom-title-card
     title: Haushalt
+    subtitle: "{{ states('number.persons_home') | int(0) }} von {{ expand('group.residents') | count }} zu Hause"
+  - type: grid
+    columns: 2
+    square: false
     cards:
       - type: custom:decluttering-card
         template: person_card_template
@@ -30,8 +34,6 @@ cards:
           - watch: silke_uhr
           - id: silke
           - beacon: sensor.ibeacon_pixel_10_pro_area
-  - type: horizontal-stack
-    cards:
       - type: custom:decluttering-card
         template: person_card_template
         variables:
@@ -46,8 +48,6 @@ cards:
           - entity: person.finn_manuel
           - id: finn_manuel
           - work_zone: zone.kita
-  - type: horizontal-stack
-    cards:
       - type: custom:decluttering-card
         template: person_card_template
         variables:
@@ -59,7 +59,9 @@ cards:
   - type: custom:auto-entities
     show_empty: false
     card:
-      type: horizontal-stack
+      type: grid
+      columns: 3
+      square: false
       title: Gäste
     card_param: cards
     filter:
