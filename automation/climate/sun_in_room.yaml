@@ -8,10 +8,13 @@ trigger:
     to: "on"
     alias: Sun hits living room
 condition:
+  - condition: state
+    entity_id: input_boolean.sonnen_schutz_aktiv
+    state: "on"
   - alias: "Check outside temperature"
     condition: numeric_state
     entity_id: sensor.temperatur
-    above: "23"
+    above: "22"
 action:
   - action: scene.turn_on
     target:
