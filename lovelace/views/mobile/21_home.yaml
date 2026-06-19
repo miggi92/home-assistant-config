@@ -40,6 +40,12 @@ sections:
         collapsible_controls: true
         tap_action:
           action: toggle
+      - type: custom:button-card
+        name: Speiseplan bearbeiten
+        icon: mdi:silverware-variant
+        tap_action:
+          action: url
+          url_path: https://grocy.kohgeb.family/mealplan
       - type: energy-sources-table
   - type: grid
     cards:
