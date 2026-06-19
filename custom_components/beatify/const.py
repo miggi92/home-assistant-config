@@ -2,6 +2,14 @@
 
 DOMAIN = "beatify"
 
+# Companion auth-bypass opt-in (#1357). The HA Android Companion bypass in
+# server/companion_auth.py grants admin access on a UA + private-IP match with
+# zero credentials. That is unsafe behind Nabu Casa / reverse proxies, so the
+# bypass is OFF by default and only takes effect when the user explicitly
+# enables this option in the integration's options flow.
+CONF_ENABLE_COMPANION_AUTH_BYPASS = "enable_companion_auth_bypass"
+DEFAULT_ENABLE_COMPANION_AUTH_BYPASS = False
+
 # Game configuration
 MAX_PLAYERS = 20
 MIN_PLAYERS = 2
@@ -57,6 +65,13 @@ FUZZY_BUDGET_LEN_DIVISOR = 3
 # string, or it shares a significant word with the truth. Anything further is
 # just wrong (no vote, 0 points). Keeps "Beatles" for "Queen" out of the vote.
 NEAR_MISS_MAX_RATIO = 0.5
+# Hard length cap for a single title/artist guess field (#1362). A real title
+# or artist never approaches this, but aiohttp accepts WS messages up to 4 MB,
+# so an unbounded guess would feed a multi-megabyte string into the pure-Python
+# O(n*m) Levenshtein DP and freeze the HA event loop. Guesses are truncated to
+# this length at WS ingest (before storing/broadcasting) and defensively again
+# inside classify_field.
+MAX_GUESS_LEN = 200
 # Conditional near-miss community-vote window (REVEAL phase), in seconds.
 TITLE_ARTIST_VOTE_WINDOW_SECONDS = 30
 
@@ -186,4 +201,5 @@ PROVIDER_APPLE_MUSIC = "apple_music"  # Preserved for future use
 PROVIDER_YOUTUBE_MUSIC = "youtube_music"
 PROVIDER_TIDAL = "tidal"
 PROVIDER_DEEZER = "deezer"
+PROVIDER_AMAZON_MUSIC = "amazon_music"
 PROVIDER_DEFAULT = PROVIDER_SPOTIFY

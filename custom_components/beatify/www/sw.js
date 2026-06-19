@@ -6,8 +6,20 @@
  */
 'use strict';
 
-var CACHE_VERSION = 'beatify-v4.0.0';
+// CACHE_VERSION is templated by server/views.py::SwJsView at serve time —
+// {{ASSET_VER}} becomes <version>-<asset-fingerprint> (#1266), so any css/js/
+// i18n change invalidates every old SW cache on the next load. No manual bump.
+var CACHE_VERSION = 'beatify-v{{ASSET_VER}}';
 var MAX_CACHE_ITEMS = 50;
+
+// Gated debug logging (#1280). Service workers run without window/localStorage,
+// so the BeatifyDebug runtime flag isn't reachable here; gate on a build-time
+// constant instead. Flip to true when debugging SW caching. console.warn/error
+// stay ungated for real failures.
+var DEBUG = false;
+function swDebug() {
+    if (DEBUG) console.log.apply(console, arguments);
+}
 
 // Critical assets to precache on install (minified versions only - fallback handled by HTML).
 // ha-auth.js is intentionally excluded — see NEVER_CACHE below.
@@ -72,7 +84,7 @@ self.addEventListener('activate', function(event) {
                             return name.startsWith('beatify-') && name !== CACHE_VERSION;
                         })
                         .map(function(name) {
-                            console.log('[SW] Deleting old cache:', name);
+                            swDebug('[SW] Deleting old cache:', name);
                             return caches.delete(name);
                         })
                 );

@@ -17,6 +17,7 @@ from custom_components.beatify.const import (
     DIFFICULTY_HARD,
     DIFFICULTY_NORMAL,
     DOMAIN,
+    PROVIDER_AMAZON_MUSIC,
     PROVIDER_APPLE_MUSIC,
     PROVIDER_DEFAULT,
     PROVIDER_DEEZER,
@@ -63,6 +64,7 @@ def _validate_provider(provider: str) -> str:
         PROVIDER_YOUTUBE_MUSIC,
         PROVIDER_TIDAL,
         PROVIDER_DEEZER,
+        PROVIDER_AMAZON_MUSIC,
     )
     return provider if provider in valid_providers else PROVIDER_DEFAULT
 
@@ -84,7 +86,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:  # noqa: PLR0911, PLR0912
         """Start a new game."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         client_ip = request.remote or "unknown"
         if not self._check_rate_limit(client_ip):
@@ -117,7 +119,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
 
         try:
             body = await request.json()
-        except Exception:  # noqa: BLE001
+        except (ValueError, UnicodeDecodeError):
             return _json_error("Invalid JSON", 400, code="INVALID_REQUEST")
 
         playlist_paths = body.get("playlists", [])
@@ -234,7 +236,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                             f"Invalid song in {playlist_path}: missing year or uri"
                         )
 
-            except Exception as err:  # noqa: BLE001
+            except (OSError, ValueError) as err:
                 warnings.append(f"Failed to load {playlist_path}: {err}")
 
         if not songs:
@@ -296,6 +298,13 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         if provider == PROVIDER_DEEZER and not capabilities.get("deezer"):
             return _json_error(
                 "Deezer is not supported on this speaker. Use Music Assistant.",
+                400,
+                code="PROVIDER_NOT_SUPPORTED",
+            )
+
+        if provider == PROVIDER_AMAZON_MUSIC and not capabilities.get("amazon_music"):
+            return _json_error(
+                "Amazon Music is not supported on this speaker. Use an Amazon Echo (alexa_media).",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
             )
@@ -433,7 +442,7 @@ class EndGameView(BeatifyAdminView):
 
     async def post(self, request: web.Request) -> web.Response:
         """End the current game."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         data = self.hass.data.get(DOMAIN, {})
         game_state = data.get("game")
@@ -477,7 +486,7 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Force-end any active game and report what was cleaned up."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         client_ip = request.remote or "unknown"
         if not self._check_rate_limit(client_ip):
@@ -519,7 +528,7 @@ class RematchGameView(HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Start a rematch with current players."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         from custom_components.beatify.game.state import GamePhase  # noqa: PLC0415
 
@@ -567,7 +576,7 @@ class StartGameplayView(BeatifyAdminView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Start gameplay from lobby."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         from custom_components.beatify.game.state import GamePhase  # noqa: PLC0415
 

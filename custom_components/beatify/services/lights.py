@@ -89,14 +89,39 @@ class PartyLightsService:
         self._wled_presets: dict[str, int] = dict(WLED_PRESET_DEFAULTS)
         self._wled_entities: set[str] = set()
 
+    def snapshot_saved_states(self) -> dict[str, dict[str, Any]]:
+        """Return a copy of the captured pre-party light states (#1402 B2).
+
+        Exposed so a reconfigure (a second ``configure_party_lights`` mid-game)
+        can carry the *genuine* original light states forward into a fresh
+        service instead of letting the new ``start()`` re-capture states that
+        are already the party colors this service applied — which would make the
+        eventual ``stop()`` "restore" lights to party colors and permanently
+        lose the user's real original states.
+        """
+        return {entity: dict(state) for entity, state in self._saved_states.items()}
+
     async def start(
         self,
         entity_ids: list[str],
         intensity: str = "medium",
         light_mode: str = "dynamic",
         wled_presets: dict[str, int] | None = None,
+        inherited_states: dict[str, dict[str, Any]] | None = None,
     ) -> None:
-        """Save current light states and take control."""
+        """Save current light states and take control.
+
+        Args:
+            entity_ids: Light entities to take over.
+            intensity: Brightness preset.
+            light_mode: "static" / "dynamic" / "wled".
+            wled_presets: Optional WLED preset overrides.
+            inherited_states: #1402 B2 — pre-party states captured by a prior
+                service being replaced. For any overlapping entity these take
+                precedence over a fresh capture (the fresh read would otherwise
+                snapshot the party colors the prior service applied). Entities
+                NOT in ``inherited_states`` are captured fresh as normal.
+        """
         if not entity_ids:
             return
 
@@ -136,7 +161,24 @@ class PartyLightsService:
                     "brightness": state.attributes.get("brightness"),
                     "rgb_color": state.attributes.get("rgb_color"),
                     "color_temp_kelvin": state.attributes.get("color_temp_kelvin"),
+                    # #1402: remember which color attribute was actually active.
+                    # A light reports BOTH rgb_color and color_temp_kelvin in its
+                    # attributes (the inactive one lingers), so restore must only
+                    # replay the attribute matching the active color_mode — sending
+                    # both in one turn_on is contradictory and the light picks one
+                    # nondeterministically.
+                    "color_mode": state.attributes.get("color_mode"),
                 }
+
+        # #1402 B2: a prior service handed us the genuine pre-party states.
+        # Overlay them so overlapping entities restore to the user's REAL
+        # original look, not the party colors the fresh capture above just read
+        # back. Done before the base-brightness computation so subtle mode also
+        # derives its level from the real pre-game brightness.
+        if inherited_states:
+            for entity_id in self._entity_ids:
+                if entity_id in inherited_states:
+                    self._saved_states[entity_id] = dict(inherited_states[entity_id])
 
         # Compute base brightness for subtle mode from saved states
         brightnesses = [
@@ -157,6 +199,30 @@ class PartyLightsService:
             len(self._wled_entities),
         )
 
+    def _phase_service_data(self, phase_name: str) -> dict[str, Any] | None:
+        """Build the service data (color + intensity-adjusted brightness) for a phase.
+
+        Single source of truth for the subtle/intensity brightness logic so that
+        set_phase() and the flash()/strobe() restore paths all agree — in subtle
+        mode they must restore to the gentle pre-game level, not full brightness
+        (#1389).
+        """
+        phase_data = PHASE_COLORS.get(phase_name)
+        if not phase_data:
+            return None
+
+        service_data = dict(phase_data)
+        if self._intensity == "subtle":
+            offset = int(SUBTLE_BRIGHTNESS_OFFSETS.get(phase_name, 0.0) * 255)
+            service_data["brightness"] = min(self._base_brightness + offset, 255)
+        else:
+            preset = INTENSITY_PRESETS.get(self._intensity, INTENSITY_PRESETS["medium"])
+            if "brightness" in service_data:
+                service_data["brightness"] = int(
+                    service_data["brightness"] * preset["brightness_scale"]
+                )
+        return service_data
+
     async def set_phase(self, phase: Any) -> None:
         """Apply phase-appropriate colors/brightness."""
         if not self._active or not self._entity_ids:
@@ -170,7 +236,15 @@ class PartyLightsService:
             await self.stop_beat_loop()
 
         if phase_name == "END":
-            # END phase triggers celebration via separate call
+            # END phase triggers the rainbow celebration via a separate
+            # celebrate() call. In WLED mode, though, the user-configured END
+            # preset must still fire here — celebrate() only drives raw rgb
+            # colors and skips WLED entities (#1390).
+            if self._light_mode == "wled" and self._wled_entities:
+                preset_id = self._wled_presets.get("END")
+                if preset_id is not None:
+                    for entity_id in self._wled_entities:
+                        await self._apply_wled(entity_id, preset_id)
             return
 
         # WLED mode: activate preset instead of setting colors
@@ -186,22 +260,9 @@ class PartyLightsService:
                 if phase_data:
                     await self._apply(non_wled, dict(phase_data), transition=1.0)
         else:
-            phase_data = PHASE_COLORS.get(phase_name)
-            if not phase_data:
+            service_data = self._phase_service_data(phase_name)
+            if service_data is None:
                 return
-
-            service_data = dict(phase_data)
-            if self._intensity == "subtle":
-                offset = int(SUBTLE_BRIGHTNESS_OFFSETS.get(phase_name, 0.0) * 255)
-                service_data["brightness"] = min(self._base_brightness + offset, 255)
-            else:
-                preset = INTENSITY_PRESETS.get(
-                    self._intensity, INTENSITY_PRESETS["medium"]
-                )
-                if "brightness" in service_data:
-                    service_data["brightness"] = int(
-                        service_data["brightness"] * preset["brightness_scale"]
-                    )
 
             await self._apply(self._entity_ids, service_data, transition=1.0)
 
@@ -230,14 +291,11 @@ class PartyLightsService:
 
         await asyncio.sleep(flash_dur)
 
-        # Restore phase color
-        if self._current_phase and self._current_phase in PHASE_COLORS:
-            phase_data = dict(PHASE_COLORS[self._current_phase])
-            if "brightness" in phase_data:
-                phase_data["brightness"] = int(
-                    phase_data["brightness"] * preset["brightness_scale"]
-                )
-            await self._apply(self._entity_ids, phase_data, transition=0.3)
+        # Restore phase color at the intensity-adjusted brightness (#1389) — in
+        # subtle mode this restores the gentle pre-game level, not full brightness.
+        restore_data = self._phase_service_data(self._current_phase or "")
+        if restore_data is not None:
+            await self._apply(self._entity_ids, restore_data, transition=0.3)
 
     async def start_beat_loop(self, bpm: int = 120) -> None:
         """Start a background beat-flash loop during PLAYING phase (#517)."""
@@ -289,10 +347,11 @@ class PartyLightsService:
                 transition=0.05,
             )
             await asyncio.sleep(interval / 2)
-        # Restore phase color
-        if self._current_phase and self._current_phase in PHASE_COLORS:
-            phase_data = dict(PHASE_COLORS[self._current_phase])
-            await self._apply(self._entity_ids, phase_data, transition=0.3)
+        # Restore phase color at the intensity-adjusted brightness (#1389) — in
+        # subtle mode this restores the gentle pre-game level, not full brightness.
+        restore_data = self._phase_service_data(self._current_phase or "")
+        if restore_data is not None:
+            await self._apply(self._entity_ids, restore_data, transition=0.3)
 
     async def celebrate(self) -> None:
         """Rainbow cycle celebration for ~5 seconds."""
@@ -300,6 +359,16 @@ class PartyLightsService:
             return
 
         _LOGGER.info("Party Lights celebration sequence started")
+        # In WLED mode the END preset is applied by set_phase(); the rainbow
+        # cycle only drives raw rgb, so skip WLED entities to preserve their
+        # configured END preset (#1390).
+        if self._light_mode == "wled":
+            entities = [e for e in self._entity_ids if e not in self._wled_entities]
+        else:
+            entities = list(self._entity_ids)
+        if not entities:
+            return
+
         if self._intensity == "subtle":
             offset = int(SUBTLE_BRIGHTNESS_OFFSETS["END"] * 255)
             brightness = min(self._base_brightness + offset, 255)
@@ -309,7 +378,7 @@ class PartyLightsService:
             if not self._active:
                 break
             await self._apply(
-                self._entity_ids,
+                entities,
                 {"rgb_color": color, "brightness": brightness},
                 transition=0.3,
             )
@@ -339,10 +408,27 @@ class PartyLightsService:
                     restore_data: dict[str, Any] = {"entity_id": entity_id}
                     if saved.get("brightness") is not None:
                         restore_data["brightness"] = saved["brightness"]
-                    if saved.get("rgb_color") is not None:
-                        restore_data["rgb_color"] = list(saved["rgb_color"])
-                    if saved.get("color_temp_kelvin") is not None:
-                        restore_data["color_temp_kelvin"] = saved["color_temp_kelvin"]
+                    # #1402: restore only the color attribute matching the
+                    # active color_mode. Sending rgb_color AND color_temp_kelvin
+                    # in the same turn_on is contradictory; the light resolves it
+                    # nondeterministically and the original color is not reliably
+                    # restored. color_temp mode → color_temp_kelvin only; any
+                    # rgb/hs/xy mode → rgb_color only. When color_mode is unknown
+                    # (older/partial states), fall back to rgb_color if present,
+                    # else color_temp_kelvin — never both.
+                    color_mode = saved.get("color_mode")
+                    rgb = saved.get("rgb_color")
+                    ct = saved.get("color_temp_kelvin")
+                    if color_mode == "color_temp":
+                        if ct is not None:
+                            restore_data["color_temp_kelvin"] = ct
+                    elif color_mode in ("rgb", "rgbw", "rgbww", "hs", "xy"):
+                        if rgb is not None:
+                            restore_data["rgb_color"] = list(rgb)
+                    elif rgb is not None:
+                        restore_data["rgb_color"] = list(rgb)
+                    elif ct is not None:
+                        restore_data["color_temp_kelvin"] = ct
                     await self._hass.services.async_call(
                         "light",
                         "turn_on",

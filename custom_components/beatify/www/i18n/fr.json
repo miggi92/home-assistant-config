@@ -661,10 +661,16 @@
     "round": "Manche {current}/{total}",
     "rounds": "manches",
     "players": "Joueurs",
+    "playersJoined": "{n} joueurs ont rejoint",
+    "playersJoinedOne": "{n} joueur a rejoint",
     "topGuesses": "Meilleures réponses de cette manche",
     "submissions": "Réponses",
     "timeRemaining": "Temps",
-    "castToTv": "Diffuser sur TV :"
+    "castToTv": "Diffuser sur TV :",
+    "wakeLockTitle": "Garder l'écran allumé ?",
+    "wakeLockBody": "Empêche l'écran TV de s'éteindre pendant la partie.",
+    "wakeLockActivate": "Activer",
+    "wakeLockDismiss": "Fermer"
   },
   "launcher": {
     "title": "Beatify",
@@ -878,7 +884,9 @@
       "empty": "Aucune enceinte détectée",
       "emptyHint": "Installe Music Assistant et rafraîchis",
       "capAll": "Tous les services",
+      "capMost": "Tous les services principaux",
       "capOnlyTemplate": "{provider} uniquement",
+      "capMoreTemplate": "{provider} +{count}",
       "capNone": "Aucun service"
     },
     "step2": {
@@ -1059,6 +1067,19 @@
       "parseFailed": "Échec du parsing JSON : {error}",
       "songLabel": "Chanson #{n}",
       "songIssues": "Chansons avec problèmes ({n})"
+    },
+    "guide": {
+      "heading": "Comment ça marche — étape par étape",
+      "step1": "Collez l’URL de la playlist Spotify ci-dessous et cliquez sur «&nbsp;<b>Copier le prompt</b>&nbsp;».",
+      "step2": "Collez le prompt dans ChatGPT, Claude.ai ou un LLM local et exécutez-le.",
+      "step3": "Recopiez le <b>JSON</b> complet dans le champ ci-dessous.",
+      "step4": "Cliquez sur <b>Valider</b> — vous verrez ✓/✗ par champ.",
+      "warnTitle": "Plus de ~32 titres ?",
+      "warnBody": "ChatGPT &amp; Claude coupent souvent les grandes playlists en cours de route. Divisez-les en <b>lots de 30 titres</b> : exécutez le prompt par lot, puis fusionnez les tableaux songs. Si ChatGPT s’interrompt avec une erreur peu claire, c’est presque toujours la longueur de la réponse qui est en cause."
     }
+  },
+  "starting": {
+    "headline": "C'est parti !",
+    "sub": "Connexion de l'enceinte et chargement de la première manche. Préparez vos buzzers."
   }
 }

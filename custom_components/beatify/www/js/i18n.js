@@ -19,6 +19,20 @@ window.BeatifyI18n = (function() {
     var isLoaded = false;
     var loadPromise = null;
 
+    // #1399: concurrency guard. setLanguage() is called from several places
+    // (admin loadSavedSettings, the wizard language chip, dashboard
+    // state-driven switches) and each one awaits an async fetch. Without a
+    // generation token a slower in-flight fetch can resolve AFTER a newer
+    // setLanguage() and clobber `translations` with the wrong locale (stale
+    // de.json landing while currentLanguage is already 'en'). _loadGen is
+    // bumped on every loadTranslations() entry; a fetch only commits its
+    // result if its captured gen is still the latest.
+    var _loadGen = 0;
+    // Promise that resolves when the most recent setLanguage()/init() load
+    // settles. Callers (e.g. dashboard handleStateUpdate) can await this to
+    // avoid rendering with empty/stale translations while a load is in flight.
+    var languageReadyPromise = Promise.resolve();
+
     /**
      * Load translations for a specific language
      * @param {string} langCode - Language code ('en', 'de', 'es', or 'fr')
@@ -34,6 +48,13 @@ window.BeatifyI18n = (function() {
      */
     function getVersionForCacheBust() {
         if (typeof document === 'undefined') return '';
+        // Prefer the asset-fingerprint version (#1266): it moves whenever any
+        // i18n JSON changes, so editing de.json without a manifest bump still
+        // busts the SW cache. Fall back to the plain version for older cached
+        // shells that predate the beatify-asset-version meta tag (#824).
+        var assetMeta = document.querySelector('meta[name="beatify-asset-version"]');
+        var assetVer = assetMeta ? assetMeta.getAttribute('content') || '' : '';
+        if (assetVer) return assetVer;
         var meta = document.querySelector('meta[name="beatify-version"]');
         return meta ? meta.getAttribute('content') || '' : '';
     }
@@ -59,18 +80,38 @@ window.BeatifyI18n = (function() {
      * @returns {Promise<void>}
      */
     async function loadTranslations() {
+        // #1399: capture this load's generation + target locale up front.
+        // A newer setLanguage() bumps _loadGen, so a slower fetch started here
+        // can detect it is stale and refuse to commit its (now wrong) result.
+        var gen = ++_loadGen;
+        var targetLang = currentLanguage;
+
         // Load English as fallback first
         if (Object.keys(fallbackTranslations).length === 0) {
-            fallbackTranslations = await fetchTranslations('en');
+            var fb = await fetchTranslations('en');
+            // Fallback is locale-independent, so a superseding load doesn't
+            // invalidate it — always keep it once fetched.
+            if (Object.keys(fallbackTranslations).length === 0) {
+                fallbackTranslations = fb;
+            }
         }
 
         // Load current language
-        if (currentLanguage === 'en') {
-            translations = fallbackTranslations;
+        var data;
+        if (targetLang === 'en') {
+            data = fallbackTranslations;
         } else {
-            translations = await fetchTranslations(currentLanguage);
+            data = await fetchTranslations(targetLang);
         }
 
+        // #1399: bail if a newer setLanguage() has superseded this load while
+        // our fetch was in flight — committing now would clobber the active
+        // locale with stale data.
+        if (gen !== _loadGen) {
+            return;
+        }
+
+        translations = data;
         isLoaded = true;
     }
 
@@ -142,7 +183,13 @@ window.BeatifyI18n = (function() {
      * @returns {string} - Translated error message
      */
     function getErrorMessage(code) {
-        return t('errors.' + code) || t('errors.UNKNOWN');
+        // #1402-B8: t() returns the key itself when a translation is missing —
+        // it never returns a falsy value — so the old `|| t('errors.UNKNOWN')`
+        // fallback was dead code (an unknown code yielded the raw "errors.FOO"
+        // string instead of the generic message). Compare against the key.
+        var key = 'errors.' + code;
+        var msg = t(key);
+        return msg === key ? t('errors.UNKNOWN') : msg;
     }
 
     /**
@@ -153,7 +200,13 @@ window.BeatifyI18n = (function() {
     /**
      * Set the current language
      * @param {string} langCode - Language code ('en', 'de', 'es', or 'fr')
-     * @returns {Promise<void>}
+     * @returns {Promise<string>} - The effectively-applied (normalized) code.
+     *   An unsupported code resolves to 'en'; callers that drive a render off
+     *   the requested code (dashboard handleStateUpdate) MUST compare against
+     *   THIS resolved value, not the raw request — otherwise a game state
+     *   carrying an unsupported language (e.g. 'pt') would loop forever:
+     *   getLanguage() can never equal 'pt', so each re-render re-invokes
+     *   setLanguage → resolve → re-render → ... (#1402-B8).
      */
     async function setLanguage(langCode) {
         // Validate language code (Story 16.3 - added Spanish support)
@@ -163,7 +216,7 @@ window.BeatifyI18n = (function() {
         }
 
         if (langCode === currentLanguage && isLoaded) {
-            return;
+            return langCode;
         }
 
         currentLanguage = langCode;
@@ -175,7 +228,14 @@ window.BeatifyI18n = (function() {
             document.documentElement.lang = langCode;
         }
 
-        await loadTranslations();
+        // #1399: expose the in-flight load so callers (e.g. dashboard's
+        // handleStateUpdate) can await it instead of rendering early with
+        // empty/stale translations — getLanguage() already returns the new
+        // code synchronously, so without this a concurrent render would skip
+        // its wait branch and flash raw keys / the previous locale.
+        languageReadyPromise = loadTranslations();
+        await languageReadyPromise;
+        return langCode;
     }
 
     /**
@@ -279,6 +339,17 @@ window.BeatifyI18n = (function() {
         return isLoaded;
     }
 
+    /**
+     * #1399: resolve once the most recent setLanguage()/init() load settles.
+     * Callers that react to state broadcasts (dashboard handleStateUpdate)
+     * should `await BeatifyI18n.languageReady()` before rendering dynamic
+     * content so an in-flight locale switch doesn't render raw keys.
+     * @returns {Promise<void>}
+     */
+    function languageReady() {
+        return languageReadyPromise;
+    }
+
     // Public API
     return {
         t: t,
@@ -288,7 +359,8 @@ window.BeatifyI18n = (function() {
         initPageTranslations: initPageTranslations,
         detectBrowserLanguage: detectBrowserLanguage,
         init: init,
-        isReady: isReady
+        isReady: isReady,
+        languageReady: languageReady
     };
 })();
 

@@ -46,9 +46,9 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 📝 Eingabe-Texte: 42
 - 🧩 Entitäten: 3886
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 1224
+- 📱 Geräte: 552
 - 📍 Geräte-Tracker: 132
-- 🔌 Integrationen: 194
+- 🔌 Integrationen: 196
 - 🗓️ Kalender: 31
 - 📷 Kameras: 18
 - 🌡️ Klima: 2

@@ -3,7 +3,7 @@
  * These helpers drive the state machine: when to show, where to resume, when to show the pill.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resumeAtStep, shouldTrigger, shouldShowPill, providerSupportedForPlayer, capabilityBadgeForPlayer, applyGameModeTogglePrecedence, difficultyDisplayFor, buildWizChip } from '../wizard.js';
+import { resumeAtStep, shouldTrigger, shouldShowPill, providerSupportedForPlayer, capabilityBadgeForPlayer, applyGameModeTogglePrecedence, difficultyDisplayFor, buildWizChip, resolveGameLanguageDefault, buildTtsPayload } from '../wizard.js';
 
 function makeLS(initial = {}) {
     const store = { ...initial };
@@ -178,9 +178,13 @@ describe('capabilityBadgeForPlayer', () => {
         expect(badge).toEqual({ cls: 'partial', label: 'nur Spotify' });
     });
 
-    it('returns a partial/orange comma-joined badge for a subset (Alexa case)', () => {
+    it('lists both services (muted summary) for a two-service subset, full list on title (#1319)', () => {
         const player = { supports_spotify: true, supports_apple_music: true, supports_youtube_music: false };
-        expect(capabilityBadgeForPlayer(player, providers)).toEqual({ cls: 'partial', label: 'Spotify, Apple Music' });
+        expect(capabilityBadgeForPlayer(player, providers)).toEqual({
+            cls: 'summary',
+            label: 'Spotify, Apple Music',
+            title: 'Spotify, Apple Music',
+        });
     });
 
     it('returns a none badge when no provider is supported (e.g. cast without MA)', () => {
@@ -192,6 +196,60 @@ describe('capabilityBadgeForPlayer', () => {
         const player = { supports_spotify: true, supports_apple_music: true, supports_youtube_music: true };
         const badge = capabilityBadgeForPlayer(player, providers, { all: 'Alle Dienste' });
         expect(badge.label).toBe('Alle Dienste');
+    });
+
+    // #1319: with the real 6-provider universe, multi-service rows must collapse
+    // to a single short, muted line instead of a wrapping uppercase comma list.
+    describe('summarization over the full 6-provider set (#1319)', () => {
+        const six = [
+            { id: 'spotify', label: 'Spotify' },
+            { id: 'apple_music', label: 'Apple Music' },
+            { id: 'youtube_music', label: 'YouTube Music' },
+            { id: 'tidal', label: 'Tidal' },
+            { id: 'deezer', label: 'Deezer' },
+            { id: 'amazon_music', label: 'Amazon Music' },
+        ];
+
+        it('collapses the typical MA player (5 of 6, all but Amazon) to "All major services"', () => {
+            const player = {
+                supports_spotify: true, supports_apple_music: true, supports_youtube_music: true,
+                supports_tidal: true, supports_deezer: true, supports_amazon_music: false,
+            };
+            expect(capabilityBadgeForPlayer(player, six)).toEqual({
+                cls: 'summary',
+                label: 'All major services',
+                title: 'Spotify, Apple Music, YouTube Music, Tidal, Deezer',
+            });
+        });
+
+        it('collapses 3 of 6 to "first +N" with the full list on title', () => {
+            const player = {
+                supports_spotify: true, supports_apple_music: true, supports_youtube_music: true,
+                supports_tidal: false, supports_deezer: false, supports_amazon_music: false,
+            };
+            expect(capabilityBadgeForPlayer(player, six)).toEqual({
+                cls: 'summary',
+                label: 'Spotify +2',
+                title: 'Spotify, Apple Music, YouTube Music',
+            });
+        });
+
+        it('keeps the single-service accent badge (cls partial) even in the 6-provider set', () => {
+            const player = {
+                supports_spotify: true, supports_apple_music: false, supports_youtube_music: false,
+                supports_tidal: false, supports_deezer: false, supports_amazon_music: false,
+            };
+            expect(capabilityBadgeForPlayer(player, six)).toEqual({ cls: 'partial', label: 'Spotify only' });
+        });
+
+        it('respects custom summary templates (locale)', () => {
+            const player = {
+                supports_spotify: true, supports_apple_music: true, supports_youtube_music: true,
+                supports_tidal: false, supports_deezer: false, supports_amazon_music: false,
+            };
+            const badge = capabilityBadgeForPlayer(player, six, { moreTemplate: '{provider} und {count} weitere' });
+            expect(badge.label).toBe('Spotify und 2 weitere');
+        });
     });
 });
 
@@ -387,5 +445,96 @@ describe('buildWizChip', () => {
 
     it('works for the intensity group too', () => {
         expect(buildWizChip('party', 'Party', 'intensity', 'party')).toContain('data-intensity="party"');
+    });
+});
+
+// ------------------------------------------------------------------
+// resolveGameLanguageDefault — game language must follow the browser
+// locale on EVERY wizard open, including a first-time user with no
+// saved settings (#1354: German wizard but English game).
+// ------------------------------------------------------------------
+describe('resolveGameLanguageDefault', () => {
+    it('uses the browser language even when there are NO saved settings (#1354)', () => {
+        // The bug: first-time user, no beatify_game_settings → game went out
+        // as the hard-coded 'en' default while the wizard UI was German.
+        expect(resolveGameLanguageDefault(() => 'de', null, 'en')).toBe('de');
+    });
+
+    it('browser language wins over a stale saved language', () => {
+        expect(resolveGameLanguageDefault(() => 'de', { language: 'en' }, 'en')).toBe('de');
+    });
+
+    it('falls back to saved language when browser detection is unavailable', () => {
+        expect(resolveGameLanguageDefault(null, { language: 'fr' }, 'en')).toBe('fr');
+    });
+
+    it('falls back to saved language when the detector throws', () => {
+        const throwing = () => { throw new Error('no navigator'); };
+        expect(resolveGameLanguageDefault(throwing, { language: 'es' }, 'en')).toBe('es');
+    });
+
+    it('falls back to the current default when nothing resolves', () => {
+        expect(resolveGameLanguageDefault(null, null, 'en')).toBe('en');
+        expect(resolveGameLanguageDefault(() => '', {}, 'en')).toBe('en');
+    });
+});
+
+// ------------------------------------------------------------------
+// buildTtsPayload — wizard finish must NOT wipe admin-owned keys (#1401)
+// ------------------------------------------------------------------
+describe('buildTtsPayload (#1401 — preserve tts_pre_round_delay)', () => {
+    // Minimal stand-in for window.BeatifyTtsPresets (tts-settings.js).
+    const presets = {
+        KEYS: ['announce_game_start', 'announce_round_start'],
+        presetValues: (name) => name === 'minimal'
+            ? { announce_game_start: true, announce_round_start: false }
+            : { announce_game_start: true, announce_round_start: true },
+    };
+
+    it('carries over an existing tts_pre_round_delay (#1211) on a preset finish', () => {
+        // Admin had configured a 3s pre-round delay via tts-settings.js.
+        const prev = { tts_pre_round_delay: 3, announce_game_start: false };
+        const out = buildTtsPayload(prev, {
+            enabled: true, entityId: 'tts.google', preset: 'standard', presets,
+        });
+        // The #1211 setting survives the wizard rebuild...
+        expect(out.tts_pre_round_delay).toBe(3);
+        // ...and the preset booleans are still applied.
+        expect(out.enabled).toBe(true);
+        expect(out.entity_id).toBe('tts.google');
+        expect(out.preset).toBe('standard');
+        expect(out.announce_game_start).toBe(true);
+    });
+
+    it('carries over tts_pre_round_delay on a custom-preset finish', () => {
+        const prev = { tts_pre_round_delay: 1.5, announce_round_start: false };
+        const out = buildTtsPayload(prev, {
+            enabled: true, entityId: 'tts.google', preset: 'custom', presets,
+        });
+        expect(out.tts_pre_round_delay).toBe(1.5);
+        // custom keeps hand-tuned booleans from prev
+        expect(out.announce_round_start).toBe(false);
+    });
+
+    it('preserves a zero delay (0 is a valid configured value, not "unset")', () => {
+        const out = buildTtsPayload({ tts_pre_round_delay: 0 }, {
+            enabled: false, entityId: '', preset: 'minimal', presets,
+        });
+        expect(out.tts_pre_round_delay).toBe(0);
+    });
+
+    it('omits the key entirely when none was previously stored', () => {
+        const out = buildTtsPayload({}, {
+            enabled: true, entityId: 'tts.google', preset: 'standard', presets,
+        });
+        expect('tts_pre_round_delay' in out).toBe(false);
+    });
+
+    it('tolerates a null prev (private mode / first run)', () => {
+        const out = buildTtsPayload(null, {
+            enabled: true, entityId: 'tts.google', preset: 'standard', presets,
+        });
+        expect('tts_pre_round_delay' in out).toBe(false);
+        expect(out.preset).toBe('standard');
     });
 });

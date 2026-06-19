@@ -14,7 +14,7 @@ import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -25,6 +25,17 @@ _LOGGER = logging.getLogger(__name__)
 MAX_DETAILED_RECORDS = 1000
 RETENTION_DAYS = 90
 PRUNE_INTERVAL = 10  # Prune every N game records
+
+# Hard cap on retained error events. record_error() is invoked once per
+# error event (e.g. websocket reconnect storms, flapping media players), so
+# without an independent cap the errors list grows unbounded between the rare
+# game-driven prune passes. Keep only the most recent events. (#1388)
+MAX_ERROR_RECORDS = 500
+
+# Debounce window (seconds) for coalescing error-driven saves. A burst of
+# errors would otherwise trigger one full-file rewrite per event; instead we
+# delay-coalesce them into a single write. (#1388)
+ERROR_SAVE_DEBOUNCE_SECONDS = 5.0
 
 # Period-to-days mapping used by stats functions
 PERIOD_DAYS_MAP: dict[str, int] = {"7d": 7, "30d": 30, "90d": 90, "all": 365 * 10}
@@ -69,6 +80,7 @@ class MonthlySummary(TypedDict):
     avg_players_per_game: float
     total_rounds: int
     avg_rounds_per_game: float
+    total_errors: int  # Running error total so error_rate can be recomputed (#1402)
     error_rate: float
 
 
@@ -103,6 +115,8 @@ class AnalyticsStorage:
         self._games_since_prune = 0
         self._session_error_count = 0
         self._save_lock = asyncio.Lock()
+        # Pending debounced error-save timer handle (#1388)
+        self._error_save_handle: asyncio.TimerHandle | None = None
         self._playlist_display_names: dict[str, str] | None = None
         self._metrics_cache: dict[
             str, tuple[float, dict]
@@ -118,30 +132,88 @@ class AnalyticsStorage:
         }
 
     async def load(self) -> None:
-        """Load analytics data from file (AC: #3)."""
+        """Load analytics data from file (AC: #3).
+
+        Only an unparseable file (bad JSON or wrong top-level type) is treated
+        as corrupt. A single malformed *record* must never wipe the whole
+        history — pruning and aggregation use ``.get()`` with defaults so they
+        skip/tolerate individual bad records instead of raising (#1385). When
+        the file truly is corrupt, the original is quarantined to
+        ``analytics.json.corrupt`` rather than being destroyed.
+        """
         try:
-            if self._path.exists():
-                content = await self._hass.async_add_executor_job(self._path.read_text)
-                self._data = json.loads(content)
-                _LOGGER.debug(
-                    "Loaded analytics: %d games, %d errors",
-                    len(self._data.get("games", [])),
-                    len(self._data.get("errors", [])),
-                )
-                # Prune old records on startup
-                await self._prune_old_records()
-                # Pre-load playlist display names so later sync
-                # callers don't block the event loop with file I/O
-                await self._hass.async_add_executor_job(
-                    self._get_playlist_display_names
-                )
-            else:
+            if not self._path.exists():
                 _LOGGER.debug("No analytics file found, starting fresh")
                 self._data = self._empty_data()
-        except (json.JSONDecodeError, KeyError, TypeError) as err:
-            _LOGGER.warning("Analytics file corrupted, recreating: %s", err)
-            self._data = self._empty_data()
-            await self._save()
+                return
+
+            try:
+                content = await self._hass.async_add_executor_job(self._path.read_text)
+            except OSError as err:
+                # The file exists but is unreadable (permissions, transient I/O
+                # error). Start fresh in memory so startup isn't blocked, but do
+                # NOT quarantine or save over it — that would destroy a
+                # possibly-recoverable file. A later successful save can still
+                # replace it once the read error clears (#1402).
+                _LOGGER.error(
+                    "Analytics file unreadable, starting fresh in memory: %s", err
+                )
+                self._data = self._empty_data()
+                return
+
+            try:
+                parsed = json.loads(content)
+            except json.JSONDecodeError as err:
+                await self._quarantine_corrupt_file(err)
+                return
+
+            if not isinstance(parsed, dict):
+                await self._quarantine_corrupt_file(
+                    TypeError(
+                        f"analytics root is {type(parsed).__name__}, expected dict"
+                    )
+                )
+                return
+
+            self._data = cast("AnalyticsData", parsed)
+            _LOGGER.debug(
+                "Loaded analytics: %d games, %d errors",
+                len(self._data.get("games", [])),
+                len(self._data.get("errors", [])),
+            )
+            # Prune old records on startup. This runs OUTSIDE the parse guard:
+            # a single malformed record must not silently reset the whole store,
+            # so prune tolerates bad records via .get() defaults (#1385).
+            await self._prune_old_records()
+        finally:
+            # Pre-load playlist display names so later sync callers don't block
+            # the event loop with file I/O. Must run on EVERY load path (fresh
+            # install, corruption recovery, normal load) — otherwise the first
+            # sync compute_playlist_stats() globs+reads playlist JSON in the
+            # event loop. See #1387.
+            await self._hass.async_add_executor_job(self._get_playlist_display_names)
+
+    async def _quarantine_corrupt_file(self, err: Exception) -> None:
+        """Move an unparseable analytics file aside and start fresh (#1385).
+
+        Renames the bad file to ``<path>.corrupt`` so the data is preserved
+        for inspection/recovery instead of being overwritten. Then resets
+        in-memory state to empty and persists the fresh store.
+        """
+        corrupt_path = self._path.with_suffix(self._path.suffix + ".corrupt")
+        _LOGGER.warning(
+            "Analytics file unparseable (%s); quarantining to %s and starting fresh",
+            err,
+            corrupt_path,
+        )
+        try:
+            await self._hass.async_add_executor_job(
+                os.replace, self._path, corrupt_path
+            )
+        except OSError as move_err:
+            _LOGGER.error("Failed to quarantine corrupt analytics file: %s", move_err)
+        self._data = self._empty_data()
+        await self._save()
 
     async def _save(self) -> None:
         """
@@ -185,6 +257,40 @@ class AnalyticsStorage:
         if (exc := task.exception()) is not None:
             _LOGGER.error("Unhandled error in analytics save task: %s", exc)
 
+    def _schedule_error_save(self) -> None:
+        """
+        Schedule a debounced save for error events (#1388).
+
+        Error events can arrive in bursts (reconnect storms, flapping media
+        players). Writing the whole analytics file per event hammers the disk
+        and runs json.dumps of the growing structure in the event loop. Instead
+        we coalesce: a save is scheduled ERROR_SAVE_DEBOUNCE_SECONDS in the
+        future, and any error arriving before it fires resets the timer, so a
+        burst results in a single write.
+        """
+        if self._error_save_handle is not None:
+            self._error_save_handle.cancel()
+
+        def _fire() -> None:
+            self._error_save_handle = None
+            self.schedule_save()
+
+        self._error_save_handle = self._hass.loop.call_later(
+            ERROR_SAVE_DEBOUNCE_SECONDS, _fire
+        )
+
+    async def async_shutdown(self) -> None:
+        """
+        Cancel any pending debounced error save and flush to disk (#1388).
+
+        Called on unload so the last coalesced batch of error events isn't lost
+        when its debounce timer never fires.
+        """
+        if self._error_save_handle is not None:
+            self._error_save_handle.cancel()
+            self._error_save_handle = None
+            await self._save()
+
     async def add_game(self, record: GameRecord) -> None:
         """
         Add game record and schedule save (AC: #1).
@@ -225,9 +331,16 @@ class AnalyticsStorage:
             "type": error_type,
             "message": message[:500],  # Limit message length
         }
-        self._data["errors"].append(event)
+        errors = self._data["errors"]
+        errors.append(event)
+        # Cap independently of the game-driven prune, which most installs never
+        # trigger. Keep only the most recent MAX_ERROR_RECORDS events so a burst
+        # cannot grow the list (and the per-save json.dumps) without bound.
+        if len(errors) > MAX_ERROR_RECORDS:
+            del errors[:-MAX_ERROR_RECORDS]
         self._session_error_count += 1
-        self.schedule_save()
+        # Debounce/coalesce the save instead of a full-file rewrite per event.
+        self._schedule_error_save()
 
         _LOGGER.debug("Recorded error event: %s - %s", error_type, message)
 
@@ -259,7 +372,11 @@ class AnalyticsStorage:
         recent_games: list[GameRecord] = []
 
         for game in games:
-            if game["ended_at"] < cutoff:
+            # Tolerate records missing 'ended_at' (hand-edited file, older
+            # schema, partial write): default to 0 so they sort as "old" and
+            # get summarized rather than raising KeyError and wiping the store
+            # (#1385).
+            if game.get("ended_at", 0) < cutoff:
                 old_games.append(game)
             else:
                 recent_games.append(game)
@@ -270,7 +387,7 @@ class AnalyticsStorage:
         # Group old games by month and create summaries
         monthly_groups: dict[str, list[GameRecord]] = {}
         for game in old_games:
-            dt = datetime.fromtimestamp(game["ended_at"], tz=timezone.utc)
+            dt = datetime.fromtimestamp(game.get("ended_at", 0), tz=timezone.utc)
             month_key = dt.strftime("%Y-%m")
             if month_key not in monthly_groups:
                 monthly_groups[month_key] = []
@@ -280,14 +397,23 @@ class AnalyticsStorage:
         for month, month_games in monthly_groups.items():
             # Check if summary already exists
             existing = next(
-                (s for s in self._data["monthly_summaries"] if s["month"] == month),
+                (s for s in self._data["monthly_summaries"] if s.get("month") == month),
                 None,
             )
             if existing:
                 # Update existing summary
                 existing["games_count"] += len(month_games)
-                existing["total_players"] += sum(g["player_count"] for g in month_games)
-                existing["total_rounds"] += sum(g["rounds_played"] for g in month_games)
+                existing["total_players"] += sum(
+                    g.get("player_count", 0) for g in month_games
+                )
+                existing["total_rounds"] += sum(
+                    g.get("rounds_played", 0) for g in month_games
+                )
+                # Accumulate errors too, tolerating summaries written before
+                # total_errors existed (legacy schema) via .get() (#1402).
+                existing["total_errors"] = existing.get("total_errors", 0) + sum(
+                    g.get("error_count", 0) for g in month_games
+                )
                 # Recalculate averages
                 if existing["games_count"] > 0:
                     existing["avg_players_per_game"] = round(
@@ -296,11 +422,17 @@ class AnalyticsStorage:
                     existing["avg_rounds_per_game"] = round(
                         existing["total_rounds"] / existing["games_count"], 2
                     )
+                    # error_rate was previously frozen at its first-write value;
+                    # recompute it from the running totals so additional months
+                    # of data are reflected (#1402).
+                    existing["error_rate"] = round(
+                        existing["total_errors"] / existing["games_count"], 2
+                    )
             else:
                 # Create new summary
-                total_players = sum(g["player_count"] for g in month_games)
-                total_rounds = sum(g["rounds_played"] for g in month_games)
-                total_errors = sum(g["error_count"] for g in month_games)
+                total_players = sum(g.get("player_count", 0) for g in month_games)
+                total_rounds = sum(g.get("rounds_played", 0) for g in month_games)
+                total_errors = sum(g.get("error_count", 0) for g in month_games)
                 games_count = len(month_games)
 
                 summary: MonthlySummary = {
@@ -310,6 +442,7 @@ class AnalyticsStorage:
                     "avg_players_per_game": round(total_players / games_count, 2),
                     "total_rounds": total_rounds,
                     "avg_rounds_per_game": round(total_rounds / games_count, 2),
+                    "total_errors": total_errors,
                     "error_rate": round(total_errors / games_count, 2),
                 }
                 self._data["monthly_summaries"].append(summary)
@@ -317,9 +450,11 @@ class AnalyticsStorage:
         # Keep only recent games
         self._data["games"] = recent_games
 
-        # Also prune old errors (keep last 90 days)
+        # Also prune old errors (keep last 90 days). Use .get() so an error
+        # record missing 'timestamp' (schema drift) defaults to 0 and is pruned
+        # rather than raising KeyError (#1385).
         self._data["errors"] = [
-            e for e in self._data["errors"] if e["timestamp"] >= cutoff
+            e for e in self._data["errors"] if e.get("timestamp", 0) >= cutoff
         ]
 
         _LOGGER.info(
@@ -466,6 +601,9 @@ class AnalyticsStorage:
 
         if not playlist_dir.exists():
             _LOGGER.debug("Playlist directory not found: %s", playlist_dir)
+            # Cache the empty result so the blocking exists() stat does not run
+            # on every subsequent call. See #1387.
+            self._playlist_display_names = display_names
             return display_names
 
         for json_file in playlist_dir.glob("*.json"):
@@ -577,12 +715,22 @@ class AnalyticsStorage:
                 week_start = now - timedelta(days=now.weekday() + 7 * i)
                 week_buckets[week_start.strftime("%Y-%m-%d")] = 0
 
+            # Oldest bucket key — used to clamp any game that falls before the
+            # first bucket so its count isn't silently dropped (#1402). Without
+            # this, games in the oldest partial week (or any out-of-range game)
+            # vanished and the chart sum no longer matched total_games.
+            oldest_key = min(week_buckets)
+
             for game in games:
                 dt = datetime.fromtimestamp(game["ended_at"], tz=timezone.utc)
                 week_start = dt - timedelta(days=dt.weekday())
                 key = week_start.strftime("%Y-%m-%d")
                 if key in week_buckets:
                     week_buckets[key] += 1
+                elif key < oldest_key:
+                    # Older than the chart window's first bucket: fold into the
+                    # oldest bucket so the totals stay consistent.
+                    week_buckets[oldest_key] += 1
 
             sorted_keys = sorted(week_buckets.keys())
             labels = [f"W{i + 1}" for i in range(len(sorted_keys))]

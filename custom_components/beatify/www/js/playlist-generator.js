@@ -33,11 +33,16 @@
     // and English is the strongest instruction-following channel.
     // -----------------------------------------------------------------
     function _t(key, fallback, args) {
+        // #1402-B8: BeatifyI18n.t(key, params) takes a PARAMS OBJECT, not a
+        // fallback string, and returns the key itself (truthy) when missing.
+        // Passing `fallback` as the second arg did nothing and `if (got)` let
+        // the raw key through, so a missing key surfaced "playlistGenerator.xyz"
+        // verbatim in the modal. Compare against the key to detect a real hit.
         let val = fallback;
         try {
             if (window.BeatifyI18n && typeof window.BeatifyI18n.t === 'function') {
-                const got = window.BeatifyI18n.t(key, fallback);
-                if (got) val = got;
+                const got = window.BeatifyI18n.t(key);
+                if (got && got !== key) val = got;
             }
         } catch (e) { /* i18n not ready */ }
         if (args && typeof val === 'string') {
@@ -689,6 +694,9 @@ __JSON__
         capturedIssueNumber: null,
         // Set after a successful Save locally so we can confirm in-modal.
         savedFilename: null,
+        // Inline step-by-step guide accordion (#1286). Open on first
+        // render so first-timers see the flow; collapsible thereafter.
+        guideOpen: true,
     };
 
     function _renderResultsTable(validation) {
@@ -739,6 +747,56 @@ __JSON__
         return verdict + copyForLlm + blocks.join('');
     }
 
+    // -----------------------------------------------------------------
+    // Inline step-by-step guide (#1286).
+    //
+    // An accordion that walks first-time users through the
+    // copy-prompt → run-in-LLM → paste-JSON → validate loop, plus a
+    // warning callout about the >32-songs ceiling external LLMs hit
+    // (HA forum 998895: Claude/ChatGPT truncate large playlists; the
+    // fix is to run the prompt per batch and merge the songs arrays).
+    // Open by default the first time the modal renders so the guide is
+    // discoverable; the chevron lets users collapse it once they know
+    // the flow. Pure render — toggling state lives in `state.guideOpen`.
+    // -----------------------------------------------------------------
+    function _renderGuide() {
+        const open = state.guideOpen;
+        const steps = [
+            _t('playlistGenerator.guide.step1', 'Paste the Spotify playlist URL below and click <b>“Copy prompt”</b>.'),
+            _t('playlistGenerator.guide.step2', 'Paste the prompt into ChatGPT, Claude.ai or a local LLM and run it.'),
+            _t('playlistGenerator.guide.step3', 'Copy the full <b>JSON</b> back into the field below.'),
+            _t('playlistGenerator.guide.step4', 'Click <b>Validate</b> — you’ll see ✓/✗ per field.'),
+        ];
+        const stepsHtml = steps.map((html, i) => `
+            <li class="plg-guide-step">
+                <span class="plg-guide-num">${i + 1}</span>
+                <span class="plg-guide-text">${html}</span>
+            </li>
+        `).join('');
+        const warnTitle = _t('playlistGenerator.guide.warnTitle', 'More than ~32 songs?');
+        const warnBody = _t(
+            'playlistGenerator.guide.warnBody',
+            'ChatGPT &amp; Claude often cut large playlists off midway. Split them into <b>batches of 30 songs</b>: run the prompt per batch, then merge the songs arrays. If ChatGPT aborts with an unclear error, the response length is almost always the cause.'
+        );
+        const heading = _t('playlistGenerator.guide.heading', 'How it works — step by step');
+        return `
+            <div class="plg-guide${open ? ' plg-guide-open' : ''}" data-plg-guide>
+                <button type="button" class="plg-guide-toggle" data-plg-action="toggle-guide"
+                    aria-expanded="${open ? 'true' : 'false'}">
+                    <span class="plg-guide-toggle-label">💡 ${_esc(heading)}</span>
+                    <span class="plg-guide-chevron" aria-hidden="true">${open ? '▾' : '▸'}</span>
+                </button>
+                <div class="plg-guide-body"${open ? '' : ' hidden'}>
+                    <ol class="plg-guide-steps">${stepsHtml}</ol>
+                    <div class="plg-guide-warn" role="note">
+                        <span class="plg-guide-warn-icon" aria-hidden="true">⚠️</span>
+                        <span class="plg-guide-warn-text"><b>${_esc(warnTitle)}</b> ${warnBody}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function _renderModal() {
         if (!state.rootEl) return;
         const v = state.lastValidation;
@@ -755,6 +813,8 @@ __JSON__
                 <button class="plg-close" data-plg-action="close" aria-label="${_esc(_t('playlistGenerator.actions.close', 'Close'))}">✕</button>
                 <h2 class="plg-title" id="plg-title">${_esc(_t('playlistGenerator.title', 'Playlist Generator'))}</h2>
                 <p class="plg-sub">${_t('playlistGenerator.intro', 'Paste a Spotify playlist URL → copy a prompt → run it in your own LLM (ChatGPT, Claude.ai, local) → paste the JSON back → validate → submit. <b>No LLM calls leave Beatify.</b>')}</p>
+
+                ${_renderGuide()}
 
                 <label class="plg-label">${_esc(_t('playlistGenerator.fields.spotifyUrl', 'Spotify playlist URL'))}</label>
                 <input type="url" class="plg-input" data-plg-field="spotify_url" placeholder="${_esc(_t('playlistGenerator.placeholders.spotifyUrl', 'https://open.spotify.com/playlist/…'))}" />
@@ -836,6 +896,16 @@ __JSON__
         const action = a.dataset.plgAction;
         if (action === 'close') {
             close();
+            return;
+        }
+        if (action === 'toggle-guide') {
+            state.guideOpen = !state.guideOpen;
+            const guideHost = state.rootEl.querySelector('[data-plg-guide]');
+            if (guideHost && guideHost.parentNode) {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = _renderGuide();
+                guideHost.parentNode.replaceChild(wrap.firstElementChild, guideHost);
+            }
             return;
         }
         if (action === 'copy-prompt') {
@@ -1051,6 +1121,14 @@ __JSON__
         // request-modal flow uses (BACKEND_API = /beatify/api/playlist-requests).
         // POST replaces the full list; we GET first so we don't drop existing
         // requests on append.
+        //
+        // #1402-B8 (KNOWN, intentionally not fixed in this frontend bundle):
+        // this GET-then-POST is a read-modify-write that overwrites the WHOLE
+        // store, so two concurrent submissions race and the later POST can drop
+        // the earlier one (lost update). A robust fix needs a server-side
+        // append/merge-by-issue_number endpoint (out of scope for a frontend-
+        // only batch); a client-side lock/retry would be fragile. Tracked under
+        // #1402 finding 7 as SKIPPED — needs a backend endpoint.
         const getResp = await fetch('/beatify/api/playlist-requests');
         let store = { requests: [], last_poll: null };
         if (getResp.ok) {
@@ -1118,14 +1196,27 @@ __JSON__
         });
     }
 
+    // #1402-B8: reset all per-session state so a reopened modal starts clean.
+    // Without this, "Saved as foo.json" or a pending issue-paste / captured-issue
+    // banner from the last open carried over and rendered stale on reopen.
+    // Pure (mutates the passed object only) → unit-tested via _internals.
+    function _resetSessionState(st) {
+        st.lastValidation = null;
+        st.lastJsonText = '';
+        st.guideOpen = true;
+        st.savedFilename = null;
+        st.pendingSubmission = null;
+        st.capturedIssueNumber = null;
+        return st;
+    }
+
     function open() {
         if (state.rootEl) return; // already open
         const host = document.createElement('div');
         host.className = 'plg-host';
         document.body.appendChild(host);
         state.rootEl = host;
-        state.lastValidation = null;
-        state.lastJsonText = '';
+        _resetSessionState(state);
         _renderModal();
         host.addEventListener('click', _onClick);
         document.addEventListener('keydown', _onKeyDown, true);
@@ -1161,6 +1252,8 @@ __JSON__
             parseSpotifyPlaylistId,
             parseIssueNumberFromUrl,
             slugify,
+            _t,
+            _resetSessionState,
         },
     };
 })();

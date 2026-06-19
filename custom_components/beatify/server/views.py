@@ -10,10 +10,11 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
+import socket
+from ipaddress import ip_address
 from pathlib import Path
 from typing import TYPE_CHECKING
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from aiohttp import ClientError, ClientTimeout, web
 from homeassistant.components.http import HomeAssistantView
@@ -24,6 +25,7 @@ from custom_components.beatify.game.state import GamePhase
 from custom_components.beatify.game.playlist import async_discover_playlists
 from custom_components.beatify.server.base import (
     RateLimitMixin,
+    _apply_cache_tokens,
     _get_html,
     _get_version,
     _json_error,
@@ -34,7 +36,10 @@ from custom_components.beatify.server.serializers import (
     build_status_response,
 )
 from custom_components.beatify.services.lights import PartyLightsService
-from custom_components.beatify.services.media_player import async_get_media_players
+from custom_components.beatify.services.media_player import (
+    album_art_signature_is_valid,
+    async_get_media_players,
+)
 
 # Re-export game views
 from custom_components.beatify.server.game_views import (  # noqa: F401
@@ -112,7 +117,7 @@ class AdminView(HomeAssistantView):
         if html_content is None:
             _LOGGER.error("Admin page not found: %s", html_path)
             return web.Response(text="Admin page not found", status=500)
-        return _html_response(html_content)
+        return _html_response(_apply_cache_tokens(html_content, self.hass))
 
 
 class LauncherView(HomeAssistantView):
@@ -133,7 +138,7 @@ class LauncherView(HomeAssistantView):
         if html_content is None:
             _LOGGER.error("Launcher page not found: %s", html_path)
             return web.Response(text="Launcher page not found", status=500)
-        return _html_response(html_content)
+        return _html_response(_apply_cache_tokens(html_content, self.hass))
 
 
 class PlayerView(HomeAssistantView):
@@ -154,7 +159,7 @@ class PlayerView(HomeAssistantView):
         if html_content is None:
             _LOGGER.error("Player page not found: %s", html_path)
             return web.Response(text="Player page not found", status=500)
-        return _html_response(html_content)
+        return _html_response(_apply_cache_tokens(html_content, self.hass))
 
 
 # ---------------------------------------------------------------------------
@@ -242,29 +247,23 @@ def _set_session_cookies(
     response: web.Response,
     request: web.Request,
     *,
-    access_token: str,
-    expires_in: int,
     refresh_token: str | None,
 ) -> None:
-    """Write the two-cookie pair onto an outgoing response."""
+    """Set the HttpOnly refresh cookie onto an outgoing response.
+
+    #1369: the HA access token is NEVER written to a cookie. A JS-readable
+    ``beatify_access`` cookie would let any XSS on a /beatify page exfiltrate
+    a token that authorizes the whole HA REST + WebSocket API. The access
+    token is instead returned only in the refresh endpoint's JSON body, where
+    the frontend (ha-auth.js) holds it in a module-scoped variable for the
+    page's lifetime and re-bootstraps it from this HttpOnly refresh cookie on
+    every page load. The callback view sets only the refresh cookie; the
+    frontend's first ``GET /beatify/auth/refresh`` then mints the access token.
+    """
     secure = _is_secure_origin(request)
-    # Render ``expires_at`` as an absolute Unix timestamp (seconds) so the
-    # frontend doesn't have to know when the cookie was actually set.
-    expires_at = int(time.time()) + max(0, int(expires_in) - 30)
-    access_payload = json.dumps(
-        {"access_token": access_token, "expires_at": expires_at}
-    )
-    response.set_cookie(
-        _ACCESS_COOKIE,
-        access_payload,
-        path="/beatify",
-        # Match HA's own token lifetime — when the cookie expires the
-        # frontend re-fetches a fresh access via /beatify/auth/refresh.
-        max_age=max(60, int(expires_in) - 30),
-        samesite="Lax",
-        secure=secure,
-        httponly=False,  # JS reads this to populate Authorization header
-    )
+    # Defensive: wipe any legacy JS-readable access cookie an upgraded client
+    # still carries, so a real HA token can't linger in document.cookie.
+    response.del_cookie(_ACCESS_COOKIE, path="/beatify")
     if refresh_token is not None:
         response.set_cookie(
             _REFRESH_COOKIE,
@@ -382,11 +381,12 @@ class BeatifyAuthCallbackView(HomeAssistantView):
             return self._redirect_to_admin(request, error="exchange_failed")
 
         response = self._redirect_to_admin(request, state=state)
+        # #1369: only the HttpOnly refresh cookie is set here. The frontend
+        # mints its in-memory access token via GET /beatify/auth/refresh on
+        # the post-callback page load.
         _set_session_cookies(
             response,
             request,
-            access_token=parsed["access_token"],
-            expires_in=parsed.get("expires_in", 1800),
             refresh_token=parsed.get("refresh_token"),
         )
         return response
@@ -396,9 +396,10 @@ class BeatifyAuthRefreshView(HomeAssistantView):
     """Silent refresh endpoint — keeps the frontend off ``/auth/token``.
 
     Reads the HttpOnly ``beatify_refresh`` cookie, posts the refresh
-    grant to HA over loopback, updates the access cookie, and returns
-    JSON with the fresh access token so ha-auth.js can populate its
-    in-memory cache. On refresh failure both cookies are wiped — the
+    grant to HA over loopback, and returns JSON with the fresh access
+    token so ha-auth.js can populate its in-memory cache (#1369: the
+    access token is never written to a cookie). On refresh failure both
+    cookies are wiped — the
     frontend then redirects to ``/auth/authorize`` for a full re-login.
     """
 
@@ -435,9 +436,11 @@ class BeatifyAuthRefreshView(HomeAssistantView):
             _clear_session_cookies(response)
             return response
 
-        # HA's refresh-token grant does NOT return a new refresh_token —
-        # it stays the long-lived one already in the HttpOnly cookie.
-        # Reissue ONLY the access cookie.
+        # #1369: the fresh access token is returned ONLY in the JSON body —
+        # the frontend caches it in memory, never in a cookie. HA's
+        # refresh-token grant does NOT return a new refresh_token (the
+        # long-lived one stays in the HttpOnly cookie), so no Set-Cookie is
+        # needed here beyond wiping any legacy JS-readable access cookie.
         response = web.json_response(
             {
                 "access_token": parsed["access_token"],
@@ -448,8 +451,6 @@ class BeatifyAuthRefreshView(HomeAssistantView):
         _set_session_cookies(
             response,
             request,
-            access_token=parsed["access_token"],
-            expires_in=parsed.get("expires_in", 1800),
             # Don't overwrite the long-lived refresh cookie.
             refresh_token=None,
         )
@@ -483,9 +484,10 @@ class SwJsView(HomeAssistantView):
             _LOGGER.error("Service worker script not found: %s", sw_path)
             return web.Response(text="Service worker not found", status=500)
         # Must be served as JS. No-cache so CACHE_VERSION bumps propagate without
-        # waiting for HTTP cache to expire on the SW bootstrap itself.
+        # waiting for HTTP cache to expire on the SW bootstrap itself. Tokens
+        # ({{ASSET_VER}}) are substituted at serve time (#1266).
         return web.Response(
-            text=content,
+            text=_apply_cache_tokens(content, self.hass),
             content_type="application/javascript",
             headers=_NO_CACHE_HEADERS,
         )
@@ -542,7 +544,7 @@ class CapabilitiesView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         """Return flags the wizard's Step 4 uses to gate toggles."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         light_count = len(self.hass.states.async_all("light"))
         tts_services = self.hass.services.async_services().get("tts", {})
@@ -569,7 +571,7 @@ class LightsView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         """Return available light entities with capabilities."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         lights = []
         for state in self.hass.states.async_all("light"):
@@ -622,7 +624,7 @@ class TtsEntitiesView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         """Return registered TTS entities sorted by friendly name."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         entities = [
             {
@@ -650,32 +652,96 @@ class AlbumArtView(HomeAssistantView):
     name = "beatify:api:albumart"
     requires_auth = False  # player browsers are unauthenticated
 
+    # Cap the re-served image so a hostile/huge upstream can't exhaust memory.
+    _MAX_BYTES = 5 * 1024 * 1024
+
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the album-art proxy view."""
         self.hass = hass
 
     async def get(self, request: web.Request) -> web.Response:
-        """Fetch the upstream image and re-serve it same-origin."""
+        """Fetch the upstream image and re-serve it same-origin (#933, hardened #1356).
+
+        The endpoint is unauthenticated (player browsers have no token), so it
+        must not be usable as a server-side request forge. Defences:
+
+        * **HMAC signature** — only URLs the integration itself produced (via
+          ``proxy_album_art``) carry a valid ``sig``; everything else is 403.
+          This is the primary SSRF guard.
+        * **Host allow-list** — loopback, link-local (incl. the
+          ``169.254.169.254`` cloud-metadata endpoint), multicast and reserved
+          ranges are refused. RFC1918 private addresses stay allowed because
+          that is exactly where the Music Assistant LAN server lives (#933).
+        * **No redirects**, a **read-size cap** and an **``image/*``
+          content-type check** so the proxy can only ever return a bounded image.
+        """
         raw_url = request.query.get("url", "")
+        signature = request.query.get("sig", "")
         if not raw_url.startswith(("http://", "https://")):
             return web.Response(status=400, text="invalid url")
+        if not album_art_signature_is_valid(raw_url, signature):
+            _LOGGER.warning("Album-art proxy rejected an unsigned/forged URL")
+            return web.Response(status=403, text="forbidden")
+
+        host = urlsplit(raw_url).hostname
+        if not host or not await self._host_is_allowed(host):
+            _LOGGER.warning("Album-art proxy refused a disallowed host")
+            return web.Response(status=403, text="forbidden")
 
         session = async_get_clientsession(self.hass)
         try:
-            async with session.get(raw_url, timeout=ClientTimeout(total=10)) as resp:
+            async with session.get(
+                raw_url,
+                timeout=ClientTimeout(total=10),
+                allow_redirects=False,
+            ) as resp:
                 if resp.status != 200:
-                    return web.Response(status=resp.status)
-                body = await resp.read()
-                content_type = resp.headers.get("Content-Type", "image/jpeg")
+                    return web.Response(status=502, text="upstream fetch failed")
+                content_type = resp.headers.get("Content-Type", "")
+                if not content_type.startswith("image/"):
+                    return web.Response(status=415, text="not an image")
+                declared = resp.headers.get("Content-Length")
+                if declared is not None and declared.isdigit():
+                    if int(declared) > self._MAX_BYTES:
+                        return web.Response(status=413, text="image too large")
+                body = bytearray()
+                async for chunk in resp.content.iter_chunked(65536):
+                    body += chunk
+                    if len(body) > self._MAX_BYTES:
+                        return web.Response(status=413, text="image too large")
         except (ClientError, asyncio.TimeoutError):
-            _LOGGER.warning("Album-art proxy fetch failed for %s", raw_url)
+            _LOGGER.warning("Album-art proxy fetch failed")
             return web.Response(status=502, text="upstream fetch failed")
 
         return web.Response(
-            body=body,
+            body=bytes(body),
             content_type=content_type,
             headers={"Cache-Control": "public, max-age=86400"},
         )
+
+    async def _host_is_allowed(self, host: str) -> bool:
+        """Reject hosts that resolve to loopback/link-local/reserved ranges (#1356)."""
+        try:
+            infos = await self.hass.async_add_executor_job(
+                socket.getaddrinfo, host, None
+            )
+        except OSError:
+            return False
+        for info in infos:
+            addr = info[4][0]
+            try:
+                ip = ip_address(addr.split("%")[0])
+            except ValueError:
+                return False
+            if (
+                ip.is_loopback
+                or ip.is_link_local
+                or ip.is_multicast
+                or ip.is_unspecified
+                or ip.is_reserved
+            ):
+                return False
+        return True
 
 
 class PreviewLightsView(HomeAssistantView):
@@ -691,11 +757,11 @@ class PreviewLightsView(HomeAssistantView):
 
     async def post(self, request: web.Request) -> web.Response:
         """Run a ~5s party lights preview on the given entity_ids."""
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         try:
             body = await request.json()
-        except Exception:  # noqa: BLE001
+        except (ValueError, UnicodeDecodeError):
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
         entity_ids = body.get("entity_ids", [])
@@ -746,14 +812,14 @@ class TtsTestView(RateLimitMixin, HomeAssistantView):
         media player to route through (#793). Caller passes both:
         ``entity_id`` (the TTS entity) and ``media_player_entity_id``.
         """
-        if not await is_authorized_http(request, self.hass):
+        if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
         client_ip = request.remote or "unknown"
         if not self._check_rate_limit(client_ip):
             return _json_error("Too many requests", 429, code="RATE_LIMITED")
         try:
             body = await request.json()
-        except Exception:  # noqa: BLE001
+        except (ValueError, UnicodeDecodeError):
             return web.json_response({"error": "Invalid JSON"}, status=400)
 
         entity_id = body.get("entity_id", "")

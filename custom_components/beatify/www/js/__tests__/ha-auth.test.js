@@ -1,15 +1,21 @@
 /**
- * Unit tests for ha-auth.js — rc15 cookie-based session.
+ * Unit tests for ha-auth.js — in-memory access-token session (#1369).
  *
- * rc15 moves the OAuth code exchange and refresh server-side because
+ * rc15 moved the OAuth code exchange and refresh server-side because
  * Safari 18 silently refuses certain same-origin POSTs from the OAuth-
- * callback page state. ha-auth.js now never POSTs to an auth endpoint:
+ * callback page state. ha-auth.js never POSTs to an auth endpoint.
  *
- *   - The access token lives in a JS-readable `beatify_access` cookie
- *     (JSON {access_token, expires_at}) set by BeatifyAuthCallbackView.
+ * #1369 hardening: the HA access token is NO LONGER persisted in a
+ * JS-readable cookie (it authorizes the whole HA API, so any XSS could
+ * exfiltrate it). Instead:
+ *
+ *   - The access token lives ONLY in a module-scoped variable, populated
+ *     from the JSON body of GET /beatify/auth/refresh.
  *   - The refresh token lives in an HttpOnly `beatify_refresh` cookie
- *     that JS can never read; only BeatifyAuthRefreshView reads it.
- *   - Silent refresh is a fetch GET to /beatify/auth/refresh.
+ *     that JS can never read; only BeatifyAuthRefreshView reads it. It is
+ *     the sole persistent credential and the page-load bootstrap source.
+ *   - Silent refresh is a fetch GET to /beatify/auth/refresh that returns
+ *     {access_token, expires_in} in its body (never via Set-Cookie).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -28,6 +34,8 @@ function loadHaAuth({
     userAgent = '',
     externalApp = null,
     externalAppV2 = null,
+    sessionStorageData = {},
+    withDomBody = false,
 } = {}) {
     const storage = (initial) => {
         const map = new Map(Object.entries(initial));
@@ -39,14 +47,46 @@ function loadHaAuth({
         };
     };
     const ls = storage(localStorageData);
-    const ss = storage({});
+    const ss = storage(sessionStorageData);
 
     // Mutable cookie jar — JS reads via document.cookie, our shim allows
     // tests to seed an initial value and inspect mutations. Honors
     // Max-Age=0 by actually removing the entry, matching browsers.
     const cookieJar = { value: cookie };
+    // Minimal DOM shim so #1394's _renderAuthError() can mount its error card.
+    // Only created when withDomBody is set; otherwise document has no body and
+    // _renderAuthError() short-circuits (matching a not-yet-painted page).
+    let bodyShim = null;
+    if (withDomBody) {
+        const makeEl = () => {
+            const el = {
+                style: { cssText: '' },
+                children: [],
+                _listeners: {},
+                setAttribute() {},
+                set innerHTML(html) { this._html = html; },
+                get innerHTML() { return this._html || ''; },
+                appendChild(c) { this.children.push(c); return c; },
+                addEventListener(ev, fn) { this._listeners[ev] = fn; },
+                querySelector() { return makeEl(); },
+            };
+            return el;
+        };
+        bodyShim = makeEl();
+    }
     const documentShim = {
         title: 'test',
+        body: bodyShim,
+        createElement: bodyShim ? () => ({
+            style: { cssText: '' },
+            _listeners: {},
+            id: '',
+            setAttribute() {},
+            set innerHTML(html) { this._html = html; },
+            get innerHTML() { return this._html || ''; },
+            appendChild() {},
+            querySelector() { return { addEventListener: () => {} }; },
+        }) : undefined,
         get cookie() { return cookieJar.value; },
         set cookie(v) {
             const name = v.split('=')[0];
@@ -108,6 +148,9 @@ function loadHaAuth({
         BeatifyAuth: sandboxWindow.BeatifyAuth,
         cookieJar,
         localStorage: ls,
+        sessionStorage: ss,
+        documentShim,
+        bodyShim,
         sandboxWindow,
     };
 }
@@ -116,33 +159,58 @@ function cookieFor(name, payload) {
     return name + '=' + encodeURIComponent(JSON.stringify(payload));
 }
 
-describe('cookie session', () => {
-    it('isAuthenticated() reads access_token + expires_at from beatify_access cookie', () => {
+describe('in-memory session (#1369)', () => {
+    it('never persists the access token in document.cookie', async () => {
+        // The whole point of #1369: even after a successful refresh, the HA
+        // access token must not appear in the JS-readable cookie jar.
+        const { BeatifyAuth, cookieJar } = loadHaAuth({
+            fetchFn: async () => ({
+                ok: true,
+                status: 200,
+                json: async () => ({ access_token: 'in-mem', expires_in: 1800 }),
+            }),
+        });
+        const token = await BeatifyAuth.getAccessToken();
+        expect(token).toBe('in-mem');
+        expect(cookieJar.value).not.toContain('beatify_access');
+    });
+
+    it('isAuthenticated() is false before any refresh (no cookie carries the token)', () => {
+        // A seeded JS-readable access cookie must NOT authenticate — the token
+        // only ever comes from the HttpOnly-refresh bootstrap now.
         const farFuture = Math.floor(Date.now() / 1000) + 3600;
         const { BeatifyAuth } = loadHaAuth({
             cookie: cookieFor('beatify_access', { access_token: 'abc', expires_at: farFuture }),
         });
-        expect(BeatifyAuth.isAuthenticated()).toBe(true);
-    });
-
-    it('isAuthenticated() returns false when expires_at is in the past', () => {
-        const farPast = Math.floor(Date.now() / 1000) - 60;
-        const { BeatifyAuth } = loadHaAuth({
-            cookie: cookieFor('beatify_access', { access_token: 'abc', expires_at: farPast }),
-        });
         expect(BeatifyAuth.isAuthenticated()).toBe(false);
     });
 
-    it('getAccessToken() returns the cookied token without hitting the network', async () => {
-        const farFuture = Math.floor(Date.now() / 1000) + 3600;
+    it('isAuthenticated() is true once a fresh token is held in memory', async () => {
+        const { BeatifyAuth } = loadHaAuth({
+            fetchFn: async () => ({
+                ok: true,
+                status: 200,
+                json: async () => ({ access_token: 'abc', expires_in: 1800 }),
+            }),
+        });
+        await BeatifyAuth.getAccessToken();
+        expect(BeatifyAuth.isAuthenticated()).toBe(true);
+    });
+
+    it('getAccessToken() reuses the in-memory token without a second fetch', async () => {
         const fetchCalls = [];
         const { BeatifyAuth } = loadHaAuth({
-            cookie: cookieFor('beatify_access', { access_token: 'cached', expires_at: farFuture }),
-            fetchFn: async (...args) => { fetchCalls.push(args); throw new Error('should not fetch'); },
+            fetchFn: async (...args) => {
+                fetchCalls.push(args);
+                return { ok: true, status: 200, json: async () => ({ access_token: 'cached', expires_in: 1800 }) };
+            },
         });
-        const token = await BeatifyAuth.getAccessToken();
-        expect(token).toBe('cached');
-        expect(fetchCalls).toHaveLength(0);
+        const first = await BeatifyAuth.getAccessToken();
+        const second = await BeatifyAuth.getAccessToken();
+        expect(first).toBe('cached');
+        expect(second).toBe('cached');
+        // First call bootstraps via refresh; the second reuses memory.
+        expect(fetchCalls).toHaveLength(1);
     });
 
     it('clears legacy localStorage keys on init (migration from rc11–rc14)', async () => {
@@ -237,10 +305,16 @@ describe('init() auth callback handling', () => {
         expect(cookieJar.value).not.toContain('beatify_access=');
     });
 
-    it('on ?auth_state= matching sessionStorage trusts the freshly-set cookie', async () => {
-        const farFuture = Math.floor(Date.now() / 1000) + 3600;
+    it('on ?auth_state= matching sessionStorage bootstraps the token via refresh (#1369)', async () => {
+        // After the server-side callback, only the HttpOnly refresh cookie is
+        // set — no JS-readable access cookie. init() validates the state echo
+        // then GETs /beatify/auth/refresh to mint the in-memory access token.
+        const fetchCalls = [];
         const { BeatifyAuth, sandboxWindow } = loadHaAuth({
-            cookie: cookieFor('beatify_access', { access_token: 'freshly-set', expires_at: farFuture }),
+            fetchFn: async (url) => {
+                fetchCalls.push(url);
+                return { ok: true, status: 200, json: async () => ({ access_token: 'freshly-set', expires_in: 1800 }) };
+            },
         });
         // Frontend stored this state before redirecting to /auth/authorize.
         sandboxWindow.sessionStorage.setItem('beatify_ha_oauth_state', 'state-abc');
@@ -248,6 +322,7 @@ describe('init() auth callback handling', () => {
 
         const ok = await BeatifyAuth.init({ requireAuth: true });
         expect(ok).toBe(true);
+        expect(fetchCalls[0]).toBe('https://ha.example/beatify/auth/refresh');
         expect(await BeatifyAuth.getAccessToken()).toBe('freshly-set');
     });
 
@@ -265,6 +340,104 @@ describe('init() auth callback handling', () => {
         ]);
         expect(result).toBe('LOGIN_NAVIGATED');
         expect(cookieJar.value).not.toContain('beatify_access=');
+    });
+});
+
+describe('bounded login loop on persistent OAuth failure (#1394)', () => {
+    const K = 'beatify_login_attempts';
+
+    function failingCallback(attemptsSoFar) {
+        // Each "page load" arrives back from the server with ?auth_error= and
+        // carries forward the attempt counter in sessionStorage (which survives
+        // the redirect in a real browser).
+        return loadHaAuth({
+            fetchFn: async () => ({ ok: false, status: 401, json: async () => ({}) }),
+            sessionStorageData: attemptsSoFar > 0 ? { [K]: String(attemptsSoFar) } : {},
+            withDomBody: true,
+        });
+    }
+
+    it('keeps redirecting while under the attempt budget, incrementing the counter', async () => {
+        // First failed callback: counter 0 -> 1, still redirects.
+        const ctx = failingCallback(0);
+        ctx.sandboxWindow.location.search = '?auth_error=exchange_failed';
+        const result = await Promise.race([
+            ctx.BeatifyAuth.init({ requireAuth: true }),
+            new Promise((r) => setTimeout(() => r('LOGIN_NAVIGATED'), 5)),
+        ]);
+        expect(result).toBe('LOGIN_NAVIGATED');
+        expect(ctx.sandboxWindow.location._lastReplace).toContain('/auth/authorize');
+        expect(ctx.sessionStorage.getItem(K)).toBe('1');
+    });
+
+    it('stops redirecting and renders an error once the budget is exhausted', async () => {
+        // Arrive back on the page with the counter already at the max (3 prior
+        // failed login redirects). The 4th callback must NOT redirect again.
+        const ctx = failingCallback(3);
+        ctx.sandboxWindow.location.search = '?auth_error=exchange_failed';
+        const result = await ctx.BeatifyAuth.init({ requireAuth: true });
+        // init() resolves (does NOT hang on a never-resolving login redirect).
+        expect(result).toBe(false);
+        // No new /auth/authorize redirect was issued.
+        expect(ctx.sandboxWindow.location._lastReplace).toBeUndefined();
+        // A user-visible error card was mounted instead of looping.
+        expect(ctx.bodyShim.children.length).toBe(1);
+    });
+
+    it('drives the full loop to a bounded stop (no infinite redirect)', async () => {
+        // Simulate consecutive page loads, carrying the counter forward each
+        // time exactly as a real browser would across the redirect bounce.
+        let attempts = 0;
+        let redirects = 0;
+        for (let i = 0; i < 10; i++) {
+            const ctx = failingCallback(attempts);
+            ctx.sandboxWindow.location.search = '?auth_error=exchange_failed';
+            const result = await Promise.race([
+                ctx.BeatifyAuth.init({ requireAuth: true }),
+                new Promise((r) => setTimeout(() => r('LOGIN_NAVIGATED'), 5)),
+            ]);
+            const next = ctx.sessionStorage.getItem(K);
+            attempts = next ? parseInt(next, 10) : attempts;
+            if (result === 'LOGIN_NAVIGATED') redirects += 1;
+            else break; // budget exhausted — loop terminated
+        }
+        // Loop is bounded: at most MAX_LOGIN_ATTEMPTS (3) redirects, then stop.
+        expect(redirects).toBe(3);
+    });
+
+    it('resets the counter after a successful callback so later sessions get a fresh budget', async () => {
+        // #1369: a successful callback no longer carries a JS-readable access
+        // cookie — init() validates the state echo, then GETs
+        // /beatify/auth/refresh to mint the in-memory access token. The
+        // bounded-loop counter (#1394) is cleared on that success path.
+        const ctx = loadHaAuth({
+            fetchFn: async () => ({
+                ok: true,
+                status: 200,
+                json: async () => ({ access_token: 'freshly-set', expires_in: 1800 }),
+            }),
+            sessionStorageData: { [K]: '2' }, // two prior failures
+            withDomBody: true,
+        });
+        ctx.sandboxWindow.sessionStorage.setItem('beatify_ha_oauth_state', 'state-ok');
+        ctx.sandboxWindow.location.search = '?auth_state=state-ok';
+        const ok = await ctx.BeatifyAuth.init({ requireAuth: true });
+        expect(ok).toBe(true);
+        // Counter cleared on the successful callback.
+        expect(ctx.sessionStorage.getItem(K)).toBeNull();
+    });
+
+    it('also bounds the refresh-failed branch (no callback, refresh keeps failing)', async () => {
+        // No ?auth_error in the URL: init() falls through to refreshAccess(),
+        // which 401s. With the counter at max, it must stop instead of looping.
+        const ctx = loadHaAuth({
+            fetchFn: async () => ({ ok: false, status: 401, json: async () => ({}) }),
+            sessionStorageData: { [K]: '3' },
+            withDomBody: true,
+        });
+        const result = await ctx.BeatifyAuth.init({ requireAuth: true });
+        expect(result).toBe(false);
+        expect(ctx.sandboxWindow.location._lastReplace).toBeUndefined();
     });
 });
 
@@ -354,8 +527,9 @@ describe('Android Companion auth bridge (#1114, #1120 — rc5)', () => {
         bridge.window = sandboxWindow;
         const token = await BeatifyAuth.getAccessToken();
         expect(token).toBe('v2-token');
-        // The cookie was planted by _setSessionCookieFromCompanion.
-        expect(cookieJar.value).toContain('beatify_access=');
+        // #1369: the Companion token is held in memory, never in a cookie.
+        expect(cookieJar.value).not.toContain('beatify_access');
+        expect(BeatifyAuth.isAuthenticated()).toBe(true);
         // V2 message shape: {id, type: "getExternalAuth", payload: {callback, force}}
         expect(bridge.calls).toHaveLength(1);
         expect(bridge.calls[0].type).toBe('getExternalAuth');
@@ -375,7 +549,9 @@ describe('Android Companion auth bridge (#1114, #1120 — rc5)', () => {
         bridge.window = sandboxWindow;
         const token = await BeatifyAuth.getAccessToken();
         expect(token).toBe('v1-token');
-        expect(cookieJar.value).toContain('beatify_access=');
+        // #1369: in-memory, not cookie-persisted.
+        expect(cookieJar.value).not.toContain('beatify_access');
+        expect(BeatifyAuth.isAuthenticated()).toBe(true);
         // V1 message shape: {callback, force}. The callback MUST be the
         // fixed string "externalAuthSetToken" — Companion ≥ 2026.4.4 silently
         // rejects any other name (security fix GHSA-7jp2-p2fw-mgvf).
@@ -572,6 +748,66 @@ describe('Companion bypass mode (#1131 — UA + RFC1918 trust on server)', () =>
         const token = await BeatifyAuth.ensureAuthenticated();
         expect(token).toBeNull();
         expect(loginCalls).toBe(0); // no /auth/authorize navigation
+    });
+
+    it('handleServerRejection() resolves null in bypass mode WITHOUT refresh or OAuth redirect (#1393)', async () => {
+        // #1393: when the server rejects a bypass-mode connection (Companion
+        // reached Beatify over a non-RFC1918 address), handleServerRejection()
+        // previously ran refreshAccess() then login() → window.location.replace
+        // to /auth/authorize → the Invalid-redirect-URI / #1153 screen with no
+        // recovery. The guard must resolve null without ANY fetch (refresh) or
+        // location.replace (OAuth redirect).
+        let fetchCalls = 0;
+        let replaceCalls = 0;
+        const fetchFn = async () => {
+            fetchCalls += 1;
+            return { ok: false, status: 401 };
+        };
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            fetchFn,
+            userAgent: COMPANION_UA,
+        });
+        const _origReplace = sandboxWindow.location.replace;
+        sandboxWindow.location.replace = function (url) {
+            replaceCalls += 1;
+            return _origReplace.call(this, url);
+        };
+        const token = await BeatifyAuth.handleServerRejection();
+        expect(token).toBeNull();
+        expect(fetchCalls).toBe(0);   // no refreshAccess() bridge/HTTP attempt
+        expect(replaceCalls).toBe(0); // no /auth/authorize navigation
+    });
+
+    it('handleServerRejection() in a NORMAL browser still refreshes + redirects (no regression)', async () => {
+        // Desktop / non-Companion: the guard must NOT change the existing
+        // recovery — a server rejection still forces a refresh and, when that
+        // fails, an OAuth redirect.
+        let replaceUrl = null;
+        const fetchFn = async () => ({ ok: false, status: 401 }); // refresh fails
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            fetchFn,
+            userAgent: 'Mozilla/5.0 (Macintosh) Safari/605',
+        });
+        sandboxWindow.location.replace = (url) => { replaceUrl = url; };
+        // The returned promise never resolves (navigating away) — assert the
+        // side effect instead, after a tick lets refreshAccess reject.
+        BeatifyAuth.handleServerRejection();
+        await new Promise((r) => setTimeout(r, 0));
+        expect(replaceUrl).toContain('/auth/authorize');
+    });
+
+    it('login() is suppressed in bypass mode — no /auth/authorize redirect (#1393)', () => {
+        // #1393 defensive guard: a direct login() call in bypass mode must NOT
+        // window.location.replace to /auth/authorize (the Invalid-redirect-URI
+        // screen). It logs an actionable hint and returns.
+        let replaceCalls = 0;
+        const { BeatifyAuth, sandboxWindow } = loadHaAuth({
+            userAgent: COMPANION_UA,
+        });
+        sandboxWindow.location.replace = () => { replaceCalls += 1; };
+        BeatifyAuth.login();
+        expect(replaceCalls).toBe(0);
+        expect(sandboxWindow.location._lastReplace).toBeUndefined();
     });
 });
 

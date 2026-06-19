@@ -29,38 +29,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import secrets
 import time
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from custom_components.beatify.const import (
-    DEFAULT_ROUND_DURATION,
-    DIFFICULTY_DEFAULT,
-    DIFFICULTY_SCORING,
-    ERR_GAME_ALREADY_STARTED,
-    ERR_GAME_NOT_STARTED,
-    INTRO_DURATION_SECONDS,
-    MIN_PLAYERS,
-    PROVIDER_DEFAULT,
-    ROUND_DURATION_MAX,
-    ROUND_DURATION_MIN,
-    STREAK_MILESTONES,
-    TITLE_ARTIST_VOTE_WINDOW_SECONDS,
-    VOLUME_STEP,
-)
-
 from .challenges import (
-    ArtistChallenge,
+    ArtistChallenge,  # noqa: F401 (re-exported for backward compatibility)
     ChallengeManager,
-    MovieChallenge,
+    MovieChallenge,  # noqa: F401 (re-exported for backward compatibility)
     build_artist_options,  # noqa: F401 (re-exported for backward compatibility)
     build_movie_options,  # noqa: F401 (re-exported for backward compatibility)
 )
 from .config import GameStateConfig
 from .highlights import HighlightsTracker
 from .player import PlayerSession
-from .playlist import PlaylistManager, get_song_uri
+from .playlist import PlaylistManager
 from .player_registry import PlayerRegistry
 from .powerups import PowerUpManager
 from .round_manager import RoundManager
@@ -68,8 +51,20 @@ from .scoring import (
     ScoringService,
 )
 from .protocols import MediaPlayerProtocol, PartyLightsProtocol
-from .serializers import GameStateSerializer
-from . import tts_phrases
+from .state_auto_advance import RevealAutoAdvanceMixin
+from .state_challenge import ChallengeMixin
+from .state_leaderboard import LeaderboardMixin
+from .state_lifecycle import RoundLifecycleMixin
+from .state_media import MediaControlMixin
+from .state_pause import PauseResumeMixin
+from .state_player import PlayerLifecycleMixin
+from .state_reveal_transition import RevealTransitionMixin
+from .state_round_delegation import RoundManagerDelegationMixin
+from .state_setup import GameSetupMixin
+from .state_scoring import RoundScoringMixin
+from .state_serialization import StateSerializationMixin
+from .state_tts import TtsAnnouncerMixin
+from .state_vote_window import VoteWindowMixin
 
 from .types import RoundAnalytics, _get_decade_label
 
@@ -94,8 +89,175 @@ class GamePhase(Enum):
     PAUSED = "PAUSED"
 
 
-class GameState:
-    """Manages game state and phase transitions."""
+# ---------------------------------------------------------------------------
+# Phase-transition table (Issue #1273, AC#1 consolidation increment)
+# ---------------------------------------------------------------------------
+#
+# The legal *forward* phase transitions, derived from every ``_set_phase`` call
+# site in this module. This makes the transition graph an explicit, auditable
+# data structure layered on the single ``_set_phase`` chokepoint — the exact
+# follow-up the ``_set_phase`` docstring invited ("Follow-up increments can
+# layer a transition table on top of this single chokepoint").
+#
+# IMPORTANT — observational, not enforcing: ``_set_phase`` only logs a WARNING
+# when an *unexpected* edge is taken; it never raises and never blocks the
+# write. This is deliberately behaviour-preserving: it surfaces drift (a new
+# transition added without updating this table, or a genuinely illegal flip)
+# without ever changing control flow. Exemptions: same-phase writes (e.g. the
+# PLAYING→PLAYING next-round commit) and ``restore=True`` resumes are never
+# checked — a resume legitimately restores PAUSED→PLAYING / PAUSED→REVEAL.
+#
+# Edges (source → allowed targets):
+#   * LOBBY and END are valid targets from ANY phase — ``start_game`` /
+#     rematch / reset re-initialise to LOBBY from anywhere, and
+#     ``advance_to_end`` is a documented universal terminal.
+#   * LOBBY   → PLAYING            (start_game)
+#   * PLAYING → REVEAL, PAUSED     (reveal / pause)
+#   * REVEAL  → PLAYING, PAUSED    (next-round commit / pause)
+# Same-phase forward writes (LOBBY→LOBBY re-init, PLAYING→PLAYING next round)
+# are covered by the same-phase exemption, not by this table.
+_VALID_PHASE_TRANSITIONS: dict[GamePhase, frozenset[GamePhase]] = {
+    GamePhase.LOBBY: frozenset({GamePhase.PLAYING}),
+    GamePhase.PLAYING: frozenset({GamePhase.REVEAL, GamePhase.PAUSED}),
+    GamePhase.REVEAL: frozenset({GamePhase.PLAYING, GamePhase.PAUSED}),
+    GamePhase.PAUSED: frozenset(),
+    GamePhase.END: frozenset(),
+}
+
+# Targets reachable from *any* source phase (re-init + universal terminal).
+_UNIVERSAL_PHASE_TARGETS: frozenset[GamePhase] = frozenset(
+    {GamePhase.LOBBY, GamePhase.END}
+)
+
+
+class GameState(
+    ChallengeMixin,
+    GameSetupMixin,
+    LeaderboardMixin,
+    MediaControlMixin,
+    PauseResumeMixin,
+    PlayerLifecycleMixin,
+    RevealAutoAdvanceMixin,
+    RevealTransitionMixin,
+    RoundLifecycleMixin,
+    RoundManagerDelegationMixin,
+    RoundScoringMixin,
+    StateSerializationMixin,
+    TtsAnnouncerMixin,
+    VoteWindowMixin,
+):
+    """Manages game state and phase transitions.
+
+    The TTS / spoken-announcement subsystem (Issue #1271 first-increment
+    extraction) lives in :class:`~custom_components.beatify.game.state_tts.TtsAnnouncerMixin`.
+
+    The leaderboard / ranking subsystem (Issue #1271 next-increment
+    extraction) lives in :class:`~custom_components.beatify.game.state_leaderboard.LeaderboardMixin`.
+
+    The media-player & party-lights output subsystem (Issue #1271
+    next-increment extraction) lives in
+    :class:`~custom_components.beatify.game.state_media.MediaControlMixin`.
+
+    The challenge-delegation subsystem (Issue #1271 next-increment
+    extraction, stacked on the media extraction) lives in
+    :class:`~custom_components.beatify.game.state_challenge.ChallengeMixin`.
+
+    The player-lifecycle subsystem (Issue #1271 next-increment extraction:
+    PlayerRegistry + PowerUpManager delegation — player lookups, sessions,
+    reactions, admin, steal/streak/bet pass-throughs) lives in
+    :class:`~custom_components.beatify.game.state_player.PlayerLifecycleMixin`.
+
+    The Title & Artist REVEAL vote-window subsystem (Issue #1271
+    next-increment extraction — the #1180 Phase 4 vote-window scheduling +
+    finalization writers the challenge-delegation cut deliberately left
+    behind, coupled to the score lock and the auto-advance task) lives in
+    :class:`~custom_components.beatify.game.state_vote_window.VoteWindowMixin`.
+
+    The round-scoring & round-stats subsystem (Issue #1271 next-increment
+    extraction, stacked on the vote-window cut — the round-end scoring pass
+    plus highlights / analytics / song-result recording, i.e. the
+    ``_end_round_unlocked`` phase 2 & 3 helpers; the shared
+    ``_score_all_players`` loop deliberately stays here so the round-end and
+    vote-window deferred-rescore paths cannot drift) lives in
+    :class:`~custom_components.beatify.game.state_scoring.RoundScoringMixin`.
+
+    The state-serialization & game-summary subsystem (Issue #1271
+    next-increment extraction, stacked on the round-scoring cut — the
+    frontend/StatsService serialization entry points ``get_state`` /
+    ``get_reveal_players_state`` plus the end-of-game summary
+    (``finalize_game``), live performance comparison (``get_game_performance``
+    / ``_calculate_current_avg``), the ``StatsService`` wiring
+    (``set_stats_service``) and the difficulty lookup (``get_song_difficulty``))
+    lives in
+    :class:`~custom_components.beatify.game.state_serialization.StateSerializationMixin`.
+
+    The round-lifecycle / round-start subsystem (Issue #1271 next-increment
+    extraction, stacked on the state-serialization cut — the LOBBY→PLAYING
+    start gate (``start_game``) plus the full ``start_round`` orchestration
+    (song selection, playback dispatch, metadata build, round-state commit) and
+    its setup helpers (``_ensure_media_player_service``, ``_prepare_intro_round``,
+    ``_build_round_metadata``, ``_initialize_round``); the round-*end* /
+    REVEAL-transition path deliberately stays here) lives in
+    :class:`~custom_components.beatify.game.state_lifecycle.RoundLifecycleMixin`.
+
+    The pause / resume subsystem (Issue #1271 next-increment extraction, stacked
+    on the round-lifecycle cut — the PLAYING/REVEAL→PAUSED pause gate
+    (``pause_game``: phase snapshot, timer + media-playback stop, REVEAL
+    auto-advance supersession) and the PAUSED→(previous phase) resume restore
+    (``resume_game``: remaining-deadline timer/intro-timer restart, media
+    resume, or immediate round-end if the deadline elapsed during the pause —
+    always writing the phase through ``_set_phase(restore=True)`` so a
+    resume-to-REVEAL never re-stamps ``reveal_started_at``); the ``_set_phase``
+    chokepoint and ``_timer_countdown`` / ``end_round`` stay on ``GameState``)
+    lives in
+    :class:`~custom_components.beatify.game.state_pause.PauseResumeMixin`.
+
+    The REVEAL auto-advance subsystem (Issue #1271 next-increment extraction,
+    off ``main`` after the pause/resume cut — the #1012 unattended REVEAL→next
+    machinery: the song-end / dwell auto-advance task (``_reveal_auto_advance``),
+    the zero-guesses idle-halt task (``_reveal_idle_halt``), their shared
+    song-end poll (``_song_finished``) and the cancel hook
+    (``_cancel_auto_advance``); the scheduler that *starts* these tasks
+    (``_schedule_reveal_advance``) and the ``_set_phase`` chokepoint stay on
+    ``GameState``) lives in
+    :class:`~custom_components.beatify.game.state_auto_advance.RevealAutoAdvanceMixin`.
+
+    The game-setup subsystem (Issue #1271 next-increment extraction, off
+    ``main`` — the new-session builder (``create_game``: token generation,
+    PlaylistManager construction, storefront detection, round-tracking + config
+    reset, challenge / power-up / mode configuration), the teardown
+    (``end_game``) and the player-preserving rebuild (``rematch_game``), their
+    shared field-reset (``_reset_game_internals``) and the Apple-Music
+    storefront detection (``_detect_storefront``); the ``_set_phase`` chokepoint
+    and ``_apply_config`` / ``_default_config`` stay on ``GameState``) lives in
+    :class:`~custom_components.beatify.game.state_setup.GameSetupMixin`.
+
+    The round-timer & REVEAL/terminal-transition subsystem (Issue #1271
+    next-increment extraction, off ``main`` — the forward-flow machinery that
+    carries a round from "all guesses in / timer expired" through REVEAL to the
+    terminal END phase: the early-reveal gate (``check_all_guesses_complete``,
+    ``_trigger_early_reveal``, ``trigger_early_reveal_if_complete``), the
+    round-timer task (``_timer_countdown``, ``cancel_timer``), the REVEAL
+    transition helpers (``_transition_to_reveal``, ``_apply_reveal_lights``), the
+    intro-splash / deadline delegations (``confirm_intro_splash``,
+    ``is_deadline_passed``) and the terminal ``advance_to_end``; the
+    ``_set_phase`` chokepoint, ``_score_all_players``, ``_end_round_unlocked`` and
+    ``_schedule_reveal_advance`` round-end SSOT stay on ``GameState``) lives in
+    :class:`~custom_components.beatify.game.state_reveal_transition.RevealTransitionMixin`.
+
+    The RoundManager delegation-property facade (Issue #1271 next-increment
+    extraction, off ``main`` — the read-only / setter ``@property`` cluster that
+    keeps the round-scoped public interface identical while the underlying
+    attributes live on the owned ``RoundManager``: ``round`` / ``total_rounds`` /
+    ``deadline`` / ``current_song`` / ``last_round`` / ``round_start_time`` /
+    ``round_duration`` / ``song_stopped`` / ``round_analytics``, the intro-mode
+    flags (``intro_mode_enabled`` / ``is_intro_round`` / ``intro_stopped`` /
+    ``intro_splash_pending``), ``early_reveal``, ``metadata_pending`` and the
+    ``PlaylistManager``-backed ``songs_remaining`` count; these are a pure
+    pass-through facade with no SSOT of their own, the managers themselves stay
+    on ``GameState``) lives in
+    :class:`~custom_components.beatify.game.state_round_delegation.RoundManagerDelegationMixin`.
+    """
 
     def __init__(self, time_fn: Callable[[], float] | None = None) -> None:
         """
@@ -109,6 +271,12 @@ class GameState:
         self._hass: HomeAssistant | None = None
         self.game_id: str | None = None
         self.admin_token: str | None = None  # Issue #386: REST admin auth
+        # #1358: monotonic game-identity epoch. Bumped by create_game /
+        # end_game / rematch_game so a long-running start_round can detect that
+        # the game it was launched for has been torn down or replaced while it
+        # was parked inside an await (verify_responsive / play_song), and bail
+        # instead of stamping PLAYING onto a game with game_id=None / no players.
+        self._game_epoch: int = 0
         self.phase: GamePhase = GamePhase.LOBBY
         # #1012: REVEAL auto-advance (seconds; 0 = manual) + its task handle
         self.reveal_auto_advance: int = 0
@@ -119,50 +287,22 @@ class GameState:
         # open vote window, so the serializer publishes an authoritative
         # vote_seconds_remaining (no client clock-skew). None when not voting.
         self._title_artist_vote_deadline: float | None = None
+        # #1371: pause snapshot of the open vote window. pause_game() cancels the
+        # vote-window task, whose CancelledError handler async-resets
+        # _title_artist_voting_open / _title_artist_vote_deadline before
+        # resume_game() runs — so the live flags are unreliable at resume time.
+        # These capture the window state at pause so resume can re-arm it.
+        self._paused_vote_open: bool = False
+        self._paused_vote_deadline: float | None = None
         # #1048: ms timestamp REVEAL was entered — clients compute remaining
         # countdown vs Date.now(). None outside REVEAL.
         self.reveal_started_at: int | None = None
         # Issue #331: Party Lights service
         self._party_lights: PartyLightsProtocol | None = None
-        # Issue #447: TTS announcement service
-        self._tts_service: Any = None  # TTSService (lazy import)
-        self._tts_announce_game_start: bool = True
-        self._tts_announce_winner: bool = True
-        # Issue #471 Phase 1: Game Flow announcements
-        self._tts_announce_round_start: bool = True
-        self._tts_announce_countdown: bool = (
-            False  # off by default — intrusive every round
-        )
-        self._tts_announce_time_up: bool = True
-        self._tts_announce_correct_answer: bool = True
-        self._tts_announce_nobody_correct: bool = True
-        # Issue #840 Phase 2: Player Achievement announcements
-        self._tts_announce_exact_guess: bool = True
-        self._tts_announce_closest_guess: bool = True
-        self._tts_announce_streak_milestone: bool = True
-        self._tts_announce_streak_broken: bool = False  # off — noisy mid-game
-        self._tts_announce_leader_change: bool = True
-        self._tts_announce_tied_first: bool = True
-        # Leader-change detection needs the prior round's leader name.
-        self._tts_previous_leader: str | None = None
-        # Issue #841 Phase 3: Betting & Game State announcements
-        self._tts_announce_bet_won: bool = True
-        self._tts_announce_bet_lost: bool = True
-        self._tts_announce_player_join: bool = True
-        # off — phones re-establish the WS constantly (screen lock, network)
-        self._tts_announce_player_reconnect: bool = False
-        self._tts_announce_last_round: bool = True
-        self._tts_announce_podium: bool = True
-        self._tts_announce_rematch: bool = True
-        # Issue #842 Phase 4: Special Modes announcements
-        self._tts_announce_intro_round: bool = True
-        self._tts_announce_steal_unlocked: bool = True
-        self._tts_announce_steal_used: bool = True
-        # Steal-unlock is announced once per player per game.
-        self._tts_steal_unlocked_announced: set[str] = set()
-        # Issue #1211: seconds to add to the deadline so the timer only starts
-        # counting once music has resumed after pre-round TTS announcements.
-        self._tts_pre_round_delay: float = 0.0
+        # Issue #447 / #1271: TTS announcement subsystem state lives in
+        # TtsAnnouncerMixin; initialize it here so the attributes exist before
+        # any announcement fires.
+        self._init_tts_state()
         self._bg_tasks: set[asyncio.Task] = (
             set()
         )  # Issue #391: prevent GC of fire-and-forget tasks
@@ -246,966 +386,157 @@ class GameState:
         for cb in self._state_callbacks:
             cb()
 
+    def async_shutdown(self) -> None:
+        """Cancel every running game task/timer on integration unload (#1391).
+
+        ``async_unload_entry`` pops ``hass.data[DOMAIN]`` but never tore down the
+        live game infrastructure. If a game was active at unload, the round-timer
+        task (``_timer_task``), the intro auto-stop timer (``_intro_stop_task``),
+        the background metadata task (``_metadata_task``), the REVEAL
+        ``_auto_advance_task`` and the fire-and-forget ``_bg_tasks`` (#391) all
+        kept running against an orphaned GameState — firing media_player service
+        calls and racing a fresh GameState after reload (two timers driving one
+        media player). This cancels them all idempotently.
+        """
+        # Round timer, intro timer, and background metadata task all live on the
+        # RoundManager (their cancel helpers are defensive no-ops when idle).
+        self._round_manager.cancel_timer()
+        self._round_manager._cancel_intro_timer()
+        self._round_manager._cancel_metadata_task()
+        # REVEAL auto-advance task (#1012).
+        self._cancel_auto_advance()
+        # Fire-and-forget party-light / media / TTS tasks (#391).
+        for task in list(self._bg_tasks):
+            if not task.done():
+                task.cancel()
+        self._bg_tasks.clear()
+
+    # ------------------------------------------------------------------
+    # Phase transitions — Single Source of Truth (Issue #1273)
+    # ------------------------------------------------------------------
+    #
+    # ALL writes to ``self.phase`` now go through ``_set_phase`` — including the
+    # two ``resume_game`` restores, which pass ``restore=True`` (#1273). There
+    # are no remaining direct ``self.phase = …`` assignments anywhere in the
+    # codebase. This makes the backend the one authoritative owner of the game
+    # phase and gives every transition a single, auditable chokepoint. Two
+    # invariants that were previously hand-maintained at each scattered
+    # ``self.phase = …`` site are now enforced here so they can never drift:
+    #
+    #   * ``reveal_started_at`` (#1048) is owned by forward transitions: non-None
+    #     *iff* phase is REVEAL — stamped on entry to REVEAL, cleared on every
+    #     other forward transition. A ``restore=True`` resume deliberately leaves
+    #     it untouched (resume must not restart the auto-advance countdown).
+    #   * registered state observers (#441) are notified on every phase change.
+    #
+    # This centralises the *write* path. An explicit, auditable transition
+    # table (``_VALID_PHASE_TRANSITIONS`` above) is now layered on top of this
+    # chokepoint: ``_set_phase`` logs a WARNING on any forward edge missing from
+    # the table. The check is observational only — it never raises or blocks, so
+    # behaviour is unchanged; it exists to surface drift (an un-tabled new edge
+    # or a genuinely illegal flip).
+
+    def _set_phase(
+        self, new_phase: GamePhase, *, notify: bool = True, restore: bool = False
+    ) -> None:
+        """Authoritatively transition the game to ``new_phase``.
+
+        The single write-point for ``self.phase`` (Issue #1273). Maintains the
+        ``reveal_started_at`` invariant (#1048) and notifies state observers
+        (#441) so no transition site has to remember either bookkeeping step.
+
+        Args:
+            new_phase: The phase to transition into.
+            notify: Whether to fire registered state callbacks. Defaults to
+                True; pass False only when the caller batches its own notify
+                immediately afterwards (kept for callers that interleave other
+                bookkeeping between the phase write and the broadcast).
+            restore: Pass True only from ``resume_game`` (#1273). A resume
+                *restores* a previously-saved phase rather than making a forward
+                transition, so it must NOT re-stamp ``reveal_started_at`` — a
+                resume-to-REVEAL would otherwise restart the auto-advance
+                countdown. With ``restore=True`` the ``reveal_started_at`` value
+                is left exactly as-is (neither stamped nor cleared); only the
+                phase write + notify happen. This lets the two resume writes
+                join the SSOT chokepoint without changing behaviour. Defaults to
+                False (forward transitions own the timestamp invariant).
+
+        """
+        # #1273 (AC#1 consolidation): observational transition-validity check.
+        # Logs — never raises, never blocks — when a forward edge isn't in the
+        # explicit transition table, so drift (an un-tabled new transition or a
+        # genuinely illegal flip) is surfaced without altering control flow.
+        # Same-phase writes and restores are exempt (see the table comment).
+        if not restore and new_phase is not self.phase:
+            allowed = _VALID_PHASE_TRANSITIONS.get(self.phase, frozenset())
+            if new_phase not in _UNIVERSAL_PHASE_TARGETS and new_phase not in allowed:
+                _LOGGER.warning(
+                    "Unexpected phase transition %s -> %s (not in transition "
+                    "table); proceeding. If this is a new legitimate edge, add "
+                    "it to _VALID_PHASE_TRANSITIONS (#1273).",
+                    self.phase.value,
+                    new_phase.value,
+                )
+        self.phase = new_phase
+        # #1048: the REVEAL-entry timestamp is owned entirely by forward phase
+        # transitions. Entering REVEAL stamps it; any other phase clears it.
+        # A restore (resume) deliberately leaves the timestamp untouched — see
+        # the ``restore`` arg docstring.
+        if not restore:
+            if new_phase is GamePhase.REVEAL:
+                self.reveal_started_at = int(self._now() * 1000)
+            else:
+                self.reveal_started_at = None
+        if notify:
+            self._notify_state_callbacks()
+
     def current_time(self) -> float:
         """Return the current timestamp from the injected clock."""
         return self._now()
 
     # ------------------------------------------------------------------
-    # Player registry delegation (keep public interface identical)
+    # Player registry / power-up delegation lives in PlayerLifecycleMixin
+    # (Issue #1271 extraction). See game/state_player.py.
     # ------------------------------------------------------------------
 
-    @property
-    def players(self) -> dict[str, PlayerSession]:
-        """Player dict — delegated to PlayerRegistry."""
-        return self._player_registry.players
-
-    @players.setter
-    def players(self, value: dict[str, PlayerSession]) -> None:
-        self._player_registry.players = value
-
-    @property
-    def leader(self) -> PlayerSession | None:
-        """Get current leader player (cached per state change)."""
-        if not self.players:
-            return None
-        return max(self.players.values(), key=lambda p: p.score)
-
     # ------------------------------------------------------------------
-    # RoundManager delegation (keep public interface identical)
+    # RoundManager delegation properties (round / total_rounds / deadline /
+    # current_song / last_round / round_start_time / round_duration /
+    # song_stopped / round_analytics / the intro-mode flags / early_reveal /
+    # songs_remaining / metadata_pending) live in RoundManagerDelegationMixin
+    # (Issue #1271 extraction). See game/state_round_delegation.py.
     # ------------------------------------------------------------------
 
-    @property
-    def round(self) -> int:
-        """Current round number — delegated to RoundManager."""
-        return self._round_manager.round
-
-    @round.setter
-    def round(self, value: int) -> None:
-        self._round_manager.round = value
-
-    @property
-    def total_rounds(self) -> int:
-        """Total rounds — delegated to RoundManager."""
-        return self._round_manager.total_rounds
-
-    @total_rounds.setter
-    def total_rounds(self, value: int) -> None:
-        self._round_manager.total_rounds = value
-
-    @property
-    def deadline(self) -> int | None:
-        """Round deadline (ms) — delegated to RoundManager."""
-        return self._round_manager.deadline
-
-    @deadline.setter
-    def deadline(self, value: int | None) -> None:
-        self._round_manager.deadline = value
-
-    @property
-    def current_song(self) -> dict[str, Any] | None:
-        """Current song dict — delegated to RoundManager."""
-        return self._round_manager.current_song
-
-    @current_song.setter
-    def current_song(self, value: dict[str, Any] | None) -> None:
-        self._round_manager.current_song = value
-
-    @property
-    def last_round(self) -> bool:
-        """Whether this is the last round — delegated to RoundManager."""
-        return self._round_manager.last_round
-
-    @last_round.setter
-    def last_round(self, value: bool) -> None:
-        self._round_manager.last_round = value
-
-    @property
-    def round_start_time(self) -> float | None:
-        """Round start timestamp — delegated to RoundManager."""
-        return self._round_manager.round_start_time
-
-    @round_start_time.setter
-    def round_start_time(self, value: float | None) -> None:
-        self._round_manager.round_start_time = value
-
-    @property
-    def round_duration(self) -> float:
-        """Round timer duration — delegated to RoundManager."""
-        return self._round_manager.round_duration
-
-    @round_duration.setter
-    def round_duration(self, value: float) -> None:
-        self._round_manager.round_duration = value
-
-    @property
-    def song_stopped(self) -> bool:
-        """Song stopped flag — delegated to RoundManager."""
-        return self._round_manager.song_stopped
-
-    @song_stopped.setter
-    def song_stopped(self, value: bool) -> None:
-        self._round_manager.song_stopped = value
-
-    @property
-    def round_analytics(self) -> RoundAnalytics | None:
-        """Round analytics — stored on RoundManager for lifecycle coherence."""
-        return self._round_manager.round_analytics
-
-    @round_analytics.setter
-    def round_analytics(self, value: RoundAnalytics | None) -> None:
-        self._round_manager.round_analytics = value
-
-    @property
-    def intro_mode_enabled(self) -> bool:
-        """Intro mode enabled — delegated to RoundManager."""
-        return self._round_manager.intro_mode_enabled
-
-    @intro_mode_enabled.setter
-    def intro_mode_enabled(self, value: bool) -> None:
-        self._round_manager.intro_mode_enabled = value
-
-    @property
-    def is_intro_round(self) -> bool:
-        """Whether current round is intro mode — delegated to RoundManager."""
-        return self._round_manager.is_intro_round
-
-    @is_intro_round.setter
-    def is_intro_round(self, value: bool) -> None:
-        self._round_manager.is_intro_round = value
-
-    @property
-    def intro_stopped(self) -> bool:
-        """Intro stopped flag — delegated to RoundManager."""
-        return self._round_manager.intro_stopped
-
-    @intro_stopped.setter
-    def intro_stopped(self, value: bool) -> None:
-        self._round_manager.intro_stopped = value
-
-    @property
-    def intro_splash_pending(self) -> bool:
-        """Intro splash pending flag — delegated to RoundManager."""
-        return self._round_manager._intro_splash_pending
-
-    @property
-    def early_reveal(self) -> bool:
-        """Early reveal flag — delegated to RoundManager."""
-        return self._round_manager._early_reveal
-
-    @property
-    def songs_remaining(self) -> int:
-        """Count of unplayed songs remaining in the playlist."""
-        if self._playlist_manager:
-            return self._playlist_manager.get_remaining_count()
-        return 0
-
-    @property
-    def metadata_pending(self) -> bool:
-        """Metadata pending flag — delegated to RoundManager."""
-        return self._round_manager.metadata_pending
-
-    @metadata_pending.setter
-    def metadata_pending(self, value: bool) -> None:
-        self._round_manager.metadata_pending = value
-
     # ------------------------------------------------------------------
-    # Power-up delegation properties (keep public interface identical)
+    # Power-up delegation properties live in PlayerLifecycleMixin
+    # (Issue #1271 extraction). See game/state_player.py.
     # ------------------------------------------------------------------
 
-    @property
-    def streak_achievements(self) -> dict[str, int]:
-        """Streak achievement counters."""
-        return self._powerup_manager.streak_achievements
-
-    @streak_achievements.setter
-    def streak_achievements(self, value: dict[str, int]) -> None:
-        self._powerup_manager.streak_achievements = value
-
-    @property
-    def bet_tracking(self) -> dict[str, int]:
-        """Bet outcome counters."""
-        return self._powerup_manager.bet_tracking
-
-    @bet_tracking.setter
-    def bet_tracking(self, value: dict[str, int]) -> None:
-        self._powerup_manager.bet_tracking = value
-
     # ------------------------------------------------------------------
-    # Challenge delegation properties (keep public interface identical)
+    # Game setup (create / reset / end / rematch) + Apple-Music storefront
+    # detection live in GameSetupMixin (Issue #1271 extraction).
+    # See game/state_setup.py.
     # ------------------------------------------------------------------
 
-    @property
-    def artist_challenge(self) -> ArtistChallenge | None:
-        """Current artist challenge state."""
-        return self._challenge_manager.artist_challenge
-
-    @artist_challenge.setter
-    def artist_challenge(self, value: ArtistChallenge | None) -> None:
-        self._challenge_manager.artist_challenge = value
-
-    @property
-    def artist_challenge_enabled(self) -> bool:
-        """Whether artist challenge is enabled."""
-        return self._challenge_manager.artist_challenge_enabled
-
-    @artist_challenge_enabled.setter
-    def artist_challenge_enabled(self, value: bool) -> None:
-        self._challenge_manager.artist_challenge_enabled = value
-
-    @property
-    def movie_challenge(self) -> MovieChallenge | None:
-        """Current movie quiz challenge state."""
-        return self._challenge_manager.movie_challenge
-
-    @movie_challenge.setter
-    def movie_challenge(self, value: MovieChallenge | None) -> None:
-        self._challenge_manager.movie_challenge = value
-
-    @property
-    def movie_quiz_enabled(self) -> bool:
-        """Whether movie quiz is enabled."""
-        return self._challenge_manager.movie_quiz_enabled
-
-    @movie_quiz_enabled.setter
-    def movie_quiz_enabled(self, value: bool) -> None:
-        self._challenge_manager.movie_quiz_enabled = value
-
-    @property
-    def title_artist_mode(self) -> bool:
-        """Whether title/artist guessing mode is enabled (Issue #1180)."""
-        return self._challenge_manager.title_artist_mode
-
-    @title_artist_mode.setter
-    def title_artist_mode(self, value: bool) -> None:
-        self._challenge_manager.title_artist_mode = value
-
-    @property
-    def title_artist_challenge(self) -> Any:
-        """Current title/artist challenge state (Issue #1180)."""
-        return self._challenge_manager.title_artist_challenge
-
-    @title_artist_challenge.setter
-    def title_artist_challenge(self, value: Any) -> None:
-        self._challenge_manager.title_artist_challenge = value
-
-    def get_artist_challenge_dict(
-        self, *, include_answer: bool
-    ) -> dict[str, Any] | None:
-        """Build artist challenge dict — delegated to ChallengeManager."""
-        return self._challenge_manager.get_artist_challenge_dict(
-            include_answer=include_answer
-        )
-
-    def get_movie_challenge_dict(
-        self, *, include_answer: bool
-    ) -> dict[str, Any] | None:
-        """Build movie challenge dict — delegated to ChallengeManager."""
-        return self._challenge_manager.get_movie_challenge_dict(
-            include_answer=include_answer
-        )
-
-    def get_title_artist_challenge_dict(
-        self, *, include_answer: bool
-    ) -> dict[str, Any] | None:
-        """Build Title & Artist challenge dict — delegated to ChallengeManager (#1180).
-
-        PLAYING (include_answer=False): {"active": True} with NO truth, or None
-        when the mode/challenge is inactive. REVEAL (include_answer=True):
-        truth + per-player results + (Phase 4) voting state.
-        """
-        challenge_dict = self._challenge_manager.get_title_artist_challenge_dict(
-            include_answer=include_answer
-        )
-        # Phase 4 (#1180): surface the vote-eligible near-misses tally and the
-        # REVEAL vote window flag so the player vote cards / host override
-        # controls can render. ``_title_artist_voting_open`` lives on GameState,
-        # so the truth-bearing REVEAL dict is finalized here, not in the manager.
-        if include_answer and challenge_dict is not None:
-            challenge_dict["near_misses"] = self.get_near_misses()
-            challenge_dict["near_miss_outcomes"] = self.get_near_miss_outcomes()
-            challenge_dict["voting_open"] = self.is_title_artist_voting_open()
-            challenge_dict["vote_seconds_remaining"] = (
-                self.title_artist_vote_seconds_remaining()
-            )
-        return challenge_dict
-
-    def title_artist_vote_seconds_remaining(self) -> int:
-        """Whole seconds left in the open vote window, server-authoritative.
-
-        Computed from the server-owned deadline against the same clock that set
-        it, so clients never compare their wall clock to the server's. Returns 0
-        when voting is closed or no deadline is set (#1180).
-        """
-        if (
-            not self._title_artist_voting_open
-            or self._title_artist_vote_deadline is None
-        ):
-            return 0
-        return max(0, round(self._title_artist_vote_deadline - self._now()))
-
     # ------------------------------------------------------------------
-    # Title/Artist vote delegation (#1180 Phase 4)
+    # Pause / resume lives in PauseResumeMixin (Issue #1271 extraction).
+    # See game/state_pause.py.
     # ------------------------------------------------------------------
 
-    def register_title_artist_vote(
-        self, voter_name: str, nearmiss_id: str, accept: bool
-    ) -> None:
-        """Record a community vote on a near-miss — delegates to ChallengeManager."""
-        self._challenge_manager.register_title_artist_vote(
-            voter_name, nearmiss_id, accept
-        )
-
-    def set_title_artist_override(self, nearmiss_id: str, accept: bool) -> None:
-        """Record a host override on a near-miss — delegates to ChallengeManager."""
-        self._challenge_manager.set_title_artist_override(nearmiss_id, accept)
-
-    def get_near_misses(self) -> list[dict[str, Any]]:
-        """List vote-eligible near-misses — delegates to ChallengeManager."""
-        return self._challenge_manager.get_near_misses()
-
-    def has_near_misses(self) -> bool:
-        """True if any near-miss is vote-eligible — delegates to ChallengeManager."""
-        return self._challenge_manager.has_near_misses()
-
-    def get_near_miss_outcomes(self) -> list[dict[str, Any]]:
-        """Resolved near-miss verdicts — delegates to ChallengeManager (#1180)."""
-        return self._challenge_manager.get_near_miss_outcomes()
-
-    def is_title_artist_voting_open(self) -> bool:
-        """True while the conditional REVEAL vote window is open (#1180 P4)."""
-        return self._title_artist_voting_open
-
-    def get_song_difficulty(self, song_uri: str) -> dict[str, Any] | None:
-        """Get song difficulty rating — delegated to StatsService."""
-        if self._stats_service:
-            return self._stats_service.get_song_difficulty(song_uri)
-        return None
-
-    def create_game(
-        self,
-        playlists: list[str],
-        songs: list[dict[str, Any]],
-        media_player: str,
-        base_url: str,
-        round_duration: int = DEFAULT_ROUND_DURATION,
-        difficulty: str = DIFFICULTY_DEFAULT,
-        provider: str = PROVIDER_DEFAULT,
-        platform: str = "unknown",
-        artist_challenge_enabled: bool = True,
-        movie_quiz_enabled: bool = True,
-        intro_mode_enabled: bool = False,
-        closest_wins_mode: bool = False,
-        title_artist_mode: bool = False,
-        reveal_auto_advance: int = 0,
-    ) -> dict[str, Any]:
-        """
-        Create a new game session.
-
-        Args:
-            playlists: List of playlist file paths
-            songs: List of song dicts loaded from playlists
-            media_player: Entity ID of media player
-            base_url: HA base URL for join URL construction
-            round_duration: Round timer duration in seconds (10-60, default 30)
-            difficulty: Difficulty level (easy/normal/hard, default normal)
-            provider: Music provider (spotify/apple_music, default spotify)
-            platform: Platform identifier for playback routing (music_assistant, sonos, alexa_media)
-            artist_challenge_enabled: Whether to enable artist guessing (default True)
-            movie_quiz_enabled: Whether to enable movie quiz bonus (default True)
-            intro_mode_enabled: Whether to enable intro mode (~20% random rounds)
-            closest_wins_mode: Whether only the closest guess(es) earn points
-            title_artist_mode: Whether title/artist guessing replaces the year guess
-
-        Returns:
-            dict with game_id, join_url, song_count, phase
-
-        Raises:
-            ValueError: If round_duration is outside valid range (10-60)
-
-        """
-        # Validate round duration (Story 13.1)
-        if not (ROUND_DURATION_MIN <= round_duration <= ROUND_DURATION_MAX):
-            raise ValueError(
-                f"Round duration must be between {ROUND_DURATION_MIN} "
-                f"and {ROUND_DURATION_MAX} seconds"
-            )
-
-        # Clear any leftover sessions from previous/crashed game (Story 11.6)
-        self.clear_all_sessions()
-
-        self.game_id = secrets.token_urlsafe(8)
-        self.admin_token = secrets.token_urlsafe(16)  # Issue #386: REST admin auth
-        self.phase = GamePhase.LOBBY
-        self._notify_state_callbacks()
-        self.playlists = playlists
-        self.songs = songs
-        self.media_player = media_player
-        self.join_url = f"{base_url}/beatify/play?game={self.game_id}"
-        self.players = {}
-
-        # Store provider setting (Story 17.2)
-        self.provider = provider
-
-        # Store platform for playback routing
-        self.platform = platform
-
-        # #808 follow-up: detect the user's Apple Music storefront from
-        # HA's configured country. Beatify's playlists carry per-region
-        # Apple Music URIs; PlaylistManager uses this to pick the right
-        # one and to filter out songs explicitly unavailable in this
-        # region. Lower-case to match the storefront codes used by
-        # Apple's API ("us", "de", "gb", ...). None when HA doesn't have
-        # a country configured → falls back to the legacy single URI.
-        self.storefront = self._detect_storefront()
-
-        # Reset error detail
-        self.last_error_detail = ""
-
-        # Initialize PlaylistManager for song selection (Epic 4, Story 17.2: with provider)
-        self._playlist_manager = PlaylistManager(
-            songs, provider, storefront=self.storefront
-        )
-
-        # #709: if the chosen provider has zero playable songs, fail fast with
-        # a clear error rather than silently starting a game that will stall.
-        if not self._playlist_manager.has_playable_songs():
-            raise ValueError(
-                f"No playable songs for provider '{provider}' in the selected "
-                f"playlist(s). Pick a different playlist or provider."
-            )
-
-        # Reset round tracking for new game
-        self.round = 0
-        self.total_rounds = self._playlist_manager.get_total_count()
-        self.deadline = None
-        self.current_song = None
-        self.last_round = False
-        self.pause_reason = None
-        self._previous_phase = None
-
-        # Reset timing for speed bonus (Story 5.1) and configurable duration (Story 13.1)
-        self.round_start_time = None
-        self.round_duration = round_duration
-
-        # Set difficulty (Story 14.1)
-        self.difficulty = difficulty
-
-        # Reset song stopped flag (Story 6.2)
-        self.song_stopped = False
-
-        # #1012: REVEAL auto-advance — seconds to wait in REVEAL before
-        # starting the next round automatically (0 = off / manual only).
-        self.reveal_auto_advance = reveal_auto_advance
-        self._auto_advance_task = None
-        self.reveal_started_at = None  # #1048
-
-        # Reset round analytics (Story 13.3)
-        self.round_analytics = None
-
-        # Issue #351: Reset power-up state for new game
-        self._powerup_manager.reset()
-
-        # Story 20.1 / Issue #28 / Issue #1180: Set challenge configuration
-        self._challenge_manager.configure(
-            artist_challenge_enabled=artist_challenge_enabled,
-            movie_quiz_enabled=movie_quiz_enabled,
-            title_artist_mode=title_artist_mode,
-        )
-
-        # Issue #23: Set intro mode configuration
-        self.intro_mode_enabled = intro_mode_enabled
-
-        # Issue #442: Set closest wins mode
-        self.closest_wins_mode = closest_wins_mode
-        self.is_intro_round = False
-        self.intro_stopped = False
-        self._round_manager._intro_round_start_time = None
-        self._round_manager._rounds_since_intro = 0
-        self._round_manager._cancel_intro_timer()
-
-        # Reset timer task for new game
-        self.cancel_timer()
-
-        _LOGGER.info("Game created: %s with %d songs", self.game_id, len(songs))
-
-        return {
-            "game_id": self.game_id,
-            "join_url": self.join_url,
-            "phase": self.phase.value,
-            "song_count": len(songs),
-        }
-
-    def get_state(self) -> dict[str, Any] | None:
-        """Get current game state for broadcast.
-
-        Delegates to GameStateSerializer (Issue #464).
-
-        Returns:
-            Game state dict or None if no active game
-
-        """
-        return GameStateSerializer.serialize(self)
-
-    def get_reveal_players_state(self) -> list[dict[str, Any]]:
-        """Get player state with reveal info for REVEAL phase.
-
-        Delegates to GameStateSerializer (Issue #464).
-
-        Returns:
-            List of player dicts including guess, round_score, years_off,
-            speed bonus data (Story 5.1), streak bonus (Story 5.2),
-            and artist bonus (Story 20.4), sorted by total score descending.
-
-        """
-        return GameStateSerializer.get_reveal_players_state(self)
-
-    def finalize_game(self) -> dict[str, Any]:
-        """
-        Calculate final stats before ending the game (Story 14.4).
-
-        Must be called BEFORE end_game() to capture statistics.
-        Returns summary dict for StatsService.record_game().
-
-        Returns:
-            Game summary dict with playlist, rounds, player_count,
-            winner, winner_score, total_points, avg_score_per_round
-
-        """
-        # Calculate totals
-        total_points = sum(p.score for p in self.players.values())
-        player_count = len(self.players)
-        rounds_played = self.round
-
-        # Determine winner(s) — detect ties
-        winner_name = "Unknown"
-        winner_score = 0
-        if self.players:
-            top_score = max(p.score for p in self.players.values())
-            winners = [p for p in self.players.values() if p.score == top_score]
-            winner_score = top_score
-            if len(winners) == 1:
-                winner_name = winners[0].name
-            else:
-                winner_name = ", ".join(w.name for w in winners)
-
-        # Calculate average score per round
-        avg_score_per_round = 0.0
-        if rounds_played > 0 and player_count > 0:
-            avg_score_per_round = total_points / (rounds_played * player_count)
-
-        # Determine playlist name (use first playlist or "mixed")
-        playlist_name = "unknown"
-        if self.playlists:
-            # Extract playlist name from path
-            playlist_path = self.playlists[0]
-            if "/" in playlist_path:
-                playlist_name = playlist_path.split("/")[-1].replace(".json", "")
-            else:
-                playlist_name = playlist_path.replace(".json", "")
-
-        return {
-            "playlist": playlist_name,
-            "rounds": rounds_played,
-            "player_count": player_count,
-            "winner": winner_name,
-            "winner_score": winner_score,
-            "total_points": total_points,
-            "avg_score_per_round": round(avg_score_per_round, 2),
-            # Story 19.11: Include streak achievements
-            "streak_3_count": self.streak_achievements.get("streak_3", 0),
-            "streak_5_count": self.streak_achievements.get("streak_5", 0),
-            "streak_10_count": self.streak_achievements.get("streak_10", 0),
-            # Story 19.12: Include bet tracking
-            "total_bets": self.bet_tracking.get("total_bets", 0),
-            "bets_won": self.bet_tracking.get("bets_won", 0),
-        }
-
-    def _reset_game_internals(self) -> None:
-        """Reset internal game state (Issue #108, #464).
-
-        Shared by end_game() and rematch_game() to prevent field drift.
-        Uses GameStateConfig to rebuild config-managed fields from defaults,
-        and delegates round state reset to RoundManager.reset().
-
-        Does NOT reset: players, sessions, phase, game_id, callbacks,
-        service refs (_stats_service, _on_round_end, _on_metadata_update),
-        or volume_level (caller's responsibility).
-        """
-        # Issue #477: Clear admin spectator WS (connection stays open, just de-ref)
-        self._admin_ws = None
-
-        # Issue #464: Reset round lifecycle (timers, metadata, intro state)
-        self._round_manager.reset()
-        self.cancel_timer()
-
-        # Issue #464: Rebuild config-managed fields from defaults
-        self._apply_config(self._default_config)
-
-        # Issue #351: Reset power-up state
-        self._powerup_manager.reset()
-
-        # Story 20.1 / Issue #28: Reset challenges
-        self._challenge_manager.reset()
-
-        # Issue #75: Reset highlights tracker
-        self.highlights_tracker.reset()
-
-    async def end_game(self) -> None:
-        """End the current game and reset state."""
-        _LOGGER.info("Game ended: %s", self.game_id)
-        self.cancel_timer()
-        # #1012: cancel the REVEAL auto-advance task synchronously, BEFORE the
-        # awaits below. Otherwise a countdown expiring at the same instant could
-        # fire start_round() during disable_party_lights()/disable_tts() (phase
-        # is still REVEAL there) and trigger the next song after the game ended.
-        # advance_to_end() already does this; the HTTP/force-end path lands here.
-        self._cancel_auto_advance()
-        # Issue #331: Restore lights before resetting
-        await self.disable_party_lights()
-        # Issue #447: Disable TTS
-        await self.disable_tts()
-        self._reset_game_internals()
-        self.game_id = None
-        self.phase = GamePhase.LOBBY
-        self.players = {}
-        self.clear_all_sessions()
-        self._notify_state_callbacks()
-
-    def rematch_game(self) -> None:
-        """Reset game for rematch, preserving connected players (Issue #108)."""
-        _LOGGER.info("Rematch initiated from game: %s", self.game_id)
-        self.cancel_timer()
-
-        # Preserve game settings that the admin configured (Issue #591)
-        preserved = {
-            "playlists": self.playlists,
-            "songs": list(self.songs),
-            "media_player": self.media_player,
-            "join_url": self.join_url,
-            "provider": self.provider,
-            "platform": self.platform,
-            "difficulty": self.difficulty,
-            "language": self.language,
-            "round_duration": self.round_duration,
-            "artist_challenge_enabled": self.artist_challenge_enabled,
-            "movie_quiz_enabled": self.movie_quiz_enabled,
-            "intro_mode_enabled": self.intro_mode_enabled,
-            "closest_wins_mode": self.closest_wins_mode,
-            "title_artist_mode": self.title_artist_mode,
-        }
-
-        self._reset_game_internals()
-
-        # Restore preserved settings for seamless rematch
-        for attr, value in preserved.items():
-            setattr(self, attr, value)
-
-        # Re-create PlaylistManager with fresh song list
-        # #808 follow-up: re-detect storefront for the rematch (in case
-        # HA's country config changed) and re-attach it.
-        self.storefront = self._detect_storefront()
-        self._playlist_manager = PlaylistManager(
-            preserved["songs"],
-            preserved["provider"],
-            storefront=self.storefront,
-        )
-        self.total_rounds = len(preserved["songs"])
-
-        self.phase = GamePhase.LOBBY
-        self._notify_state_callbacks()
-        # Reset each player's game stats but keep them connected
-        for player in self.players.values():
-            player.reset_for_new_game()
-        # Generate new game ID and admin token for the rematch
-        self.game_id = secrets.token_urlsafe(8)
-        self.admin_token = secrets.token_urlsafe(16)  # Issue #386
-
-        # Regenerate join_url with new game_id
-        if preserved["join_url"]:
-            base_url = preserved["join_url"].split("/beatify/play")[0]
-            self.join_url = f"{base_url}/beatify/play?game={self.game_id}"
-
-        _LOGGER.info(
-            "Rematch ready with %d players, %d songs, new game_id: %s",
-            len(self.players),
-            self.total_rounds,
-            self.game_id,
-        )
-
-    async def pause_game(self, reason: str) -> bool:
-        """
-        Pause the game (typically due to admin disconnect).
-
-        Args:
-            reason: Pause reason code (e.g., "admin_disconnected")
-
-        Returns:
-            True if successfully paused, False if already paused/ended
-
-        """
-        if self.phase == GamePhase.PAUSED:
-            return False  # Already paused
-        if self.phase == GamePhase.END:
-            return False  # Can't pause ended game
-
-        # Store current phase for resume
-        self._previous_phase = self.phase
-        self.pause_reason = reason
-
-        # Store admin name for rejoin verification (Story 7-2). #790: capture
-        # this for ANY pause reason, not just "admin_disconnected" — when the
-        # pause is triggered server-side (media_player_error, no_songs_available)
-        # the admin's WS may still be open, but if it later drops they need a
-        # path back. Without this, ws_handlers.py:113 rejects all admin claims
-        # during non-LOBBY phases and the game becomes unrecoverable.
-        for player in self.players.values():
-            if player.is_admin:
-                self.disconnected_admin_name = player.name
-                break
-
-        # #1012: a pause stops the unattended REVEAL auto-advance too.
-        self._cancel_auto_advance()
-
-        # Stop timer if in PLAYING
-        if self.phase == GamePhase.PLAYING:
-            self.cancel_timer()
-            # Issue #23: Cancel intro timer if running
-            self._round_manager._cancel_intro_timer()
-            # Stop media playback
-            if self._media_player_service:
-                await self._media_player_service.stop()
-
-        # Transition to PAUSED
-        self.phase = GamePhase.PAUSED
-        self.reveal_started_at = None  # #1048: leaving REVEAL
-        self._notify_state_callbacks()
-        _LOGGER.info("Game paused: %s", reason)
-
-        return True
-
-    async def resume_game(self) -> bool:
-        """
-        Resume game from PAUSED state.
-
-        Returns:
-            True if successfully resumed, False if not paused
-
-        """
-        if self.phase != GamePhase.PAUSED:
-            return False
-        if self._previous_phase is None:
-            _LOGGER.error("Cannot resume: no previous phase stored")
-            return False
-
-        previous = self._previous_phase
-
-        # Restart timer if resuming to PLAYING and deadline still valid
-        if previous == GamePhase.PLAYING and self.deadline:
-            now_ms = int(self._now() * 1000)
-            remaining_ms = self.deadline - now_ms
-
-            if remaining_ms > 0:
-                remaining_seconds = remaining_ms / 1000.0
-                # Local import to avoid module-level cycle.
-                from custom_components.beatify.game.round_manager import (  # noqa: PLC0415
-                    _log_timer_task_failure,
-                )
-
-                self._round_manager._timer_task = asyncio.create_task(
-                    self._timer_countdown(remaining_seconds)
-                )
-                self._round_manager._timer_task.add_done_callback(
-                    _log_timer_task_failure
-                )
-                _LOGGER.info("Timer restarted with %.1fs remaining", remaining_seconds)
-
-                # Issue #416: Restart intro stop timer if this was an intro round
-                # Issue #496: Use actual playing time (excludes pause duration)
-                if (
-                    self.is_intro_round
-                    and not self.intro_stopped
-                    and self._round_manager._intro_round_start_time is not None
-                ):
-                    elapsed_intro = (
-                        self._round_manager.round_duration - remaining_seconds
-                    )
-                    remaining_intro = INTRO_DURATION_SECONDS - elapsed_intro
-                    if remaining_intro > 0:
-                        self._round_manager._intro_stop_task = asyncio.create_task(
-                            self._round_manager._intro_auto_stop(
-                                remaining_intro, self._on_round_end
-                            )
-                        )
-                        _LOGGER.info(
-                            "Intro stop timer restarted with %.1fs remaining",
-                            remaining_intro,
-                        )
-
-                # Resume media playback if it was stopped
-                if self._media_player_service and self.current_song:
-                    await self._media_player_service.play()
-                    _LOGGER.info("Media playback resumed")
-            else:
-                # Timer expired during pause — end the round immediately
-                _LOGGER.info("Timer expired during pause, ending round")
-                self.phase = previous
-                self._notify_state_callbacks()
-                self.pause_reason = None
-                self.disconnected_admin_name = None
-                self._previous_phase = None
-                await self.end_round()
-                return True
-
-        # Restore previous phase
-        self.phase = previous
-        self._notify_state_callbacks()
-        self.pause_reason = None
-        self.disconnected_admin_name = None
-        self._previous_phase = None
-
-        _LOGGER.info("Game resumed to phase: %s", previous.value)
-
-        return True
-
-    def get_average_score(self) -> int:
-        """Calculate average score of all current players. Delegates to PlayerRegistry."""
-        return self._player_registry.get_average_score()
-
-    def add_player(
-        self, name: str, ws: web.WebSocketResponse
-    ) -> tuple[bool, str | None]:
-        """Add a player to the game. Delegates to PlayerRegistry."""
-        return self._player_registry.add_player(
-            name, ws, self.phase, self.get_average_score
-        )
-
-    def get_player(self, name: str) -> PlayerSession | None:
-        """Get player by name. Delegates to PlayerRegistry."""
-        return self._player_registry.get_player(name)
-
-    def get_player_by_session_id(self, session_id: str) -> PlayerSession | None:
-        """Get player by session ID. Delegates to PlayerRegistry."""
-        return self._player_registry.get_player_by_session_id(session_id)
-
-    def get_player_by_ws(self, ws: web.WebSocketResponse) -> PlayerSession | None:
-        """Get player by WebSocket connection. Delegates to PlayerRegistry."""
-        return self._player_registry.get_player_by_ws(ws)
-
-    def record_reaction(self, player_name: str, emoji: str) -> bool:
-        """Record a player reaction. Delegates to PlayerRegistry."""
-        return self._player_registry.record_reaction(player_name, emoji)
-
-    def get_steal_targets(self, stealer_name: str) -> list[str]:
-        """Get list of players who can be stolen from (Story 15.3). Delegates to PowerUpManager."""
-        return self._powerup_manager.get_steal_targets(stealer_name, self.players)
-
-    def use_steal(self, stealer_name: str, target_name: str) -> dict[str, Any]:
-        """Execute steal power-up (Story 15.3). Delegates to PowerUpManager."""
-        return self._powerup_manager.use_steal(
-            stealer_name, target_name, self.players, self.phase, self._now()
-        )
-
-    def remove_player(self, name: str) -> None:
-        """Remove player from game. Delegates to PlayerRegistry."""
-        self._player_registry.remove_player(name)
-
-    def clear_all_sessions(self) -> None:
-        """Clear all session mappings for game reset. Delegates to PlayerRegistry."""
-        self._player_registry.clear_all_sessions()
-
-    def get_players_state(self) -> list[dict[str, Any]]:
-        """Get player list for state broadcast. Delegates to PlayerRegistry."""
-        return self._player_registry.get_players_state()
-
-    def all_submitted(self) -> bool:
-        """Check if all connected players have submitted. Delegates to PlayerRegistry."""
-        return self._player_registry.all_submitted()
-
-    def check_all_guesses_complete(self) -> bool:
-        """
-        Check if all connected players have submitted all required guesses (Story 20.9).
-
-        For early reveal: checks year guesses, and if artist challenge is active,
-        also checks artist guesses.
-
-        Returns:
-            True if all connected players have completed all required guesses
-
-        """
-        # First check year guesses using existing method
-        # Note: all_submitted() already returns False for zero connected players
-        if not self.all_submitted():
-            return False
-
-        # If artist challenge enabled and active, check artist guesses
-        # Skip check if challenge already has a winner (buttons disabled for others)
-        # or if no one has guessed yet (don't block early reveal for ignored challenges)
-        if self.artist_challenge_enabled and self.artist_challenge:
-            has_winner = getattr(self.artist_challenge, "winner", None) is not None
-            anyone_guessed = any(
-                p.has_artist_guess for p in self.players.values() if p.is_active
-            )
-            if not has_winner and anyone_guessed:
-                for player in self.players.values():
-                    if player.is_active and not player.has_artist_guess:
-                        return False
-
-        # Issue #28: If movie quiz enabled and active, check movie guesses
-        # Skip check if challenge already has correct guesses or no one interacted
-        if self.movie_quiz_enabled and self.movie_challenge:
-            has_correct = len(self.movie_challenge.correct_guesses) > 0
-            anyone_guessed = any(
-                p.has_movie_guess for p in self.players.values() if p.is_active
-            )
-            if not has_correct and anyone_guessed:
-                for player in self.players.values():
-                    if player.is_active and not player.has_movie_guess:
-                        return False
-
-        # #1180: In Title & Artist mode, wait for every active player to submit
-        # their title/artist guess before auto-advancing. This mode replaces the
-        # year guess, so there is no "winner" short-circuit — each player guesses
-        # independently and we hold PLAYING until all are in.
-        if self.title_artist_mode and self.title_artist_challenge:
-            for player in self.players.values():
-                if player.is_active and not player.has_title_artist_guess:
-                    return False
-
-        return True
-
-    async def _trigger_early_reveal(self) -> None:
-        """
-        Trigger early transition to reveal when all guesses are in (Story 20.9).
-
-        Cancels timer, sets early_reveal flag, and calls end_round.
-        Uses _score_lock to prevent concurrent invocations from racing
-        when multiple players submit simultaneously (AF2-013).
-
-        """
-        async with self._score_lock:
-            # Re-check phase under lock — another coroutine may have already
-            # transitioned to REVEAL between our caller's check and acquiring
-            # the lock.
-            if self.phase != GamePhase.PLAYING:
-                _LOGGER.debug(
-                    "Early reveal skipped — phase already %s", self.phase.value
-                )
-                return
-
-            _LOGGER.info(
-                "All guesses complete - triggering early reveal (phase=%s, callback=%s)",
-                self.phase.value,
-                self._on_round_end is not None,
-            )
-            self.cancel_timer()
-            self._round_manager._early_reveal = True
-            await self._end_round_unlocked()
-            _LOGGER.info("Early reveal complete - phase now %s", self.phase.value)
-
-    async def trigger_early_reveal_if_complete(self) -> None:
-        """Trigger early reveal if the round is playing and all guesses are in."""
-        if self.phase == GamePhase.PLAYING and self.check_all_guesses_complete():
-            await self._trigger_early_reveal()
+    # ------------------------------------------------------------------
+    # Player lifecycle / lookup + power-up delegation lives in
+    # PlayerLifecycleMixin (Issue #1271 extraction). See game/state_player.py.
+    # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Early-reveal gate (check_all_guesses_complete / _trigger_early_reveal /
+    # trigger_early_reveal_if_complete), the round-timer task (_timer_countdown
+    # / cancel_timer), the REVEAL transition helpers (_transition_to_reveal /
+    # _apply_reveal_lights), the intro-splash / deadline delegations
+    # (confirm_intro_splash / is_deadline_passed) and the terminal
+    # advance_to_end live in RevealTransitionMixin (Issue #1271 extraction).
+    # See game/state_reveal_transition.py.
+    # ------------------------------------------------------------------
 
     def set_round_end_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
         """
@@ -1228,372 +559,6 @@ class GameState:
 
         """
         self._on_metadata_update = callback
-
-    def set_stats_service(self, stats_service: StatsService) -> None:
-        """
-        Set stats service reference (Story 14.4).
-
-        Args:
-            stats_service: StatsService instance for game performance tracking
-
-        """
-        self._stats_service = stats_service
-        _LOGGER.info("Stats service connected to GameState")
-
-    def _calculate_current_avg(self) -> float:
-        """
-        Calculate current game's average score per round (Story 14.4).
-
-        Used for in-game comparison to all-time average.
-
-        Returns:
-            Current game average score per round, or 0.0 if no data
-
-        """
-        if self.round == 0 or not self.players:
-            return 0.0
-
-        total_points = sum(p.score for p in self.players.values())
-        player_count = len(self.players)
-
-        return total_points / (self.round * player_count)
-
-    def get_game_performance(self) -> dict[str, Any] | None:
-        """
-        Get game performance comparison data (Story 14.4).
-
-        Used during REVEAL and END phases to show motivational feedback.
-
-        Returns:
-            Performance dict with comparison data, or None if no stats service
-
-        """
-        if not self._stats_service:
-            _LOGGER.debug("get_game_performance: No stats service connected")
-            return None
-
-        current_avg = self._calculate_current_avg()
-        comparison = self._stats_service.get_game_comparison(current_avg)
-        message_data = self._stats_service.get_motivational_message(comparison)
-
-        return {
-            "current_avg": round(current_avg, 2),
-            "all_time_avg": comparison["all_time_avg"],
-            "difference": comparison["difference"],
-            "is_above_average": comparison["is_above_average"],
-            "is_new_record": comparison["is_new_record"],
-            "is_first_game": comparison["is_first_game"],
-            "message": message_data,
-        }
-
-    def set_admin(self, name: str) -> bool:
-        """Mark a player as admin. Delegates to PlayerRegistry."""
-        return self._player_registry.set_admin(name)
-
-    def _detect_storefront(self) -> str | None:
-        """Determine the user's Apple Music storefront for URI resolution.
-
-        Sources, in order:
-          1. ``hass.config.country`` — HA's configured country code, set
-             during initial HA setup. This is what most users will have.
-             Returned lower-cased to match Apple's storefront codes.
-          2. None — fall back to the legacy single Apple Music URI in
-             ``uri_apple_music`` (typically a US track ID).
-
-        Future: query Music Assistant's WebSocket API for the actual
-        Apple Music provider's configured storefront, which may differ
-        from HA's country (e.g. an expat using a US Apple Music account
-        from a German HA install). For now HA's country covers ~80%+ of
-        users without any extra round-trip.
-        """
-        hass = getattr(self, "_hass", None)
-        if hass is None:
-            return None
-        country = getattr(hass.config, "country", None) if hass.config else None
-        if not country:
-            return None
-        return str(country).strip().lower() or None
-
-    def start_game(self) -> tuple[bool, str | None]:
-        """
-        Start the game, transitioning from LOBBY to PLAYING.
-
-        Returns:
-            (success, error_code) - error_code is None on success
-
-        """
-        if self.phase != GamePhase.LOBBY:
-            return False, ERR_GAME_ALREADY_STARTED
-
-        if len(self.players) < MIN_PLAYERS:
-            return False, ERR_GAME_NOT_STARTED  # Need at least MIN_PLAYERS to play
-
-        self.phase = GamePhase.PLAYING
-        self._notify_state_callbacks()
-        # Round and song selection will be implemented in Epic 4
-        _LOGGER.info("Game started: %d players", len(self.players))
-        return True, None
-
-    async def start_round(self, _retry_count: int = 0) -> bool:
-        """Start a new round with song playback (#390).
-
-        Args:
-            _retry_count: Internal counter for failed song attempts (max 3)
-
-        Returns:
-            True if round started successfully, False otherwise
-
-        """
-        MAX_SONG_RETRIES = 3
-
-        # #1012: a (manual or auto) round start supersedes any pending
-        # REVEAL auto-advance.
-        if _retry_count == 0:
-            self._cancel_auto_advance()
-
-        if not self._playlist_manager:
-            _LOGGER.error("No playlist manager configured")
-            return False
-
-        # Get next playable song (skip songs without URI for selected provider)
-        song = self._playlist_manager.get_next_song()
-        if not song:
-            _LOGGER.info("All songs exhausted, ending game")
-            self.phase = GamePhase.END
-            self._notify_state_callbacks()
-            return False
-
-        resolved_uri = song.get("_resolved_uri")
-        if not resolved_uri:
-            _LOGGER.warning(
-                "Skipping song (year %s) - no URI for provider", song.get("year", "?")
-            )
-            self._playlist_manager.mark_played(
-                get_song_uri(song, self.provider, self.storefront) or song.get("uri")
-            )
-            if _retry_count >= MAX_SONG_RETRIES:
-                _LOGGER.error(
-                    "No playable songs found after %d attempts, pausing game",
-                    MAX_SONG_RETRIES,
-                )
-                await self.pause_game("no_songs_available")
-                return False
-            return await self.start_round(_retry_count + 1)
-
-        self.last_round = self._playlist_manager.get_remaining_count() <= 1
-        self._ensure_media_player_service()
-        will_defer_for_splash = self._prepare_intro_round(song)
-
-        # Play song via media player (skip if deferred for intro splash)
-        if self._media_player_service and not will_defer_for_splash:
-            if not self._media_player_service.is_available():
-                self.last_error_detail = (
-                    f"Media player {self.media_player} is unavailable"
-                )
-                _LOGGER.error(
-                    "Media player %s is not available, pausing game", self.media_player
-                )
-                await self.pause_game("media_player_error")
-                return False
-
-            # Additional responsiveness check for non-MA players
-            if self.platform != "music_assistant":
-                (
-                    responsive,
-                    error_detail,
-                ) = await self._media_player_service.verify_responsive()
-                if not responsive:
-                    self.last_error_detail = error_detail
-                    _LOGGER.error(
-                        "Media player not responsive: %s, pausing game", error_detail
-                    )
-                    await self.pause_game("media_player_error")
-                    return False
-
-            success = await self._media_player_service.play_song(song)
-            if not success:
-                # #808 follow-up: classify the failure. "unavailable" means
-                # MA accepted the URI but the speaker stayed on the prior
-                # track — typically a region/storefront mismatch (the track
-                # ID isn't in the user's catalog). Skip silently and try the
-                # next song without counting against MAX_SONG_RETRIES; the
-                # user can't fix individual track availability and the game
-                # should keep playing the subset that IS available.
-                #
-                # "error" / unset → systemic failure (speaker offline, MA
-                # provider broken). Count toward MAX_SONG_RETRIES so the
-                # recovery banner kicks in for real problems.
-                failure_reason = getattr(
-                    self._media_player_service, "last_failure_reason", None
-                )
-                self._playlist_manager.mark_played(
-                    song.get("_resolved_uri") or song.get("uri")
-                )
-
-                if failure_reason == "unavailable":
-                    _LOGGER.info(
-                        "Skipping unavailable song silently: %s (likely not in "
-                        "your provider's storefront/catalog) — trying next song",
-                        song.get("title") or song.get("uri"),
-                    )
-                    await asyncio.sleep(0.2)
-                    return await self.start_round(_retry_count)
-
-                # #949: a systemic playback failure — the speaker stayed idle,
-                # or the Music Assistant provider is unauthenticated — does not
-                # fix itself by retrying. play_song already waited a full MA
-                # timeout. Retrying it ~3x more meant ~2 minutes of a silent
-                # "Starting..." button before the admin saw anything. Pause
-                # now so the recovery banner (which names the provider to
-                # re-authenticate) appears within seconds; its Resume button
-                # is the manual retry if it really was a transient blip.
-                _LOGGER.error(
-                    "Playback failed for %s — speaker unreachable, pausing game",
-                    song.get("uri"),
-                )
-                await self.pause_game("media_player_error")
-                return False
-
-        metadata = self._build_round_metadata(song, resolved_uri, will_defer_for_splash)
-        # Issue #1211: when TTS pre-round announcements are active, shift the
-        # deadline forward so the timer doesn't count down during the TTS
-        # overhead (e.g. Google Home chime → announcement → chime before music
-        # resumes). Default is 0 ms (no change); users configure this via the
-        # TTS settings "Timer delay" field.
-        extra_ms = 0
-        if self._tts_service and self._tts_pre_round_delay > 0:
-            extra_ms = int(self._tts_pre_round_delay * 1000)
-        self._initialize_round(
-            song,
-            metadata,
-            resolved_uri,
-            will_defer_for_splash,
-            extra_deadline_ms=extra_ms,
-        )
-
-        delay_seconds = (self.deadline - int(self._now() * 1000)) / 1000.0
-        await self._lights_set_phase(GamePhase.PLAYING)
-        _LOGGER.info(
-            "Round %d started: %s - %s (%.1fs timer)",
-            self.round,
-            self.current_song.get("artist"),
-            self.current_song.get("title"),
-            delay_seconds,
-        )
-
-        # Issue #471 Phase 1: Game Flow announcements at round start.
-        # Fired AFTER lights/log so the audio aligns with the user-visible
-        # transition. countdown is opt-in (default off) — chained after
-        # round_start when both are enabled.
-        await self.announce_round_start()
-        await self.announce_countdown()
-        # Issue #841 Phase 3: flag the final round (use case 17).
-        if self.total_rounds > 1 and self.round >= self.total_rounds:
-            await self.announce_last_round()
-        # Issue #842 Phase 4: flag an intro-mode round (use case 21).
-        if self.is_intro_round:
-            await self.announce_intro_round()
-
-        return True
-
-    def _ensure_media_player_service(self) -> None:
-        """Create MediaPlayerService lazily on first round."""
-        # Lazy import: only the concrete class for instantiation; type hints
-        # use MediaPlayerProtocol (module-level) to keep the import graph acyclic.
-        from custom_components.beatify.services.media_player import (  # noqa: PLC0415
-            MediaPlayerService,
-        )
-
-        if self.media_player and not self._media_player_service:
-            self._media_player_service = MediaPlayerService(
-                self._hass,
-                self.media_player,
-                platform=self.platform,
-                provider=self.provider,
-            )
-            # Connect analytics for error recording (Story 19.1 AC: #2)
-            if self._stats_service and hasattr(self._stats_service, "_analytics"):
-                self._media_player_service.set_analytics(self._stats_service._analytics)
-
-    def _prepare_intro_round(self, song: dict) -> bool:
-        """Determine if this is an intro round. Delegates to RoundManager."""
-        return self._round_manager.prepare_intro_round(song, self._hass)
-
-    def _build_round_metadata(
-        self, song: dict, resolved_uri: str, will_defer_for_splash: bool
-    ) -> dict:
-        """Build initial metadata dict. Delegates to RoundManager."""
-        return self._round_manager.build_round_metadata(
-            song,
-            resolved_uri,
-            will_defer_for_splash,
-            self._media_player_service,
-            self._fetch_metadata_async(resolved_uri),
-        )
-
-    def _initialize_round(
-        self,
-        song: dict,
-        metadata: dict,
-        resolved_uri: str,
-        will_defer_for_splash: bool,
-        extra_deadline_ms: int = 0,
-    ) -> None:
-        """Commit all round state. Delegates to RoundManager."""
-        self._round_manager.initialize_round(
-            song,
-            metadata,
-            resolved_uri,
-            will_defer_for_splash,
-            self._playlist_manager,
-            self._challenge_manager,
-            self.players,
-            self._timer_countdown,
-            self._on_round_end,
-            extra_deadline_ms=extra_deadline_ms,
-        )
-        self.round_analytics = None
-        self.phase = GamePhase.PLAYING
-        self.reveal_started_at = None  # #1048: leaving REVEAL
-        self._notify_state_callbacks()
-
-    async def _timer_countdown(self, delay_seconds: float) -> None:
-        """Wait for round to end, then trigger reveal.
-
-        Wraps RoundManager._timer_countdown with phase-aware end_round call.
-        """
-        try:
-            await self._round_manager._timer_countdown(delay_seconds)
-            # #1029: release the timer-task handle BEFORE invoking end_round.
-            # end_round → _end_round_unlocked calls self.cancel_timer(), which
-            # would cancel `_timer_task` — and `_timer_task` IS the currently
-            # running task. A self-cancel schedules CancelledError on the next
-            # real yield, interrupting the REVEAL broadcast (and historically
-            # the phase transition itself before fake-await chains masked it).
-            # _log_timer_task_failure treats cancellations as silent, so the
-            # round froze on PLAYING with no diagnostic. Clearing the handle
-            # here makes the subsequent cancel_timer() a no-op for this task.
-            self._round_manager._timer_task = None
-            # Timer completed normally — check phase and end round
-            if self.phase == GamePhase.PLAYING:
-                # #471 Phase 1: announce time-up only when timer ran to zero
-                # (not on early-reveal). Done before end_round so the audio
-                # leads the REVEAL transition.
-                await self.announce_time_up()
-                await self.end_round()
-            else:
-                _LOGGER.debug(
-                    "Timer expired but phase already changed to %s", self.phase
-                )
-        except asyncio.CancelledError:
-            _LOGGER.debug("Timer task cancelled")
-            raise
-
-    def _cancel_auto_advance(self) -> None:
-        """Cancel the pending REVEAL auto-advance task, if any (#1012)."""
-        if self._auto_advance_task is not None:
-            self._auto_advance_task.cancel()
-            self._auto_advance_task = None
 
     def _score_all_players(
         self, correct_year: int | None, all_players: list[PlayerSession]
@@ -1640,218 +605,6 @@ class GameState:
                     self.round,
                     err,
                 )
-
-    def _schedule_title_artist_vote_window(self) -> None:
-        """Open or skip the conditional 30s near-miss vote window (#1180 P4).
-
-        Called from _end_round_unlocked while phase is REVEAL and title/artist
-        mode is on. If there are near-misses, flip voting_open and spawn the
-        window task (reused _auto_advance_task slot so a manual next_round,
-        pause or end cancels it via _cancel_auto_advance). With no near-misses,
-        resolve immediately so scoring/advance proceed unchanged.
-        """
-        if not self.title_artist_mode:
-            return
-        if self.has_near_misses():
-            self._title_artist_voting_open = True
-            self._title_artist_vote_deadline = (
-                self._now() + TITLE_ARTIST_VOTE_WINDOW_SECONDS
-            )
-            self._cancel_auto_advance()
-            self._auto_advance_task = asyncio.create_task(
-                self._title_artist_vote_window(TITLE_ARTIST_VOTE_WINDOW_SECONDS)
-            )
-        else:
-            # No vote-eligible fields — finalize now (everything exact/fuzzy/
-            # skipped), no window, advance behaves exactly as the year mode.
-            self._challenge_manager.resolve_title_artist()
-            self._title_artist_voting_open = False
-            self._title_artist_vote_deadline = None
-
-    async def _title_artist_vote_window(self, window_seconds: int) -> None:
-        """Hold REVEAL open for community voting, then resolve (#1180 P4).
-
-        Sleeps in short polls so a manual host-advance / pause / end can
-        cancel promptly. On natural expiry, finalizes near-misses via
-        resolve_title_artist, scores the deferred round, then re-broadcasts so
-        the accepted points and closed window reach every client. A late firing
-        is a no-op once the phase has left REVEAL.
-        """
-        poll = 0.5
-        try:
-            elapsed = 0.0
-            while elapsed < window_seconds:
-                await asyncio.sleep(poll)
-                elapsed += poll
-                if self.phase != GamePhase.REVEAL:
-                    return  # advanced / paused / ended elsewhere
-            # Window expired naturally — clear the handle first so a manual
-            # start_round's _cancel_auto_advance() can't cancel this task.
-            self._auto_advance_task = None
-            if self.phase != GamePhase.REVEAL:
-                return
-            await self._finalize_title_artist_window()
-            if self._on_round_end:
-                try:
-                    await self._on_round_end()
-                except (ConnectionError, OSError, TypeError) as err:
-                    _LOGGER.error("Vote-window broadcast failed: %s", err)
-        except asyncio.CancelledError:
-            _LOGGER.debug("Title/artist vote window cancelled")
-            raise
-
-    async def _finalize_title_artist_window(self) -> None:
-        """Resolve near-misses and apply title/artist scoring (#1180 P4).
-
-        Guarded by voting_open so a host-advance + timer expiry race resolves
-        exactly once. Scoring was deferred out of _end_round_unlocked's main
-        loop (the per-player score depends on the final near-miss resolution),
-        so this runs the single, post-resolve scoring pass under the score lock
-        — accepted near-misses are now reflected in the leaderboard.
-        """
-        if not self._title_artist_voting_open:
-            return
-        self._title_artist_voting_open = False
-        self._title_artist_vote_deadline = None
-        self._challenge_manager.resolve_title_artist()
-        async with self._score_lock:
-            await self._score_title_artist_round()
-
-    async def _score_title_artist_round(self) -> None:
-        """Run the deferred title/artist scoring pass. Caller holds the lock.
-
-        Scores every player exactly once now that near-misses are resolved,
-        reusing _score_all_players so this path and _end_round_unlocked share
-        one scoring loop. Players were intentionally NOT scored in the main
-        loop (defer_title_artist), so this is the first and only score for the
-        round — no double-counting.
-        """
-        correct_year = self.current_song.get("year") if self.current_song else None
-        all_players = list(self.players.values())
-        self._score_all_players(correct_year, all_players)
-
-    async def resolve_title_artist_if_pending(self) -> None:
-        """Finalize an open vote window early (host advanced) (#1180 P4).
-
-        Called from the next_round admin handler before it starts the next
-        round / ends the game, so accepted near-misses are scored first.
-        Cancels the pending window task and finalizes. No-op when the window
-        isn't open (year mode, no near-misses, or already resolved).
-        """
-        if not self._title_artist_voting_open:
-            return
-        self._cancel_auto_advance()
-        await self._finalize_title_artist_window()
-
-    def _song_finished(self) -> bool:
-        """True once the round's song is no longer playing (#1012).
-
-        The song keeps playing through REVEAL; when the track ends the
-        media player drops out of "playing", which is the song-end
-        signal for the auto-advance.
-        """
-        if not self._media_player_service:
-            return False
-        try:
-            pstate = self._media_player_service.get_playback_state()
-        except Exception:  # noqa: BLE001 — defensive: never let a poll error stall
-            return False
-        return pstate not in ("playing", "buffering")
-
-    async def _reveal_auto_advance(self, timer_seconds: int) -> None:
-        """Auto-advance from REVEAL to the next round (#1012).
-
-        Advances on whichever comes first: the round's song finishing,
-        or — when ``timer_seconds`` > 0 — that many seconds elapsing.
-        ``timer_seconds == 0`` ("Off") means wait for the song to end.
-        A generous hard cap guarantees the game can never stall even if
-        song-end is undetectable. A manual next_round, pause or game-end
-        cancels this task; the phase re-check makes a late firing a no-op.
-        """
-        poll = 2.0
-        # Even in song-end mode, never wait longer than this (songs run
-        # ~3-5 min) so an undetectable song-end can't stall the game.
-        hard_cap = timer_seconds if timer_seconds > 0 else 360
-        try:
-            elapsed = 0.0
-            while True:
-                await asyncio.sleep(poll)
-                elapsed += poll
-                if self.phase != GamePhase.REVEAL:
-                    return  # advanced / paused / ended elsewhere
-                if self._song_finished() or elapsed >= hard_cap:
-                    break
-            # Clear the handle before advancing so start_round's own
-            # _cancel_auto_advance() doesn't cancel this running task.
-            self._auto_advance_task = None
-            _LOGGER.info(
-                "REVEAL auto-advance (timer=%ss, %.0fs elapsed) — next round",
-                timer_seconds,
-                elapsed,
-            )
-            success = await self.start_round()
-            # start_round() only fires sync state-callbacks via
-            # _notify_state_callbacks; the async WebSocket broadcast
-            # (`_on_round_end` = ws_handler.broadcast_state) is what actually
-            # pushes the new PLAYING state to clients. The manual
-            # admin_next_round path explicitly awaits handler.broadcast_state()
-            # after start_round — mirror that here, otherwise music starts but
-            # the admin + player UIs stay frozen on REVEAL.
-            if success and self._on_round_end:
-                try:
-                    await self._on_round_end()
-                except (ConnectionError, OSError, TypeError) as err:
-                    _LOGGER.error("Auto-advance broadcast failed: %s", err)
-        except asyncio.CancelledError:
-            _LOGGER.debug("REVEAL auto-advance cancelled")
-            raise
-
-    async def _reveal_idle_halt(self) -> None:
-        """Hold the game when a round ends with zero guesses (#1012 follow-up).
-
-        A round where nobody submitted a guess means the party is idle —
-        rather than auto-advancing through the playlist unattended, let the
-        round's song play out, stop the speaker, and hold on REVEAL without
-        starting a new round. The host's manual "Next round" still resumes;
-        a pause or game-end cancels this task, and the phase re-check makes
-        a late firing a no-op.
-        """
-        poll = 2.0
-        # Never poll forever if song-end is undetectable (songs run ~3-5 min).
-        hard_cap = 360
-        try:
-            elapsed = 0.0
-            while True:
-                await asyncio.sleep(poll)
-                elapsed += poll
-                if self.phase != GamePhase.REVEAL:
-                    return  # host advanced / paused / ended elsewhere
-                if self._song_finished() or elapsed >= hard_cap:
-                    break
-            # Clear the handle before stopping so a manual start_round's
-            # _cancel_auto_advance() doesn't cancel this running task.
-            self._auto_advance_task = None
-            # #1123: re-check phase after clearing the handle.  The admin may have
-            # clicked "Next Round" in the narrow window between the song-finished
-            # detection (loop exit) and this stop() call.  Without the guard,
-            # stop() would silence the newly-started next song even though the
-            # game has already advanced to PLAYING.
-            if self.phase != GamePhase.REVEAL:
-                _LOGGER.debug(
-                    "Idle halt: phase left REVEAL before stop() — skipping stop"
-                )
-                return
-            if self._media_player_service:
-                try:
-                    await self._media_player_service.stop()
-                except Exception as err:  # noqa: BLE001 — a stop error must not raise
-                    _LOGGER.warning("Idle-halt stop playback failed: %s", err)
-            _LOGGER.info(
-                "REVEAL idle halt — no guesses this round; game holds on REVEAL"
-            )
-        except asyncio.CancelledError:
-            _LOGGER.debug("REVEAL idle halt cancelled")
-            raise
 
     async def _fetch_metadata_async(self, uri: str) -> None:
         """
@@ -1926,7 +679,19 @@ class GameState:
             await self._end_round_unlocked()
 
     async def _end_round_unlocked(self) -> None:
-        """Inner end_round logic. Caller MUST hold _score_lock."""
+        """Inner end_round logic. Caller MUST hold _score_lock.
+
+        Short orchestrator over the round-end phases (#1272). Each helper runs
+        under the caller-held _score_lock — none acquires the lock itself, so
+        the _unlocked contract is preserved:
+          1. guard + setup (timer cancel, previous-rank snapshot, correct_year)
+          2. _score_round            — scoring pass + closest-wins + round_results
+          3. _record_round_stats     — highlights, analytics, song-result stats
+          4. _transition_to_reveal   — REVEAL announcement + phase flip
+          5. _schedule_reveal_advance — vote window / auto-advance / idle-halt
+          6. _apply_reveal_lights    — party-light phase + event flashes
+          7. round-end broadcast callback
+        """
         # Guard: skip if already transitioned (e.g. timer + early reveal race)
         if self.phase != GamePhase.PLAYING:
             _LOGGER.debug("end_round skipped — phase already %s", self.phase.value)
@@ -1956,149 +721,43 @@ class GameState:
                     "missing" if self.current_song is None else "no year field",
                 )
 
-        # Calculate scores for all players — delegates to ScoringService (#139).
-        # #816: wrap in try/except so an unexpected state shape in ONE player
-        # doesn't abort the whole round-end transition. Without this, a
-        # ScoringService exception bubbles up before line 1573 (where phase
-        # gets set to REVEAL) and broadcast_state never fires — the UI
-        # stays frozen on the PLAYING screen with the timer at 0. Per-player
-        # isolation: if one player's scoring fails, the rest still score and
-        # the round still ends.
-        all_players = list(self.players.values())
-        # #1180 Phase 4: in title/artist mode with vote-eligible near-misses,
-        # the per-player score depends on the final near-miss resolution, which
-        # only happens after the REVEAL vote window closes. Defer scoring those
-        # players to _finalize_title_artist_window (scored exactly once, after
-        # resolve) so the leaderboard reflects accepted near-misses without the
-        # main loop and the rescore double-counting. With no near-misses the
-        # challenge resolves immediately, so scoring here is already final.
-        defer_title_artist = self.title_artist_mode and self.has_near_misses()
-        if not defer_title_artist:
-            self._score_all_players(correct_year, all_players)
+        # Phase 2: scoring pass (year/title-artist), closest-wins, round_results
+        self._score_round(correct_year)
 
-        # Issue #442: Closest Wins — zero out non-closest players' scores.
-        # #816: same defensive wrap as above.
-        if self.closest_wins_mode and correct_year is not None:
+        # Phase 3: highlights, round analytics, persisted song-result stats
+        await self._record_round_stats(correct_year)
+
+        # Phase 4: REVEAL announcement + transition to the REVEAL phase
+        await self._transition_to_reveal(correct_year)
+
+        # Phase 5: schedule the title/artist vote window or REVEAL auto-advance
+        self._schedule_reveal_advance()
+
+        # Phase 6: party-light phase update + exact/correct flashes
+        await self._apply_reveal_lights(correct_year)
+
+        _LOGGER.info("Round %d ended, phase: REVEAL", self.round)
+
+        # Invoke callback to broadcast state
+        if self._on_round_end:
+            _LOGGER.debug("Invoking round_end callback to broadcast REVEAL state")
             try:
-                ScoringService.apply_closest_wins(all_players, correct_year)
-            except (KeyError, AttributeError, TypeError, ValueError) as err:
-                _LOGGER.error(
-                    "apply_closest_wins failed in round %d: %s — round still ends",
-                    self.round,
-                    err,
-                )
-
-        # Issue #120: Track round results for shareable result cards.
-        # #816: defensive wrap so a corrupt player.years_off doesn't block
-        # the round-end transition.
-        if correct_year is not None:
-            scoring_cfg = DIFFICULTY_SCORING.get(
-                self.difficulty, DIFFICULTY_SCORING[DIFFICULTY_DEFAULT]
+                await self._on_round_end()
+                _LOGGER.debug("Round_end callback completed successfully")
+            except (ConnectionError, OSError, TypeError) as err:
+                _LOGGER.error("Round_end callback failed: %s", err)
+        else:
+            _LOGGER.warning(
+                "No round_end callback set - REVEAL state will not be broadcast!"
             )
-            close_range = scoring_cfg["close_range"]
-            near_range = scoring_cfg["near_range"]
-            for player in self.players.values():
-                try:
-                    if player.submitted and player.years_off is not None:
-                        if player.years_off == 0:
-                            player.round_results.append("exact")
-                        elif close_range > 0 and player.years_off <= close_range:
-                            player.round_results.append("scored")
-                        elif near_range > 0 and player.years_off <= near_range:
-                            player.round_results.append("close")
-                        else:
-                            player.round_results.append("missed")
-                    else:
-                        player.round_results.append("missed")
-                except (AttributeError, TypeError) as err:
-                    _LOGGER.error(
-                        "round_results append failed for player %s: %s",
-                        getattr(player, "name", "?"),
-                        err,
-                    )
 
-        # Issue #75: Record highlights after scoring
-        try:
-            self._record_round_highlights(correct_year)
-        except (KeyError, AttributeError, TypeError, ValueError) as err:
-            _LOGGER.error("Failed to record round highlights: %s", err)
+    def _schedule_reveal_advance(self) -> None:
+        """Schedule the REVEAL vote window or auto-advance task (#1272).
 
-        # Issue #23: Music continues playing through reveal for intro rounds.
-        # No resume needed — _intro_auto_stop no longer pauses playback.
-
-        # Calculate round analytics after scoring (Story 13.3)
-        try:
-            self.round_analytics = self.calculate_round_analytics()
-        except (
-            KeyError,
-            AttributeError,
-            TypeError,
-            ValueError,
-            ZeroDivisionError,
-        ) as err:
-            _LOGGER.error("Failed to calculate round analytics: %s", err)
-            self.round_analytics = None
-
-        # Record song results for difficulty tracking (Story 15.1 AC3)
-        # Extended for song statistics (Story 19.7)
-        # Wrapped in try/catch to ensure round transition completes even if stats fail
-        if self._stats_service and self.current_song:
-            song_uri = self.current_song.get("_resolved_uri") or self.current_song.get(
-                "uri"
-            )
-            if song_uri:
-                try:
-                    # Build player results list for song difficulty calculation
-                    player_results = [
-                        {
-                            "submitted": p.submitted,
-                            "years_off": p.years_off if p.years_off is not None else 0,
-                        }
-                        for p in self.players.values()
-                    ]
-                    # Story 19.7: Pass song metadata and playlist info
-                    song_metadata = {
-                        "title": self.current_song.get("title", "Unknown"),
-                        "artist": self.current_song.get("artist", "Unknown"),
-                        "year": self.current_song.get("year", 0),
-                    }
-                    # Extract playlist name from path (e.g., "greatest-hits.json" -> "Greatest Hits")
-                    playlist_name = None
-                    if self.playlists:
-                        playlist_path = self.playlists[0]
-                        playlist_name = (
-                            playlist_path.replace(".json", "").replace("-", " ").title()
-                        )
-                    await self._stats_service.record_song_result(
-                        song_uri,
-                        player_results,
-                        song_metadata=song_metadata,
-                        playlist_name=playlist_name,
-                        difficulty=self.difficulty,
-                    )
-                except (OSError, KeyError, TypeError, ValueError) as err:
-                    _LOGGER.error("Failed to record song results: %s", err)
-
-        # The per-round REVEAL announcements (correct answer, accuracy,
-        # streaks, bets, steal unlocks, standings) collected into ONE
-        # combined utterance — see _announce_reveal. Fired BEFORE the phase
-        # transition so the audio leads the visible state change, and
-        # wrapped so a TTS hiccup never blocks REVEAL below.
-        try:
-            await self._announce_reveal(correct_year)
-        except (KeyError, AttributeError, TypeError, ValueError) as err:
-            _LOGGER.error("REVEAL announcement failed: %s", err)
-
-        # Transition to REVEAL
-        self._player_registry._reactions_this_phase = (
-            set()
-        )  # Story 18.9: Clear for new reveal phase
-        self.phase = GamePhase.REVEAL
-        # #1048: timestamp REVEAL entry so admin client can render the
-        # auto-advance countdown on the sticky Next button.
-        self.reveal_started_at = int(self._now() * 1000)
-        self._notify_state_callbacks()
-
+        Sync; caller holds _score_lock. Cancels any prior auto-advance, then
+        either opens the title/artist vote window (which owns the dwell) or
+        schedules the song-end auto-advance / idle-halt task.
+        """
         # #1012: schedule the unattended REVEAL auto-advance — always on
         # (timer 0 = advance at song-end). start_round itself ends the
         # game when songs are exhausted, so this also carries the final
@@ -2118,747 +777,36 @@ class GameState:
         if self.title_artist_mode:
             self._schedule_title_artist_vote_window()
         if not self._title_artist_voting_open:
-            if any(p.submitted for p in self.players.values()):
-                self._auto_advance_task = asyncio.create_task(
-                    self._reveal_auto_advance(self.reveal_auto_advance)
-                )
-            else:
-                _LOGGER.info(
-                    "Round %d ended with zero guesses — holding after song-end",
-                    self.round,
-                )
-                self._auto_advance_task = asyncio.create_task(self._reveal_idle_halt())
+            self._schedule_song_end_auto_advance()
 
-        # Issue #331/#517: Update Party Lights for reveal phase + event flashes
-        await self._lights_set_phase(GamePhase.REVEAL)
-        if correct_year is not None:
-            has_exact = False
-            has_correct = False
-            for p in self.players.values():
-                if p.submitted and p.years_off is not None:
-                    if p.years_off == 0:
-                        has_exact = True
-                    elif p.years_off <= 1:
-                        has_correct = True
-            if has_exact:
-                await self._lights_flash("gold")
-            elif has_correct:
-                await self._lights_flash("green")
+    def _schedule_song_end_auto_advance(self) -> None:
+        """Spawn the song-end auto-advance / idle-halt task (#1012).
 
-        _LOGGER.info("Round %d ended, phase: REVEAL", self.round)
-
-        # Invoke callback to broadcast state
-        if self._on_round_end:
-            _LOGGER.debug("Invoking round_end callback to broadcast REVEAL state")
-            try:
-                await self._on_round_end()
-                _LOGGER.debug("Round_end callback completed successfully")
-            except (ConnectionError, OSError, TypeError) as err:
-                _LOGGER.error("Round_end callback failed: %s", err)
-        else:
-            _LOGGER.warning(
-                "No round_end callback set - REVEAL state will not be broadcast!"
-            )
-
-    def _record_round_highlights(self, correct_year: int | None) -> None:
-        """Detect and record highlights for the current round (Issue #75)."""
-        if correct_year is None:
-            return
-
-        song_title = ""
-        if self.current_song:
-            song_title = self.current_song.get("title", "Unknown")
-
-        submitted_players = [
-            p
-            for p in self.players.values()
-            if p.submitted and p.current_guess is not None
-        ]
-
-        sorted_players = sorted(self.players.values(), key=lambda p: (-p.score, p.name))
-        rank_map = {p.name: i + 1 for i, p in enumerate(sorted_players)}
-
-        for player in submitted_players:
-            # Exact match
-            if player.years_off == 0:
-                self.highlights_tracker.record_exact_match(
-                    player.name, song_title, correct_year, self.round
-                )
-
-            # Heartbreaker (off by 1)
-            if player.years_off == 1:
-                self.highlights_tracker.record_heartbreaker(
-                    player.name, song_title, 1, self.round
-                )
-
-            # Streak milestones
-            if player.streak in STREAK_MILESTONES:
-                self.highlights_tracker.record_streak(
-                    player.name, player.streak, self.round
-                )
-                # Fire-and-forget flash (sync context — cannot await)
-                task = asyncio.create_task(self._lights_flash("orange"))
-                self._bg_tasks.add(task)
-                task.add_done_callback(self._bg_tasks.discard)
-
-            # Bet win
-            if player.bet_outcome == "won" and player.round_score >= 10:
-                self.highlights_tracker.record_bet_win(
-                    player.name, player.round_score, self.round
-                )
-
-            # Comeback (gained 2+ positions)
-            if player.previous_rank is not None:
-                current_rank = rank_map.get(player.name)
-                if current_rank is not None:
-                    positions_gained = player.previous_rank - current_rank
-                    if positions_gained >= 2:
-                        self.highlights_tracker.record_comeback(
-                            player.name, positions_gained, self.round
-                        )
-
-        # Speed record (fastest submission this round)
-        timed = [
-            (p, p.submission_time - self.round_start_time)
-            for p in submitted_players
-            if p.submission_time is not None and self.round_start_time is not None
-        ]
-        if timed:
-            fastest_player, fastest_time = min(timed, key=lambda x: x[1])
-            if fastest_time < 5.0:  # Only highlight very fast answers
-                self.highlights_tracker.record_speed_record(
-                    fastest_player.name, fastest_time, self.round
-                )
-
-        # Photo finish (tied round scores among top players) — Issue #414
-        scores = [p.round_score for p in self.players.values()]
-        if len(scores) >= 2:
-            from collections import Counter
-
-            score_counts = Counter(scores)
-            for score, count in score_counts.items():
-                if count >= 2 and score > 0:
-                    tied_names = [
-                        p.name for p in self.players.values() if p.round_score == score
-                    ]
-                    # Only record if it's among the top scores
-                    top_score = max(scores)
-                    if score >= top_score * 0.8:
-                        self.highlights_tracker.record_photo_finish(
-                            tied_names, self.round
-                        )
-                        break  # Only one photo finish per round
-
-    def cancel_timer(self) -> None:
-        """Cancel the round timer. Delegates to RoundManager."""
-        self._round_manager.cancel_timer()
-
-    async def confirm_intro_splash(self) -> None:
-        """Handle admin confirmation of intro splash (Issue #292, #403).
-
-        Delegates to RoundManager.
+        The non-vote-window tail of :meth:`_schedule_reveal_advance`: if anyone
+        submitted a guess, arm the song-end auto-advance; otherwise the party is
+        idle, so arm the idle-halt (let the song finish, stop, hold on REVEAL).
+        Assumes the caller already cancelled any prior task and that no vote
+        window owns the ``_auto_advance_task`` slot. Reused by
+        ``resume_game`` (#1371) to re-arm a REVEAL that was paused mid-dwell.
         """
-        await self._round_manager.confirm_intro_splash(
-            self.play_deferred_song, self._on_round_end, self._timer_countdown
-        )
-
-    def is_deadline_passed(self) -> bool:
-        """Check if the round deadline has passed. Delegates to RoundManager."""
-        return self._round_manager.is_deadline_passed()
-
-    def get_leaderboard(self) -> list[dict[str, Any]]:
-        """
-        Get leaderboard sorted by score (Story 5.5).
-
-        Returns:
-            List of player data with rank and movement info.
-            Note: is_current is set client-side based on playerName.
-
-        """
-        # Sort by score descending, then by name for tie-breaking display order
-        sorted_players = sorted(
-            self.players.values(),
-            key=lambda p: (-p.score, p.name),
-        )
-
-        leaderboard = []
-        current_rank = 0
-        previous_score = None
-
-        for i, player in enumerate(sorted_players):
-            # Handle ties (same score = same rank)
-            # Example: scores [100, 80, 80, 50] -> ranks [1, 2, 2, 4]
-            if player.score != previous_score:
-                current_rank = i + 1  # Rank jumps to position (skips tied ranks)
-            previous_score = player.score
-
-            # Calculate rank change (positive = moved up)
-            rank_change = 0
-            if player.previous_rank is not None:
-                rank_change = player.previous_rank - current_rank
-
-            entry = {
-                "rank": current_rank,
-                "name": player.name,
-                "score": player.score,
-                "streak": player.streak,
-                "is_admin": player.is_admin,
-                "rank_change": rank_change,
-                "connected": player.connected,
-            }
-            leaderboard.append(entry)
-
-        return leaderboard
-
-    def _store_previous_ranks(self) -> None:
-        """Store current ranks before scoring for rank change detection."""
-        sorted_players = sorted(
-            self.players.values(),
-            key=lambda p: (-p.score, p.name),
-        )
-
-        current_rank = 0
-        previous_score = None
-
-        for i, player in enumerate(sorted_players):
-            if player.score != previous_score:
-                current_rank = i + 1
-            previous_score = player.score
-            player.previous_rank = current_rank
-
-    def get_final_leaderboard(self) -> list[dict[str, Any]]:
-        """
-        Get final leaderboard with full player stats (Story 5.6).
-
-        Returns:
-            List of player data with rank and final stats.
-            Note: is_current is set client-side based on playerName.
-
-        """
-        # Sort by score descending, then by name for tie-breaking display order
-        sorted_players = sorted(
-            self.players.values(),
-            key=lambda p: (-p.score, p.name),
-        )
-
-        leaderboard = []
-        current_rank = 0
-        previous_score = None
-
-        for i, player in enumerate(sorted_players):
-            if player.score != previous_score:
-                current_rank = i + 1
-            previous_score = player.score
-
-            entry = {
-                "rank": current_rank,
-                "name": player.name,
-                "score": player.score,
-                "is_admin": player.is_admin,
-                "connected": player.connected,
-                # Final stats (Story 5.6)
-                "best_streak": player.best_streak,
-                "rounds_played": player.rounds_played,
-                "bets_won": player.bets_won,
-            }
-            leaderboard.append(entry)
-
-        return leaderboard
-
-    async def advance_to_end(self) -> None:
-        """Transition to END phase with proper cleanup (#321).
-
-        Use this instead of setting ``phase = GamePhase.END`` directly.
-        Cancels timers so no stale callbacks fire after the game ends.
-        Does NOT clear players (they stay for rematch/end screen).
-        """
-        self.cancel_timer()
-        self._round_manager._cancel_intro_timer()
-        self._cancel_auto_advance()  # #1012
-        self.phase = GamePhase.END
-        self.reveal_started_at = None  # #1048
-        self._notify_state_callbacks()
-
-        # Issue #331: Celebrate with Party Lights, then stop (#553)
-        if self._party_lights:
-            try:
-                await self._party_lights.celebrate()
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning("Party Lights celebration failed")
-            await self.disable_party_lights()
-
-        # Issue #447: Announce winner via TTS
-        await self.announce_winner()
-        # Issue #841 Phase 3: read out the podium (use case 19).
-        await self.announce_podium()
-
-        _LOGGER.info("Game advanced to END phase")
-
-    async def stop_media(self) -> None:
-        """Stop media playback if a media player service is available (#321)."""
-        if self._media_player_service:
-            await self._media_player_service.stop()
-
-    async def set_volume_on_player(self, level: float) -> bool:
-        """Apply volume level to the media player (#321).
-
-        Returns:
-            True if successful, False if failed or no media player.
-        """
-        if self._media_player_service:
-            return await self._media_player_service.set_volume(level)
-        return False
-
-    async def seek_forward(self, seconds: int) -> bool:
-        """Seek media player forward by given seconds (#498)."""
-        if self._media_player_service:
-            return await self._media_player_service.seek_forward(seconds)
-        return False
-
-    async def play_deferred_song(self, song: dict) -> bool:
-        """Play a song that was deferred for intro splash (#321).
-
-        Returns:
-            True if playback started, False otherwise.
-        """
-        if self._media_player_service:
-            return await self._media_player_service.play_song(song)
-        return False
-
-    # ------------------------------------------------------------------
-    # Party Lights (#331)
-    # ------------------------------------------------------------------
-
-    async def configure_party_lights(
-        self,
-        entity_ids: list[str],
-        intensity: str = "medium",
-        light_mode: str = "dynamic",
-        wled_presets: dict[str, int] | None = None,
-    ) -> None:
-        """Configure and start Party Lights for the game."""
-        # Lazy import: only the concrete class for instantiation; type hints
-        # use PartyLightsProtocol (module-level) to keep the import graph acyclic.
-        from custom_components.beatify.services.lights import PartyLightsService  # noqa: PLC0415
-
-        self._party_lights = PartyLightsService(self._hass)
-        await self._party_lights.start(entity_ids, intensity, light_mode, wled_presets)
-
-    async def disable_party_lights(self) -> None:
-        """Stop Party Lights and restore original light states."""
-        if self._party_lights:
-            await self._party_lights.stop()
-            self._party_lights = None
-
-    async def _lights_set_phase(self, phase: GamePhase) -> None:
-        """Set Party Lights phase color (fire-and-forget)."""
-        if self._party_lights:
-            try:
-                await self._party_lights.set_phase(phase)
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning("Party Lights phase change failed")
-
-    async def _lights_flash(self, color: str) -> None:
-        """Flash Party Lights (fire-and-forget)."""
-        if self._party_lights:
-            try:
-                task = asyncio.create_task(self._party_lights.flash(color))
-                self._bg_tasks.add(task)
-                task.add_done_callback(self._bg_tasks.discard)
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning("Party Lights flash failed")
-
-    # ------------------------------------------------------------------
-    # TTS Announcements (#447)
-    # ------------------------------------------------------------------
-
-    async def configure_tts(
-        self,
-        entity_id: str,
-        *,
-        announce_game_start: bool = True,
-        announce_winner: bool = True,
-        # Issue #471 Phase 1: Game Flow announcements
-        announce_round_start: bool = True,
-        announce_countdown: bool = False,
-        announce_time_up: bool = True,
-        announce_correct_answer: bool = True,
-        announce_nobody_correct: bool = True,
-        # Issue #840 Phase 2: Player Achievement announcements
-        announce_exact_guess: bool = True,
-        announce_closest_guess: bool = True,
-        announce_streak_milestone: bool = True,
-        announce_streak_broken: bool = False,
-        announce_leader_change: bool = True,
-        announce_tied_first: bool = True,
-        # Issue #841 Phase 3: Betting & Game State announcements
-        announce_bet_won: bool = True,
-        announce_bet_lost: bool = True,
-        announce_player_join: bool = True,
-        announce_player_reconnect: bool = False,
-        announce_last_round: bool = True,
-        announce_podium: bool = True,
-        announce_rematch: bool = True,
-        # Issue #842 Phase 4: Special Modes announcements
-        announce_intro_round: bool = True,
-        announce_steal_unlocked: bool = True,
-        announce_steal_used: bool = True,
-        # Issue #1211: seconds to add to the round deadline when pre-round TTS
-        # fires, so the countdown only starts once music has actually resumed.
-        tts_pre_round_delay: float = 0.0,
-    ) -> None:
-        """Configure TTS announcement service for the game.
-
-        ``entity_id`` is the TTS provider entity (e.g. ``tts.google_gemini_tts``).
-        Beatify routes the audio through the game's existing speaker
-        (``self.media_player``) — see #793 for why we need both identifiers.
-
-        The announce_* booleans toggle individual event types; defaults match
-        the most common host expectation (round start + time's up + correct
-        answer announced; per-round 3-2-1 countdown opt-in only).
-        """
-        from custom_components.beatify.services.tts import TTSService  # noqa: PLC0415
-
-        self._tts_service = TTSService(
-            self._hass,
-            tts_entity_id=entity_id,
-            media_player_entity_id=self.media_player,
-        )
-        self._tts_announce_game_start = announce_game_start
-        self._tts_announce_winner = announce_winner
-        self._tts_announce_round_start = announce_round_start
-        self._tts_announce_countdown = announce_countdown
-        self._tts_announce_time_up = announce_time_up
-        self._tts_announce_correct_answer = announce_correct_answer
-        self._tts_announce_nobody_correct = announce_nobody_correct
-        self._tts_announce_exact_guess = announce_exact_guess
-        self._tts_announce_closest_guess = announce_closest_guess
-        self._tts_announce_streak_milestone = announce_streak_milestone
-        self._tts_announce_streak_broken = announce_streak_broken
-        self._tts_announce_leader_change = announce_leader_change
-        self._tts_announce_tied_first = announce_tied_first
-        self._tts_announce_bet_won = announce_bet_won
-        self._tts_announce_bet_lost = announce_bet_lost
-        self._tts_announce_player_join = announce_player_join
-        self._tts_announce_player_reconnect = announce_player_reconnect
-        self._tts_announce_last_round = announce_last_round
-        self._tts_announce_podium = announce_podium
-        self._tts_announce_rematch = announce_rematch
-        self._tts_announce_intro_round = announce_intro_round
-        self._tts_announce_steal_unlocked = announce_steal_unlocked
-        self._tts_announce_steal_used = announce_steal_used
-        # Issue #1211: deadline offset to compensate for pre-round TTS overhead.
-        self._tts_pre_round_delay = max(0.0, float(tts_pre_round_delay))
-        # Fresh game — no prior leader, no steal unlocks announced yet.
-        self._tts_previous_leader = None
-        self._tts_steal_unlocked_announced = set()
-
-    async def disable_tts(self) -> None:
-        """Disable TTS announcements."""
-        self._tts_service = None
-
-    def _lang(self) -> str:
-        """Resolve the game's TTS language, defaulting to English.
-
-        ``self.language`` is injected by the start-game handlers; fall back to
-        English defensively so announcements never crash if it's unset.
-        """
-        return tts_phrases.normalize_language(getattr(self, "language", None))
-
-    async def _tts_announce(self, message: str) -> None:
-        """Speak a TTS announcement (fire-and-forget)."""
-        if self._tts_service:
-            try:
-                task = asyncio.create_task(
-                    self._tts_service.speak(message, language=self._lang())
-                )
-                self._bg_tasks.add(task)
-                task.add_done_callback(self._bg_tasks.discard)
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning("TTS announcement failed")
-
-    async def announce_game_start(self) -> None:
-        """Announce game start (use case 16)."""
-        if not self._tts_service or not self._tts_announce_game_start:
-            return
-        lang = self._lang()
-        message = tts_phrases.phrase(
-            lang,
-            "game_start",
-            rounds=tts_phrases.spoken_number(lang, self.total_rounds),
-            difficulty=tts_phrases.difficulty_label(lang, self.difficulty),
-        )
-        await self._tts_announce(message)
-
-    async def announce_winner(self) -> None:
-        """Announce the winner (use case 18)."""
-        if not self._tts_service or not self._tts_announce_winner or not self.players:
-            return
-        lang = self._lang()
-        top_score = max(p.score for p in self.players.values())
-        winners = [p for p in self.players.values() if p.score == top_score]
-        points = tts_phrases.spoken_number(lang, top_score)
-        if len(winners) == 1:
-            message = tts_phrases.phrase(
-                lang, "winner_single", name=winners[0].name, points=points
+        if any(p.submitted for p in self.players.values()):
+            self._auto_advance_task = asyncio.create_task(
+                self._reveal_auto_advance(self.reveal_auto_advance)
             )
         else:
-            names = tts_phrases.join_names(lang, [w.name for w in winners])
-            message = tts_phrases.phrase(lang, "winner_tie", names=names, points=points)
-        await self._tts_announce(message)
-
-    # ------------------------------------------------------------------
-    # Issue #471 Phase 1 — Game Flow announcements
-    # ------------------------------------------------------------------
-
-    async def announce_round_start(self) -> None:
-        """Announce round start (use case 1). Fires after round number bump."""
-        if not self._tts_service or not self._tts_announce_round_start:
-            return
-        lang = self._lang()
-        message = tts_phrases.phrase(
-            lang, "round_start", round=tts_phrases.spoken_number(lang, self.round)
-        )
-        await self._tts_announce(message)
-
-    async def announce_countdown(self) -> None:
-        """Announce 3-2-1 countdown before round start (use case 2).
-
-        Single utterance, not a per-second sequence. Defaults off because
-        firing on every round is intrusive — opt-in for hosts who want a
-        rhythmic intro.
-        """
-        if not self._tts_service or not self._tts_announce_countdown:
-            return
-        message = tts_phrases.phrase(self._lang(), "countdown")
-        await self._tts_announce(message)
-
-    async def announce_time_up(self) -> None:
-        """Announce timer expiration (use case 3). Fires only when the
-        round-timer ran to zero — NOT on early-reveal (all-submitted) path.
-        """
-        if not self._tts_service or not self._tts_announce_time_up:
-            return
-        message = tts_phrases.phrase(self._lang(), "time_up")
-        await self._tts_announce(message)
-
-    async def _announce_reveal(self, correct_year: int | None) -> None:
-        """Build and speak the single combined REVEAL announcement.
-
-        The per-round REVEAL events from phases 1-4 (correct answer,
-        accuracy, streaks, bet outcomes, steal unlocks, standings) used to
-        fire as up to ~7 separate TTS utterances — a stutter of clips. They
-        are now collected into ONE narrated sentence, each fragment still
-        gated by its own ``_tts_announce_*`` toggle, so the audio flows the
-        way a host would describe the round.
-
-        Fragment order is intentional: answer → accuracy → streaks → bets →
-        steal → standings.
-        """
-        if not self._tts_service:
-            return
-        lang = self._lang()
-        players = list(self.players.values())
-        frags: list[str] = []
-
-        # Correct answer.
-        if self._tts_announce_correct_answer and correct_year is not None:
-            year = tts_phrases.spoken_number(lang, correct_year, "year")
-            frags.append(tts_phrases.phrase(lang, "answer", year=year))
-
-        # Accuracy — exact guesses, else the Closest-Wins winner, else the
-        # "nobody got it" line (mutually exclusive).
-        exact = [p.name for p in players if p.submitted and p.years_off == 0]
-        had_submitters = any(p.submitted for p in players)
-        if exact and self._tts_announce_exact_guess:
-            names = tts_phrases.join_names(lang, exact)
-            frags.append(tts_phrases.phrase(lang, "exact", names=names))
-        elif self.closest_wins_mode and not exact and self._tts_announce_closest_guess:
-            submitted = [p for p in players if p.submitted and p.years_off is not None]
-            if submitted:
-                winner = min(submitted, key=lambda p: p.years_off)
-                if winner.round_score > 0:
-                    frags.append(tts_phrases.phrase(lang, "closest", name=winner.name))
-        elif had_submitters and not exact and self._tts_announce_nobody_correct:
-            frags.append(tts_phrases.phrase(lang, "nobody"))
-
-        # Streak milestones — streak_bonus is non-zero only on the exact
-        # round a milestone (3/5/10/15/20/25) is reached.
-        if self._tts_announce_streak_milestone:
-            for p in players:
-                if p.streak_bonus > 0:
-                    frags.append(
-                        tts_phrases.phrase(
-                            lang,
-                            "streak_milestone",
-                            name=p.name,
-                            streak=tts_phrases.spoken_number(lang, p.streak),
-                        )
-                    )
-
-        # Streak broken — previous_streak holds the pre-reset length. Gate
-        # at >= 3 so a one-off miss after a short run doesn't trigger it.
-        if self._tts_announce_streak_broken:
-            for p in players:
-                if p.streak == 0 and p.previous_streak >= 3:
-                    frags.append(
-                        tts_phrases.phrase(
-                            lang,
-                            "streak_broken",
-                            name=p.name,
-                            previous=tts_phrases.spoken_number(lang, p.previous_streak),
-                        )
-                    )
-
-        # Bet outcomes — gated on submitted so a stale outcome can't misfire.
-        for p in players:
-            if not (p.submitted and p.bet):
-                continue
-            if p.bet_outcome == "won" and self._tts_announce_bet_won:
-                frags.append(tts_phrases.phrase(lang, "bet_won", name=p.name))
-            elif p.bet_outcome == "lost" and self._tts_announce_bet_lost:
-                frags.append(tts_phrases.phrase(lang, "bet_lost", name=p.name))
-
-        # Steal unlocks — once per player per game. The dedup set is updated
-        # regardless of the toggle so a mid-game toggle-on can't replay it.
-        for p in players:
-            if p.steal_available and p.name not in self._tts_steal_unlocked_announced:
-                self._tts_steal_unlocked_announced.add(p.name)
-                if self._tts_announce_steal_unlocked:
-                    frags.append(
-                        tts_phrases.phrase(lang, "steal_unlocked", name=p.name)
-                    )
-
-        # Standings — leader change / tie at the top. _tts_previous_leader
-        # is updated regardless of the toggles so detection stays correct.
-        leaderboard = sorted(players, key=lambda p: p.score, reverse=True)
-        if leaderboard and leaderboard[0].score > 0:
-            top_score = leaderboard[0].score
-            leaders = [p for p in leaderboard if p.score == top_score]
-            if len(leaders) > 1:
-                if self._tts_announce_tied_first:
-                    frags.append(tts_phrases.phrase(lang, "tie_at_top"))
-                self._tts_previous_leader = None
-            else:
-                new_leader = leaders[0].name
-                if new_leader != self._tts_previous_leader:
-                    # Suppress round 1 — the leader always "changes" from
-                    # nobody on the first scored round.
-                    if (
-                        self._tts_previous_leader is not None
-                        and self._tts_announce_leader_change
-                    ):
-                        frags.append(
-                            tts_phrases.phrase(lang, "leader_change", name=new_leader)
-                        )
-                self._tts_previous_leader = new_leader
-
-        if frags:
-            await self._tts_announce(" ".join(frags))
-
-    # ------------------------------------------------------------------
-    # Issue #841 Phase 3 — Betting & Game State announcements
-    # ------------------------------------------------------------------
-
-    async def announce_player_join(self, player_name: str) -> None:
-        """Announce a new player joining the game (use case 14)."""
-        if not self._tts_service or not self._tts_announce_player_join:
-            return
-        message = tts_phrases.phrase(self._lang(), "player_join", name=player_name)
-        await self._tts_announce(message)
-
-    async def announce_player_reconnect(self, player_name: str) -> None:
-        """Announce a player reconnecting (use case 15).
-
-        Off by default — phones drop and re-establish the WebSocket
-        constantly (screen lock, network handoff), so firing on every
-        reconnect is noisy. Opt-in for hosts who want it.
-        """
-        if not self._tts_service or not self._tts_announce_player_reconnect:
-            return
-        message = tts_phrases.phrase(self._lang(), "player_reconnect", name=player_name)
-        await self._tts_announce(message)
-
-    async def announce_last_round(self) -> None:
-        """Announce that the final round is starting (use case 17).
-
-        Fires from start_round, chained after announce_round_start, only
-        when the round just started is the last one.
-        """
-        if not self._tts_service or not self._tts_announce_last_round:
-            return
-        message = tts_phrases.phrase(self._lang(), "last_round")
-        await self._tts_announce(message)
-
-    async def announce_podium(self) -> None:
-        """Announce the top-3 finishers at game end (use case 19).
-
-        Fires from advance_to_end after announce_winner. Names the podium
-        bottom-up — 3rd, 2nd, 1st — the way a host reads an awards list.
-        With fewer than three scoring players the podium shrinks to match.
-        """
-        if not self._tts_service or not self._tts_announce_podium:
-            return
-        ranked = sorted(self.players.values(), key=lambda p: p.score, reverse=True)
-        podium = [p for p in ranked if p.score > 0][:3]
-        if not podium:
-            return
-        lang = self._lang()
-        segments = [
-            f"{tts_phrases.place_label(lang, i + 1)}: "
-            f"{podium[i].name}{'!' if i == 0 else '.'}"
-            for i in reversed(range(len(podium)))
-        ]
-        await self._tts_announce(" ".join(segments))
-
-    async def announce_rematch(self) -> None:
-        """Announce a rematch starting (use case 20)."""
-        if not self._tts_service or not self._tts_announce_rematch:
-            return
-        message = tts_phrases.phrase(self._lang(), "rematch")
-        await self._tts_announce(message)
-
-    # ------------------------------------------------------------------
-    # Issue #842 Phase 4 — Special Modes announcements
-    # ------------------------------------------------------------------
-
-    async def announce_intro_round(self) -> None:
-        """Announce the start of an intro-mode round (use case 21)."""
-        if not self._tts_service or not self._tts_announce_intro_round:
-            return
-        await self._tts_announce(tts_phrases.phrase(self._lang(), "intro_round"))
-
-    async def announce_steal_used(self, stealer_name: str, target_name: str) -> None:
-        """Announce a player using steal on another (use case 23)."""
-        if not self._tts_service or not self._tts_announce_steal_used:
-            return
-        await self._tts_announce(
-            tts_phrases.phrase(
-                self._lang(), "steal_used", stealer=stealer_name, target=target_name
+            _LOGGER.info(
+                "Round %d ended with zero guesses — holding after song-end",
+                self.round,
             )
-        )
+            self._auto_advance_task = asyncio.create_task(self._reveal_idle_halt())
 
-    def adjust_volume(self, direction: str) -> float:
-        """
-        Adjust volume level by step (Story 6.4).
-
-        Args:
-            direction: "up" to increase, "down" to decrease
-
-        Returns:
-            New volume level (clamped 0.0 to 1.0)
-
-        """
-        # Sync with actual media player volume before adjusting
-        if self._media_player_service:
-            self.volume_level = self._media_player_service.get_volume()
-
-        if direction == "up":
-            self.volume_level = min(1.0, self.volume_level + VOLUME_STEP)
-        elif direction == "down":
-            self.volume_level = max(0.0, self.volume_level - VOLUME_STEP)
-
-        return self.volume_level
+    # ------------------------------------------------------------------
+    # REVEAL transition (_transition_to_reveal / _apply_reveal_lights), the
+    # round-timer task (_timer_countdown / cancel_timer), the intro-splash /
+    # deadline delegations (confirm_intro_splash / is_deadline_passed) and the
+    # terminal advance_to_end live in RevealTransitionMixin (Issue #1271
+    # extraction). See game/state_reveal_transition.py.
+    # ------------------------------------------------------------------
 
     def calculate_round_analytics(self) -> RoundAnalytics:
         """Calculate round analytics (Story 13.3). Delegates to ScoringService (#139)."""
@@ -2882,32 +830,4 @@ class GameState:
             movie_quiz_enabled=self.movie_quiz_enabled,
             intro_mode_enabled=self.intro_mode_enabled,
             title_artist_mode_enabled=self.title_artist_mode,
-        )
-
-    def submit_artist_guess(
-        self, player_name: str, artist: str, guess_time: float
-    ) -> dict[str, Any]:
-        """Submit artist guess for bonus points (Story 20.3). Delegates to ChallengeManager."""
-        return self._challenge_manager.submit_artist_guess(
-            player_name, artist, guess_time
-        )
-
-    def submit_movie_guess(
-        self, player_name: str, movie: str, guess_time: float
-    ) -> dict[str, Any]:
-        """Submit movie guess for bonus points (Issue #28). Delegates to ChallengeManager."""
-        return self._challenge_manager.submit_movie_guess(
-            player_name, movie, guess_time, self.round_start_time
-        )
-
-    def submit_title_artist_guess(
-        self, player_name: str, title: str, artist: str, ts: float
-    ) -> dict[str, Any]:
-        """Submit a Title & Artist guess (#1180). Delegates to ChallengeManager.
-
-        Returns {"title_status": str, "artist_status": str}; classification and
-        storage live on the challenge.
-        """
-        return self._challenge_manager.submit_title_artist_guess(
-            player_name, title, artist, ts
         )

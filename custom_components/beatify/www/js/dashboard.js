@@ -7,9 +7,11 @@
 
     // Alias BeatifyUtils for convenience
     var utils = window.BeatifyUtils || {};
+    var debug = utils.debug || function() {};
 
     // View elements
     var loadingView = document.getElementById('dashboard-loading');
+    var startingView = document.getElementById('dashboard-starting');  // #1287 cold-start vinyl loader
     var noGameView = document.getElementById('dashboard-no-game');
     var lobbyView = document.getElementById('dashboard-lobby');
     var playingView = document.getElementById('dashboard-playing');
@@ -18,12 +20,29 @@
     var pausedView = document.getElementById('dashboard-paused');
 
     // All views array for showView helper
-    var allViews = [loadingView, noGameView, lobbyView, playingView, revealView, endView, pausedView];
+    var allViews = [loadingView, startingView, noGameView, lobbyView, playingView, revealView, endView, pausedView];
 
     // WebSocket connection
     var ws = null;
     var reconnectAttempts = 0;
-    var MAX_RECONNECT_ATTEMPTS = 20;
+    // #1398: the dashboard is a passive, read-only always-on TV display. It must
+    // reconnect FOREVER (capped backoff), never giving up — a router reboot or
+    // HA restart longer than the old ~8 min / 20-attempt cap used to brick the
+    // screen until someone physically woke the tab (visibilitychange never fires
+    // on an always-on TV). There is intentionally no max-attempt cap any more.
+    // #1397: guards the pending exponential-backoff reconnect timer. An
+    // out-of-band reconnect (visibilitychange) cancels it before opening its
+    // own socket — otherwise the backoff timer fires later and opens a second
+    // parallel WebSocket (double renders + reconnect storm). Falls back to a
+    // tiny inline shim if utils.js failed to load.
+    var reconnectGuard = (utils.createReconnectGuard && utils.createReconnectGuard()) || (function() {
+        var t = null;
+        return {
+            schedule: function(fn, d) { if (t !== null) { clearTimeout(t); } t = setTimeout(function() { t = null; fn(); }, d); },
+            cancel: function() { if (t !== null) { clearTimeout(t); t = null; } },
+            isPending: function() { return t !== null; }
+        };
+    })();
     var MAX_RECONNECT_DELAY_MS = 30000;
 
     // State tracking
@@ -43,24 +62,43 @@
     }
 
     /**
-     * Get reconnection delay with exponential backoff
+     * Get reconnection delay with capped exponential backoff (#1398).
+     * Delegates to the shared, unit-tested BeatifyUtils.reconnectBackoffDelay so
+     * the policy lives in one place. `reconnectAttempts` is 1-based here (it is
+     * incremented before this is called); the helper never overflows for large
+     * attempt counts, so an indefinitely-retrying display stays at the 30s cap.
      * @returns {number} Delay in milliseconds
      */
     function getReconnectDelay() {
-        return Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY_MS);
+        if (utils.reconnectBackoffDelay) {
+            return utils.reconnectBackoffDelay(reconnectAttempts, { maxDelay: MAX_RECONNECT_DELAY_MS });
+        }
+        // Fallback if utils failed to load: same capped backoff, 1-based attempt.
+        return Math.min(1000 * Math.pow(2, reconnectAttempts - 1), MAX_RECONNECT_DELAY_MS);
     }
 
     /**
      * Connect to WebSocket as read-only observer (AC 10.4.1)
      */
     function connectWebSocket() {
+        // #1397: cancel any pending backoff-timer reconnect so it can't fire
+        // after this call and open a second parallel socket.
+        reconnectGuard.cancel();
+        // Detach the previous socket's handlers before replacing it. Without
+        // this, an orphaned (still-open or closing) socket keeps rendering
+        // broadcasts and re-scheduling reconnects via its onclose. (#1397)
+        if (ws) {
+            ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null;
+            try { ws.close(); } catch (e) { /* already closed */ }
+        }
+
         var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         var wsUrl = wsProtocol + '//' + window.location.host + '/beatify/ws';
 
         ws = new WebSocket(wsUrl);
 
         ws.onopen = function() {
-            console.log('[Dashboard] WebSocket connected');
+            debug('[Dashboard] WebSocket connected');
             reconnectAttempts = 0;
             // Request current state as read-only observer
             ws.send(JSON.stringify({ type: 'get_state' }));
@@ -76,15 +114,16 @@
         };
 
         ws.onclose = function() {
-            console.log('[Dashboard] WebSocket closed');
-            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                reconnectAttempts++;
-                var delay = getReconnectDelay();
-                console.log('[Dashboard] Reconnecting in ' + delay + 'ms (attempt ' + reconnectAttempts + ')');
-                setTimeout(connectWebSocket, delay);
-            } else {
-                showView('dashboard-no-game');
-            }
+            debug('[Dashboard] WebSocket closed');
+            // #1398 + #1397: retry FOREVER with capped backoff, scheduled through
+            // the dedup guard so a visibilitychange reconnect can cancel the
+            // pending timer instead of racing it into a second socket. The
+            // "no game" view is an interim status, never a terminal give-up.
+            reconnectAttempts++;
+            showView('dashboard-no-game');
+            var delay = getReconnectDelay();
+            debug('[Dashboard] Reconnecting in ' + delay + 'ms (attempt ' + reconnectAttempts + ')');
+            reconnectGuard.schedule(connectWebSocket, delay);
         };
 
         ws.onerror = function(err) {
@@ -152,6 +191,11 @@
         return _keepAwakeVideo;
     }
 
+    // Returns true if a reliable wake lock engaged (native Layer 1), false if
+    // we had to fall back to a best-effort path. The #1285 banner uses the
+    // false result to offer a one-tap re-try inside a trusted user gesture —
+    // iOS blocks navigator.wakeLock.request() on a passive TV/dashboard
+    // display that never received a touch, but allows it from a tap handler.
     async function requestWakeLock() {
         if ('wakeLock' in navigator) {
             try {
@@ -161,7 +205,7 @@
                     _wakeLock = null;
                 });
                 console.debug('[BeatifyWakeLock] Layer 1 (native wakeLock) acquired');
-                return;
+                return true;
             } catch (err) {
                 console.debug('[BeatifyWakeLock] Layer 1 request failed:', err, '— trying Layer 2');
             }
@@ -186,14 +230,19 @@
         var ns = _ensureNoSleep();
         if (!ns) {
             console.debug('[BeatifyWakeLock] Layer 2 unavailable (NoSleep vendor not loaded)');
-            return;
+            return false;
         }
-        if (_noSleepActive) return;
+        if (_noSleepActive) return false;
         try {
             var p = ns.enable();
             _noSleepActive = true;
             if (p && typeof p.catch === 'function') {
                 p.catch(function(err) {
+                    // Reset the flag so a later banner-tap (#1285) /
+                    // visibilitychange retry can re-attempt ns.enable() inside a
+                    // trusted gesture — otherwise the one-tap recovery silently
+                    // no-ops on iOS where the init() call was gesture-rejected.
+                    _noSleepActive = false;
                     console.debug('[BeatifyWakeLock] Layer 2 enable promise rejected:', err);
                 });
             }
@@ -201,6 +250,61 @@
         } catch (err) {
             console.debug('[BeatifyWakeLock] Layer 2 enable failed:', err);
             _noSleepActive = false;
+        }
+        return false;
+    }
+
+    // ============================================
+    // Wake-Lock activation banner (#1285, design option 2)
+    // ============================================
+    // On a passive iOS TV/dashboard display the native screen wake lock is
+    // rejected without a user gesture, so requestWakeLock() above can only fall
+    // back to a best-effort path. The banner surfaces a single tap that re-runs
+    // requestWakeLock() inside a trusted gesture context, letting the native
+    // lock (and NoSleep video) fully engage. Dismissal is remembered so the
+    // banner never nags on a display where the user already chose.
+    var _WAKE_BANNER_DISMISS_KEY = 'beatify_wakelock_banner_dismissed';
+
+    function _wakeBannerDismissed() {
+        try { return localStorage.getItem(_WAKE_BANNER_DISMISS_KEY) === '1'; }
+        catch (e) { return false; }
+    }
+
+    function _rememberWakeBannerDismissed() {
+        try { localStorage.setItem(_WAKE_BANNER_DISMISS_KEY, '1'); } catch (e) { /* private mode */ }
+    }
+
+    function _hideWakeBanner() {
+        var banner = document.getElementById('dashboard-wakelock-banner');
+        if (banner) banner.classList.add('hidden');
+    }
+
+    function _showWakeBanner() {
+        if (_wakeBannerDismissed()) return;
+        var banner = document.getElementById('dashboard-wakelock-banner');
+        if (!banner) return;
+        banner.classList.remove('hidden');
+    }
+
+    function _initWakeBanner() {
+        var banner = document.getElementById('dashboard-wakelock-banner');
+        if (!banner) return;
+        var activateBtn = document.getElementById('dashboard-wakelock-activate');
+        var dismissBtn = document.getElementById('dashboard-wakelock-dismiss');
+        if (activateBtn) {
+            activateBtn.addEventListener('click', function() {
+                // Tap is the trusted gesture iOS requires — re-run the full
+                // request so the native lock can engage; remember the choice.
+                requestWakeLock();
+                _rememberWakeBannerDismissed();
+                _hideWakeBanner();
+            });
+        }
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function() {
+                _rememberWakeBannerDismissed();
+                _hideWakeBanner();
+            });
         }
     }
 
@@ -213,7 +317,7 @@
         if (document.visibilityState === 'visible') {
             requestWakeLock();
             if (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
-                console.log('[Dashboard] Page visible, WebSocket dead — reconnecting immediately.');
+                debug('[Dashboard] Page visible, WebSocket dead — reconnecting immediately.');
                 reconnectAttempts = 0;
                 connectWebSocket();
             }
@@ -228,11 +332,11 @@
         if (data.type === 'state') {
             // Debug: Log game_performance data (Story 14.4)
             if (data.game_performance) {
-                console.log('[Dashboard] game_performance:', data.game_performance);
+                debug('[Dashboard] game_performance:', data.game_performance);
             }
             handleStateUpdate(data);
         } else if (data.type === 'error') {
-            console.log('[Dashboard] Server error:', data.message);
+            debug('[Dashboard] Server error:', data.message);
             // Dashboard ignores most errors since it's read-only
         } else if (data.type === 'player_reaction') {
             // Live reactions from players (Story 18.9)
@@ -240,6 +344,13 @@
         } else if (data.type === 'metadata_update') {
             // Issue #42: Handle async metadata update for fast transitions
             handleMetadataUpdate(data.song);
+        } else if (data.type === 'game_starting') {
+            // #1287: cold-start bridge. The admin pressed start; show the
+            // animated vinyl-disc loader while the Music Assistant speaker
+            // connects + round 1 loads (~10-15s). The next PLAYING `state`
+            // broadcast replaces it.
+            stopCountdown();
+            showView('dashboard-starting');
         }
         // Dashboard ignores submit_ack, song_stopped, volume_changed since it doesn't interact
     }
@@ -276,7 +387,7 @@
             preloader.src = newSrc;
         }
 
-        console.log('[Dashboard] Metadata updated:', song.artist, '-', song.title);
+        debug('[Dashboard] Metadata updated:', song.artist, '-', song.title);
     }
 
     /**
@@ -290,10 +401,26 @@
         // Must re-render after language loads to update dynamic content
         // Guard: skip if i18n unavailable
         if (typeof BeatifyI18n !== 'undefined' && data.language && data.language !== BeatifyI18n.getLanguage()) {
-            BeatifyI18n.setLanguage(data.language).then(function() {
+            // #1402-B8: setLanguage() normalizes an unsupported code to 'en' and
+            // resolves with the EFFECTIVELY-APPLIED code. We must re-render only
+            // when the applied locale actually differs from what we'd compare on
+            // re-entry — otherwise a state carrying an unsupported language (e.g.
+            // 'pt') loops forever: getLanguage() can never equal 'pt', so each
+            // re-render re-enters this branch. Re-render with applied locale and
+            // guard the recursion against the resolved (not requested) code.
+            BeatifyI18n.setLanguage(data.language).then(function(appliedLang) {
                 BeatifyI18n.initPageTranslations();
-                // Re-render current view with correct language
-                handleStateUpdate(data);
+                if (appliedLang === BeatifyI18n.getLanguage()) {
+                    // Re-render current view with correct language. The branch
+                    // above won't re-fire because data.language is now stale vs
+                    // the applied locale check below — but to be safe against an
+                    // unsupported code (data.language !== appliedLang) we mutate
+                    // the local copy so the recursive call's comparison settles.
+                    if (data.language !== appliedLang) {
+                        data = Object.assign({}, data, { language: appliedLang });
+                    }
+                    handleStateUpdate(data);
+                }
             });
             // Don't render yet - wait for language to load
             return;
@@ -331,7 +458,7 @@
                 showView('dashboard-paused');
                 break;
             default:
-                console.log('[Dashboard] Unknown phase:', phase);
+                debug('[Dashboard] Unknown phase:', phase);
         }
     }
 
@@ -355,10 +482,16 @@
         renderGameSettings(data);
 
         // Update player count
+        // #1402-B8: was hardcoded English ("N players joined") on an otherwise
+        // localized TV dashboard. Use an i18n key with {n} interpolation plus a
+        // singular variant; utils.t() falls back to the English literal if the
+        // key is missing from a locale.
         var countEl = document.getElementById('dashboard-player-count');
         if (countEl) {
             var count = players.length;
-            countEl.textContent = count + ' player' + (count !== 1 ? 's' : '') + ' joined';
+            var joinedKey = count === 1 ? 'dashboard.playersJoinedOne' : 'dashboard.playersJoined';
+            var joinedFallback = count + ' player' + (count !== 1 ? 's' : '') + ' joined';
+            countEl.textContent = utils.t(joinedKey, joinedFallback).replace(/\{n\}/g, count);
         }
 
         // Render player list with slide-in animation
@@ -539,8 +672,8 @@
      * @param {Array} players - Players array
      */
     function renderRoundStats(data, players) {
-        console.log('[Dashboard] renderRoundStats called, players:', players);
-        console.log('[Dashboard] data.players:', data.players);
+        debug('[Dashboard] renderRoundStats called, players:', players);
+        debug('[Dashboard] data.players:', data.players);
 
         // Calculate submission count
         var submitted = 0;
@@ -549,12 +682,12 @@
             if (p.submitted) submitted++;
         });
 
-        console.log('[Dashboard] Submissions:', submitted, '/', total);
+        debug('[Dashboard] Submissions:', submitted, '/', total);
 
         var submissionsEl = document.getElementById('dashboard-submissions');
         if (submissionsEl) {
             submissionsEl.textContent = submitted + '/' + total;
-            console.log('[Dashboard] Updated submissions element');
+            debug('[Dashboard] Updated submissions element');
         } else {
             console.warn('[Dashboard] dashboard-submissions element not found');
         }
@@ -732,8 +865,17 @@
         if (titleEl) titleEl.textContent = song.title || 'Unknown Song';
         if (yearEl) yearEl.textContent = song.year || '????';
 
+        // Lower-third announce: the YEAR is the hero in year mode; in Title &
+        // Artist mode the year row hides and the TA banner carries the answer.
+        var taMode = !!data.title_artist_mode;
+        var yearRow = document.getElementById('reveal-year-row');
+        if (yearRow) yearRow.classList.toggle('hidden', taMode);
+
         // Title & Artist mode (#1180): show truth banner + voting status on TV.
         renderDashboardTitleArtist(data);
+
+        // Year mode: the guess-the-artist mini-game result (🎤 who got it).
+        renderDashboardArtistChallenge(taMode ? null : data.artist_challenge);
 
         // Render fun fact (Story 16.4)
         renderFunFact(song);
@@ -875,6 +1017,38 @@
         }
     }
 
+    /**
+     * Year-mode artist-challenge result on the TV (the guess-the-artist
+     * mini-game). Shows "🎤 The artist: <name>" + who got it (winner +bonus,
+     * or a muted "nobody guessed"). Hidden when the challenge isn't active.
+     * @param {Object|null} ac - data.artist_challenge { correct_artist, winner, bonus_points }
+     */
+    function renderDashboardArtistChallenge(ac) {
+        var el = document.getElementById('reveal-artist-challenge');
+        if (!el) return;
+        if (!ac || !ac.correct_artist) {
+            el.classList.add('hidden');
+            el.innerHTML = '';
+            return;
+        }
+        var label = utils.t('artistChallenge.theArtistWas', 'The artist');
+        var resultHtml;
+        if (ac.winner) {
+            var pts = ac.bonus_points || 5;
+            resultHtml = '<span class="reveal-ac-result reveal-ac-result--won">' +
+                utils.escapeHtml(ac.winner) + ' +' + pts + '</span>';
+        } else {
+            resultHtml = '<span class="reveal-ac-result reveal-ac-result--none">' +
+                utils.escapeHtml(utils.t('artistChallenge.noWinner', 'Nobody guessed it')) + '</span>';
+        }
+        el.innerHTML =
+            '<span class="reveal-ac-ic" aria-hidden="true">🎤</span>' +
+            '<span class="reveal-ac-label">' + utils.escapeHtml(label) + '</span>' +
+            '<span class="reveal-ac-name">' + utils.escapeHtml(ac.correct_artist) + '</span>' +
+            resultHtml;
+        el.classList.remove('hidden');
+    }
+
     // Local countdown ticker for the TV live-vote view. Anchored to the server's
     // vote_seconds_remaining (#1180) and re-synced on every broadcast.
     var _taLiveTick = null;
@@ -907,8 +1081,8 @@
         // Get localized fun fact (Story 16.3)
         var funFact = utils.getLocalizedSongField(song, 'fun_fact');
 
-        console.log('[Dashboard] renderFunFact called with song:', song);
-        console.log('[Dashboard] fun_fact value:', funFact || 'no fun fact');
+        debug('[Dashboard] renderFunFact called with song:', song);
+        debug('[Dashboard] fun_fact value:', funFact || 'no fun fact');
 
         if (!container || !textEl) {
             console.warn('[Dashboard] Fun fact elements not found');
@@ -918,14 +1092,14 @@
         // Hide if no fun fact
         if (!funFact || funFact.trim() === '') {
             container.classList.add('hidden');
-            console.log('[Dashboard] No fun_fact, hiding container');
+            debug('[Dashboard] No fun_fact, hiding container');
             return;
         }
 
         // Show fun fact
         textEl.textContent = funFact;
         container.classList.remove('hidden');
-        console.log('[Dashboard] Fun fact shown:', funFact);
+        debug('[Dashboard] Fun fact shown:', funFact);
     }
 
     /**
@@ -1144,21 +1318,40 @@
     function renderEndView(data) {
         var leaderboard = data.leaderboard || [];
 
-        // Update podium (AC 10.4.5)
+        // Update podium (AC 10.4.5) — name, score, and a colour-keyed avatar.
         [1, 2, 3].forEach(function(place) {
             var player = leaderboard.find(function(p) { return p.rank === place; });
             var nameEl = document.getElementById('end-podium-' + place + '-name');
             var scoreEl = document.getElementById('end-podium-' + place + '-score');
+            var avatarEl = document.getElementById('end-podium-' + place + '-avatar');
 
-            if (nameEl) nameEl.textContent = player ? utils.escapeHtml(player.name) : '---';
+            // #1402-B8: textContent already neutralizes markup, so feeding it
+            // escapeHtml() output double-escapes — a name like "A&B" rendered
+            // as "A&amp;B" on the podium. Assign the raw name directly.
+            if (nameEl) nameEl.textContent = player ? player.name : '---';
             if (scoreEl) scoreEl.textContent = player ? player.score : '0';
+            if (avatarEl) {
+                var nm = player ? player.name : '';
+                avatarEl.textContent = nm ? nm.trim().charAt(0).toUpperCase() : '';
+                avatarEl.style.background = nm ? endAvatarGradient(nm) : 'transparent';
+            }
         });
+
+        // Header meta — rounds + players (icon-led so it needs no translation).
+        var stats = data.game_stats || {};
+        var roundsEl = document.getElementById('end-meta-rounds');
+        var playersEl = document.getElementById('end-meta-players');
+        if (roundsEl) roundsEl.textContent = '🎵 ' + (stats.total_rounds != null ? stats.total_rounds : leaderboard.length && data.round || 0);
+        if (playersEl) playersEl.textContent = '👥 ' + (stats.total_players != null ? stats.total_players : leaderboard.length);
 
         // Render stats comparison (Story 14.4)
         renderStatsComparison(data.game_performance);
 
         // Render superlatives / fun awards (Story 15.2)
         renderSuperlatives(data.superlatives);
+
+        // Issue #75: Game highlights reel (data was always sent, never shown).
+        renderHighlights(data.highlights);
 
         // Story 14.5 (AC3, AC7): Trigger winner confetti on dashboard
         // H2 fix: Only trigger if there's a valid winner with score > 0
@@ -1167,11 +1360,16 @@
             triggerConfetti('winner');
         }
 
-        // Render full leaderboard (Story 11.4: disconnected styling)
+        // Full standings panel — the players BELOW the podium (rank 4+). The
+        // podium already celebrates the top 3; this completes the ranking.
+        // Fallback to the whole board for small games (<=3 players) so the
+        // panel is never empty.
         var container = document.getElementById('end-leaderboard');
         if (container) {
+            var rest = leaderboard.filter(function(e) { return e.rank > 3; });
+            var rows = rest.length ? rest : leaderboard;
             var html = '';
-            leaderboard.forEach(function(entry) {
+            rows.forEach(function(entry) {
                 var rankClass = entry.rank <= 3 ? 'is-top-' + entry.rank : '';
                 var disconnectedClass = entry.connected === false ? 'leaderboard-entry--disconnected' : '';
                 var awayBadge = entry.connected === false ? '<span class="away-badge">(away)</span>' : '';
@@ -1185,58 +1383,62 @@
 
             container.innerHTML = html;
         }
-
-        // Render shareable result cards (Issue #216)
-        renderDashboardShare(data.share_data, leaderboard);
     }
 
     /**
-     * Render shareable result cards on dashboard end screen (Issue #216)
-     * Shows all players' emoji grids prominently on the TV screen
-     * @param {Object|null} shareData - Share data with emoji_grids, playlist_name
-     * @param {Array} leaderboard - Leaderboard for ordering players
+     * Deterministic avatar gradient from a player name (matches the player
+     * reveal standings palette).
+     * @param {string} name
+     * @returns {string} CSS gradient
      */
-    function renderDashboardShare(shareData, leaderboard) {
-        var container = document.getElementById('dashboard-share-container');
-        var gridsEl = document.getElementById('dashboard-share-grids');
-        if (!container || !gridsEl) return;
+    function endAvatarGradient(name) {
+        var palettes = [
+            ['#ff2d6a', '#ff6600'], ['#00f5ff', '#7a5cff'], ['#39ff14', '#00f5ff'],
+            ['#ff6600', '#ff0040'], ['#7a5cff', '#b3b3c2'], ['#ff2d6a', '#7a5cff']
+        ];
+        var h = 0;
+        for (var i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
+        var p = palettes[h % palettes.length];
+        return 'linear-gradient(140deg,' + p[0] + ',' + p[1] + ')';
+    }
 
-        if (!shareData || !shareData.emoji_grids || Object.keys(shareData.emoji_grids).length === 0) {
+    /**
+     * Render the game highlights reel (Issue #75). The server always sent
+     * data.highlights (top ~3 moments) but nothing rendered it on the TV.
+     * Each highlight: { type, round, player, emoji, description (i18n key),
+     * description_params }. Localised via the "highlights.<description>" key.
+     * @param {Array|null} highlights
+     */
+    function renderHighlights(highlights) {
+        var container = document.getElementById('end-highlights');
+        if (!container) return;
+        if (!highlights || highlights.length === 0) {
+            container.innerHTML = '';
             container.classList.add('hidden');
             return;
         }
-
-        var emojiGrids = shareData.emoji_grids;
-
-        // Order by leaderboard rank, then show remaining
-        var orderedPlayers = [];
-        leaderboard.forEach(function(entry) {
-            if (emojiGrids[entry.name]) {
-                orderedPlayers.push(entry.name);
-            }
-        });
-        // Add any players not in leaderboard
-        Object.keys(emojiGrids).forEach(function(name) {
-            if (orderedPlayers.indexOf(name) === -1) {
-                orderedPlayers.push(name);
-            }
-        });
-
-        // Render each player's grid
+        // Per-type accent for the card's left border.
+        var accents = {
+            exact_match: '#00f5ff', streak: '#ff6600', bet_win: '#39ff14',
+            heartbreaker: '#ff2d6a', speed_record: '#00f5ff', comeback: '#39ff14',
+            photo_finish: '#ffd34d'
+        };
         var html = '';
-        orderedPlayers.forEach(function(playerName, index) {
-            var grid = emojiGrids[playerName];
-            var gridLines = grid.split('\n').map(function(line) {
-                return '<div class="emoji-grid-line">' + utils.escapeHtml(line) + '</div>';
-            }).join('');
-
-            html += '<div class="dashboard-share-card" style="animation-delay: ' + (index * 0.1) + 's">' +
-                '<div class="dashboard-share-player-name">' + utils.escapeHtml(playerName) + '</div>' +
-                '<div class="emoji-grid-preview">' + gridLines + '</div>' +
+        highlights.forEach(function(h, index) {
+            var accent = accents[h.type] || '#ff2d6a';
+            var text = utils.t('highlights.' + h.description, h.description_params || {}) || '';
+            var roundBadge = h.round
+                ? '<div class="hcard-round">' + (utils.t('game.roundLabel') || 'Round') + ' ' + h.round + '</div>'
+                : '';
+            html += '<div class="hcard" style="border-left-color:' + accent + ';animation-delay:' + (index * 0.12) + 's">' +
+                '<div class="hcard-icon" aria-hidden="true">' + (h.emoji || '✨') + '</div>' +
+                '<div class="hcard-body">' +
+                    '<div class="hcard-text">' + utils.escapeHtml(text) + '</div>' +
+                    roundBadge +
+                '</div>' +
             '</div>';
         });
-
-        gridsEl.innerHTML = html;
+        container.innerHTML = html;
         container.classList.remove('hidden');
     }
 
@@ -1526,7 +1728,7 @@
      * Initialize dashboard
      */
     async function init() {
-        console.log('[Dashboard] Initializing...');
+        debug('[Dashboard] Initializing...');
         // Initialize i18n (Story 12.5)
         // Guard clause: wait for BeatifyI18n in case fallback script is loading
         var i18nAvailable = await utils.waitForI18n();
@@ -1537,7 +1739,12 @@
             BeatifyI18n.initPageTranslations();
         }
         connectWebSocket();
-        requestWakeLock();  // #1122: keep TV/monitor display awake
+        _initWakeBanner();  // #1285: wire the activation banner's tap handlers
+        // #1122: keep TV/monitor display awake. On a passive iOS display the
+        // native lock is gesture-gated and won't engage here, so surface the
+        // #1285 banner that offers a one-tap re-try inside a trusted gesture.
+        var locked = await requestWakeLock();
+        if (!locked) _showWakeBanner();
     }
 
     // Start when DOM is ready
@@ -1559,7 +1766,7 @@
             navigator.serviceWorker.register('/beatify/sw.js', {
                 scope: '/beatify/'
             }).then(function(registration) {
-                console.log('[Dashboard] SW registered:', registration.scope);
+                debug('[Dashboard] SW registered:', registration.scope);
             }).catch(function(error) {
                 console.warn('[Dashboard] SW registration failed:', error);
             });

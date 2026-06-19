@@ -18,7 +18,11 @@ from homeassistant.components.frontend import (
 )
 
 from .analytics import AnalyticsStorage
-from .const import DOMAIN
+from .const import (
+    CONF_ENABLE_COMPANION_AUTH_BYPASS,
+    DEFAULT_ENABLE_COMPANION_AUTH_BYPASS,
+    DOMAIN,
+)
 from .game.playlist import (
     async_discover_playlists,
     async_ensure_playlist_directory,
@@ -65,6 +69,13 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# hass.data key (outside DOMAIN, so it survives async_unload_entry popping
+# hass.data[DOMAIN]) guarding one-time HTTP route registration. aiohttp routes
+# cannot be unregistered, so views/WS/static paths must be registered exactly
+# once per HA run — re-registering on a config-entry reload would shadow the
+# new handlers with stale duplicates (#1364).
+_ROUTES_REGISTERED = f"{DOMAIN}_routes_registered"
+
 
 def _read_manifest_version() -> str:
     """Read the integration version from manifest.json (executor-safe).
@@ -90,8 +101,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Beatify from a config entry."""
     _LOGGER.debug("Setting up Beatify integration")
 
-    # Initialize domain data storage
-    hass.data.setdefault(DOMAIN, {})
+    # hass.data[DOMAIN] is assigned wholesale below once discovery + game
+    # infrastructure are built, so an early setdefault here is redundant (#1402
+    # B6). The only reader before that assignment is _read_manifest_version,
+    # which doesn't touch hass.data.
 
     # Read version from manifest.json once at setup (#784). Done in executor
     # because HA 2026.2+ flags blocking I/O at module level — but doing it
@@ -149,6 +162,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Issue #603/#609: Create GameService facade
     game_service = GameService(hass, game_state)
 
+    # #1357: Companion auth-bypass opt-in. Read once at setup; the auth helper
+    # in server/companion_auth.py reads this live from hass.data per request,
+    # so the options-update listener below can flip it without a full reload.
+    companion_auth_bypass_enabled = entry.options.get(
+        CONF_ENABLE_COMPANION_AUTH_BYPASS, DEFAULT_ENABLE_COMPANION_AUTH_BYPASS
+    )
+
     # Store discovery results and game infrastructure
     hass.data[DOMAIN] = {
         "entry_id": entry.entry_id,
@@ -161,53 +181,87 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "ws_handler": ws_handler,
         "stats": stats_service,
         "analytics": analytics,
+        "companion_auth_bypass_enabled": companion_auth_bypass_enabled,
     }
+
+    # #1357: refresh the bypass flag in place when the options change. No full
+    # reload is needed — companion_auth.py reads hass.data live per request.
+    entry.async_on_unload(entry.add_update_listener(_async_update_options))
 
     # Issue #441: Forward sensor and binary_sensor platforms
     await hass.config_entries.async_forward_entry_setups(
         entry, ["sensor", "binary_sensor"]
     )
 
-    # Register HTTP views
-    hass.http.register_view(AdminView(hass))
-    hass.http.register_view(LauncherView(hass))
-    # Safari 18 /auth/token workaround — server-side OAuth handling, the
-    # frontend never POSTs to auth endpoints (rc15+).
-    hass.http.register_view(BeatifyAuthCallbackView(hass))
-    hass.http.register_view(BeatifyAuthRefreshView(hass))
-    hass.http.register_view(StatusView(hass))
-    hass.http.register_view(CapabilitiesView(hass))
-    hass.http.register_view(LightsView(hass))  # Issue #331
-    hass.http.register_view(AlbumArtView(hass))  # Issue #933 — remote album art
-    hass.http.register_view(PreviewLightsView(hass))  # Issue #408
-    hass.http.register_view(TtsEntitiesView(hass))  # Issue #1073
-    hass.http.register_view(TtsTestView(hass))
-    hass.http.register_view(StartGameView(hass))
-    hass.http.register_view(StartGameplayView(hass))
-    hass.http.register_view(EndGameView(hass))
-    hass.http.register_view(
-        ForceResetView(hass)
-    )  # #777 follow-up — stuck-state escape hatch
-    hass.http.register_view(RematchGameView(hass))  # Issue #108
-    hass.http.register_view(PlayerView(hass))
-    hass.http.register_view(
-        SwJsView(hass)
-    )  # #780 — SW at /beatify/sw.js for /beatify/ scope
-    hass.http.register_view(GameStatusView(hass))
-    hass.http.register_view(DashboardView(hass))
-    hass.http.register_view(StatsView(hass))
-    hass.http.register_view(AnalyticsView(hass))
-    hass.http.register_view(AnalyticsPageView(hass))
-    hass.http.register_view(SongStatsView(hass))  # Story 19.7
-    hass.http.register_view(PlaylistRequestsView(hass))  # Story 44
-    hass.http.register_view(SavePlaylistView(hass))  # #1057
-    hass.http.register_view(UsageView(hass))  # v3.3 Playlist Hub local stats
+    # Register HTTP views, the WebSocket route, and static paths exactly ONCE
+    # per HA run (#1364). aiohttp's router cannot unregister resources, and its
+    # dispatcher resolves to the FIRST matching resource — so re-registering on
+    # a config-entry reload (unload + setup) would leave stale handlers serving
+    # while the freshly-wired game state's callbacks point at the new, empty
+    # handler. All views resolve their state from hass.data at request time, and
+    # the WS route below dispatches to the *current* handler in hass.data, so a
+    # single registration keeps working across reloads.
+    if not hass.data.get(_ROUTES_REGISTERED):
+        hass.http.register_view(AdminView(hass))
+        hass.http.register_view(LauncherView(hass))
+        # Safari 18 /auth/token workaround — server-side OAuth handling, the
+        # frontend never POSTs to auth endpoints (rc15+).
+        hass.http.register_view(BeatifyAuthCallbackView(hass))
+        hass.http.register_view(BeatifyAuthRefreshView(hass))
+        hass.http.register_view(StatusView(hass))
+        hass.http.register_view(CapabilitiesView(hass))
+        hass.http.register_view(LightsView(hass))  # Issue #331
+        hass.http.register_view(AlbumArtView(hass))  # Issue #933 — remote album art
+        hass.http.register_view(PreviewLightsView(hass))  # Issue #408
+        hass.http.register_view(TtsEntitiesView(hass))  # Issue #1073
+        hass.http.register_view(TtsTestView(hass))
+        hass.http.register_view(StartGameView(hass))
+        hass.http.register_view(StartGameplayView(hass))
+        hass.http.register_view(EndGameView(hass))
+        hass.http.register_view(
+            ForceResetView(hass)
+        )  # #777 follow-up — stuck-state escape hatch
+        hass.http.register_view(RematchGameView(hass))  # Issue #108
+        hass.http.register_view(PlayerView(hass))
+        hass.http.register_view(
+            SwJsView(hass)
+        )  # #780 — SW at /beatify/sw.js for /beatify/ scope
+        hass.http.register_view(GameStatusView(hass))
+        hass.http.register_view(DashboardView(hass))
+        hass.http.register_view(StatsView(hass))
+        hass.http.register_view(AnalyticsView(hass))
+        hass.http.register_view(AnalyticsPageView(hass))
+        hass.http.register_view(SongStatsView(hass))  # Story 19.7
+        hass.http.register_view(PlaylistRequestsView(hass))  # Story 44
+        hass.http.register_view(SavePlaylistView(hass))  # #1057
+        hass.http.register_view(UsageView(hass))  # v3.3 Playlist Hub local stats
 
-    # Register WebSocket endpoint
-    hass.http.app.router.add_get("/beatify/ws", ws_handler.handle)
+        # Register WebSocket endpoint via a stable dispatch closure that
+        # resolves the *current* handler from hass.data at call time (#1364).
+        # Binding ws_handler.handle directly would pin the route to the handler
+        # created in THIS setup; after a reload the new game state's callbacks
+        # would target a new handler while clients kept landing in the old one's
+        # (now empty) connection set, freezing round-end broadcasts.
+        async def _ws_dispatch(request):
+            handler = hass.data.get(DOMAIN, {}).get("ws_handler")
+            if handler is None:
+                from aiohttp import web  # noqa: PLC0415
 
-    # Register static file paths
-    await async_register_static_paths(hass)
+                return web.Response(status=503, text="Beatify not ready")
+            return await handler.handle(request)
+
+        hass.http.app.router.add_get("/beatify/ws", _ws_dispatch)
+
+        # Register static file paths
+        await async_register_static_paths(hass)
+
+        hass.data[_ROUTES_REGISTERED] = True
+        _LOGGER.debug("Beatify HTTP routes registered (once per HA run)")
+    else:
+        _LOGGER.debug(
+            "Beatify HTTP routes already registered this HA run — skipping "
+            "re-registration on reload (#1364)"
+        )
 
     # Register sidebar panel (Story 10.3)
     # Points to launcher page which opens game in a new tab (fullscreen, no HA chrome)
@@ -226,23 +280,81 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Refresh in-place state when the integration options change (#1357).
+
+    Currently this only mirrors the ``enable_companion_auth_bypass`` toggle into
+    ``hass.data[DOMAIN]``. The auth helper reads that value live per request, so
+    flipping the option takes effect immediately without reloading the entry.
+    """
+    domain_data = hass.data.get(DOMAIN)
+    if not isinstance(domain_data, dict):
+        return
+    domain_data["companion_auth_bypass_enabled"] = entry.options.get(
+        CONF_ENABLE_COMPANION_AUTH_BYPASS, DEFAULT_ENABLE_COMPANION_AUTH_BYPASS
+    )
+    _LOGGER.debug(
+        "Beatify options updated: companion_auth_bypass_enabled=%s",
+        domain_data["companion_auth_bypass_enabled"],
+    )
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.debug("Unloading Beatify integration")
 
-    # Issue #441: Unload sensor and binary_sensor platforms
-    await hass.config_entries.async_unload_platforms(entry, ["sensor", "binary_sensor"])
+    # Issue #441: Unload sensor and binary_sensor platforms.
+    # Issue #1392: gate cleanup on the platform-unload result and propagate it.
+    # If a platform unload fails, leave the panel and hass.data[DOMAIN] in place
+    # so HA does not treat the entry as fully unloaded while entities (and their
+    # _game_state callbacks) still exist.
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, ["sensor", "binary_sensor"]
+    )
 
-    # Remove sidebar panel (Story 10.3)
-    try:
-        async_remove_panel(hass, "beatify")
-        _LOGGER.debug("Beatify sidebar panel removed")
-    except KeyError:
-        _LOGGER.debug("Beatify sidebar panel was not registered, skipping removal")
+    if unload_ok:
+        # Remove sidebar panel (Story 10.3)
+        try:
+            async_remove_panel(hass, "beatify")
+            _LOGGER.debug("Beatify sidebar panel removed")
+        except KeyError:
+            _LOGGER.debug("Beatify sidebar panel was not registered, skipping removal")
 
-    # Clean up domain data
-    if DOMAIN in hass.data:
-        hass.data.pop(DOMAIN)
+        # #1391: tear down the live game infrastructure BEFORE popping hass.data,
+        # otherwise running game tasks/timers and open WebSockets keep operating on
+        # an orphaned GameState/handler (and race a fresh GameState after reload —
+        # two timers driving one media player). Best-effort so a teardown error here
+        # never blocks the unload.
+        domain_data = hass.data.get(DOMAIN, {})
+        game_state = domain_data.get("game")
+        if game_state is not None:
+            try:
+                game_state.async_shutdown()
+            except Exception:  # noqa: BLE001
+                _LOGGER.warning(
+                    "Error shutting down game state on unload", exc_info=True
+                )
+        ws_handler = domain_data.get("ws_handler")
+        if ws_handler is not None:
+            try:
+                await ws_handler.async_close_all()
+            except Exception:  # noqa: BLE001
+                _LOGGER.warning(
+                    "Error closing WebSocket connections on unload", exc_info=True
+                )
 
-    _LOGGER.info("Beatify integration unloaded")
-    return True
+        # Clean up domain data
+        if DOMAIN in hass.data:
+            domain_data = hass.data.pop(DOMAIN)
+            # Flush any pending debounced analytics error save before teardown (#1388)
+            analytics = domain_data.get("analytics")
+            if analytics is not None:
+                await analytics.async_shutdown()
+
+        _LOGGER.info("Beatify integration unloaded")
+    else:
+        _LOGGER.warning(
+            "Beatify platform unload failed; leaving panel and domain data in place"
+        )
+
+    return unload_ok

@@ -7,15 +7,17 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from aiohttp import WSMsgType, web
+from aiohttp import WSCloseCode, WSMsgType, web
 
 from custom_components.beatify.const import (
     ERR_GAME_NOT_STARTED,
     LOBBY_DISCONNECT_GRACE_PERIOD,
 )
 from custom_components.beatify.server.serializers import (
+    REDACTED_PLACEHOLDER,
     build_state_message,
     get_game_state,
+    redact_state_for_player,
 )
 from custom_components.beatify.server.ws_handlers import (
     handle_admin,
@@ -66,7 +68,6 @@ class BeatifyWebSocketHandler:
         """
         self.hass = hass
         self.connections: set[web.WebSocketResponse] = set()
-        self._pending_removals: dict[str, asyncio.Task] = {}
         self._admin_disconnect_task: asyncio.Task | None = None
         self._analytics: AnalyticsStorage | None = None
         # Debouncing for concurrent player joins (Issue #41)
@@ -292,15 +293,53 @@ class BeatifyWebSocketHandler:
         if not targets:
             return
 
+        # #1366: the broadcast payload carries the round's answers (admin_song
+        # year; song.artist/title in title_artist_mode) for the spectator admin
+        # / TV. Sent unfiltered, any player could read them off the WebSocket
+        # before guessing. Redact per-recipient: only the spectator admin WS
+        # gets the answers; every player connection gets a redacted copy.
+        player_message = self._redact_for_player(message, game_state)
+
+        admin_ws = game_state._admin_ws if game_state else None
+
         # Build list of send tasks for all open connections
         tasks = []
         for ws in list(targets):
             if not ws.closed:
-                tasks.append(self._safe_send(ws, message))
+                payload = message if ws is admin_ws else player_message
+                tasks.append(self._safe_send(ws, payload))
 
         # Execute all sends in parallel
         if tasks:
             await asyncio.gather(*tasks)
+
+    @staticmethod
+    def _redact_for_player(message: dict, game_state) -> dict:  # noqa: ANN001
+        """Return the player-safe variant of an answer-bearing broadcast (#1366).
+
+        Returns ``message`` unchanged for payloads that carry no answers.
+        ``metadata_update`` frames (sent mid-PLAYING when song metadata lands)
+        have no ``phase`` / ``title_artist_mode`` of their own, so the
+        title_artist context is taken from ``game_state``.
+        """
+        msg_type = message.get("type")
+        if msg_type == "state":
+            return redact_state_for_player(message)
+        if msg_type == "metadata_update" and game_state is not None:
+            from custom_components.beatify.game.state import (  # noqa: PLC0415
+                GamePhase,
+            )
+
+            if (
+                game_state.title_artist_mode
+                and game_state.phase == GamePhase.PLAYING
+                and isinstance(message.get("song"), dict)
+            ):
+                song = dict(message["song"])
+                song["artist"] = REDACTED_PLACEHOLDER
+                song["title"] = REDACTED_PLACEHOLDER
+                return {**message, "song": song}
+        return message
 
     async def _safe_send(self, ws: web.WebSocketResponse, message: dict) -> None:
         """
@@ -313,7 +352,7 @@ class BeatifyWebSocketHandler:
         """
         try:
             await ws.send_json(message)
-        except Exception as err:  # noqa: BLE001
+        except (ConnectionError, RuntimeError) as err:
             _LOGGER.warning("Failed to send to WebSocket: %s", err)
 
     async def debounced_broadcast_state(self) -> None:
@@ -454,12 +493,6 @@ class BeatifyWebSocketHandler:
         Called when game ends to prevent dangling async tasks.
 
         """
-        # Cancel all pending player removals
-        for task in list(self._pending_removals.values()):
-            if not task.done():
-                task.cancel()
-        self._pending_removals.clear()
-
         # Cancel admin disconnect task
         if self._admin_disconnect_task and not self._admin_disconnect_task.done():
             self._admin_disconnect_task.cancel()
@@ -467,15 +500,37 @@ class BeatifyWebSocketHandler:
 
         _LOGGER.debug("Cleaned up all pending game tasks")
 
-    def cancel_pending_removal(self, player_name: str) -> None:
-        """
-        Cancel a pending player removal (on reconnect).
+    async def async_close_all(self) -> None:
+        """Cancel pending tasks and close every open WebSocket on unload (#1391).
 
-        Args:
-            player_name: Name of reconnecting player
-
+        ``async_unload_entry`` previously left this handler's tasks
+        (``_admin_disconnect_task``, ``_broadcast_debounce_task``) running and
+        every player/admin WebSocket open, pinning the orphaned handler +
+        GameState after the integration was torn down. This cancels all of them
+        and sends each client a going-away close so they reconnect cleanly to a
+        fresh handler after reload.
         """
-        if player_name in self._pending_removals:
-            self._pending_removals[player_name].cancel()
-            del self._pending_removals[player_name]
-            _LOGGER.info("Cancelled removal for reconnecting player: %s", player_name)
+        # Reuse the existing pending-task cleanup (_admin_disconnect_task),
+        # then additionally cancel the debounce task that cleanup_game_tasks
+        # does not cover.
+        await self.cleanup_game_tasks()
+        if self._broadcast_debounce_task and not self._broadcast_debounce_task.done():
+            self._broadcast_debounce_task.cancel()
+        self._broadcast_debounce_task = None
+
+        # Close every open connection with a going-away code. Snapshot the set
+        # first: ws.close() resolves the handle() finally-block which discards
+        # from self.connections, mutating it mid-iteration otherwise.
+        for ws in list(self.connections):
+            if not ws.closed:
+                try:
+                    await ws.close(
+                        code=WSCloseCode.GOING_AWAY, message=b"beatify-unload"
+                    )
+                except Exception:  # noqa: BLE001 — best-effort teardown
+                    _LOGGER.debug(
+                        "Error closing WebSocket during unload", exc_info=True
+                    )
+        self.connections.clear()
+
+        _LOGGER.debug("Closed all WebSocket connections on unload")

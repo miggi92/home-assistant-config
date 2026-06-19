@@ -352,6 +352,8 @@
     "stop": "Stop",
     "stopSong": "Song stoppen",
     "connectionLost": "Verbindung verloren — wird reconnected...",
+    "wsAuthFailed": "Home Assistant hat den Zugriffstoken abgelehnt. Erneute Anmeldung…",
+    "companionLocalNetworkRequired": "Beatify-Admin benötigt lokalen Netzwerkzugriff aus der Companion-App — öffne Beatify in einem externen Browser oder verbinde dich mit deinem Heim-WLAN.",
     "confirmIntro": "Runde starten",
     "next": "Weiter",
     "nextRound": "Nächste Runde",
@@ -661,10 +663,16 @@
     "round": "Runde {current}/{total}",
     "rounds": "Runden",
     "players": "Spieler",
+    "playersJoined": "{n} Spieler beigetreten",
+    "playersJoinedOne": "{n} Spieler beigetreten",
     "topGuesses": "Beste Tipps dieser Runde",
     "submissions": "Abgaben",
     "timeRemaining": "Zeit",
-    "castToTv": "Auf TV zeigen:"
+    "castToTv": "Auf TV zeigen:",
+    "wakeLockTitle": "Bildschirm wachhalten?",
+    "wakeLockBody": "Verhindert, dass sich das TV-Display während des Spiels abschaltet.",
+    "wakeLockActivate": "Aktivieren",
+    "wakeLockDismiss": "Schließen"
   },
   "launcher": {
     "title": "Beatify",
@@ -878,7 +886,9 @@
       "empty": "Noch keine Lautsprecher gefunden",
       "emptyHint": "Music Assistant installieren und aktualisieren",
       "capAll": "Alle Dienste",
+      "capMost": "Alle gängigen Dienste",
       "capOnlyTemplate": "nur {provider}",
+      "capMoreTemplate": "{provider} +{count}",
       "capNone": "Keine Dienste"
     },
     "step2": {
@@ -1219,6 +1229,19 @@
       "parseFailed": "JSON-Parsing fehlgeschlagen: {error}",
       "songLabel": "Song #{n}",
       "songIssues": "Songs mit Problemen ({n})"
+    },
+    "guide": {
+      "heading": "So funktioniert's — Schritt für Schritt",
+      "step1": "Spotify-Playlist-URL unten einfügen und „<b>Prompt kopieren</b>“ klicken.",
+      "step2": "Prompt in ChatGPT, Claude.ai oder ein lokales LLM einfügen und ausführen.",
+      "step3": "Das vollständige <b>JSON</b> zurück in das Feld unten kopieren.",
+      "step4": "<b>Validieren</b> klicken — pro Zeile siehst du ✓/✗ je Feld.",
+      "warnTitle": "Mehr als ~32 Songs?",
+      "warnBody": "ChatGPT &amp; Claude brechen bei großen Playlists oft mittendrin ab. Teile sie in <b>Batches zu 30 Songs</b>: Prompt pro Batch ausführen, die songs-Arrays anschließend zusammenführen. Bricht ChatGPT mit unklarem Fehler ab, ist fast immer die Antwortlänge die Ursache."
     }
+  },
+  "starting": {
+    "headline": "Gleich geht's los!",
+    "sub": "Wir verbinden den Lautsprecher und laden die erste Runde. Schnappt euch schon mal eure Buzzer."
   }
 }

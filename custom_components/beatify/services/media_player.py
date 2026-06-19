@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import logging
-import sys
+import secrets
+from asyncio import timeout as async_timeout
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
-
-if sys.version_info >= (3, 11):
-    from asyncio import timeout as async_timeout
-else:
-    from async_timeout import timeout as async_timeout
 
 from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 from homeassistant.helpers.event import async_track_state_change_event
@@ -35,6 +33,7 @@ PLATFORM_CAPABILITIES: dict[str, dict[str, Any]] = {
         "youtube_music": True,
         "tidal": True,
         "deezer": True,
+        "amazon_music": False,
         "method": "uri",
         "warning": "Premium account must be configured in Music Assistant",
     },
@@ -44,6 +43,7 @@ PLATFORM_CAPABILITIES: dict[str, dict[str, Any]] = {
         "apple_music": False,
         "youtube_music": False,
         "tidal": False,
+        "amazon_music": False,
         "method": "uri",
         "warning": "Spotify must be linked in Sonos app",
     },
@@ -53,6 +53,7 @@ PLATFORM_CAPABILITIES: dict[str, dict[str, Any]] = {
         "apple_music": True,
         "youtube_music": False,
         "tidal": False,
+        "amazon_music": True,
         "method": "text_search",
         "warning": "Service must be linked in Alexa app",
         "caveat": "Uses voice search - may occasionally play different version",
@@ -97,6 +98,62 @@ PLAYBACK_TIMEOUT = 8.0
 # a new track on the first round. #777 showed 8s was too aggressive — rounds
 # advanced before the track had actually swapped on the speaker.
 MA_PLAYBACK_TIMEOUT = 15.0
+
+# #1381: Fast-path Path 2 (title-advanced-without-exact-match) must not
+# instant-accept an *arbitrary* title change. If a requested URI fails to
+# resolve in MA while the speaker's prior queue naturally auto-advances to its
+# next track within the wait window, the title changes to an unrelated song and
+# the old code confirmed it as success in ~1s — silently running a round whose
+# audio is the wrong track (the #795 failure class). Path 2 now requires cheap
+# evidence that the new title is plausibly OUR track: either a token overlap
+# with the expected title (remaster/translation tolerance, e.g. "Das Modell"
+# vs "The Model" share no tokens but the artist matches) OR the expected artist
+# appearing in the speaker's media_artist. The unbounded "any new title"
+# acceptance is reserved for the post-timeout #345 branch, where it is logged.
+_TITLE_TOKEN_MIN_LEN = 3
+
+
+def _normalize_for_match(text: str) -> str:
+    """Lower-case and strip non-alphanumeric to ASCII-ish tokens for matching."""
+    return "".join(c if c.isalnum() else " " for c in text.lower())
+
+
+def _title_tokens(text: str) -> set[str]:
+    """Significant word tokens of a title (drops short noise words/suffixes)."""
+    return {
+        tok
+        for tok in _normalize_for_match(text).split()
+        if len(tok) >= _TITLE_TOKEN_MIN_LEN
+    }
+
+
+def _titles_plausibly_match(expected_title: str, current_title: str) -> bool:
+    """Cheap similarity gate for fast-path Path 2 (#1381).
+
+    True when the two titles share at least one significant token, or one
+    normalized title is a prefix of the other (covers "(Remastered)" suffixes
+    and minor punctuation differences). False for genuinely unrelated titles
+    (e.g. the prior queue auto-advancing to a different song).
+    """
+    exp_norm = _normalize_for_match(expected_title).strip()
+    cur_norm = _normalize_for_match(current_title).strip()
+    if not exp_norm or not cur_norm:
+        return False
+    if cur_norm.startswith(exp_norm) or exp_norm.startswith(cur_norm):
+        return True
+    return bool(_title_tokens(expected_title) & _title_tokens(current_title))
+
+
+def _artist_matches(expected_artist: str, media_artist: str) -> bool:
+    """True when the expected artist is plausibly present in media_artist (#1381)."""
+    exp = _normalize_for_match(expected_artist).strip()
+    cur = _normalize_for_match(media_artist).strip()
+    if not exp or not cur:
+        return False
+    if exp in cur or cur in exp:
+        return True
+    return bool(_title_tokens(expected_artist) & _title_tokens(media_artist))
+
 
 # Timeout for waiting for metadata to update after playing (seconds)
 # Wait up to 2s for MA to push fresh metadata (album art, etc.) after a
@@ -148,7 +205,33 @@ _PROVIDER_URI_FIELDS: dict[str, tuple[str, ...]] = {
     "youtube_music": ("uri_youtube_music",),
     "tidal": ("uri_tidal",),
     "deezer": ("uri_deezer",),
+    # Amazon Music uses Alexa text search — no URI fields; playback via
+    # _play_via_alexa() with content_type="AMAZON_MUSIC".
+    "amazon_music": (),
 }
+
+
+# Process-global key used to sign the absolute URLs that the album-art proxy
+# is allowed to fetch (#1356). It is minted fresh on every HA start: only URLs
+# that *this* integration produced via ``proxy_album_art`` carry a valid
+# signature, which is what stops AlbumArtView from being an open SSRF proxy. A
+# restart simply invalidates previously-signed URLs — clients 403 once and pick
+# up the freshly-signed URL from the next state broadcast.
+_ALBUM_ART_SIGNING_KEY = secrets.token_bytes(32)
+
+
+def _album_art_signature(url: str) -> str:
+    """Return the hex HMAC-SHA256 signature for an album-art proxy URL (#1356)."""
+    return hmac.new(
+        _ALBUM_ART_SIGNING_KEY, url.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
+def album_art_signature_is_valid(url: str, signature: str) -> bool:
+    """Verify, in constant time, that ``signature`` matches ``url`` (#1356)."""
+    if not signature:
+        return False
+    return hmac.compare_digest(_album_art_signature(url), signature)
 
 
 def proxy_album_art(url: str) -> str:
@@ -162,12 +245,21 @@ def proxy_album_art(url: str) -> str:
     the HA server fetch the image (it can reach the LAN) and re-serve it
     same-origin.
 
+    The wrapped URL carries an HMAC signature (#1356) so the proxy only ever
+    fetches URLs the integration itself produced — without it the endpoint
+    would be an unauthenticated server-side request forge.
+
     Relative URLs — HA's own signed media-player proxy path, the
     ``no-artwork.svg`` fallback — are already same-origin and pass through
     unchanged.
     """
     if url and url.startswith(("http://", "https://")):
-        return "/beatify/api/albumart?url=" + quote(url, safe="")
+        return (
+            "/beatify/api/albumart?url="
+            + quote(url, safe="")
+            + "&sig="
+            + _album_art_signature(url)
+        )
     return url
 
 
@@ -201,6 +293,11 @@ class MediaPlayerService:
         # candidate list so subsequent songs don't pay the primary-attempt
         # timeout on every round (#768).
         self._ma_preferred_uri_field: str | None = None
+        # #1381: which acceptance path confirmed the most recent successful
+        # _try_ma_play. 1 = expected-title substring (Path 1, strongest), 2 =
+        # similarity/artist gate (Path 2), 0 = post-timeout #345 tolerance.
+        # Only Path 1 is strong enough to promote a URI field to preferred.
+        self._last_confirm_path: int = 0
         # #808 follow-up: classify the most recent failure mode so the
         # caller (game/state.py:start_round) can decide whether to count
         # this against MAX_SONG_RETRIES (real failure) or skip silently
@@ -219,6 +316,13 @@ class MediaPlayerService:
         #                   game pauses on systemic issues (offline speaker,
         #                   broken provider auth across the board).
         self.last_failure_reason: str | None = None
+
+        # #1363: set when Beatify itself issues a same-song media_stop after a
+        # stale-title detect (line ~729). The stop forces the speaker to
+        # 'idle'; if the NEXT cascade candidate also fails to resolve, the
+        # idle-failure branch must NOT misread that self-induced idle as a
+        # systemic 'error' (which pauses the game). Reset before each song.
+        self._stopped_for_cascade: bool = False
 
     def set_analytics(self, analytics: AnalyticsStorage) -> None:
         """
@@ -314,7 +418,7 @@ class MediaPlayerService:
                 return await self._play_via_alexa(song)
             _LOGGER.error("Unsupported platform: %s", self._platform)
             return False
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             _LOGGER.error(
                 "Playback timed out after %ss for %s: %s",
                 PLAYBACK_TIMEOUT,
@@ -376,6 +480,49 @@ class MediaPlayerService:
         # spotify:track:<id> and https:// URLs are passed through unchanged
         return uri
 
+    @classmethod
+    def _uri_match_tokens(cls, uri: str) -> list[str]:
+        """Tokens to look for in MA's media_content_id to confirm playback.
+
+        Issue #1380: the raw Beatify-internal URI is not what MA reports in
+        media_content_id — MA echoes the _convert_uri_for_ma form. To reliably
+        detect that the requested track started, match against BOTH the
+        MA-converted URI and the bare track ID (last path/ID segment), which is
+        identical across the internal and the MA-converted form for every
+        provider (Spotify, Apple Music, Tidal, YT Music, Deezer).
+
+        Args:
+            uri: The Beatify-internal URI that was requested.
+
+        Returns:
+            Ordered, deduped, non-empty substring tokens.
+
+        """
+        tokens: list[str] = []
+
+        def _add(token: str | None) -> None:
+            if token and token not in tokens:
+                tokens.append(token)
+
+        # The form MA actually reports.
+        _add(cls._convert_uri_for_ma(uri))
+        # The raw form too, in case a provider echoes the internal URI verbatim.
+        _add(uri)
+
+        # Bare track ID — stable across both forms.
+        if uri.startswith("spotify:"):
+            _add(uri.split(":")[-1])
+        elif "watch?v=" in uri:
+            # https://music.youtube.com/watch?v=<id>[&extra]
+            _add(uri.split("watch?v=", 1)[-1].split("&", 1)[0])
+        elif "://" in uri:
+            # applemusic://track/<id>, tidal://track/<id>, deezer://track/<id>,
+            # and plain https URLs — the bare ID is the last "/"-segment.
+            tail = uri.rstrip("/").rsplit("/", 1)[-1]
+            _add(tail.split("?", 1)[0])
+
+        return tokens
+
     def _get_ma_uri_candidates(
         self, song: dict[str, Any]
     ) -> list[tuple[str | None, str]]:
@@ -388,9 +535,17 @@ class MediaPlayerService:
         the user said "Apple Music only" just buys 15s timeouts per
         unsupported provider before MA reports `MediaNotFoundError`.
 
-        Order: previously-successful field (if any) first, then the user's
-        selected URI (`_resolved_uri`), then any remaining provider URI
-        fields. URIs are converted for MA and deduped by their converted form.
+        Order: the user's selected URI (`_resolved_uri`, storefront-resolved by
+        the caller) ALWAYS first, then the previously-successful field (if any),
+        then any remaining provider URI fields. URIs are converted for MA and
+        deduped by their converted form.
+
+        For apple_music, the legacy `uri_apple_music` field (a single,
+        historically US-storefront ID) is dropped from the alternates whenever
+        the song carries a `uri_apple_music_by_region` map — otherwise a non-US
+        user would re-pay the wrong-storefront timeout #808 eliminated, and a
+        cross-storefront-lucky US hit could become the learned preferred field
+        and bypass region-correct resolution for the rest of the session (#1379).
 
         Returns:
             List of `(field_name, converted_uri)`. `field_name` is `None` for
@@ -399,7 +554,25 @@ class MediaPlayerService:
         """
         seen: set[str] = set()
         candidates: list[tuple[str | None, str]] = []
-        provider_fields = _PROVIDER_URI_FIELDS.get(self._provider, ())
+        # Validate the dispatch key explicitly (#1276). An unknown provider
+        # (key absent from the table) is a config-level mismatch — the wizard
+        # is supposed to gate it, but if it slips through, `.get(..., ())`
+        # would silently yield zero candidates and playback would fail with
+        # no actionable diagnostic. This is the silent-fail pattern behind
+        # #768/#808. A KNOWN provider mapped to `()` (e.g. amazon_music, which
+        # plays via Alexa text-search, not URIs) is intentional and stays
+        # quiet. `_resolved_uri` is still honored below as a last resort so an
+        # unexpected provider doesn't hard-fail when the song does carry a URI.
+        provider_fields = _PROVIDER_URI_FIELDS.get(self._provider)
+        if provider_fields is None:
+            _LOGGER.warning(
+                "MA dispatch: unknown provider %r — no URI field mapping; "
+                "falling back to _resolved_uri only for %s - %s (#1276)",
+                self._provider,
+                song.get("artist"),
+                song.get("title"),
+            )
+            provider_fields = ()
 
         def _add(field: str | None, raw: str | None) -> None:
             if not raw:
@@ -410,21 +583,45 @@ class MediaPlayerService:
             seen.add(converted)
             candidates.append((field, converted))
 
+        # #1379: storefront-unaware fallback guard. For apple_music, the legacy
+        # `uri_apple_music` field holds a single (historically US-storefront)
+        # track ID. The caller (`get_song_uri`) already resolves `_resolved_uri`
+        # storefront-aware from `uri_apple_music_by_region` when that map exists.
+        # Appending the legacy US field as an alternate for a non-US user
+        # re-introduces exactly the wrong-storefront 15s stale-title timeout that
+        # #808 eliminated — and if that US ID ever resolves cross-storefront, it
+        # becomes the learned preferred field and systematically outranks the
+        # region-correct URI for the rest of the session. When a regional map is
+        # present, drop the legacy field entirely so only `_resolved_uri` (the
+        # region-correct ID, or None when unavailable) is tried.
+        skip_legacy_apple = self._provider == "apple_music" and bool(
+            song.get("uri_apple_music_by_region")
+        )
+
+        def _field_eligible(field: str) -> bool:
+            return not (skip_legacy_apple and field == "uri_apple_music")
+
+        # #1379: `_resolved_uri` is ALWAYS tried first — it is the URI Beatify
+        # resolved for the user's selected provider AND storefront. The learned
+        # preference must never outrank it (a US ID that resolved once must not
+        # systematically bypass storefront-correct resolution); the preference is
+        # used only to order the REMAINING alternates below.
+        _add(None, song.get("_resolved_uri"))
+
         # Learned preference — but only if it's a field belonging to the
         # current provider (the cache survives across games where provider
-        # may have changed).
+        # may have changed) and not a legacy field we're skipping for storefront
+        # reasons (#1379). Ordered ahead of the other alternates, behind primary.
         if (
             self._ma_preferred_uri_field
             and self._ma_preferred_uri_field in provider_fields
+            and _field_eligible(self._ma_preferred_uri_field)
         ):
             _add(self._ma_preferred_uri_field, song.get(self._ma_preferred_uri_field))
 
-        # Primary: the URI Beatify picked based on the user's selected provider.
-        _add(None, song.get("_resolved_uri"))
-
         # Remaining alternates within the same provider.
         for field in provider_fields:
-            if field != self._ma_preferred_uri_field:
+            if field != self._ma_preferred_uri_field and _field_eligible(field):
                 _add(field, song.get(field))
 
         return candidates
@@ -443,11 +640,17 @@ class MediaPlayerService:
         # #808 follow-up: clear stale failure classification before each
         # attempt so start_round reads only the result of THIS song.
         self.last_failure_reason = None
+        # #1363: clear the cascade-stop flag at the start of each song so a
+        # stop from a PRIOR song never leaks into this song's classification.
+        self._stopped_for_cascade = False
 
         candidates = self._get_ma_uri_candidates(song)
         if not candidates:
-            _LOGGER.error(
-                "MA playback: no URIs for %s - %s",
+            # #1276: surface the provider so a missing-URI miss is debuggable
+            # (which provider was selected vs. which fields the song carries).
+            _LOGGER.warning(
+                "MA playback: no playable URI for provider %r — %s - %s (#1276)",
+                self._provider,
                 song.get("artist"),
                 song.get("title"),
             )
@@ -455,6 +658,7 @@ class MediaPlayerService:
             return False
 
         expected_title = song.get("title") or ""
+        expected_artist = song.get("artist") or ""
         if not expected_title:
             _LOGGER.warning(
                 "MA playback: no expected title — skipping title verification"
@@ -468,9 +672,20 @@ class MediaPlayerService:
                     len(candidates),
                     uri,
                 )
-            success = await self._try_ma_play(uri, expected_title)
+            success = await self._try_ma_play(uri, expected_title, expected_artist)
             if success:
-                if field and field != self._ma_preferred_uri_field:
+                # #1381: only learn a candidate's URI field as the new preferred
+                # one when an EXPECTED-TITLE substring match (Path 1) confirmed
+                # it. A weaker confirmation (artist/token gate, or the
+                # post-timeout #345 tolerance) is not strong enough proof that
+                # THIS field actually resolved our track — promoting it would
+                # reorder future candidates wrongly for a field that never
+                # really worked.
+                if (
+                    field
+                    and field != self._ma_preferred_uri_field
+                    and self._last_confirm_path == 1
+                ):
                     _LOGGER.debug("MA preferred URI field now: %s (#768)", field)
                     self._ma_preferred_uri_field = field
                 self.last_failure_reason = None
@@ -486,7 +701,9 @@ class MediaPlayerService:
         # _try_ma_play attempt (set by that method); start_round reads it.
         return False
 
-    async def _try_ma_play(self, uri: str, expected_title: str) -> bool:
+    async def _try_ma_play(
+        self, uri: str, expected_title: str, expected_artist: str = ""
+    ) -> bool:
         """
         Attempt a single MA `play_media` call and wait for playback confirmation.
 
@@ -495,6 +712,10 @@ class MediaPlayerService:
         URI. Returns True both when playback is confirmed AND when the speaker
         is showing ambiguous-but-changing state (MA may still be buffering —
         preserving the #345 tolerance so we don't chase flaky retries).
+
+        `expected_artist` (#1381) feeds the fast-path Path 2 similarity gate so
+        an arbitrary title change from the prior queue auto-advancing is not
+        instant-accepted as our track.
         """
         _LOGGER.debug("MA playback: %s on %s", uri, self._entity_id)
 
@@ -547,8 +768,9 @@ class MediaPlayerService:
 
             Two acceptance paths:
               1. Title contains expected (substring) — the strongest signal.
-              2. Title moved to ANYTHING different from before the call — MA
-                 is making progress on a new track, accept it.
+              2. Title moved to a *plausibly-our-track* new title — MA is
+                 making progress on a new track that shares a token with the
+                 expected title, or whose artist matches the expected artist.
 
             Path 2 was previously only reachable via the 15-second slow-buffer
             tolerance below. Levtos reported that pressing "next" caused the
@@ -559,6 +781,17 @@ class MediaPlayerService:
             the wait timed out. With path 2 in the fast-path, the UI now
             returns within ~1s of MA actually starting playback.
 
+            #1381 tightened Path 2: it used to accept ANY title that differed
+            from `title_before`. If the requested URI failed to resolve in MA
+            while the speaker's prior queue auto-advanced to its next track
+            during the 15s window, that unrelated title was instant-confirmed
+            as success — the #795 "guess the year of SongX with no SongX audio"
+            class, but silently. Path 2 now requires a cheap similarity gate
+            (token overlap / normalized-prefix vs expected_title, OR expected
+            artist present in media_artist). The unbounded "any new title"
+            acceptance is reserved for the post-timeout #345 branch, where it
+            is logged.
+
             #795 invariant still holds: if the title is unchanged from
             before the call (`title_before`), neither path fires and we
             fall through to the title-must-advance hard-failure check.
@@ -567,23 +800,34 @@ class MediaPlayerService:
                 return False
             try:
                 current_title = state.attributes.get("media_title", "") or ""
+                current_artist = state.attributes.get("media_artist", "") or ""
                 position_updated = state.attributes.get("media_position_updated_at")
 
                 position_fresh = position_updated != position_updated_before
                 if not position_fresh:
                     return False
 
-                # Path 1: exact-ish title match (substring).
+                # Path 1: exact-ish title match (substring) — strongest signal,
+                # the only path strong enough to learn a preferred URI field.
                 if expected_lower and expected_lower in current_title.lower():
+                    self._last_confirm_path = 1
                     return True
                 # If no expected title was supplied, position-fresh alone is
                 # all the signal we have — accept (matches old behavior).
                 if not expected_lower:
+                    self._last_confirm_path = 2
                     return True
 
-                # Path 2: title moved to something different from before.
+                # Path 2 (#1381): title moved to a DIFFERENT title AND that
+                # title is plausibly our track (shared token / prefix) OR the
+                # artist matches. A bare "any different title" no longer
+                # qualifies — that is the prior-queue auto-advance trap.
                 if current_title and current_title != title_before:
-                    return True
+                    if _titles_plausibly_match(
+                        expected_title, current_title
+                    ) or _artist_matches(expected_artist, current_artist):
+                        self._last_confirm_path = 2
+                        return True
 
                 return False
             except (AttributeError, KeyError):
@@ -630,6 +874,25 @@ class MediaPlayerService:
 
         # Hard failure: speaker is idle/unavailable/off — song won't play
         if speaker_state in ("idle", "unavailable", "off", "unknown"):
+            # #1363: if the speaker is 'idle' only because WE stopped it after a
+            # prior same-song stale-title detect, this is a storefront-gap
+            # cascade (e.g. apple_music's `_resolved_uri` and a differing
+            # `uri_apple_music` both point at an unavailable catalog entry), NOT
+            # a systemic speaker/provider failure. Misclassifying it as 'error'
+            # makes state_lifecycle pause the whole game on a per-track gap —
+            # the exact #805/#808 regression. Keep it 'unavailable' so the game
+            # skips the song silently and tries the next one.
+            if self._stopped_for_cascade and speaker_state == "idle":
+                _LOGGER.warning(
+                    "MA playback failed after %.1fs for %s — speaker idle, but "
+                    "Beatify stopped it after a same-song stale-title detect. "
+                    "Treating as a storefront/catalog gap (unavailable), not a "
+                    "systemic error — game will skip this song silently. (#1363)",
+                    MA_PLAYBACK_TIMEOUT,
+                    uri,
+                )
+                self.last_failure_reason = "unavailable"
+                return False
             _LOGGER.error(
                 "MA playback failed after %.1fs for %s (state: %s). "
                 "Either the speaker is offline, MA's provider is unauthenticated, "
@@ -706,6 +969,10 @@ class MediaPlayerService:
                     {"entity_id": self._entity_id},
                     blocking=False,
                 )
+                # #1363: record that the next cascade candidate will see an
+                # 'idle' speaker WE caused, so its idle-failure isn't
+                # misclassified as a systemic 'error'.
+                self._stopped_for_cascade = True
             except (HomeAssistantError, ServiceNotFound, ConnectionError, OSError):
                 _LOGGER.debug(
                     "media_stop call after stale-title detect failed for %s",
@@ -736,6 +1003,10 @@ class MediaPlayerService:
             title_before,
             title_after,
         )
+        # #1381: a post-timeout #345 tolerance confirmation is the weakest
+        # acceptance — it must NOT promote this candidate's URI field to
+        # preferred (it never proved THIS field actually resolved our track).
+        self._last_confirm_path = 0
         return True
 
     async def _play_via_sonos(self, song: dict[str, Any]) -> bool:
@@ -759,7 +1030,27 @@ class MediaPlayerService:
     async def _play_via_alexa(self, song: dict[str, Any]) -> bool:
         """Play via Alexa (text search-based)."""
         search_text = self._get_alexa_search_text(song)
-        content_type = "SPOTIFY" if self._provider == "spotify" else "APPLE_MUSIC"
+        if self._provider == "spotify":
+            content_type = "SPOTIFY"
+        elif self._provider == "amazon_music":
+            content_type = "AMAZON_MUSIC"
+        elif self._provider == "apple_music":
+            content_type = "APPLE_MUSIC"
+        else:
+            # Unknown provider slipped past the wizard gate. Previously every
+            # non-spotify/non-amazon provider was silently mapped to
+            # APPLE_MUSIC, so a deezer/tidal/ytmusic mismatch played the wrong
+            # catalog with no diagnostic — the same silent-fail class as
+            # #768/#808. Surface it (mirrors the #1276 dispatch warning) before
+            # falling back to APPLE_MUSIC. (#1402)
+            _LOGGER.warning(
+                "Alexa dispatch: unexpected provider %r — no Alexa content-type "
+                "mapping; falling back to APPLE_MUSIC for %s - %s (#1402)",
+                self._provider,
+                song.get("artist"),
+                song.get("title"),
+            )
+            content_type = "APPLE_MUSIC"
 
         _LOGGER.debug(
             "Alexa playback: '%s' (%s) on %s",
@@ -785,6 +1076,10 @@ class MediaPlayerService:
         """Generate Alexa-compatible search text from song metadata."""
         artist = song.get("artist", "")
         title = song.get("title", "")
+
+        # Playlists may store multiple artists as "A;B" — use only the first.
+        if artist and ";" in artist:
+            artist = artist.split(";")[0].strip()
 
         if artist and title:
             return f"{title} by {artist}"
@@ -842,11 +1137,16 @@ class MediaPlayerService:
             Dict with artist, title, album_art keys
 
         """
-        # Extract track ID from URI — Issue #422: platform-aware parsing
-        if uri.startswith("spotify:"):
-            track_id = uri.split(":")[-1]
-        else:
-            track_id = uri
+        # Build the substring tokens to look for in MA's media_content_id.
+        # Issue #1380: for non-Spotify providers the raw Beatify-internal URI
+        # (applemusic://track/123, tidal://track/123,
+        # https://music.youtube.com/watch?v=ABC) never appears in MA's
+        # content_id, because MA reports its own form derived from
+        # _convert_uri_for_ma (apple_music://track/123,
+        # https://tidal.com/browse/track/123, ytmusic://track/ABC). Match
+        # against the MA-converted URI AND the bare track ID (the last path/ID
+        # segment), which is stable across both forms.
+        match_tokens = self._uri_match_tokens(uri)
 
         # Get initial state for comparison
         initial_state = self._hass.states.get(self._entity_id)
@@ -870,7 +1170,7 @@ class MediaPlayerService:
             if not state:
                 return False
             content_id = state.attributes.get("media_content_id", "")
-            if track_id in content_id:
+            if any(token in content_id for token in match_tokens):
                 return True
             current_title = state.attributes.get("media_title")
             return bool(current_title and current_title != initial_title)
@@ -920,6 +1220,16 @@ class MediaPlayerService:
                         song_matched.wait(), timeout=METADATA_WAIT_TIMEOUT
                     )
                 except asyncio.TimeoutError:
+                    # Issue #1380: if entity_picture already advanced to a real
+                    # new cover during the wait, honor that captured metadata
+                    # (the #1260 two-phase freshness) instead of discarding it.
+                    if art_changed.is_set():
+                        _LOGGER.warning(
+                            "Song match not detected within %.1fs, but new album "
+                            "art arrived — using captured metadata",
+                            METADATA_WAIT_TIMEOUT,
+                        )
+                        return art_metadata
                     _LOGGER.warning(
                         "Metadata not updated within %.1fs, using current state",
                         METADATA_WAIT_TIMEOUT,
@@ -933,7 +1243,11 @@ class MediaPlayerService:
                 if current_state
                 else ""
             )
-            reason = "matched track ID" if track_id in content_id else "title changed"
+            reason = (
+                "matched track ID"
+                if any(token in content_id for token in match_tokens)
+                else "title changed"
+            )
             _LOGGER.debug("Song started after %.1fs (%s)", elapsed, reason)
 
             # ── Phase 2: wait for entity_picture to also update ───────────
@@ -1145,24 +1459,38 @@ class MediaPlayerService:
             return False, msg
 
         try:
-            # Use volume_set with current volume as a lightweight ping
-            # This wakes up sleeping speakers without changing anything
-            current_volume = self.get_volume()
+            # Read the *real* reported volume — NOT get_volume(), which masks
+            # an unreported volume_level as a hard-coded 0.5. Writing that 0.5
+            # back via volume_set would physically blast an idle speaker (the
+            # very speakers this ping targets) to 50%, instead of being the
+            # promised no-op (#1382).
+            reported_volume = state.attributes.get("volume_level")
 
             async with async_timeout(PREFLIGHT_TIMEOUT):
-                await self._hass.services.async_call(
-                    "media_player",
-                    "volume_set",
-                    {
-                        "entity_id": self._entity_id,
-                        "volume_level": current_volume,
-                    },
-                    blocking=True,
-                )
+                if reported_volume is not None:
+                    # Genuine no-op ping: re-set the speaker to its own volume.
+                    await self._hass.services.async_call(
+                        "media_player",
+                        "volume_set",
+                        {
+                            "entity_id": self._entity_id,
+                            "volume_level": float(reported_volume),
+                        },
+                        blocking=True,
+                    )
+                else:
+                    # No volume reported (sleeping/idle speaker): use a truly
+                    # read-only refresh as the ping so we never change volume.
+                    await self._hass.services.async_call(
+                        "homeassistant",
+                        "update_entity",
+                        {"entity_id": self._entity_id},
+                        blocking=True,
+                    )
             _LOGGER.debug("Media player %s is responsive", self._entity_id)
             self._preflight_verified = True
             return True, ""
-        except TimeoutError:
+        except (TimeoutError, asyncio.TimeoutError):
             msg = f"Timeout after {PREFLIGHT_TIMEOUT}s - speaker may be sleeping or offline"
             _LOGGER.warning(
                 "Media player %s not responsive: %s",

@@ -1,6 +1,9 @@
 {
   "domain": "beatify",
   "name": "Beatify",
+  "after_dependencies": [
+    "cloud"
+  ],
   "codeowners": [
     "@mholzi"
   ],
@@ -15,5 +18,6 @@
   "requirements": [
     "num2words==0.5.14"
   ],
-  "version": "4.0.0"
+  "single_config_entry": true,
+  "version": "4.1.0"
 }

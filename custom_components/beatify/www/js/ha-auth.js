@@ -17,12 +17,18 @@
  *     /beatify/auth/callback. The Beatify server (BeatifyAuthCallbackView)
  *     receives the code, exchanges it over loopback HTTP, and sets two
  *     cookies before redirecting back to /beatify/admin.
- *   - beatify_access cookie: JS-readable JSON {access_token, expires_at}.
- *     This module reads it on page load and includes the token in
- *     Authorization headers for /beatify/api/* calls.
+ *   - The access token is NEVER persisted in a JS-readable cookie (#1369).
+ *     It lives only in a module-scoped variable for the lifetime of the
+ *     page. On page load this module bootstraps it from the HttpOnly
+ *     refresh cookie via GET /beatify/auth/refresh — the same cold-start
+ *     path used whenever the in-memory token has expired. Keeping the HA
+ *     access token out of document.cookie means an XSS on any /beatify
+ *     page can no longer exfiltrate a token that authorizes the whole HA
+ *     REST + WebSocket API.
  *   - beatify_refresh cookie: HttpOnly. Never exposed to JS. The refresh
  *     view (BeatifyAuthRefreshView) reads it server-side when this module
- *     does fetch GET /beatify/auth/refresh.
+ *     does fetch GET /beatify/auth/refresh, which returns the fresh access
+ *     token in its JSON body (never via Set-Cookie).
  *
  * Normal players never touch this module — joining /beatify/play stays
  * frictionless. It is only invoked on the admin page (on load) and on the
@@ -33,14 +39,43 @@
 (function () {
   'use strict';
 
-  // JS-readable session cookie set by BeatifyAuthCallbackView. Contains a
-  // URL-encoded JSON object: {access_token: string, expires_at: number}.
-  // expires_at is an absolute Unix timestamp (seconds) so we don't depend
-  // on the client clock matching the server when the cookie was set.
+  // Gated debug logging (#1280). Self-contained to keep this module
+  // dependency-free (it loads before BeatifyUtils). Off by default; opt in
+  // via localStorage 'beatify_debug'='1' or URL ?debug=1 — same flag as
+  // BeatifyUtils.debug.
+  function debug() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var qp = params.get('debug') || params.get('BeatifyDebug');
+      var on = qp !== null
+        ? (qp !== '0' && qp.toLowerCase() !== 'false')
+        : (window.localStorage.getItem('beatify_debug') === '1');
+      if (on) console.log.apply(console, arguments);
+    } catch (e) { /* ignore */ }
+  }
+
+  // In-memory access-token session (#1369). The HA access token is held
+  // ONLY here — never in document.cookie — so an XSS cannot read it. Shape:
+  // {access_token: string, expires_at: number} where expires_at is an
+  // absolute Unix timestamp (seconds). null when no token is cached.
+  var _session = null;
+
+  // Legacy JS-readable cookie name (pre-#1369). The server no longer sets
+  // it; we proactively wipe any leftover copy from an upgraded session so a
+  // real access token can't linger in document.cookie past this deploy.
   var ACCESS_COOKIE = 'beatify_access';
 
   // sessionStorage: CSRF state lives only for the duration of one redirect.
   var K_STATE = 'beatify_ha_oauth_state';
+
+  // sessionStorage: consecutive login() redirects that ended in a failed
+  // server-side OAuth exchange (?auth_error=) or state mismatch. Cleared on a
+  // successful callback. Bounds the admin → /auth/authorize → callback?auth_error
+  // → login() loop so a persistently-broken exchange (e.g. the rc15 loopback
+  // HTTP exchange misconfigured) surfaces an error instead of redirecting
+  // forever (#1394). Mirrors the WS path's MAX_ADMIN_WS_AUTH_RECOVERIES.
+  var K_LOGIN_ATTEMPTS = 'beatify_login_attempts';
+  var MAX_LOGIN_ATTEMPTS = 3;
 
   // Old rc8–rc14 localStorage keys. We clear them once on init so a user
   // upgrading from a previous RC doesn't carry forward dead state that
@@ -84,32 +119,24 @@
       .join('');
   }
 
-  // -- cookie session ------------------------------------------------------
+  // -- in-memory session ---------------------------------------------------
 
-  function _readSessionCookie() {
-    try {
-      var raw = document.cookie || '';
-      var prefix = ACCESS_COOKIE + '=';
-      var parts = raw.split(';');
-      for (var i = 0; i < parts.length; i++) {
-        var p = parts[i].replace(/^\s+/, '');
-        if (p.indexOf(prefix) === 0) {
-          var value = p.substring(prefix.length);
-          var data = JSON.parse(decodeURIComponent(value));
-          if (data && data.access_token && data.expires_at) return data;
-          return null;
-        }
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
+  // Store a fresh access token in the module-scoped session (#1369).
+  // expiresIn is the HA token TTL in seconds; we shave 30s so we refresh
+  // slightly ahead of the server-side expiry.
+  function _setSession(accessToken, expiresIn) {
+    var ttl =
+      typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 1800;
+    _session = {
+      access_token: accessToken,
+      expires_at: Math.floor(Date.now() / 1000) + Math.max(0, ttl - 30),
+    };
   }
 
-  function _clearAccessCookie() {
-    // The HttpOnly refresh cookie can only be cleared server-side (the
-    // refresh view does this when refresh fails). The access cookie is
-    // JS-readable, so we can wipe it here on logout / state mismatch.
+  function _wipeLegacyAccessCookie() {
+    // Defensive: the access token is no longer cookie-persisted, but an
+    // upgraded browser may still carry the old JS-readable beatify_access
+    // cookie. Wipe it so a real HA token can't linger in document.cookie.
     try {
       document.cookie =
         ACCESS_COOKIE +
@@ -118,6 +145,13 @@
     } catch (e) {
       /* ignore */
     }
+  }
+
+  function _clearSession() {
+    // Drop the in-memory token; the HttpOnly refresh cookie can only be
+    // cleared server-side (the refresh view does this when refresh fails).
+    _session = null;
+    _wipeLegacyAccessCookie();
   }
 
   function _migrateFromLocalStorage() {
@@ -133,15 +167,13 @@
   }
 
   function storedAccess() {
-    var data = _readSessionCookie();
-    return data ? data.access_token : null;
+    return _session ? _session.access_token : null;
   }
 
   function accessFresh() {
-    var data = _readSessionCookie();
-    if (!data) return false;
-    // expires_at from the server is Unix seconds; Date.now() is millis.
-    return data.expires_at * 1000 > Date.now();
+    if (!_session) return false;
+    // expires_at is Unix seconds; Date.now() is millis.
+    return _session.expires_at * 1000 > Date.now();
   }
 
   // -- Android Companion App auth bridge (#1114, #1120 — rc5) --------------
@@ -306,7 +338,7 @@
     if (_bridgePathLogged) return;
     _bridgePathLogged = true;
     try {
-      console.log(
+      debug(
         '[BeatifyAuth] Companion bridge: ' + path +
         ' (ua: ' + ((navigator && navigator.userAgent) || 'unknown') + ')'
       );
@@ -380,24 +412,23 @@
     return entry.promise;
   }
 
-  // Persist a Companion-supplied token in the JS-readable session cookie so
-  // the rest of the module (accessFresh / storedAccess / authedFetch) keeps
-  // working without further branching. The HttpOnly refresh cookie isn't
-  // needed on Companion — we just call getExternalAuth(force=true) again
-  // when the access token expires.
-  function _setSessionCookieFromCompanion(payload) {
+  // Stash a Companion-supplied token in the in-memory session (#1369) so the
+  // rest of the module (accessFresh / storedAccess / authedFetch) keeps
+  // working without further branching. The token is never written to a
+  // cookie. The HttpOnly refresh cookie isn't needed on Companion — we just
+  // call getExternalAuth(force=true) again when the access token expires.
+  function _setSessionFromCompanion(payload) {
     var expiresIn =
       typeof payload.expires_in === 'number' && payload.expires_in > 0
         ? payload.expires_in
         : 1800;
-    var expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
     // rc6 (#1120 diagnostics): log token characteristics on each bridge
     // response. If `force: true` is honoured by Companion, the prefix
     // should change between successive calls; if it's the same prefix
     // every time, force is being silently ignored (H1 confirmed) and
     // we'll need a Companion-side fix.
     try {
-      console.log(
+      debug(
         '[BeatifyAuth] Bridge token received (len=' +
         (payload.access_token ? payload.access_token.length : 0) +
         ', prefix=' +
@@ -407,20 +438,7 @@
         ', expires_in=' + expiresIn + ')'
       );
     } catch (e) { /* ignore */ }
-    var cookieValue = encodeURIComponent(
-      JSON.stringify({
-        access_token: payload.access_token,
-        expires_at: expiresAt,
-      })
-    );
-    var cookieStr =
-      ACCESS_COOKIE +
-      '=' +
-      cookieValue +
-      '; Path=/beatify; SameSite=Lax; Max-Age=' +
-      expiresIn;
-    if (location.protocol === 'https:') cookieStr += '; Secure';
-    try { document.cookie = cookieStr; } catch (e) { /* ignore */ }
+    _setSession(payload.access_token, expiresIn);
   }
 
   // -- silent refresh via /beatify/auth/refresh ----------------------------
@@ -437,7 +455,7 @@
       // the Companion in-app token bridge instead.
       refreshInFlight = getCompanionAuthToken(true)
         .then(function (payload) {
-          _setSessionCookieFromCompanion(payload);
+          _setSessionFromCompanion(payload);
           return payload.access_token;
         })
         .catch(function (err) {
@@ -467,7 +485,15 @@
           return null;
         }
         return resp.json().then(function (body) {
-          return (body && body.access_token) || null;
+          var token = (body && body.access_token) || null;
+          if (token) {
+            // #1369: the refresh JSON body is now the sole carrier of the
+            // access token (no Set-Cookie). Cache it in memory so
+            // accessFresh() / storedAccess() / authedFetch() can reuse it
+            // without another round-trip.
+            _setSession(token, body && body.expires_in);
+          }
+          return token;
         });
       })
       .catch(function (err) {
@@ -502,7 +528,107 @@
     window.location.replace(url);
   }
 
+  // -- bounded login loop guard (#1394) ------------------------------------
+
+  function _loginAttempts() {
+    try {
+      return parseInt(sessionStorage.getItem(K_LOGIN_ATTEMPTS), 10) || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function _clearLoginAttempts() {
+    try {
+      sessionStorage.removeItem(K_LOGIN_ATTEMPTS);
+    } catch (e) {
+      /* ignore — best-effort */
+    }
+  }
+
+  /**
+   * Render a terminal auth-error state into the page instead of redirecting
+   * again. Called once the bounded retry budget is exhausted (#1394) so a
+   * persistently-failing server-side OAuth exchange stops the redirect loop
+   * and shows the user what happened.
+   */
+  function _renderAuthError() {
+    try {
+      console.error(
+        '[BeatifyAuth] OAuth exchange failed ' +
+          MAX_LOGIN_ATTEMPTS +
+          ' times in a row — stopping the login loop (#1394)'
+      );
+    } catch (e) { /* ignore */ }
+    try {
+      if (typeof document === 'undefined' || !document.body) return;
+      var box = document.createElement('div');
+      box.id = 'beatify-auth-error';
+      box.setAttribute('role', 'alert');
+      box.style.cssText =
+        'position:fixed;inset:0;z-index:2147483647;display:flex;' +
+        'align-items:center;justify-content:center;padding:24px;' +
+        'background:#1c1c1e;color:#fff;font:16px/1.5 system-ui,sans-serif;' +
+        'text-align:center;';
+      box.innerHTML =
+        '<div style="max-width:420px">' +
+        '<h2 style="margin:0 0 12px">Anmeldung fehlgeschlagen</h2>' +
+        '<p style="margin:0 0 20px;opacity:.85">Die Verbindung zu Home ' +
+        'Assistant konnte nicht hergestellt werden. Bitte pr&uuml;fe die ' +
+        'Beatify-Konfiguration (interne URL / SSL) und versuche es erneut.</p>' +
+        '<button type="button" style="padding:10px 20px;border:0;' +
+        'border-radius:8px;background:#0a84ff;color:#fff;font-size:16px;' +
+        'cursor:pointer">Erneut versuchen</button>' +
+        '</div>';
+      var btn = box.querySelector('button');
+      if (btn) {
+        btn.addEventListener('click', function () {
+          _clearLoginAttempts();
+          login();
+        });
+      }
+      document.body.appendChild(box);
+    } catch (e) {
+      /* ignore — error UI is best-effort */
+    }
+  }
+
+  /**
+   * Begin the OAuth redirect, but stop after MAX_LOGIN_ATTEMPTS consecutive
+   * failed callbacks and render an error instead. Returns true if a redirect
+   * was issued, false if the budget was exhausted (caller should stop).
+   */
+  function _attemptLogin() {
+    var attempts = _loginAttempts();
+    if (attempts >= MAX_LOGIN_ATTEMPTS) {
+      _renderAuthError();
+      return false;
+    }
+    try {
+      sessionStorage.setItem(K_LOGIN_ATTEMPTS, String(attempts + 1));
+    } catch (e) {
+      /* ignore — counting is best-effort if storage is unavailable */
+    }
+    login();
+    return true;
+  }
+
   function login() {
+    // #1393: defensive guard. Every getAccessToken()/ensureAuthenticated()/
+    // handleServerRejection() caller now short-circuits in bypass mode before
+    // reaching login(), but if any future path calls login() directly while in
+    // Companion bypass mode, _legacyOAuthLogin()'s window.location.replace to
+    // /auth/authorize would land the user on the Invalid-redirect-URI screen
+    // (#1153). Refuse the OAuth redirect and log an actionable hint instead.
+    if (isCompanionBypassMode()) {
+      console.warn(
+        '[BeatifyAuth] login() suppressed in Companion bypass mode — an ' +
+          '/auth/authorize redirect would hit the Invalid-redirect-URI ' +
+          'screen. Beatify admin requires local network access from the ' +
+          'Companion app: open in an external browser or connect to home Wi-Fi.'
+      );
+      return;
+    }
     if (isAndroidCompanion() && _hasCompanionAuthBridge()) {
       // Companion path: pull a fresh token from the in-app bridge, plant
       // it in the cookie, and reload so init() re-enters with cookies
@@ -510,7 +636,7 @@
       // intercepts and 403s.
       getCompanionAuthToken(true)
         .then(function (payload) {
-          _setSessionCookieFromCompanion(payload);
+          _setSessionFromCompanion(payload);
           window.location.href = origin() + '/beatify/admin';
         })
         .catch(function (err) {
@@ -547,7 +673,7 @@
         '[BeatifyAuth] server-side OAuth exchange returned error:',
         authError
       );
-      _clearAccessCookie();
+      _clearSession();
       _stripQuery();
       return false;
     }
@@ -562,9 +688,11 @@
     _stripQuery();
     if (expected && authState !== expected) {
       console.warn('[BeatifyAuth] OAuth state mismatch — clearing session');
-      _clearAccessCookie();
+      _clearSession();
       return false;
     }
+    // Successful callback — reset the bounded login-loop counter (#1394).
+    _clearLoginAttempts();
     return true;
   }
 
@@ -644,7 +772,24 @@
    * elsewhere).
    */
   function handleServerRejection() {
-    _clearAccessCookie();
+    // #1393: in Companion bypass mode the server authenticates via UA+RFC1918,
+    // not a Bearer token, so a server rejection here is NOT a stale-token
+    // problem — it means the request reached Beatify over a non-RFC1918 address
+    // where the server-side companion trust does not apply. refreshAccess()
+    // would hit the unreliable bridge and login() would window.location.replace
+    // to /auth/authorize inside the Companion WebView → the historically-buggy
+    // "Invalid redirect URI" / #1153 unauthorized screen with no recovery.
+    // Resolve null and let the caller surface an actionable local-network hint.
+    if (isCompanionBypassMode()) {
+      console.warn(
+        '[BeatifyAuth] server rejected a Companion bypass-mode connection — ' +
+          'likely reached Beatify over a non-local address; skipping OAuth ' +
+          'redirect (would land on the Invalid-redirect-URI screen). ' +
+          'Resolving null so the caller can surface a local-network hint.'
+      );
+      return Promise.resolve(null);
+    }
+    _clearSession();
     return refreshAccess().then(function (token) {
       if (token) return token;
       login();
@@ -731,8 +876,11 @@
     // In either case the cookies are not usable; jump straight to login.
     if (callbackResult === false) {
       if (options.requireAuth) {
-        login();
-        return new Promise(function () {});
+        // Bounded retry: a persistently-failing server-side exchange must not
+        // loop admin → /auth/authorize → callback?auth_error → login() forever
+        // (#1394). _attemptLogin() renders an error once the budget is spent.
+        if (_attemptLogin()) return new Promise(function () {});
+        return Promise.resolve(false);
       }
       return Promise.resolve(false);
     }
@@ -740,6 +888,8 @@
     if (accessFresh()) {
       // Cookie has a fresh access token (either from the just-completed
       // callback, or a returning session within the cookie's lifetime).
+      // A usable session means the loop is broken — reset the counter (#1394).
+      _clearLoginAttempts();
       return Promise.resolve(true);
     }
 
@@ -747,17 +897,22 @@
     // refresh cookie may still be valid even if the access cookie has
     // already expired (different lifetimes by design).
     return refreshAccess().then(function (token) {
-      if (token) return true;
+      if (token) {
+        _clearLoginAttempts();
+        return true;
+      }
       if (!options.requireAuth) return false;
-      login();
-      return new Promise(function () {});
+      // Same bounded-loop guard as the failed-callback branch (#1394): if
+      // login() keeps producing auth_error callbacks, stop and show an error.
+      if (_attemptLogin()) return new Promise(function () {});
+      return false;
     });
   }
 
   window.BeatifyAuth = {
     init: init,
     login: login,
-    logout: _clearAccessCookie,
+    logout: _clearSession,
     isAuthenticated: isAuthenticated,
     getAccessToken: getAccessToken,
     ensureAuthenticated: ensureAuthenticated,

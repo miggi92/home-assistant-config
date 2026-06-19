@@ -48,6 +48,7 @@ import {
 } from './player-tour.js';
 
 var utils = window.BeatifyUtils || {};
+var debug = utils.debug || function() {};
 
 // ============================================
 // Constants
@@ -111,15 +112,15 @@ function getStoredPlayerName() {
     try {
         var storedGameId = localStorage.getItem(STORAGE_KEY_GAME_ID);
         var storedName = localStorage.getItem(STORAGE_KEY_NAME);
-        console.log('[Beatify] Checking localStorage - storedGameId:', storedGameId, 'currentGameId:', state.gameId, 'storedName:', storedName);
+        debug('[Beatify] Checking localStorage - storedGameId:', storedGameId, 'currentGameId:', state.gameId, 'storedName:', storedName);
 
         if (storedGameId && storedGameId === state.gameId) {
-            console.log('[Beatify] Game ID match, returning stored name:', storedName);
+            debug('[Beatify] Game ID match, returning stored name:', storedName);
             return storedName;
         }
 
         if (storedGameId && storedGameId !== state.gameId) {
-            console.log('[Beatify] Different game ID, clearing stored data');
+            debug('[Beatify] Different game ID, clearing stored data');
             localStorage.removeItem(STORAGE_KEY_NAME);
             localStorage.removeItem(STORAGE_KEY_GAME_ID);
         }
@@ -133,7 +134,7 @@ function storePlayerName(name) {
     try {
         localStorage.setItem(STORAGE_KEY_NAME, name);
         localStorage.setItem(STORAGE_KEY_GAME_ID, state.gameId);
-        console.log('[Beatify] Stored player name:', name, 'for game:', state.gameId);
+        debug('[Beatify] Stored player name:', name, 'for game:', state.gameId);
     } catch (e) {
         console.error('[Beatify] Failed to store player name:', e);
     }
@@ -385,7 +386,7 @@ function connectWithSession() {
             updateReconnectStatus(state.reconnectAttempts);
 
             var delay = getReconnectDelay();
-            console.log('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
+            debug('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
             // #646: Keep using session reconnect while cookie exists
             if (getSessionCookie()) {
                 setTimeout(connectWithSession, delay);
@@ -483,7 +484,7 @@ function connectWebSocket(name) {
             updateReconnectStatus(state.reconnectAttempts);
 
             var delay = getReconnectDelay();
-            console.log('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
+            debug('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
             setTimeout(function() { connectWebSocket(state.playerName); }, delay);
         } else if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
             state.isReconnecting = false;
@@ -513,6 +514,25 @@ function handleServerMessage(data) {
     // Heartbeat: any inbound message proves the socket is alive (#967).
     state.lastServerActivity = Date.now();
     if (data.type === 'pong') {
+        return;
+    }
+
+    // #1287: cold-start bridge. The admin pressed start; the server fires this
+    // the moment it begins connecting the Music Assistant speaker + loading
+    // round 1 (~10-15s of otherwise-empty wait). Show the animated vinyl-disc
+    // loader; the subsequent PLAYING `state` broadcast replaces it. Only players
+    // already past the join screen (i.e. who saw the lobby) should see it — a
+    // visitor still on the join form keeps their form.
+    if (data.type === 'game_starting') {
+        var loadingEl = document.getElementById('loading-view');
+        var lobbyEl = document.getElementById('lobby-view');
+        var joinEl = document.getElementById('join-view');
+        var lobbyActive = lobbyEl && !lobbyEl.classList.contains('hidden');
+        var loadingActive = loadingEl && !loadingEl.classList.contains('hidden');
+        var joinActive = joinEl && !joinEl.classList.contains('hidden');
+        if (lobbyActive || loadingActive || !joinActive) {
+            showView('starting-view');
+        }
         return;
     }
 
@@ -767,7 +787,7 @@ function handleServerMessage(data) {
     } else if (data.type === 'game_ended') {
         handleGameEnded();
     } else if (data.type === 'rematch_started') {
-        console.log('[Player] Rematch started - transitioning to lobby');
+        debug('[Player] Rematch started - transitioning to lobby');
         AnimationQueue.clear();
         stopConfetti();
         showView('lobby-view');
@@ -1042,7 +1062,7 @@ async function initAll() {
 
     var storedName = getStoredPlayerName();
     if (storedName && state.gameId) {
-        console.log('[Beatify] Auto-reconnecting as:', storedName);
+        debug('[Beatify] Auto-reconnecting as:', storedName);
         connectWebSocket(storedName);
         return;
     }
@@ -1089,7 +1109,7 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/beatify/sw.js', {
             scope: '/beatify/'
         }).then(function(registration) {
-            console.log('[Beatify] SW registered:', registration.scope);
+            debug('[Beatify] SW registered:', registration.scope);
         }).catch(function(error) {
             console.warn('[Beatify] SW registration failed:', error);
         });
@@ -1111,7 +1131,7 @@ document.addEventListener('visibilitychange', function() {
         var ws = state.ws;
         if (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
             if (state.playerName) {
-                console.log('[Beatify] Page visible, WebSocket dead — reconnecting immediately.');
+                debug('[Beatify] Page visible, WebSocket dead — reconnecting immediately.');
                 state.reconnectAttempts = 0; // reset backoff so it reconnects instantly
                 connectWithSession();
             }

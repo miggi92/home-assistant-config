@@ -23,6 +23,15 @@ const LS_GAME_SETTINGS = 'beatify_game_settings'; // set by admin.js, contains {
 
 let _hubMounted = false;
 
+// HTML-escape helpers. HA friendly_name / entity_id values come from devices
+// and integrations on the LAN and are NOT trusted — a Sonos/Cast/DLNA device
+// can advertise an arbitrary name (e.g. `<img src=x onerror=...>`) that HA
+// stores as friendly_name. They must be escaped before entering innerHTML.
+// escapeAttr also escapes quotes for use inside attribute values; escapeText
+// is for text content between tags (#1370).
+const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escapeText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 // ------------------------------------------------------------------
 // Pure helpers — exported for vitest
 // ------------------------------------------------------------------
@@ -160,6 +169,49 @@ export function difficultyDisplayFor(titleArtistMode) {
         : { showChips: true, summaryKey: null };
 }
 
+/**
+ * Resolve the game-language default the wizard sends when starting a game.
+ *
+ * #1354: the browser language must win on EVERY wizard open, including a
+ * first-time user with no saved settings — otherwise the wizard UI renders in
+ * the browser locale (via BeatifyI18n auto-detect) while the started game goes
+ * out as 'en', leaving the player/game screens stuck in English.
+ *
+ * Order: browser detection (navigator.language) → saved settings.language →
+ * the caller's current default. Returns the resolved code (or `current` when
+ * nothing else is available). Pure: `detectFn` and `saved` are injected so this
+ * is unit-testable without a DOM.
+ *
+ * @param {function():string} [detectFn] - browser-language detector
+ * @param {{language?: string}|null} [saved] - parsed saved game settings
+ * @param {string} [current='en'] - fallback when neither source resolves
+ * @returns {string}
+ */
+export function resolveGameLanguageDefault(detectFn, saved, current = 'en') {
+    let resolved = null;
+    try {
+        if (typeof detectFn === 'function') resolved = detectFn();
+    } catch (e) { /* ignore */ }
+    if (!resolved && saved && saved.language) resolved = saved.language;
+    return resolved || current;
+}
+
+/**
+ * #1402-B8: decide whether the lights level-up should hydrate as ON from the
+ * stored `beatify_party_lights` shape. An EXPLICIT `enabled:false` must stay
+ * off — the old logic re-enabled lights whenever entities were still
+ * configured, silently turning party lights back on after the user disabled
+ * them. Mirrors the TTS rule: only "entities present with no explicit flag"
+ * counts as implied-on.
+ * @param {{enabled?: boolean, lights?: any}|null} s - parsed party-lights store
+ * @returns {boolean}
+ */
+export function lightsLevelUpEnabledFromStored(s) {
+    if (!s) return false;
+    if (s.enabled === true) return true;
+    return s.enabled === undefined && Array.isArray(s.lights) && s.lights.length > 0;
+}
+
 // ------------------------------------------------------------------
 // DOM-driven controller (browser-only below this line)
 // ------------------------------------------------------------------
@@ -279,7 +331,12 @@ function _hydrateLevelUpDetails() {
             // so _persistLevelUpDetails skips the lights branch and the
             // `enabled: true` fix from PR #1031 never gets written to
             // localStorage. Mirror of the TTS hydration on line below.
-            if (s.enabled === true || (Array.isArray(s.lights) && s.lights.length > 0)) {
+            // #1402-B8: respect an EXPLICIT disable. The old condition re-enabled
+            // lights whenever entities were still configured (s.lights non-empty),
+            // even after the user set s.enabled=false — so re-entering the wizard
+            // silently turned party lights back on. Mirror the TTS hydrate below:
+            // only treat "entities present, no explicit flag" as implied-on.
+            if (lightsLevelUpEnabledFromStored(s)) {
                 chosenLevelUps.lights = true;
             }
         }
@@ -402,7 +459,9 @@ function _capabilityBadge(player) {
     return capabilityBadgeForPlayer(player, PROVIDERS, {
         none: _t('wizard.step1.capNone', 'No services'),
         all: _t('wizard.step1.capAll', 'All services'),
+        most: _t('wizard.step1.capMost', 'All major services'),
         onlyTemplate: _t('wizard.step1.capOnlyTemplate', '{provider} only'),
+        moreTemplate: _t('wizard.step1.capMoreTemplate', '{provider} +{count}'),
     });
 }
 
@@ -425,13 +484,16 @@ function _renderSpeakers() {
             const selected = chosenSpeaker === p.entity_id;
             const platform = _platformLabel(p.platform) || p.state || '';
             const badge = _capabilityBadge(p);
+            // Summarized badges keep the full service list on a title tooltip so
+            // no information is lost (#1319 AC: full list still discoverable).
+            const badgeTitle = badge && badge.title ? ` title="${badge.title}"` : '';
             const badgeHtml = badge
-                ? `<span class="cap-dot" aria-hidden="true"></span><span class="cap-badge ${badge.cls}">${badge.label}</span>`
+                ? `<span class="cap-dot" aria-hidden="true"></span><span class="cap-badge ${badge.cls}"${badgeTitle}>${badge.label}</span>`
                 : '';
-            return `<button type="button" class="wiz-row ${selected ? 'selected' : ''}" data-entity-id="${p.entity_id}">
+            return `<button type="button" class="wiz-row ${selected ? 'selected' : ''}" data-entity-id="${escapeAttr(p.entity_id)}">
           <div class="wiz-row-avatar">${SPEAKER_ICON}</div>
           <div class="wiz-row-text">
-            <div class="wiz-row-name">${p.friendly_name || p.entity_id}</div>
+            <div class="wiz-row-name">${escapeText(p.friendly_name || p.entity_id)}</div>
             <div class="wiz-row-sub">${platform}${badgeHtml}</div>
           </div>
           ${selected ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="wiz-row-check"><path d="M5 12l5 5L20 7"/></svg>' : ''}
@@ -468,6 +530,7 @@ const PROVIDERS = [
     { id: 'youtube_music', label: 'YouTube Music' },
     { id: 'tidal', label: 'Tidal' },
     { id: 'deezer', label: 'Deezer' },
+    { id: 'amazon_music', label: 'Amazon Music' },
 ];
 
 // Lock icon SVG for dimmed provider chips (#772 UX).
@@ -494,24 +557,50 @@ function _providerSupported(providerId) {
 }
 
 // Pure: summarize a player's service capabilities into a badge descriptor.
-// Returns { cls, label } or null. Exported for tests.
+// Returns { cls, label, title? } or null. Exported for tests.
+//
+// Layout contract (#1319): the badge must fit ONE line at mobile width and
+// stay visually secondary to the speaker name. Only the genuinely constrained
+// single-service case ("Spotify only") keeps the orange accent (cls 'partial');
+// every multi-service case is muted (cls 'summary') and, for 3+ providers,
+// collapsed to "first +N" so a typical MA player (5 of 6 services) no longer
+// spells out a wrapping uppercase list. The full list is preserved in `title`
+// (rendered as a tooltip) so no information is lost.
 //
 // labels.onlyTemplate is a format string containing `{provider}`. The word
 // order of "only" vs. the provider name differs per language — English
 // suffixes ("Spotify only") but German, Spanish, Dutch prefix ("nur Spotify",
 // "solo Spotify", "alleen Spotify"). Using a template lets each locale pick.
+// labels.moreTemplate ("{provider} +{count}") and labels.most ("All major
+// services") are the summary strings.
 export function capabilityBadgeForPlayer(player, providers, labels = {}) {
     if (!player) return null;
     const supported = providers.filter((p) => player[`supports_${p.id}`]);
-    if (supported.length === 0) return { cls: 'none', label: labels.none || 'No services' };
-    if (supported.length === providers.length) {
+    const n = supported.length;
+    if (n === 0) return { cls: 'none', label: labels.none || 'No services' };
+    if (n === providers.length) {
         return { cls: 'full', label: labels.all || 'All services' };
     }
-    if (supported.length === 1) {
+    if (n === 1) {
+        // The one case that genuinely limits playback — keep the accent.
         const template = labels.onlyTemplate || '{provider} only';
         return { cls: 'partial', label: template.replace('{provider}', supported[0].label) };
     }
-    return { cls: 'partial', label: supported.map((p) => p.label).join(', ') };
+    // Everything below is multi-service: muted, single-line, full list in title.
+    const fullList = supported.map((p) => p.label).join(', ');
+    // "Most" = all but one (only meaningful from 4+ providers, else it overlaps
+    // the two-service case). A typical MA player (5 of 6) lands here.
+    if (n >= 3 && n === providers.length - 1) {
+        return { cls: 'summary', label: labels.most || 'All major services', title: fullList };
+    }
+    if (n === 2) {
+        // Two still fits one line — list both, just de-emphasized.
+        return { cls: 'summary', label: fullList, title: fullList };
+    }
+    // 3+ (but not "most"): first provider + overflow count, full list on tooltip.
+    const moreTemplate = labels.moreTemplate || '{provider} +{count}';
+    const label = moreTemplate.replace('{provider}', supported[0].label).replace('{count}', String(n - 1));
+    return { cls: 'summary', label, title: fullList };
 }
 
 function _renderProviders() {
@@ -550,35 +639,67 @@ function _showProviderExplainer(providerId) {
     const platform = player ? _platformLabel(player.platform) : _t('wizard.step2.explainer.yourSpeaker', 'your speaker');
     const provider = (PROVIDERS.find((p) => p.id === providerId) || {}).label || providerId;
     const vars = { provider, platform };
-    const title = _t('wizard.step2.explainer.title', '{provider} on {platform} needs Music Assistant', vars);
-    const body = _t(
-        'wizard.step2.explainer.body',
-        "{platform} plays Spotify directly from Home Assistant. {provider} and other streaming services need the Music Assistant add-on to route the track — it handles the login and format conversion {platform} can't do on its own.",
-        vars,
-    );
-    const step1 = _t('wizard.step2.explainer.step1', 'Install <strong>Music Assistant</strong> from HACS');
-    const step2 = _t('wizard.step2.explainer.step2', 'Add your {provider} account in MA → Providers', vars);
-    const step3 = _t('wizard.step2.explainer.step3', 'Come back — your {platform} appears as a Music Assistant speaker', vars);
-    const primary = _t('wizard.step2.explainer.primary', 'Set up Music Assistant →');
     const ghost = _t('wizard.step2.explainer.ghost', 'Pick a different service');
-    const footer = _t('wizard.step2.explainer.footer', 'Prefer Spotify? It works on {platform} directly — no add-on needed.', vars);
-    host.innerHTML = `
-        <div class="wiz-explainer-title">
-            <span class="icon" aria-hidden="true">⚠️</span>
-            <span>${title}</span>
-        </div>
-        <p class="wiz-explainer-body">${body}</p>
-        <ol class="wiz-explainer-steps">
-            <li>${step1}</li>
-            <li>${step2}</li>
-            <li>${step3}</li>
-        </ol>
-        <div class="wiz-explainer-actions">
-            <a class="btn btn-primary" href="https://www.home-assistant.io/integrations/music_assistant/" target="_blank" rel="noopener">${primary}</a>
-            <button type="button" class="btn btn-ghost" id="wiz-explainer-dismiss">${ghost}</button>
-        </div>
-        <div class="wiz-explainer-footer">${footer}</div>
-    `;
+
+    let innerHtml;
+    if (providerId === 'amazon_music') {
+        const title = _t('wizard.step2.explainer.amazonTitle', 'Amazon Music needs an Amazon Echo', vars);
+        const body = _t(
+            'wizard.step2.explainer.amazonBody',
+            'Amazon Music is not available through Music Assistant. To use it, select an Amazon Echo device (via the alexa_media integration) as your speaker.',
+            vars,
+        );
+        const step1 = _t('wizard.step2.explainer.amazonStep1', 'Install the <strong>Alexa Media Player</strong> integration in Home Assistant');
+        const step2 = _t('wizard.step2.explainer.amazonStep2', 'Link your Amazon account and Echo device');
+        const step3 = _t('wizard.step2.explainer.amazonStep3', 'Come back — your Echo appears as an available speaker');
+        const primary = _t('wizard.step2.explainer.amazonPrimary', 'Set up Alexa Media Player →');
+        innerHtml = `
+            <div class="wiz-explainer-title">
+                <span class="icon" aria-hidden="true">⚠️</span>
+                <span>${title}</span>
+            </div>
+            <p class="wiz-explainer-body">${body}</p>
+            <ol class="wiz-explainer-steps">
+                <li>${step1}</li>
+                <li>${step2}</li>
+                <li>${step3}</li>
+            </ol>
+            <div class="wiz-explainer-actions">
+                <a class="btn btn-primary" href="https://github.com/alandtse/alexa_media_player" target="_blank" rel="noopener">${primary}</a>
+                <button type="button" class="btn btn-ghost" id="wiz-explainer-dismiss">${ghost}</button>
+            </div>
+        `;
+    } else {
+        const title = _t('wizard.step2.explainer.title', '{provider} on {platform} needs Music Assistant', vars);
+        const body = _t(
+            'wizard.step2.explainer.body',
+            "{platform} plays Spotify directly from Home Assistant. {provider} and other streaming services need the Music Assistant add-on to route the track — it handles the login and format conversion {platform} can't do on its own.",
+            vars,
+        );
+        const step1 = _t('wizard.step2.explainer.step1', 'Install <strong>Music Assistant</strong> from HACS');
+        const step2 = _t('wizard.step2.explainer.step2', 'Add your {provider} account in MA → Providers', vars);
+        const step3 = _t('wizard.step2.explainer.step3', 'Come back — your {platform} appears as a Music Assistant speaker', vars);
+        const primary = _t('wizard.step2.explainer.primary', 'Set up Music Assistant →');
+        const footer = _t('wizard.step2.explainer.footer', 'Prefer Spotify? It works on {platform} directly — no add-on needed.', vars);
+        innerHtml = `
+            <div class="wiz-explainer-title">
+                <span class="icon" aria-hidden="true">⚠️</span>
+                <span>${title}</span>
+            </div>
+            <p class="wiz-explainer-body">${body}</p>
+            <ol class="wiz-explainer-steps">
+                <li>${step1}</li>
+                <li>${step2}</li>
+                <li>${step3}</li>
+            </ol>
+            <div class="wiz-explainer-actions">
+                <a class="btn btn-primary" href="https://www.home-assistant.io/integrations/music_assistant/" target="_blank" rel="noopener">${primary}</a>
+                <button type="button" class="btn btn-ghost" id="wiz-explainer-dismiss">${ghost}</button>
+            </div>
+            <div class="wiz-explainer-footer">${footer}</div>
+        `;
+    }
+    host.innerHTML = innerHtml;
     host.hidden = false;
     const dismiss = document.getElementById('wiz-explainer-dismiss');
     if (dismiss) {
@@ -951,9 +1072,9 @@ function _lightsDetailHtml() {
         ? lights.map((l) => {
               const checked = chosenLightEntityIds.has(l.entity_id) ? 'checked' : '';
               const searchable = `${l.friendly_name || ''} ${l.entity_id}`.toLowerCase();
-              return `<label class="wiz-detail-check" data-light-search="${searchable.replace(/"/g, '&quot;')}">
-            <input type="checkbox" data-light-id="${l.entity_id}" ${checked}>
-            <span class="wiz-detail-check-name">${l.friendly_name || l.entity_id}</span>
+              return `<label class="wiz-detail-check" data-light-search="${escapeAttr(searchable)}">
+            <input type="checkbox" data-light-id="${escapeAttr(l.entity_id)}" ${checked}>
+            <span class="wiz-detail-check-name">${escapeText(l.friendly_name || l.entity_id)}</span>
           </label>`;
           }).join('')
         : `<div class="wiz-detail-empty">${_t('wizard.step5.lights.noneFound', 'No lights available')}</div>`;
@@ -1025,8 +1146,6 @@ function _ttsDetailHtml() {
     // load any entities (e.g. offline or older HA) so the wizard never
     // becomes un-completable.
     const entities = cachedTtsEntities || [];
-    const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const escapeText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const known = new Set(entities.map((e) => e.entity_id));
     const optsHtml = entities.map((e) => {
         const label = e.friendly_name && e.friendly_name !== e.entity_id
@@ -1228,6 +1347,42 @@ function _renderLevelUp() {
     });
 }
 
+/**
+ * Build the beatify_tts localStorage payload the wizard writes on finish.
+ *
+ * Pure + exported so it can be unit-tested. `prevTts` is the previously stored
+ * beatify_tts object (parse of localStorage); `presets` is window.BeatifyTtsPresets.
+ *
+ * #1401: the admin TTS panel (tts-settings.js) writes `tts_pre_round_delay`
+ * (the #1211 setting) into beatify_tts, but the wizard rebuilt the payload from
+ * scratch — silently wiping the delay back to 0 whenever the wizard was
+ * finished. Carry over any previously-stored keys the wizard doesn't manage
+ * (at minimum tts_pre_round_delay) so finishing the wizard never clobbers them.
+ */
+export function buildTtsPayload(prevTts, { enabled, entityId, preset, presets }) {
+    const prev = prevTts || {};
+    const ttsPayload = {
+        enabled,
+        entity_id: entityId,
+        preset,
+    };
+    if (presets && preset !== 'custom') {
+        const vals = presets.presetValues(preset);
+        presets.KEYS.forEach((k) => { ttsPayload[k] = vals[k]; });
+    } else if (presets && preset === 'custom') {
+        // Preserve hand-tuned toggles from the admin panel — don't clobber.
+        presets.KEYS.forEach((k) => {
+            if (typeof prev[k] === 'boolean') ttsPayload[k] = prev[k];
+        });
+    }
+    // #1401: preserve unmanaged keys the admin TTS panel owns. The wizard never
+    // edits tts_pre_round_delay (#1211), so carry the previous value over.
+    if (prev.tts_pre_round_delay !== undefined) {
+        ttsPayload.tts_pre_round_delay = prev.tts_pre_round_delay;
+    }
+    return ttsPayload;
+}
+
 function _persistLevelUpDetails() {
     try {
         if (chosenLevelUps.lights) {
@@ -1250,22 +1405,13 @@ function _persistLevelUpDetails() {
         // Write a complete config: enabled + entity + preset + all 23
         // announce_* booleans, so the admin TTS panel and game engine read a
         // consistent state. BeatifyTtsPresets is exposed by tts-settings.js.
-        const ttsPayload = {
+        const prevTts = JSON.parse(localStorage.getItem('beatify_tts') || '{}');
+        const ttsPayload = buildTtsPayload(prevTts, {
             enabled: chosenLevelUps.tts,
-            entity_id: chosenTtsEntityId,
+            entityId: chosenTtsEntityId,
             preset: chosenTtsPreset,
-        };
-        const presets = window.BeatifyTtsPresets;
-        if (presets && chosenTtsPreset !== 'custom') {
-            const vals = presets.presetValues(chosenTtsPreset);
-            presets.KEYS.forEach((k) => { ttsPayload[k] = vals[k]; });
-        } else if (presets && chosenTtsPreset === 'custom') {
-            // Preserve hand-tuned toggles from the admin panel — don't clobber.
-            const prev = JSON.parse(localStorage.getItem('beatify_tts') || '{}');
-            presets.KEYS.forEach((k) => {
-                if (typeof prev[k] === 'boolean') ttsPayload[k] = prev[k];
-            });
-        }
+            presets: window.BeatifyTtsPresets,
+        });
         localStorage.setItem('beatify_tts', JSON.stringify(ttsPayload));
     } catch (e) { /* private mode */ }
 }
@@ -1378,40 +1524,44 @@ export async function show(stepOverride) {
     try {
         chosenSpeaker = ls ? ls.getItem(LS_SELECTED_PLAYER) : null;
         const rawSettings = ls ? ls.getItem(LS_GAME_SETTINGS) : null;
-        if (rawSettings) {
-            const s = JSON.parse(rawSettings);
+        const savedSettings = rawSettings ? JSON.parse(rawSettings) : null;
+
+        // #1354 + #815 + #822: resolve the game-language default from the
+        // BROWSER on EVERY wizard open, regardless of whether saved settings
+        // exist. Previously this lived inside the `if (rawSettings)` block, so
+        // a first-time user with no saved settings kept the hard-coded
+        // chosenLanguage='en' default — the wizard UI rendered in German (via
+        // BeatifyI18n auto-detect) but the started game went out as 'en',
+        // leaving the player/game screens in English (#1354).
+        //
+        // Why navigator.language (via detectBrowserLanguage), not
+        // BeatifyI18n.getLanguage()?  Earlier rc15/rc17 attempts used
+        // getLanguage() but `admin.js:loadSavedSettings()` calls
+        // BeatifyI18n.setLanguage(settings.language) on every page
+        // load — which silently overrides the auto-detected language
+        // with whatever's in localStorage. A user with `navigator
+        // .language='de-DE'` plus stale settings.language='en' from a
+        // pre-rc15 wizard run would see currentLanguage='en' by the
+        // time the wizard opened, and the rc17 fix returned 'en' too.
+        // detectBrowserLanguage() is a pure read of navigator.language
+        // — no session state, no race.
+        //
+        // Power users who actually want game-language ≠ browser-
+        // language can tap the chip during the wizard; that explicit
+        // tap re-saves and persists across reloads via the chip
+        // handler in wizard.js's _renderChipGroup callback.
+        const _detectFn = (typeof window !== 'undefined' && window.BeatifyI18n
+            && typeof window.BeatifyI18n.detectBrowserLanguage === 'function')
+            ? window.BeatifyI18n.detectBrowserLanguage
+            : null;
+        chosenLanguage = resolveGameLanguageDefault(_detectFn, savedSettings, chosenLanguage);
+
+        if (savedSettings) {
+            const s = savedSettings;
             if (s.provider) chosenProvider = s.provider;
             if (s.difficulty) chosenDifficulty = s.difficulty;
             if (s.duration) chosenDuration = s.duration;
             if (typeof s.revealAutoAdvance === 'number') chosenRevealAutoAdvance = s.revealAutoAdvance;
-            // #815 + #822: prefer the BROWSER's language as the game-language
-            // default. Saved value only wins if browser detection isn't
-            // available.
-            //
-            // Why navigator.language (via detectBrowserLanguage), not
-            // BeatifyI18n.getLanguage()?  Earlier rc15/rc17 attempts used
-            // getLanguage() but `admin.js:loadSavedSettings()` calls
-            // BeatifyI18n.setLanguage(settings.language) on every page
-            // load — which silently overrides the auto-detected language
-            // with whatever's in localStorage. A user with `navigator
-            // .language='de-DE'` plus stale settings.language='en' from a
-            // pre-rc15 wizard run would see currentLanguage='en' by the
-            // time the wizard opened, and the rc17 fix returned 'en' too.
-            // detectBrowserLanguage() is a pure read of navigator.language
-            // — no session state, no race.
-            //
-            // Power users who actually want game-language ≠ browser-
-            // language can tap the chip during the wizard; that explicit
-            // tap re-saves and persists across reloads via the chip
-            // handler in wizard.js's _renderChipGroup callback.
-            let _resolvedLang = null;
-            try {
-                if (window.BeatifyI18n && typeof window.BeatifyI18n.detectBrowserLanguage === 'function') {
-                    _resolvedLang = window.BeatifyI18n.detectBrowserLanguage();
-                }
-            } catch (e) { /* ignore */ }
-            if (!_resolvedLang && s.language) _resolvedLang = s.language;
-            if (_resolvedLang) chosenLanguage = _resolvedLang;
             if (typeof s.artistChallenge === 'boolean') chosenArtistChallenge = s.artistChallenge;
             if (typeof s.movieQuiz === 'boolean') chosenMovieQuiz = s.movieQuiz;
             if (typeof s.introMode === 'boolean') chosenIntroMode = s.introMode;

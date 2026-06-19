@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 from aiohttp import web
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from custom_components.beatify.const import (
     ARTIST_BONUS_POINTS,
@@ -44,17 +45,41 @@ from custom_components.beatify.const import (
     ERR_SESSION_NOT_FOUND,
     ERR_SESSION_TAKEOVER,
     ERR_UNAUTHORIZED,
+    MAX_GUESS_LEN,
     YEAR_MAX,
     YEAR_MIN,
 )
 from custom_components.beatify.game.state import GamePhase, GameState
 from custom_components.beatify.server.companion_auth import is_companion_trusted_meta
-from custom_components.beatify.server.serializers import build_state_message
+from custom_components.beatify.server.serializers import (
+    build_state_message,
+    redact_state_for_player,
+)
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from custom_components.beatify.server.websocket import BeatifyWebSocketHandler
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def _send_state_to(
+    ws: web.WebSocketResponse, state_msg: dict, game_state: GameState
+) -> None:
+    """Send a ``state`` message to a single recipient, redacted for players.
+
+    #1366: ``state`` frames carry the round's answers (admin_song year;
+    song.artist/title in title_artist_mode). Only the spectator admin WS
+    (``game_state._admin_ws``) may receive them unfiltered; every other
+    connection — including an admin who joined as a *participant* — gets a
+    redacted copy, matching the per-recipient filtering in
+    ``BeatifyWebSocketHandler.broadcast``.
+    """
+    payload = state_msg
+    if ws is not game_state._admin_ws:
+        payload = redact_state_for_player(state_msg)
+    await ws.send_json(payload)
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +115,7 @@ def _is_ha_authenticated(
     """
     token = data.get("ha_token")
     if not token or not isinstance(token, str):
-        if _ws_companion_trusted(ws):
+        if _ws_companion_trusted(ws, handler.hass):
             _LOGGER.info(
                 "[WS auth] admin_connect: ha_token missing — accepting via "
                 "Companion bypass (UA+RFC1918 match on upgrade request)"
@@ -105,7 +130,7 @@ def _is_ha_authenticated(
     try:
         result = handler.hass.auth.async_validate_access_token(token)
     except Exception as err:  # noqa: BLE001 — any decode/validation error means "no"
-        if _ws_companion_trusted(ws):
+        if _ws_companion_trusted(ws, handler.hass):
             _LOGGER.info(
                 "[WS auth] admin_connect: ha_token unparseable (%s) — accepting "
                 "via Companion bypass",
@@ -120,7 +145,7 @@ def _is_ha_authenticated(
         )
         return False
     if result is None:
-        if _ws_companion_trusted(ws):
+        if _ws_companion_trusted(ws, handler.hass):
             _LOGGER.info(
                 "[WS auth] admin_connect: ha_token did not resolve to a refresh "
                 "token — accepting via Companion bypass"
@@ -138,12 +163,14 @@ def _is_ha_authenticated(
     return True
 
 
-def _ws_companion_trusted(ws: web.WebSocketResponse | None) -> bool:
+def _ws_companion_trusted(
+    ws: web.WebSocketResponse | None, hass: HomeAssistant
+) -> bool:
     """Check the request-meta stashed by ``BeatifyWebSocketHandler.handle``."""
     if ws is None:
         return False
     meta = getattr(ws, "beatify_request_meta", None)
-    return is_companion_trusted_meta(meta)
+    return is_companion_trusted_meta(meta, hass)
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +259,6 @@ async def handle_join(
                     handler._admin_disconnect_task.cancel()
                     handler._admin_disconnect_task = None
                     _LOGGER.info("Admin reconnected (own reclaim): %s", name)
-                handler.cancel_pending_removal(name)
                 if game_state.phase == GamePhase.PAUSED:
                     if await game_state.resume_game():
                         _LOGGER.info("Game resumed by admin reclaim during PAUSED")
@@ -244,7 +270,6 @@ async def handle_join(
                         _LOGGER.info(
                             "Admin reconnected, cancelled pause task: %s", name
                         )
-                    handler.cancel_pending_removal(name)
                     if game_state.phase == GamePhase.PAUSED:
                         if await game_state.resume_game():
                             _LOGGER.info("Game resumed by admin reconnection")
@@ -293,8 +318,6 @@ async def handle_join(
                 else:
                     game_state.set_admin(name)
         else:
-            handler.cancel_pending_removal(name)
-
             # Issue #420: If this player matches disconnected admin by name,
             # cancel the admin disconnect task even without is_admin flag
             if game_state.disconnected_admin_name:
@@ -325,13 +348,13 @@ async def handle_join(
                 }
             )
 
-        # Send full state to newly joined player
+        # Send state to newly joined player (redacted — #1366)
         state_msg = build_state_message(game_state)
         if not state_msg:
             return
         try:
-            await ws.send_json(state_msg)
-        except Exception as err:  # noqa: BLE001
+            await _send_state_to(ws, state_msg, game_state)
+        except (ConnectionError, RuntimeError) as err:
             _LOGGER.warning("Failed to send state to new player: %s", err)
             return
         await handler.debounced_broadcast_state()
@@ -442,7 +465,7 @@ async def handle_get_state(
     """Handle dashboard/observer state request (Story 10.4)."""
     state_msg = build_state_message(game_state)
     if state_msg:
-        await ws.send_json(state_msg)
+        await _send_state_to(ws, state_msg, game_state)
 
 
 async def handle_round_timeout(
@@ -487,7 +510,7 @@ async def handle_ping(
     """
     try:
         await ws.send_json({"type": "pong"})
-    except Exception as err:  # noqa: BLE001
+    except (ConnectionError, RuntimeError) as err:
         _LOGGER.debug("Failed to send pong: %s", err)
 
 
@@ -561,6 +584,14 @@ async def admin_start_game(
             }
         )
         return
+
+    # #1287: cold-start bridge. start_round() blocks for ~10-15s while Music
+    # Assistant connects the speaker and round 1 is prepared, and only then is
+    # the PLAYING state broadcast. Without an interim signal every client stays
+    # on the lobby/"Starting…" view the whole time. Fire a lightweight transient
+    # message FIRST so player phones + the TV/dashboard switch to the animated
+    # vinyl-disc loader immediately; the PLAYING broadcast below replaces it.
+    await handler.broadcast({"type": "game_starting"})
 
     success = await game_state.start_round()
     if success:
@@ -1178,13 +1209,12 @@ async def handle_reconnect(
                 }
             )
             await player.ws.close()
-        except Exception:  # noqa: BLE001
+        except (ConnectionError, RuntimeError):
             pass
         _LOGGER.info("Session takeover: %s (old tab disconnected)", player.name)
 
     player.ws = ws
     player.connected = True
-    handler.cancel_pending_removal(player.name)
 
     if player.is_admin:
         if handler._admin_disconnect_task:
@@ -1206,7 +1236,7 @@ async def handle_reconnect(
 
     state_msg = build_state_message(game_state)
     if state_msg:
-        await ws.send_json(state_msg)
+        await _send_state_to(ws, state_msg, game_state)
 
     await handler.broadcast_state()
 
@@ -1571,6 +1601,12 @@ async def handle_title_artist_guess(
         title = ""
     if not isinstance(artist, str):
         artist = ""
+    # Cap guess length before it is matched, stored, and re-broadcast (#1362).
+    # aiohttp accepts WS messages up to 4 MB; an unbounded guess would feed a
+    # multi-megabyte string into the O(n*m) Levenshtein DP and freeze the HA
+    # event loop. A real title/artist never approaches MAX_GUESS_LEN.
+    title = title[:MAX_GUESS_LEN]
+    artist = artist[:MAX_GUESS_LEN]
 
     guess_time = game_state.current_time()
     result = game_state.submit_title_artist_guess(
@@ -1773,6 +1809,22 @@ async def handle_title_artist_override(
 # ---------------------------------------------------------------------------
 
 
+def _write_report(reports_path: Path, report: dict) -> None:
+    """Append a data quality report to the JSON file (blocking I/O).
+
+    Runs in the executor (see ``handle_report_data``) so the mkdir/read/write
+    never blocks the HA event loop (Issue #1372).
+    """
+    reports_path.parent.mkdir(parents=True, exist_ok=True)
+    existing: list = []
+    if reports_path.exists():
+        existing = json.loads(reports_path.read_text(encoding="utf-8"))
+    existing.append(report)
+    reports_path.write_text(
+        json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+
 async def handle_report_data(
     handler: BeatifyWebSocketHandler,
     ws: web.WebSocketResponse,
@@ -1820,19 +1872,18 @@ async def handle_report_data(
         Path(handler.hass.config.path("beatify")) / "data_quality_reports.json"
     )
     try:
-        reports_path.parent.mkdir(parents=True, exist_ok=True)
-        existing: list = []
-        if reports_path.exists():
-            existing = json.loads(reports_path.read_text(encoding="utf-8"))
-        existing.append(report)
-        reports_path.write_text(
-            json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-    except Exception:  # noqa: BLE001
+        # Filesystem I/O is blocking and must not run on the HA event loop
+        # (Issue #1372) — offload the read-append-write to the executor.
+        await handler.hass.async_add_executor_job(_write_report, reports_path, report)
+    except (OSError, ValueError):
         _LOGGER.warning("Failed to write data quality report to %s", reports_path)
 
-    asyncio.ensure_future(
-        _create_gh_issue(artist, title, year, playlist_file, player.name)
+    # #1384: track the follow-up via HA's background-task registry so it can't
+    # be garbage-collected mid-flight and is cancelled on integration unload —
+    # instead of a bare asyncio.ensure_future that HA never sees.
+    handler.hass.async_create_background_task(
+        _create_gh_issue(handler.hass, artist, title, year, playlist_file, player.name),
+        name="beatify-report-data",
     )
 
     await ws.send_json({"type": "report_data_ack"})
@@ -1842,34 +1893,40 @@ _WORKER_URL = "https://beatify-api.mholzi.workers.dev"
 
 
 async def _create_gh_issue(
+    hass: HomeAssistant,
     artist: str,
     title: str,
     year: int | None,
     playlist_file: str,
     reporter: str,
 ) -> None:
-    """Report data quality issue via Cloudflare Worker (best-effort)."""
+    """Report data quality issue via Cloudflare Worker (best-effort).
+
+    #1384: reuses HA's shared aiohttp ClientSession via
+    ``async_get_clientsession(hass)`` rather than spinning up (and tearing down)
+    a fresh ``aiohttp.ClientSession`` per call.
+    """
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{_WORKER_URL}/report-data",
-                json={
-                    "artist": artist,
-                    "title": title,
-                    "year": year,
-                    "playlist_file": playlist_file,
-                    "reporter": reporter,
-                },
-                timeout=aiohttp.ClientTimeout(total=15),
-            ) as resp:
-                if resp.status not in (200, 201):
-                    _LOGGER.debug(
-                        "Worker /report-data returned %s for %s — %s",
-                        resp.status,
-                        artist,
-                        title,
-                    )
-    except Exception:  # noqa: BLE001
+        session = async_get_clientsession(hass)
+        async with session.post(
+            f"{_WORKER_URL}/report-data",
+            json={
+                "artist": artist,
+                "title": title,
+                "year": year,
+                "playlist_file": playlist_file,
+                "reporter": reporter,
+            },
+            timeout=aiohttp.ClientTimeout(total=15),
+        ) as resp:
+            if resp.status not in (200, 201):
+                _LOGGER.debug(
+                    "Worker /report-data returned %s for %s — %s",
+                    resp.status,
+                    artist,
+                    title,
+                )
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
         _LOGGER.debug(
             "Worker /report-data call failed (non-critical) for %s — %s", artist, title
         )

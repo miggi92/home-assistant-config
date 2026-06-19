@@ -29,6 +29,7 @@ export var state = {
 // ============================================
 
 var loadingView = document.getElementById('loading-view');
+var startingView = document.getElementById('starting-view');  // #1287 cold-start vinyl loader
 var notFoundView = document.getElementById('not-found-view');
 var endedView = document.getElementById('ended-view');
 var inProgressView = document.getElementById('in-progress-view');
@@ -42,7 +43,7 @@ var pausedView = document.getElementById('paused-view');
 var endView = document.getElementById('end-view');
 var connectionLostView = document.getElementById('connection-lost-view');
 
-var allViews = [loadingView, notFoundView, endedView, inProgressView, joinView, tourView, readyView, lobbyView, gameView, revealView, pausedView, endView, connectionLostView];
+var allViews = [loadingView, startingView, notFoundView, endedView, inProgressView, joinView, tourView, readyView, lobbyView, gameView, revealView, pausedView, endView, connectionLostView];
 
 /**
  * Show a specific view and hide all others
@@ -57,8 +58,13 @@ export function showView(viewId) {
     // Hide the outer .player-header when either is active so the logo doesn't
     // double up with the ready wordmark + clutter the tour header.
     var isLearningScreen = viewId === 'tour-view' || viewId === 'ready-view';
+    // During active play (guessing round + reveal) hide the outer wordmark
+    // header — it's redundant chrome there; the game/reveal cards carry the
+    // context. Branding stays on join/lobby/end.
+    var isInGame = viewId === 'game-view' || viewId === 'reveal-view';
     if (document.body) {
         document.body.classList.toggle('is-learning-screen', isLearningScreen);
+        document.body.classList.toggle('is-ingame', isInGame);
     }
 
     // Set calm energy for entry screens (Story 9.9)
