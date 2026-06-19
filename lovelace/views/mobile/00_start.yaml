@@ -429,6 +429,7 @@ sections:
             {% set weekdays = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'] %}
             {% set today_weekday = weekdays[now().weekday()] %}
             {% set target_keywords = ['meal', 'kita', 'mittag', 'fruhstuck', 'abendessen'] %}
+            {% set meal_order = {'fruhstuck': 0, 'kita': 1, 'mittag': 2, 'meal': 3, 'abendessen': 4} %}
 
             {% for img in states.image | rejectattr('state', 'in', ['unavailable', 'unknown']) %}
               {% set eid = img.entity_id %}
@@ -444,9 +445,11 @@ sections:
                   {% if text_val and text_val | trim != '' and text_val not in ['unknown', 'unavailable'] %}
 
                     {% set icon = 'mdi:briefcase' if is_work else ('mdi:baby-bottle' if 'kita' in eid else 'mdi:food') %}
+                    {% set sort_key = meal_order.get(meal_order.keys() | select('in', eid) | first, 99) %}
 
                     {% set ns.cards = ns.cards + [{
                       "type": "picture-glance",
+                      "sort_key": sort_key,
                       "title": text_val,
                       "image_entity": eid,
                       "fit_mode": "cover",
@@ -463,7 +466,9 @@ sections:
               {% endif %}
             {% endfor %}
 
-            {% if ns.cards | length > 0 %}
+            {% set sorted_cards = ns.cards | sort(attribute='sort_key') %}
+
+            {% if sorted_cards | length > 0 %}
               {{ [
                 {
                   "type": "custom:mushroom-title-card",
@@ -476,7 +481,7 @@ sections:
                     "grid-template-columns": "repeat(auto-fit, minmax(250px, 1fr))",
                     "gap": "12px"
                   },
-                  "cards": ns.cards
+                  "cards": sorted_cards
                 }
               ] }}
             {% else %}
