@@ -1,69 +1,47 @@
 ---
 # Residents
+# Residents
 type: vertical-stack
 cards:
   - type: custom:mushroom-title-card
     title: Haushalt
-    subtitle: "{{ states('number.persons_home') | int(0) }} von {{ expand('group.residents') | count }} zu Hause"
-  - type: grid
-    columns: 2
-    square: false
-    cards:
-      - type: custom:decluttering-card
-        template: person_card_template
-        variables:
-          - title: Miguel Info
-          - entity: person.miguel
-          - work_zone: zone.work_miguel
-          - eta_work: sensor.miguel_eta_work
-          - eta_home: sensor.miguel_eta_home
-          - phone: pixel_9_pro
-          - id: miguel
-          - beacon: sensor.ibeacon_pixel_9_pro_area
-          - watch: pixel_watch_3
-          - watch_beacon: sensor.ibeacon_pixel_watch_area
-      - type: custom:decluttering-card
-        template: person_card_template
-        variables:
-          - title: Silke Info
-          - entity: person.silke
-          - work_zone: zone.work_silke
-          - eta_work: sensor.silke_eta_work
-          - eta_home: sensor.silke_eta_home
-          - phone: pixel_10_pro
-          - watch: silke_uhr
-          - id: silke
-          - beacon: sensor.ibeacon_pixel_10_pro_area
-      - type: custom:decluttering-card
-        template: person_card_template
-        variables:
-          - title: Milo Info
-          - entity: person.milo_carlos
-          - id: milo_carlos
-          - work_zone: zone.kita
-      - type: custom:decluttering-card
-        template: person_card_template
-        variables:
-          - title: Finn Info
-          - entity: person.finn_manuel
-          - id: finn_manuel
-          - work_zone: zone.kita
-      - type: custom:decluttering-card
-        template: person_card_template
-        variables:
-          - title: Maja Info
-          - entity: person.maja
-          - id: maja
-          - work_zone: zone.home
-          - korbchen: binary_sensor.maja_korbchen_occupancy
+    subtitle: >-
+      {{ states('number.persons_home') | int(0) }} von {{
+      expand('group.residents') | count }} zu Hause
+  - type: custom:auto-entities
+    card_param: cards
+    card:
+      type: grid
+      columns: 2
+      square: false
+    filter:
+      template: >
+        {% set persons = [
+          {"id": "person.miguel", "vars": [{"title": "Miguel Info"}, {"entity": "person.miguel"}, {"work_zone": "zone.work_miguel"}, {"eta_work": "sensor.miguel_eta_work"}, {"eta_home": "sensor.miguel_eta_home"}, {"phone": "pixel_9_pro"}, {"id": "miguel"}, {"beacon": "sensor.ibeacon_pixel_9_pro_area"}, {"watch": "pixel_watch_3"}, {"watch_beacon": "sensor.ibeacon_pixel_watch_area"}]},
+          {"id": "person.silke", "vars": [{"title": "Silke Info"}, {"entity": "person.silke"}, {"work_zone": "zone.work_silke"}, {"eta_work": "sensor.silke_eta_work"}, {"eta_home": "sensor.silke_eta_home"}, {"phone": "pixel_10_pro"}, {"watch": "silke_uhr"}, {"id": "silke"}, {"beacon": "sensor.ibeacon_pixel_10_pro_area"}]},
+          {"id": "person.milo_carlos", "vars": [{"title": "Milo Info"}, {"entity": "person.milo_carlos"}, {"id": "milo_carlos"}, {"work_zone": "zone.kita"}]},
+          {"id": "person.finn_manuel", "vars": [{"title": "Finn Info"}, {"entity": "person.finn_manuel"}, {"id": "finn_manuel"}, {"work_zone": "zone.kita"}]},
+          {"id": "person.maja", "vars": [{"title": "Maja Info"}, {"entity": "person.maja"}, {"id": "maja"}, {"work_zone": "zone.home"}, {"korbchen": "binary_sensor.maja_korbchen_occupancy"}]}
+        ] %}
+        {% set ns = namespace(home=[], away=[]) %}
+        {% for p in persons %}
+          {% set card = {"type": "custom:decluttering-card", "template": "person_card_template", "variables": p.vars} %}
+          {% if is_state(p.id, 'home') %}
+            {% set ns.home = ns.home + [card] %}
+          {% else %}
+            {% set ns.away = ns.away + [card] %}
+          {% endif %}
+        {% endfor %}
+        {{ (ns.home + ns.away) | tojson }}
+
   - type: custom:auto-entities
     show_empty: false
+    card_param: cards
     card:
       type: grid
       columns: 3
       square: false
       title: Gäste
-    card_param: cards
     filter:
       include:
         - group: group.guests
