@@ -2,17 +2,20 @@
 # Notifications
 id: 55aaff45-6a17-465e-a2ee-e31d1987aaef
 alias: carNotif
-description: "Benachrichtigungen"
 trigger:
-  - platform: numeric_state
+  - platform: state
     entity_id: sensor.fordpass_tourneo_indicators
-    above: 0
     id: warnings
-  - platform: numeric_state
+  - platform: state
     entity_id: sensor.fordpass_tourneo_messages
-    above: 0
     id: messages
-condition: []
+condition:
+  - condition: template
+    alias: filterStateIncrease
+    value_template: >-
+      {% set toVal = trigger.to_state.state | int(-1) %}
+      {% set fromVal = trigger.from_state.state | int(-1) if trigger.from_state is not none else -1 %}
+      {{ toVal > 0 and toVal > fromVal }}
 action:
   - alias: processWarnings
     if:
@@ -43,7 +46,7 @@ action:
           entity_id: ai_task.google_ai_task
         response_variable: aiResponse
       - alias: sendWarningNotification
-        service: script.notify_engine
+        action: script.notify_engine
         data:
           title: "{{ title }}"
           value1: "{{ aiResponse.data }}"
@@ -71,10 +74,10 @@ action:
             {{ ns.items | to_json }}
       - alias: sendIndividualMessages
         repeat:
-          for_each: "{{ carMessages | from_json }}"
+          for_each: "{{ carMessages }}"
           sequence:
             - alias: sendSingleMessage
-              service: script.notify_engine
+              action: script.notify_engine
               data:
                 title: "{{ repeat.item.title }}"
                 value1: "{{ repeat.item.msg }}"

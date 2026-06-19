@@ -1,0 +1,59 @@
+---
+# sensor.fordpass_tourneo_elvehcharging
+id: 1ca0bc34-2624-4f91-8503-bde9a4670197
+alias: chargingInfo
+description: Ladeinfo
+trigger:
+  - trigger: state
+    entity_id:
+      - sensor.fordpass_tourneo_elvehplug
+    to:
+      - CONNECTED
+    for:
+      hours: 3
+      minutes: 45
+      seconds: 0
+    id: work
+  - trigger: state
+    entity_id:
+      - sensor.fordpass_tourneo_elvehcharging
+    from:
+      - IN_PROGRESS
+    to:
+      - COMPLETED
+    id: full
+condition: []
+action:
+  - if:
+      - condition: template
+        value_template: "{{ trigger.id == 'work' }}"
+      - condition: zone.in_zone
+        target:
+          entity_id: device_tracker.fordpass_tourneo_tracker
+        options:
+          behavior: any
+          for: "00:00:00"
+          zone: zone.work_miguel
+    then:
+      - service: script.notify_engine
+        data:
+          title: |
+            Auto lädt
+          value1: >-
+            Auto lädt seit 3h 45 min. In 15 min sind Blockierungsgebühren fällig.
+          who: "home, miguel"
+          tag_id: "information"
+          group: "Car"
+  - if:
+      - condition: template
+        value_template: "{{ trigger.id == 'full' }}"
+    then:
+      - service: script.notify_engine
+        data:
+          title: |
+            Auto ist vollständig geladen
+          value1: >-
+            Auto ist vollständig geladen und kann ausgesteckt werden.
+          who: "home"
+          tag_id: "information"
+          group: "Car"
