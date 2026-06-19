@@ -152,43 +152,53 @@ routes:
       [[[
         return window.innerWidth <= 768;
       ]]]
-  - url: /lovelace-mobile/miguel
-    icon: mdi:cog
+  - icon: mdi:cog
     label: "Profil"
     image: |
-      [[[ return hass.states['person.miguel'].attributes.entity_picture ]]]
+      [[[
+        return hass.states['person.miguel'].attributes.entity_picture;
+      ]]]
+    url: /lovelace-mobile/miguel
     hidden: |
-      [[[ return user.name != 'Miguel' ]]]
-  - url: /lovelace-mobile/silke
-    icon: mdi:cog
+      [[[ return user.name !== 'Miguel' ]]]
+  - icon: mdi:cog
     label: "Profil"
     image: |
-      [[[ return hass.states['person.silke'].attributes.entity_picture ]]]
+      [[[
+        return hass.states['person.silke'].attributes.entity_picture;
+      ]]]
+    url: /lovelace-mobile/silke
     hidden: |
-      [[[ return user.name != 'Silke' ]]]
-  - url: /lovelace-mobile/tablet
-    icon: mdi:cog
+      [[[ return user.name !== 'Silke' ]]]
+  - icon: mdi:cog
     label: "Profil"
     image: |
-      [[[ return hass.states['image.tablet_picture'].attributes.entity_picture ]]]
+      [[[
+        return hass.states['image.tablet_picture'].attributes.entity_picture;
+      ]]]
+    url: /lovelace-mobile/tablet
     hidden: |
-      [[[ return user.name != 'Tablet' ]]]
+      [[[ return user.name !== 'Tablet' ]]]
   - icon: mdi:dots-horizontal
     label: Mehr
     tap_action:
       action: open-popup
     popup:
       - icon: mdi:account
+        label: Profil
         url: /profile/general
       - icon: mdi:cog
+        label: Einstellungen
         url: /config/dashboard
         hidden: |
           [[[ return user.name != 'Miguel' ]]]
       - icon: mdi:hammer
+        label: Entwickler
         url: /developer-tools/yaml
         hidden: |
           [[[ return user.name != 'Miguel' ]]]
       - icon: mdi:power
+        label: Neustart HA
         hidden: |
           [[[ return user.name != 'Miguel' ]]]
         tap_action:
