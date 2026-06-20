@@ -26,6 +26,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import slugify
 
 from .entity import SHCEntity
 from .const import (
@@ -37,15 +38,6 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
-
-
-def _format(input_string: str) -> str:
-    import re
-
-    """Format a string to be used in an entity_id."""
-    for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
-        input_string = input_string.casefold().replace(search, replace)
-    return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
 
 
 async def async_setup_entry(
@@ -118,9 +110,13 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
 
         self._device = device
         self._key_id = key_id
+        # Guard against phantom events: track the last event timestamp we fired
+        # on so a battery-level long-poll that re-delivers a stale Keypad state
+        # (same keyName, same eventTimestamp) does not trigger a duplicate event.
+        self._last_fired_timestamp: int = -1
 
         self.entity_id = ENTITY_ID_FORMAT.format(
-            f"{_format(self._device.name)}_button_{key_id.casefold()}"
+            f"{slugify(self._device.name)}_button_{key_id.casefold()}"
         )
         self._attr_name = f"{self._device.name} Button {key_id}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
@@ -134,22 +130,41 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
                 service.register_event(self._key_id, self._event_callback)
 
     def _event_callback(self) -> None:
-        event_type = self._device.eventtype.name
+        # Issue #192: The SHC sometimes delivers a Keypad service update that
+        # piggybacks on a battery-level change, replaying the last stale keyName
+        # and eventTimestamp without a new keypress having occurred.  Guard:
+        # (1) eventtype must be a genuine button press, never None or a
+        #     SWITCH_ON/SWITCH_OFF motor event; (2) eventtimestamp must have
+        #     advanced since the last event we actually fired.
+        event_type_raw = self._device.eventtype
+        if event_type_raw is None:
+            return
+        event_type = event_type_raw.name
+        if event_type not in ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]:
+            return
+        current_ts = self._device.eventtimestamp
+        if current_ts == self._last_fired_timestamp:
+            LOGGER.debug(
+                "Skipping duplicate Keypad event for %s (ts=%s unchanged)",
+                self.entity_id,
+                current_ts,
+            )
+            return
+        self._last_fired_timestamp = current_ts
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
-            ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
+            ATTR_LAST_TIME_TRIGGERED: current_ts,
         }
-        if event_type in ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]:
-            try:
-                self._trigger_event(event_type, event_attributes)
-            except ValueError:
-                LOGGER.warning(
-                    "Invalid event type %s for %s", event_type, self.entity_id
-                )
-                return
+        try:
+            self._trigger_event(event_type, event_attributes)
+        except ValueError:
+            LOGGER.warning(
+                "Invalid event type %s for %s", event_type, self.entity_id
+            )
+            return
         self.schedule_update_ha_state()
 
 
@@ -166,7 +181,7 @@ class SHCScenarioEvent(EventEntity):
         self._session = session
 
         self.entity_id = ENTITY_ID_FORMAT.format(
-            f"scenario_{_format(self._scenario.name)}"
+            f"scenario_{slugify(self._scenario.name)}"
         )
         self._attr_name = f"{self._scenario.name} Scenario"
         self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"

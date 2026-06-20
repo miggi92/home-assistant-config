@@ -1,10 +1,17 @@
 """The Bosch Smart Home Controller integration."""
 
+from datetime import timedelta
+
 import voluptuous as vol
 import functools as ft
 import json
 from boschshcpy import SHCSession, SHCUniversalSwitch
-from boschshcpy.exceptions import SHCAuthenticationError, SHCConnectionError
+from boschshcpy.exceptions import (
+    SHCAuthenticationError,
+    SHCConnectionError,
+)
+
+from .certificate import parse_certificate
 from homeassistant.components.zeroconf import async_get_instance
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -38,6 +45,7 @@ from .const import (
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
     DOMAIN_NOTIFICATION_ID,
+    DATA_CERT_CHECK_UNSUB,
     DATA_POLLING_HANDLER,
     DATA_SESSION,
     DATA_SHC,
@@ -49,7 +57,6 @@ from .const import (
     SERVICE_TRIGGER_RAWSCAN,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
-from .certificate import parse_certificate
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -62,8 +69,9 @@ PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.LIGHT,
     Platform.NUMBER,
-    Platform.VALVE,
 ]
+if hasattr(Platform, "VALVE"):
+    PLATFORMS.append(Platform.VALVE)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -84,8 +92,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if cert_info is not None:
         if cert_info.days_remaining < 0:
-            from homeassistant.exceptions import ConfigEntryAuthFailed
-
             expiry = cert_info.not_after.date()
             LOGGER.error(
                 "Bosch SHC client certificate expired on %s. Reconfigure integration (put controller in pairing mode and re-authenticate).",
@@ -149,33 +155,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     # Daily certificate re-check scheduling
-    from datetime import timedelta
-    from .const import DATA_CERT_CHECK_UNSUB
-
-    def _scheduled_cert_check(_now):
-        async def _run():
-            try:
-                info = await hass.async_add_executor_job(parse_certificate, cert_path)
-            except Exception:  # silently ignore parsing issues
-                return
-            if info.days_remaining < 0:
-                LOGGER.error(
-                    "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
-                    info.not_after.date(),
-                )
-                hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
-            elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
-                expiry = info.not_after.date()
-                hass.components.persistent_notification.create(
-                    (
-                        f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
-                        "To renew: Put the controller into pairing mode and re-authenticate the integration."
-                    ),
-                    title="Bosch SHC certificate expiring",
-                    notification_id=DOMAIN_NOTIFICATION_ID,
-                )
-
-        hass.async_create_task(_run())
+    async def _scheduled_cert_check(_now):
+        # async_track_time_interval dispatches sync callbacks to a worker
+        # thread, where hass.async_create_task triggers HA 2026.x's escalated
+        # report_non_thread_safe_operation RuntimeError for custom integrations.
+        # Making the callback async makes async_track_time_interval schedule it
+        # directly on the event loop, eliminating both the wrapper and the bug.
+        try:
+            info = await hass.async_add_executor_job(parse_certificate, cert_path)
+        except Exception:  # silently ignore parsing issues
+            return
+        if info.days_remaining < 0:
+            LOGGER.error(
+                "Bosch SHC client certificate expired on %s (daily check). Triggering reload for re-auth.",
+                info.not_after.date(),
+            )
+            hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+        elif info.days_remaining <= CERT_EXPIRY_WARNING_DAYS:
+            expiry = info.not_after.date()
+            hass.components.persistent_notification.create(
+                (
+                    f"Bosch SHC client certificate will expire in {info.days_remaining} days (on {expiry}).\n"
+                    "To renew: Put the controller into pairing mode and re-authenticate the integration."
+                ),
+                title="Bosch SHC certificate expiring",
+                notification_id=DOMAIN_NOTIFICATION_ID,
+            )
 
     hass.data[DOMAIN][entry.entry_id][DATA_CERT_CHECK_UNSUB] = (
         async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
@@ -203,8 +208,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             },
         )
 
-    for scenario in hass.data[DOMAIN][entry.entry_id][DATA_SESSION].scenarios:
-        session.subscribe_scenario_callback("shc", _scenario_trigger)
+    session.subscribe_scenario_callback("shc", _scenario_trigger)
 
     for switch_device in session.device_helper.universal_switches:
         event_listener = SwitchDeviceEventListener(hass, entry, switch_device)
@@ -231,8 +235,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id][DATA_POLLING_HANDLER]()
     # cancel daily cert check
-    from .const import DATA_CERT_CHECK_UNSUB
-
     unsub = hass.data[DOMAIN][entry.entry_id].pop(DATA_CERT_CHECK_UNSUB, None)
     if unsub:
         unsub()
@@ -265,7 +267,9 @@ def register_services(hass, entry):
                 if isinstance(session, SHCSession):
                     for scenario in session.scenarios:
                         if scenario.name == name:
-                            hass.async_add_executor_job(scenario.trigger)
+                            # await so a failed trigger surfaces instead of being
+                            # silently discarded (async migration, phase 0).
+                            await hass.async_add_executor_job(scenario.trigger)
 
     hass.services.async_register(
         DOMAIN,
@@ -329,9 +333,6 @@ class SwitchDeviceEventListener:
         for service in self._device.device_services:
             if service.id == "Keypad":
                 self._keypad_service = service
-                self._keypad_service.subscribe_callback(
-                    self._device.id, self._input_events_handler
-                )
                 break
 
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._handle_ha_stop)
@@ -371,6 +372,10 @@ class SwitchDeviceEventListener:
             via_device=(DOMAIN, self._device.root_device_id),
         )
         self.device_id = device_entry.id
+        if self._keypad_service is not None:
+            self._keypad_service.subscribe_callback(
+                self._device.id, self._input_events_handler
+            )
 
     def shutdown(self):
         """Shutdown the listener."""

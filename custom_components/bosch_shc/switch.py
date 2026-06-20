@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-
+import logging
 from dataclasses import dataclass
 
 from boschshcpy import (
     SHCCamera360,
     SHCCameraEyes,
+    SHCCameraOutdoorGen2,
     SHCLightSwitch,
     SHCSession,
     SHCSmartPlug,
@@ -27,6 +28,7 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.util import slugify
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -37,14 +39,20 @@ from homeassistant.helpers.typing import StateType
 from .const import DATA_SESSION, DOMAIN, DATA_SHC
 from .entity import SHCEntity, async_migrate_to_new_unique_id
 
+LOGGER = logging.getLogger(__name__)
+
 
 @dataclass
 class SHCSwitchRequiredKeysMixin:
     """Mixin for SHC switch required keys."""
 
+    key: str
     on_key: str
     on_value: StateType
-    should_poll: bool
+    should_poll: bool | False
+    device_class: SwitchDeviceClass | None = None
+    icon: str | None = None
+    entity_category: EntityCategory | None = None
 
 
 @dataclass
@@ -136,6 +144,32 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         entity_category=EntityCategory.CONFIG,
         icon="mdi:message-badge",
     ),
+    "cameraoutdoorgen2": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="privacymode",
+        on_value=SHCCameraOutdoorGen2.PrivacyModeService.State.DISABLED,
+        should_poll=True,
+        icon="mdi:video",
+    ),
+    "cameraoutdoorgen2_camerafrontlight": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2_camerafrontlight",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="camerafrontlight",
+        on_value=SHCCameraOutdoorGen2.CameraFrontLightService.State.ON,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:light-flood-down",
+    ),
+    "cameraoutdoorgen2_cameraambientlight": SHCSwitchEntityDescription(
+        key="cameraoutdoorgen2_cameraambientlight",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="cameraambientlight",
+        on_value=SHCCameraOutdoorGen2.CameraAmbientLightService.State.ON,
+        should_poll=True,
+        entity_category=EntityCategory.CONFIG,
+        icon="mdi:wall-sconce-flat",
+    ),
     "presencesimulation": SHCSwitchEntityDescription(
         key="presencesimulation",
         device_class=SwitchDeviceClass.SWITCH,
@@ -155,6 +189,18 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         device_class=SwitchDeviceClass.SWITCH,
         on_key="child_lock",
         on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:lock",
+    ),
+    "child_lock_thermostat": SHCSwitchEntityDescription(
+        key="child_lock_thermostat",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="child_lock",
+        # Thermostats expose child lock as a ThermostatService.State enum, not a
+        # bool. State.ON != True, so reusing the bool "child_lock" description
+        # made the switch read OFF permanently. Compare against the enum member.
+        on_value=SHCThermostat.ThermostatService.State.ON,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:lock",
@@ -185,15 +231,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
     ),
 }
-
-
-def _format(input_string: str) -> str:
-    import re
-
-    """Format a string to be used in an entity_id."""
-    for search, replace in {"ä": "ae", "ö": "oe", "ü": "ue"}.items():
-        input_string = input_string.casefold().replace(search, replace)
-    return re.sub(r"\s+", "_", re.sub("[^0-9a-z_ ]", "", input_string))
 
 
 async def async_setup_entry(
@@ -326,6 +363,39 @@ async def async_setup_entry(
             )
         )
 
+    for switch in session.device_helper.camera_outdoor_gen2:
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2"],
+            )
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Light"
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
+                attr_name="Frontlight",
+            )
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["cameraoutdoorgen2_cameraambientlight"],
+                attr_name="AmbientLight",
+            )
+        )
+
     presence_simulation_system = session.device_helper.presence_simulation_system
     if presence_simulation_system:
         await async_migrate_to_new_unique_id(
@@ -373,14 +443,35 @@ async def async_setup_entry(
                 )
             )
 
+    # Thermostats / room thermostats / wall thermostats expose child lock as a
+    # ThermostatService.State enum (ON/OFF) -> needs the enum-aware description.
     for switch in (
         session.device_helper.thermostats
         + session.device_helper.roomthermostats
-        + session.device_helper.micromodule_shutter_controls
+        # wall thermostats expose child_lock only with boschshcpy >= 0.2.119;
+        # hasattr guard so an older (pinned) lib does not raise on device.child_lock
+        + [d for d in session.device_helper.wallthermostats if hasattr(d, "child_lock")]
+    ):
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["child_lock_thermostat"],
+                attr_name="ChildLock",
+            )
+        )
+
+    # ChildProtection devices expose child lock as a bool (childLockActive).
+    # micromodule_dimmers and light_switches_bsm also carry the ChildProtection
+    # service but were previously not wired -> no child-lock entity was created.
+    for switch in (
+        session.device_helper.micromodule_shutter_controls
         + session.device_helper.micromodule_blinds
         + session.device_helper.micromodule_light_attached
         + session.device_helper.micromodule_relays
         + session.device_helper.micromodule_impulse_relays
+        + session.device_helper.micromodule_dimmers
+        + session.device_helper.light_switches_bsm
     ):
         entities.append(
             SHCSwitch(
@@ -396,28 +487,36 @@ async def async_setup_entry(
 
     @callback
     def async_add_userdefinedstateswitch(
-        switch: SHCUserDefinedStateSwitch,
+        device: SHCUserDefinedState,
     ) -> None:
         """Add User Defined State Switch."""
-        switch = SHCUserDefinedStateSwitch(
-            device=switch,
+        entity = SHCUserDefinedStateSwitch(
+            device=device,
             hass=hass,
             session=session,
             entry_id=config_entry.entry_id,
             description=SWITCH_TYPES["user_defined_state"],
         )
-        async_add_entities([switch])
+        async_add_entities([entity])
 
     # add all current items in session
     for switch in session.userdefinedstates:
-        async_add_userdefinedstateswitch(switch=switch)
+        async_add_userdefinedstateswitch(device=switch)
 
-    # register listener for new switches
-    config_entry.async_on_unload(
-        config_entry.add_update_listener(  # This likely needs a call_soon_threadsafe as calling into async_add_userdefinedstateswitch must be called from the event loop.
-            session.subscribe((SHCUserDefinedState, async_add_userdefinedstateswitch))
-        )
-    )
+    # Register listener for new user-defined state switches and ensure it is
+    # torn down on config entry unload.  session.subscribe() returns None, so
+    # we build the unsubscribe closure ourselves.  add_update_listener expects
+    # an options-update callback (hass, entry) -> None and must NOT be used here.
+    _uds_subscriber = (SHCUserDefinedState, async_add_userdefinedstateswitch)
+    session.subscribe(_uds_subscriber)
+
+    def _unsubscribe_uds():
+        try:
+            session._subscribers.remove(_uds_subscriber)
+        except ValueError:
+            pass
+
+    config_entry.async_on_unload(_unsubscribe_uds)
 
 
 class SHCSwitch(SHCEntity, SwitchEntity):
@@ -445,20 +544,52 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         )
 
     @property
-    def is_on(self) -> bool:
-        """Return the state of the switch."""
-        return (
-            getattr(self._device, self.entity_description.on_key)
-            == self.entity_description.on_value
-        )
+    def is_on(self) -> bool | None:
+        """Return the state of the switch.
+
+        Defensive: cameras registered via SHC local API can have a None
+        underlying service (e.g. PrivacyModeService for cameraeyes / camera360
+        switches), causing boschshcpy to crash with AttributeError on every
+        state update. Return None (unavailable) instead of crash-looping the
+        state writer. See mosandlt/boschshc-hass branch fix/code-quality-improvements.
+        """
+        try:
+            return (
+                getattr(self._device, self.entity_description.on_key)
+                == self.entity_description.on_value
+            )
+        except AttributeError:
+            return None
 
     def turn_on(self, **kwargs) -> None:
-        """Turn the switch on."""
-        setattr(self._device, self.entity_description.on_key, True)
+        """Turn the switch on.
+
+        Guard against AttributeError: some devices (e.g. MicromoduleRelay with
+        no connected load, Camera360 with no PrivacyMode service) expose a
+        property whose underlying service is None.  Swallow and log instead of
+        crash-looping the entity.  Fixes issues #185 (relay) and #206
+        (camera_360).
+        """
+        try:
+            setattr(self._device, self.entity_description.on_key, True)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_on skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
     def turn_off(self, **kwargs) -> None:
-        """Turn the switch off."""
-        setattr(self._device, self.entity_description.on_key, False)
+        """Turn the switch off.
+
+        Same guard as turn_on — see that docstring.
+        """
+        try:
+            setattr(self._device, self.entity_description.on_key, False)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_off skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
     @property
     def should_poll(self) -> bool:
@@ -494,7 +625,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         )
 
         self.entity_id = ENTITY_ID_FORMAT.format(
-            f"userdefinedstate_{_format(self._device.name)}"
+            f"userdefinedstate_{slugify(self._device.name)}"
         )
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
