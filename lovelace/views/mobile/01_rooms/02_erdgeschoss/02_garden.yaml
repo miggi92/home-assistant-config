@@ -5,8 +5,103 @@ icon: mdi:tree
 subview: true
 type: sections
 max_columns: 3
-badges: []
+badges:
+  - type: entity
+    show_name: true
+    show_state: true
+    show_icon: true
+    entity: sensor.birdnet_summary_count
+    name: Vögel
+    state_content: count
+    tap_action:
+      action: navigate
+      navigation_path: "#birdnet_summary"
 sections:
   - type: grid
     cards:
       - !include ../../../../cards/nav-bar.yaml
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: "{{ states('sensor.birdnet_latest_detection') }}"
+            secondary: >-
+              {{ state_attr('sensor.birdnet_latest_detection', 'scientific_name') }} |
+              {{ (state_attr('sensor.birdnet_latest_detection', 'max_confidence') *
+              100) | round(0) }}% Sicherheit
+            picture: "http://192.168.0.76:8088{{ state_attr('sensor.birdnet_latest_detection', 'thumbnail_url') }}"
+            fill_container: false
+            multiline_secondary: false
+            icon_type: entity-picture
+            tap_action:
+              action: navigate
+              navigation_path: "#birdnet_popup"
+  - type: grid
+    cards:
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "#birdnet_popup"
+        name: Letzte Erkennung
+        icon: mdi:bird
+        back_open_popup: false
+        width_desktop: 500px
+        cards:
+          - type: markdown
+            content: >
+              <img src="http://192.168.0.76:8088{{ state_attr('sensor.birdnet_latest_detection', 'thumbnail_url') }}" style="width: 100%; border-radius: 16px; display: block; margin: 0 auto;">
+
+              <div style="text-align: center; margin-top: 12px; font-size: 20px; font-weight: bold;">
+                {{ states('sensor.birdnet_latest_detection') }}
+              </div>
+              <div style="text-align: center; font-style: italic; color: gray; margin-bottom: 8px;">
+                {{ state_attr('sensor.birdnet_latest_detection', 'scientific_name') }}
+              </div>
+
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: template
+                icon: mdi:counter
+                icon_color: green
+                content: "{{ state_attr('sensor.birdnet_latest_detection', 'count') }}x"
+              - type: template
+                icon: mdi:clock-start
+                icon_color: blue
+                content: "{{ state_attr('sensor.birdnet_latest_detection', 'first_heard') }}"
+              - type: template
+                icon: mdi:clock-end
+                icon_color: amber
+                content: "{{ state_attr('sensor.birdnet_latest_detection', 'latest_heard') }}"
+            alignment: center
+      - type: custom:bubble-card
+        card_type: pop-up
+        hash: "#birdnet_summary"
+        name: Top 10 Vögel gesamt
+        icon: mdi:format-list-numbered
+        back_open_popup: false
+        width_desktop: 500px
+        cards:
+          - type: markdown
+            content: |
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              {% set names = state_attr('sensor.birdnet_top_10', 'common_name') %}
+              {% if names is not none %}
+              {% set common_names = names if names is iterable and not names is string else [names] %}
+              {% set scis = state_attr('sensor.birdnet_top_10', 'scientific_name') %}
+              {% set scientific_names = scis if scis is iterable and not scis is string else [scis] %}
+              {% set cnts = state_attr('sensor.birdnet_top_10', 'count') %}
+              {% set counts = cnts if cnts is iterable and not cnts is string else [cnts] %}
+              {% set thumbs = state_attr('sensor.birdnet_top_10', 'thumbnail_url') %}
+              {% set thumbnails = thumbs if thumbs is iterable and not thumbs is string else [thumbs] %}
+              {% for i in range(0, common_names | length) %}
+              <div style="display: flex; align-items: center; padding: 12px; background: var(--secondary-background-color); border-radius: 12px;">
+                <img src="http://192.168.0.76:8088{{ thumbnails[i] }}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; margin-right: 12px;">
+                <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+                  <span style="color: var(--primary-text-color); font-size: 14px; font-weight: 500; line-height: 1.2;">{{ i + 1 }}. {{ common_names[i] }}</span>
+                  <span style="color: var(--secondary-text-color); font-size: 12px; line-height: 1.2; margin-top: 2px;">{{ scientific_names[i] }}</span>
+                </div>
+                <div style="background: rgba(var(--rgb-primary-text-color), 0.05); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: var(--primary-text-color);">
+                  {{ counts[i] }}x
+                </div>
+              </div>
+              {% endfor %}
+              {% endif %}
+              </div>
