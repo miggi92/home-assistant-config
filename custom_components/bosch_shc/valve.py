@@ -15,7 +15,9 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DATA_SESSION, DOMAIN, LOGGER
-from .entity import SHCEntity
+from .entity import SHCEntity, device_excluded
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(
@@ -28,6 +30,8 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for valve in session.device_helper.thermostats:
+        if device_excluded(valve, config_entry.options):
+            continue
         entities.append(
             SHCValve(
                 device=valve,
@@ -55,9 +59,7 @@ class SHCValve(SHCEntity, ValveEntity):
     ) -> None:
         """Initialize a SHC valve."""
         super().__init__(device, entry_id)
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        self._attr_name = None if attr_name is None else attr_name
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -73,7 +75,7 @@ class SHCValve(SHCEntity, ValveEntity):
         """
         try:
             return self._device.position
-        except (ValueError, KeyError) as err:
+        except (ValueError, KeyError, AttributeError) as err:
             LOGGER.debug(
                 "Could not read valve position for %s: %s", self._device.name, err
             )

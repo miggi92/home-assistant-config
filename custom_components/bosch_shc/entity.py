@@ -3,10 +3,23 @@
 from boschshcpy.device import SHCDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry
-from homeassistant.helpers.device_registry import async_get as get_dev_reg
+from homeassistant.helpers.device_registry import DeviceInfo, async_get as get_dev_reg
 from homeassistant.helpers.entity import Entity
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, OPT_EXCLUDED_DEVICES, OPT_EXCLUDED_ROOMS
+
+
+def device_excluded(device, options) -> bool:
+    """True if the Bosch device is excluded by the device/room filter options."""
+    excluded_devices = options.get(OPT_EXCLUDED_DEVICES) or []
+    excluded_rooms = options.get(OPT_EXCLUDED_ROOMS) or []
+    if not excluded_devices and not excluded_rooms:
+        return False
+    if getattr(device, "id", None) in excluded_devices:
+        return True
+    if getattr(device, "room_id", None) in excluded_rooms:
+        return True
+    return False
 
 
 async def async_get_device_id(hass: HomeAssistant, device_id: str) -> None:
@@ -73,11 +86,16 @@ async def async_migrate_to_new_unique_id(
 class SHCEntity(Entity):
     """Representation of a SHC base entity."""
 
+    _attr_has_entity_name = True
+
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the generic SHC device."""
         self._device = device
         self._entry_id = entry_id
-        self._attr_name = f"{device.name}"
+        # Primary entity: _attr_name = None means HA uses the device name as the
+        # entity name.  Sub-classes that represent a feature set _attr_name to the
+        # feature label (without the device name prefix, since HA prepends it).
+        self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._update_attr()
 
@@ -94,7 +112,12 @@ class SHCEntity(Entity):
 
         def update_entity_information():
             if self._device.deleted:
-                self.hass.add_job(async_remove_devices(self.hass, self, self._entry_id))
+                # Fires from the SHC poll thread → schedule on the loop safely
+                # instead of hass.add_job (#288-cluster).
+                self.hass.loop.call_soon_threadsafe(
+                    self.hass.async_create_task,
+                    async_remove_devices(self.hass, self, self._entry_id),
+                )
             else:
                 self._update_attr()
                 self.schedule_update_ha_state()
@@ -121,15 +144,15 @@ class SHCEntity(Entity):
         return self._device.id
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device.id)},
-            "name": self.device_name,
-            "manufacturer": self._device.manufacturer,
-            "model": self._device.device_model,
-            "via_device": (DOMAIN, self._device.root_device_id),
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self.device_name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+            via_device=(DOMAIN, self._device.root_device_id),
+        )
 
     @property
     def available(self):

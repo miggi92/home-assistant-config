@@ -9,9 +9,12 @@ from homeassistant.components.alarm_control_panel.const import (
 from homeassistant.const import (
     Platform,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DATA_SESSION, DOMAIN
 from .entity import async_migrate_to_new_unique_id
+
+PARALLEL_UPDATES = 1
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -40,6 +43,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     """Representation of SHC intrusion detection control."""
 
+    _attr_has_entity_name = True
+    _attr_name = None  # primary entity — HA uses the device name as the entity name
+
     def __init__(self, device: SHCIntrusionSystem, entry_id: str):
         """Initialize the intrusion detection control."""
         self._device = device
@@ -61,28 +67,20 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
         self._device.unsubscribe_callback(self.entity_id)
 
     @property
-    def name(self):
-        """Name of the entity."""
-        return self._device.name
-
-    @property
     def device_id(self):
         """Return the ID of the system."""
         return self._device.id
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return {
-            "identifiers": {(DOMAIN, self._device.id)},
-            "name": self._device.name,
-            "manufacturer": self._device.manufacturer,
-            "model": self._device.device_model,
-            "via_device": (
-                DOMAIN,
-                self._device.root_device_id,
-            ),
-        }
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device.id)},
+            name=self._device.name,
+            manufacturer=self._device.manufacturer,
+            model=self._device.device_model,
+            via_device=(DOMAIN, self._device.root_device_id),
+        )
 
     @property
     def available(self):
@@ -173,3 +171,16 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):
     def alarm_mute(self):
         """Mute alarm command."""
         self._device.mute()
+
+    @property
+    def extra_state_attributes(self):
+        """Return additional IDS state attributes.
+
+        Exposes alarm_state_incidents, security_gaps, and remaining_time_until_armed
+        from the SHCIntrusionSystem domain model.
+        """
+        return {
+            "incidents": self._device.alarm_state_incidents,
+            "security_gaps": self._device.security_gaps,
+            "remaining_time_until_armed": self._device.remaining_time_until_armed,
+        }

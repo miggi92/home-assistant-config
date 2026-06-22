@@ -37,9 +37,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import DATA_SESSION, DOMAIN, DATA_SHC
-from .entity import SHCEntity, async_migrate_to_new_unique_id
+from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 1
 
 
 @dataclass
@@ -205,6 +207,87 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         should_poll=False,
         icon="mdi:lock",
     ),
+    "pet_immunity_enabled": SHCSwitchEntityDescription(
+        key="pet_immunity_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="pet_immunity_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:paw",
+    ),
+    "energy_saving_mode_enabled": SHCSwitchEntityDescription(
+        key="energy_saving_mode_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="energy_saving_mode_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:leaf",
+    ),
+    "warning_suppressed": SHCSwitchEntityDescription(
+        key="warning_suppressed",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="warning_suppressed",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:bell-off",
+    ),
+    "nightly_promise_enabled": SHCSwitchEntityDescription(
+        key="nightly_promise_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="nightly_promise_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:shield-check",
+    ),
+    "humidity_warning_enabled": SHCSwitchEntityDescription(
+        key="humidity_warning_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="humidity_warning_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:water-alert",
+    ),
+    "swap_inputs": SHCSwitchEntityDescription(
+        key="swap_inputs",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="swap_inputs",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:swap-horizontal",
+    ),
+    "swap_outputs": SHCSwitchEntityDescription(
+        key="swap_outputs",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="swap_outputs",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:swap-horizontal-bold",
+    ),
+    "pre_alarm_enabled": SHCSwitchEntityDescription(
+        key="pre_alarm_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="pre_alarm_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:smoke-detector",
+    ),
+    "smart_sensitivity_enabled": SHCSwitchEntityDescription(
+        key="smart_sensitivity_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="smart_sensitivity_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:tune",
+    ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
@@ -243,6 +326,8 @@ async def async_setup_entry(
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
     for switch in session.device_helper.smart_plugs:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -264,11 +349,37 @@ async def async_setup_entry(
                 attr_name="Routing",
             )
         )
+        if (
+            getattr(switch, "supports_energy_saving_mode", False)
+            and getattr(switch, "energy_saving_mode_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["energy_saving_mode_enabled"],
+                    attr_name="EnergySavingMode",
+                )
+            )
+        if (
+            getattr(switch, "supports_power_switch_warning", False)
+            and getattr(switch, "warning_suppressed", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["warning_suppressed"],
+                    attr_name="WarningSuppressed",
+                )
+            )
 
     for switch in (
         session.device_helper.light_switches_bsm
         + session.device_helper.micromodule_light_attached
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -281,6 +392,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.smart_plugs_compact:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -291,8 +404,34 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["smartplugcompact"],
             )
         )
+        if (
+            getattr(switch, "supports_energy_saving_mode", False)
+            and getattr(switch, "energy_saving_mode_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["energy_saving_mode_enabled"],
+                    attr_name="EnergySavingMode",
+                )
+            )
+        if (
+            getattr(switch, "supports_power_switch_warning", False)
+            and getattr(switch, "warning_suppressed", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["warning_suppressed"],
+                    attr_name="WarningSuppressed",
+                )
+            )
 
     for switch in session.device_helper.micromodule_relays:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -303,8 +442,62 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["micromodule_relay_switch"],
             )
         )
+        if (
+            getattr(switch, "supports_switch_configuration", False)
+            and getattr(switch, "swap_inputs", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["swap_inputs"],
+                    attr_name="SwapInputs",
+                )
+            )
+        if (
+            getattr(switch, "supports_switch_configuration", False)
+            and getattr(switch, "swap_outputs", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["swap_outputs"],
+                    attr_name="SwapOutputs",
+                )
+            )
+
+    for device in getattr(session.device_helper, "micromodule_light_controls", []):
+        if device_excluded(device, config_entry.options):
+            continue
+        if (
+            getattr(device, "supports_switch_configuration", False)
+            and getattr(device, "swap_inputs", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["swap_inputs"],
+                    attr_name="SwapInputs",
+                )
+            )
+        if (
+            getattr(device, "supports_switch_configuration", False)
+            and getattr(device, "swap_outputs", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=device,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["swap_outputs"],
+                    attr_name="SwapOutputs",
+                )
+            )
 
     for switch in session.device_helper.camera_eyes:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -341,6 +534,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_360:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -364,6 +559,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.camera_outdoor_gen2:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -376,8 +573,20 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraoutdoorgen2"],
             )
         )
+        # #289-safe migration: in 0.4.106-0.4.111 both Gen2 camera lights shared
+        # attr_name="Light" (uid _light); the Frontlight/AmbientLight split left
+        # the old migration pointing at a phantom _light and gave AmbientLight no
+        # migration at all.  Map the old id (both historical formats) to the real
+        # Frontlight uid; async_migrate skips if the target already exists, so
+        # already-upgraded users are unaffected.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch, attr_name="Light"
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="Frontlight", old_unique_id=f"{switch.serial}_light",
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="Frontlight",
+            old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
         entities.append(
             SHCSwitch(
@@ -386,6 +595,18 @@ async def async_setup_entry(
                 description=SWITCH_TYPES["cameraoutdoorgen2_camerafrontlight"],
                 attr_name="Frontlight",
             )
+        )
+        # AmbientLight had no prior migration; the old single _light entity is
+        # claimed by Frontlight above, so these no-op for upgraders but cover a
+        # registry where only AmbientLight's id survived.
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="AmbientLight", old_unique_id=f"{switch.serial}_light",
+        )
+        await async_migrate_to_new_unique_id(
+            hass=hass, platform=Platform.SWITCH, device=switch,
+            attr_name="AmbientLight",
+            old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
         entities.append(
             SHCSwitch(
@@ -397,7 +618,9 @@ async def async_setup_entry(
         )
 
     presence_simulation_system = session.device_helper.presence_simulation_system
-    if presence_simulation_system:
+    if presence_simulation_system and not device_excluded(
+        presence_simulation_system, config_entry.options
+    ):
         await async_migrate_to_new_unique_id(
             hass=hass,
             platform=Platform.SWITCH,
@@ -412,6 +635,8 @@ async def async_setup_entry(
         )
 
     for switch in session.device_helper.shutter_contacts2:
+        if device_excluded(switch, config_entry.options):
+            continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
         )
@@ -433,6 +658,8 @@ async def async_setup_entry(
             )
 
     for switch in session.device_helper.thermostats:
+        if device_excluded(switch, config_entry.options):
+            continue
         if switch.supports_silentmode:
             entities.append(
                 SHCSwitch(
@@ -452,6 +679,8 @@ async def async_setup_entry(
         # hasattr guard so an older (pinned) lib does not raise on device.child_lock
         + [d for d in session.device_helper.wallthermostats if hasattr(d, "child_lock")]
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -473,6 +702,8 @@ async def async_setup_entry(
         + session.device_helper.micromodule_dimmers
         + session.device_helper.light_switches_bsm
     ):
+        if device_excluded(switch, config_entry.options):
+            continue
         entities.append(
             SHCSwitch(
                 device=switch,
@@ -481,6 +712,97 @@ async def async_setup_entry(
                 attr_name="ChildLock",
             )
         )
+
+    for switch in session.device_helper.motion_detectors2:
+        if device_excluded(switch, config_entry.options):
+            continue
+        await async_migrate_to_new_unique_id(
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="PetImmunity",
+        )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["pet_immunity_enabled"],
+                attr_name="PetImmunity",
+            )
+        )
+        if hasattr(switch, "smart_sensitivity_enabled"):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["smart_sensitivity_enabled"],
+                    attr_name="SmartSensitivity",
+                )
+            )
+
+    for switch in getattr(session.device_helper, "twinguards", []):
+        if device_excluded(switch, config_entry.options):
+            continue
+        if (
+            getattr(switch, "supports_nightly_promise", False)
+            and getattr(switch, "nightly_promise_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["nightly_promise_enabled"],
+                    attr_name="NightlyPromise",
+                )
+            )
+        if (
+            getattr(switch, "supports_smoke_sensitivity", False)
+            and getattr(switch, "pre_alarm_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["pre_alarm_enabled"],
+                    attr_name="PreAlarm",
+                )
+            )
+
+    for switch in getattr(session.device_helper, "smoke_detectors", []):
+        if device_excluded(switch, config_entry.options):
+            continue
+        if (
+            getattr(switch, "supports_smoke_sensitivity", False)
+            and getattr(switch, "pre_alarm_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["pre_alarm_enabled"],
+                    attr_name="PreAlarm",
+                )
+            )
+
+    # ThermostatGen2 / RoomThermostat2: humidity warning toggle.
+    # Guarded by hasattr so old lib (no display_config) doesn't create it.
+    for switch in (
+        session.device_helper.thermostats + session.device_helper.roomthermostats
+    ):
+        if device_excluded(switch, config_entry.options):
+            continue
+        if (
+            getattr(switch, "supports_display_configuration", False)
+            and getattr(switch, "humidity_warning_enabled", None) is not None
+        ):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["humidity_warning_enabled"],
+                    attr_name="HumidityWarning",
+                )
+            )
 
     if entities:
         async_add_entities(entities)
@@ -534,9 +856,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         """Initialize a SHC switch."""
         super().__init__(device, entry_id)
         self.entity_description = description
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        self._attr_name = None if attr_name is None else attr_name
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -605,6 +925,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
     """Representation of a SHC User Defined State Entity."""
 
     entity_description: SHCSwitchEntityDescription
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -620,9 +941,11 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._session = session
         self._entry_id = entry_id
         self.entity_description = description
-        self._attr_name = (
-            f"{device.name}" if attr_name is None else f"{device.name} {attr_name}"
-        )
+        # UDS entity: the state name IS the entity's distinguishing name.
+        # With has_entity_name=True and _attr_name=None HA would show the SHC hub
+        # name only; set _attr_name to the UDS state name so the entity is
+        # identifiable (e.g. "Vacation Mode").
+        self._attr_name = device.name if attr_name is None else attr_name
 
         self.entity_id = ENTITY_ID_FORMAT.format(
             f"userdefinedstate_{slugify(self._device.name)}"
@@ -644,10 +967,13 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         def update_entity_information():
             if self._device.deleted:
                 self._attr_available = False
-                # async_will_remove_from_hass isn't intended to be called
-                # directly and should only be called by the entity platform
-                # it should be split into another function
-                self.hass.add_job(self.async_will_remove_from_hass)
+                # async_will_remove_from_hass must run on the event loop; this
+                # callback fires from the SHC poll thread, so schedule it
+                # thread-safely instead of hass.add_job (#288-cluster).
+                self.hass.loop.call_soon_threadsafe(
+                    self.hass.async_create_task,
+                    self.async_will_remove_from_hass(),
+                )
             self.schedule_update_ha_state()
 
         self._session.subscribe_userdefinedstate_callback(
