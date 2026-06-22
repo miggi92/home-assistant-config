@@ -205,24 +205,9 @@ sections:
           type: custom:mushroom-template-card
           icon: mdi:cloud-alert
           icon_color: red
-          primary: Es gibt aktuelle Wetterwarnungen
-          secondary: |-
-            Anzahl der Warnungen: {{ state_attr("sensor.home_aktuelle_warnstufe", "warning_count") + state_attr("sensor.home_vorwarnstufe", "warning_count")}}
-          card_mod:
-            style:
-              mushroom-shape-icon$: |
-                ha-icon {
-                  --icon-animation: surprise 3s ease infinite;
-                }
-                @keyframes surprise {
-                  0%, 20%, 100% { transform: translateY(0); }
-                  2.5% { transform: translateY(-6px) rotate(-14deg); }
-                  5% { transform: translateY(-6px) rotate(11deg); }
-                  7.5% { transform: translateY(-6px) rotate(-8deg); }
-                  10% { transform: translateY(-6px) rotate(5deg); }
-                  12.5% { transform: translateY(0); }
-                  15% { transform: translateY(-3px) }
-                }
+          primary: Aktuelle Wetterwarnungen
+          secondary: >-
+            {{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') + state_attr('sensor.home_vorwarnstufe', 'warning_count') }} Warnung(en)
           tap_action:
             action: navigate
             navigation_path: dwd
