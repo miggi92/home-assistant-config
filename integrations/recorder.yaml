@@ -2,12 +2,33 @@
 # Recorder
 # https://www.home-assistant.io/integrations/recorder/
 recorder:
+  purge_keep_days: 30
+  commit_interval: 30
   exclude:
     domains:
       - automation
       - update
+      - sun
     entity_globs:
       - sensor.sun*
       - weather.*
       - sensor.flightradar24*
       - sensor.team_tracker*
+      - sensor.*_cpu_prozent
+      - sensor.*_arbeitsspeicher_in_prozent
+      - sensor.*_uptime
+      - sensor.*_linkquality
+      - sensor.callmon_*
+    entities:
+      - sensor.time
+      - sensor.date
+      - sensor.date_time_iso
+      - sensor.day_of_week
+      - sensor.weekday
+      - sensor.sun_solar_elevation
+      - sensor.sun_solar_azimuth
+      - sensor.alle_benzinpreise
+      - sensor.billigsten_tankstellen
+      - sensor.joke
+      - sensor.unsplash_pool
+      - sensor.phone_line_status
