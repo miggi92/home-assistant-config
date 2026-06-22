@@ -1,0 +1,26 @@
+---
+# Summary
+resource: http://192.168.0.76:8088/api/v2/analytics/species/summary
+scan_interval: 300
+sensor:
+  - name: "Birdnet Summary Count"
+    unique_id: birdnet_summary_count
+    value_template: "{{ value_json | length }}"
+  - name: "Birdnet Latest Summary Detection"
+    unique_id: birdnet_latest_summary_detection
+    value_template: >
+      {% if value_json | length > 0 %}
+        {{ value_json[0].common_name }}
+      {% else %}
+        none
+      {% endif %}
+    json_attributes_path: "$[0]"
+    json_attributes:
+      - scientific_name
+      - species_code
+      - count
+      - first_heard
+      - last_heard
+      - avg_confidence
+      - max_confidence
+      - thumbnail_url

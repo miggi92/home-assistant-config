@@ -19,6 +19,7 @@ recorder:
       - sensor.*_uptime
       - sensor.*_linkquality
       - sensor.callmon_*
+      - sensor.birdnet*
     entities:
       - sensor.time
       - sensor.date

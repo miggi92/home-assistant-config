@@ -1,0 +1,25 @@
+---
+# Unsplash
+resource: http://192.168.0.76:8088/api/v2/analytics/species/daily
+scan_interval: 300
+sensor:
+  - name: "Birdnet Daily Count"
+    unique_id: birdnet_daily_count
+    value_template: "{{ value_json | length }}"
+  - name: "Birdnet Latest Detection"
+    unique_id: birdnet_latest_detection
+    value_template: >
+      {% if value_json | length > 0 %}
+        {{ value_json[0].common_name }}
+      {% else %}
+        none
+      {% endif %}
+    json_attributes_path: "$[0]"
+    json_attributes:
+      - scientific_name
+      - species_code
+      - count
+      - max_confidence
+      - first_heard
+      - latest_heard
+      - thumbnail_url
