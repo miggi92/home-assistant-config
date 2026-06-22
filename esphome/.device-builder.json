@@ -20,6 +20,56 @@
   },
   "_firmware_jobs": [
     {
+      "job_id": "117811ba2afe",
+      "configuration": "m5stack-atom-echo-54cbf0.yaml",
+      "job_type": "upload",
+      "status": "cancelled",
+      "created_at": "2026-06-22T12:04:20.669285+00:00",
+      "started_at": null,
+      "completed_at": "2026-06-22T12:04:24.258986+00:00",
+      "exit_code": null,
+      "error": "prerequisite job did not complete successfully",
+      "port": "OTA",
+      "new_name": "",
+      "depends_on": "e426d9f69400",
+      "dependency_released": false,
+      "progress": null,
+      "remote_peer": "",
+      "remote_job_id": "",
+      "remote_peer_label": "",
+      "device_name": "",
+      "device_friendly_name": "",
+      "source": "local",
+      "source_pin_sha256": "",
+      "source_label": "",
+      "source_esphome_version": ""
+    },
+    {
+      "job_id": "e426d9f69400",
+      "configuration": "m5stack-atom-echo-54cbf0.yaml",
+      "job_type": "compile",
+      "status": "cancelled",
+      "created_at": "2026-06-22T12:04:20.669260+00:00",
+      "started_at": "2026-06-22T12:04:20.669749+00:00",
+      "completed_at": "2026-06-22T12:04:24.258927+00:00",
+      "exit_code": -15,
+      "error": null,
+      "port": "",
+      "new_name": "",
+      "depends_on": "",
+      "dependency_released": false,
+      "progress": null,
+      "remote_peer": "",
+      "remote_job_id": "",
+      "remote_peer_label": "",
+      "device_name": "",
+      "device_friendly_name": "",
+      "source": "local",
+      "source_pin_sha256": "",
+      "source_label": "",
+      "source_esphome_version": ""
+    },
+    {
       "job_id": "9b57202dfeca",
       "configuration": "proxy_couch.yaml",
       "job_type": "upload",
@@ -269,5 +319,8 @@
       "source_label": "",
       "source_esphome_version": ""
     }
-  ]
+  ],
+  "s3box_main.yaml": {
+    "mac_address": "74:4D:BD:2E:8B:78"
+  }
 }
