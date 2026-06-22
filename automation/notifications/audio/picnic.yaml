@@ -6,7 +6,9 @@ description: "Benachrichtigen wenn picnic kommt"
 trigger:
   - platform: template
     value_template: >
-      {{ now().timestamp() >= as_timestamp( states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung'), now().timestamp() + 301 ) - 300 }}
+      {% set delivery = as_timestamp(states('sensor.picnic_voraussichtlicher_beginn_der_nachsten_lieferung'), 0) | float(0) %}
+      {% set diff = delivery - now().timestamp() %}
+      {{ delivery > 0 and diff <= 300 and diff > 0 }}
 condition: []
 action:
   - delay:
@@ -18,5 +20,4 @@ action:
       who: "home, home_audio"
       tag_id: "information"
       group: "Shopping"
-
 mode: single
