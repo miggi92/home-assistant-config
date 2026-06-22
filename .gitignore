@@ -87,6 +87,7 @@ home-assistant_v2.db
 home-assistant_v2.db-shm
 home-assistant_v2.db-wal
 OZW_Log.txt
+.mcp_proxy_config.json
 
 # Spezifische Konfigurationen & Add-on State
 skyqDefaultRoom.yaml
