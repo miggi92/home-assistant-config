@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.3%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.3)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.6.4%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.6.4)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -28,14 +28,14 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 189
+- 🆙 Aktualisierung: 192
 - 🚨 Alarmbedienfelder: 2
 - ↕️ Auswahlen: 84
-- 🤖 Automatisierungen: 206
+- 🤖 Automatisierungen: 208
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 43
-- 🛡️ Binäre Sensoren: 257
-- 🛠️ Custom Integrationen: 56
+- 🛡️ Binäre Sensoren: 260
+- 🛠️ Custom Integrationen: 58
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
 - 🔡 Eingabe-Auswahlen: 10
@@ -44,10 +44,10 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3923
+- 🧩 Entitäten: 3949
 - 🎮 Fernbedienungen: 17
-- 📱 Geräte: 559
-- 📍 Geräte-Tracker: 133
+- 📱 Geräte: 564
+- 📍 Geräte-Tracker: 134
 - 🔌 Integrationen: 197
 - 🗓️ Kalender: 31
 - 📷 Kameras: 19
@@ -58,16 +58,16 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🎵 Mediaplayer: 46
 - 🔟 Nummern: 141
 - 👤 Personen: 9
-- 🔌 Schalter: 344
+- 🔌 Schalter: 345
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1802
+- 📟 Sensoren: 1816
 - 📢 Sirenen: 1
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 144
+- 🔘 Tasten: 146
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 47
 - 🚁 Ventilatoren: 4

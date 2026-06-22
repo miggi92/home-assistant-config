@@ -1002,6 +1002,12 @@
       "id": "nawma_sa_gov_au"
     },
     {
+      "title": "North West Resource Recovery and Recycling",
+      "module": "nwrrr_com_au",
+      "default_params": {},
+      "id": "nwrrr_com_au"
+    },
+    {
       "title": "Northern Areas Council",
       "module": "app_my_local_services_au",
       "default_params": {},
@@ -1564,6 +1570,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Baumkirchen",
+      "module": "baumkirchen_gv_at",
+      "default_params": {},
+      "id": "baumkirchen_gv_at"
+    },
+    {
       "title": "Behamberg",
       "module": "citiesapps_com",
       "default_params": {},
@@ -1628,6 +1640,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_abfallv_zerowaste_io"
+    },
+    {
+      "title": "Breitenau",
+      "module": "citiesapps_com",
+      "default_params": {},
+      "id": "citiesapps_com"
     },
     {
       "title": "Breitenbach am Inn",
@@ -1864,6 +1882,18 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Elsbethen",
+      "module": "elsbethen_at",
+      "default_params": {},
+      "id": "elsbethen_at"
+    },
+    {
+      "title": "Enns",
+      "module": "enns_at",
+      "default_params": {},
+      "id": "enns_at"
+    },
+    {
       "title": "Enzenreith",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2038,6 +2068,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Fritzens",
+      "module": "fritzens_gv_at",
+      "default_params": {},
+      "id": "fritzens_gv_at"
+    },
+    {
       "title": "Frohnleiten",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2106,6 +2142,24 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_aspangmarkt_at"
+    },
+    {
+      "title": "Gemeinde B\u00fcrmoos",
+      "module": "buermoos_at",
+      "default_params": {},
+      "id": "buermoos_at"
+    },
+    {
+      "title": "Gemeinde Felixdorf",
+      "module": "felixdorf_gv_at",
+      "default_params": {},
+      "id": "felixdorf_gv_at"
+    },
+    {
+      "title": "Gemeinde Passail",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_passail_at"
     },
     {
       "title": "Gemeinde Sulz",
@@ -2426,6 +2480,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Hart bei Graz",
+      "module": "hartbeigraz_at",
+      "default_params": {},
+      "id": "hartbeigraz_at"
+    },
+    {
       "title": "Hartberg",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2490,6 +2550,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Herzogsdorf",
+      "module": "herzogsdorf_ooe_gv_at",
+      "default_params": {},
+      "id": "herzogsdorf_ooe_gv_at"
     },
     {
       "title": "Heugraben",
@@ -2584,6 +2650,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Imst",
+      "module": "imst_at",
+      "default_params": {},
+      "id": "imst_at"
+    },
+    {
       "title": "infeo",
       "module": "infeo_at",
       "default_params": {},
@@ -2620,6 +2692,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Jochberg",
+      "module": "jochberg_gv_at",
+      "default_params": {},
+      "id": "jochberg_gv_at"
     },
     {
       "title": "Kainach",
@@ -2760,6 +2838,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Koppl",
+      "module": "koppl_at",
+      "default_params": {},
+      "id": "koppl_at"
+    },
+    {
       "title": "Korneuburg",
       "module": "citiesapps_com",
       "default_params": {},
@@ -2782,6 +2866,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Kronstorf",
+      "module": "kronstorf_at",
+      "default_params": {},
+      "id": "kronstorf_at"
     },
     {
       "title": "Krottendorf-Gaisfeld",
@@ -3084,6 +3174,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Marktgemeinde Angern an der March",
+      "module": "angern_gv_at",
+      "default_params": {},
+      "id": "angern_gv_at"
+    },
+    {
       "title": "Marktgemeinde Edlitz",
       "module": "edlitz_at",
       "default_params": {},
@@ -3102,10 +3198,28 @@
       "id": "goessendorf_at"
     },
     {
+      "title": "Marktgemeinde Kirchberg am Wechsel",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_kirchberg_am_wechsel_at"
+    },
+    {
       "title": "Marktgemeinde Obdach",
       "module": "obdach_at",
       "default_params": {},
       "id": "obdach_at"
+    },
+    {
+      "title": "Marktgemeinde Schlierbach",
+      "module": "schlierbach_at",
+      "default_params": {},
+      "id": "schlierbach_at"
+    },
+    {
+      "title": "Marktgemeinde Sollenau",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_sollenau_at"
     },
     {
       "title": "Marz",
@@ -3154,6 +3268,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Micheldorf in Ober\u00f6sterreich",
+      "module": "micheldorf_at",
+      "default_params": {},
+      "id": "micheldorf_at"
     },
     {
       "title": "Miesenbach",
@@ -3318,6 +3438,12 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "Oberndorf bei Schwanenstadt",
+      "module": "oberndorf_schwanenstadt_at",
+      "default_params": {},
+      "id": "oberndorf_schwanenstadt_at"
+    },
+    {
       "title": "Oberndorf in Tirol",
       "module": "ics",
       "default_params": {},
@@ -3352,6 +3478,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Ort im Innkreis",
+      "module": "ort_im_innkreis_at",
+      "default_params": {},
+      "id": "ort_im_innkreis_at"
     },
     {
       "title": "Oslip",
@@ -3438,6 +3570,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Piberbach",
+      "module": "piberbach_ooe_gv_at",
+      "default_params": {},
+      "id": "piberbach_ooe_gv_at"
+    },
+    {
       "title": "Pichl bei Wels",
       "module": "ics",
       "default_params": {},
@@ -3520,6 +3658,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "Puch bei Hallein",
+      "module": "puchbeihallein_gv_at",
+      "default_params": {},
+      "id": "puchbeihallein_gv_at"
     },
     {
       "title": "P\u00f6chlarn",
@@ -3798,6 +3942,12 @@
       "id": "citiesapps_com"
     },
     {
+      "title": "Sch\u00e4rding",
+      "module": "schaerding_ooe_gv_at",
+      "default_params": {},
+      "id": "schaerding_ooe_gv_at"
+    },
+    {
       "title": "Sch\u00fctzen am Gebirge",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3942,6 +4092,12 @@
       "id": "ics_muellapp_com"
     },
     {
+      "title": "St. Kanzian am Klopeiner See",
+      "module": "kanzian_at",
+      "default_params": {},
+      "id": "kanzian_at"
+    },
+    {
       "title": "St. Konrad",
       "module": "citiesapps_com",
       "default_params": {},
@@ -3970,6 +4126,12 @@
       "module": "citiesapps_com",
       "default_params": {},
       "id": "citiesapps_com"
+    },
+    {
+      "title": "St. Margarethen im Lungau",
+      "module": "st_margarethen_salzburg_at",
+      "default_params": {},
+      "id": "st_margarethen_salzburg_at"
     },
     {
       "title": "St. Martin im Innkreis",
@@ -4032,6 +4194,18 @@
         "customer": "salzburg"
       },
       "id": "infeo_at"
+    },
+    {
+      "title": "Stadtbetriebe Steyr GmbH",
+      "module": "steyr_at",
+      "default_params": {},
+      "id": "steyr_at"
+    },
+    {
+      "title": "Stadtgemeinde Berndorf",
+      "module": "berndorf_gv_at",
+      "default_params": {},
+      "id": "berndorf_gv_at"
     },
     {
       "title": "Stadtgemeinde Klosterneuburg",
@@ -4578,6 +4752,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_muellapp_com"
+    },
+    {
+      "title": "Zillingdorf",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_zillingdorf_at"
     },
     {
       "title": "Zillingtal",
@@ -5409,6 +5589,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_svoz_litovle_cz"
+    },
+    {
+      "title": "Lys\u00e1 nad Labem",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_zhleatherworks_cz"
     },
     {
       "title": "L\u00e1zn\u011b Bohdane\u010d",
@@ -6286,6 +6472,12 @@
       "id": "sictom_lons_le_saunier_fr"
     },
     {
+      "title": "SICTOM du Val de Sa\u00f4ne",
+      "module": "sictomvds_com",
+      "default_params": {},
+      "id": "sictomvds_com"
+    },
+    {
       "title": "SIVOM de la Vall\u00e9e de l'Yerres et des S\u00e9narts",
       "module": "sivom_com",
       "default_params": {},
@@ -6328,6 +6520,12 @@
         "city": "Talence"
       },
       "id": "opendata_bordeauxmetropole_fr"
+    },
+    {
+      "title": "Toulouse M\u00e9tropole",
+      "module": "toulouse_metropole_fr",
+      "default_params": {},
+      "id": "toulouse_metropole_fr"
     },
     {
       "title": "Tours M\u00e9tropole",
@@ -6642,9 +6840,9 @@
     },
     {
       "title": "Abfallwirtschaft Kreis Pl\u00f6n",
-      "module": "ics",
+      "module": "kreis_ploen_de",
       "default_params": {},
-      "id": "ics_kreis_ploen_de"
+      "id": "kreis_ploen_de"
     },
     {
       "title": "Abfallwirtschaft Lahn-Dill-Kreises",
@@ -6842,13 +7040,9 @@
     },
     {
       "title": "Abfallwirtschaftsbetrieb Ilm-Kreis",
-      "module": "ics",
-      "default_params": {
-        "headers": {
-          "referer": "https://aik.ilm-kreis.de"
-        }
-      },
-      "id": "ics_ilm_kreis_de"
+      "module": "ilm_kreis_de",
+      "default_params": {},
+      "id": "ilm_kreis_de"
     },
     {
       "title": "Abfallwirtschaftsbetrieb Kiel (ABK)",
@@ -7459,14 +7653,6 @@
       "id": "awigo_de"
     },
     {
-      "title": "AWISTA D\u00fcsseldorf",
-      "module": "muellmax_de",
-      "default_params": {
-        "service": "Dus"
-      },
-      "id": "muellmax_de"
-    },
-    {
       "title": "AWISTA LOGISTIK Stadt Remscheid",
       "module": "monaloga_de",
       "default_params": {},
@@ -7569,6 +7755,14 @@
       "module": "app_abfallplus_de",
       "default_params": {
         "app_id": "de.k4systems.abfallappbk"
+      },
+      "id": "app_abfallplus_de"
+    },
+    {
+      "title": "Bad M\u00fcnstereifel",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
       },
       "id": "app_abfallplus_de"
     },
@@ -8158,6 +8352,14 @@
       "module": "ceb_coburg_de",
       "default_params": {},
       "id": "ceb_coburg_de"
+    },
+    {
+      "title": "Dahlem",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
     },
     {
       "title": "Dankelsheim",
@@ -9440,6 +9642,14 @@
       "id": "heinz_entsorgung_de"
     },
     {
+      "title": "Hellenthal",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
+    },
+    {
       "title": "Helmscherode",
       "module": "nerdbridge_de",
       "default_params": {
@@ -9772,6 +9982,14 @@
       "id": "nerdbridge_de"
     },
     {
+      "title": "Kall",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
+    },
+    {
       "title": "Kammerborn",
       "module": "nerdbridge_de",
       "default_params": {
@@ -10023,6 +10241,14 @@
       "module": "app_abfallplus_de",
       "default_params": {
         "app_id": "de.k4systems.awbemsland"
+      },
+      "id": "app_abfallplus_de"
+    },
+    {
+      "title": "Kreis Euskirchen",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
       },
       "id": "app_abfallplus_de"
     },
@@ -10434,9 +10660,9 @@
     },
     {
       "title": "Kreisstadt Gro\u00df-Gerau",
-      "module": "ics",
+      "module": "gross_gerau_de",
       "default_params": {},
-      "id": "ics_gross_gerau_de"
+      "id": "gross_gerau_de"
     },
     {
       "title": "Kreisstadt St. Wendel",
@@ -10949,9 +11175,9 @@
     },
     {
       "title": "Landkreis Peine",
-      "module": "ics",
+      "module": "ab_peine_de",
       "default_params": {},
-      "id": "ics_ab_peine_de"
+      "id": "ab_peine_de"
     },
     {
       "title": "Landkreis Ravensburg",
@@ -11519,7 +11745,7 @@
       "id": "lobbe_app"
     },
     {
-      "title": "Mechernich und Kommunen",
+      "title": "Mechernich",
       "module": "app_abfallplus_de",
       "default_params": {
         "app_id": "de.k4systems.abfallinfoapp"
@@ -11678,6 +11904,12 @@
       "module": "ics",
       "default_params": {},
       "id": "ics_moerfelden_walldorf_de"
+    },
+    {
+      "title": "M\u00fchlenkreis Minden-L\u00fcbbecke",
+      "module": "muehlenkreis_de",
+      "default_params": {},
+      "id": "muehlenkreis_de"
     },
     {
       "title": "M\u00fchlheim am Main (MyMuell App)",
@@ -12518,6 +12750,14 @@
       "id": "nerdbridge_de"
     },
     {
+      "title": "Schleiden",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
+    },
+    {
       "title": "Schleswig-Flensburg (ASF)",
       "module": "ics",
       "default_params": {},
@@ -12988,6 +13228,12 @@
       "id": "verl_de"
     },
     {
+      "title": "Stadt Vlotho",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_abfall_export_vcal"
+    },
+    {
       "title": "Stadt Wetzlar",
       "module": "ics",
       "default_params": {},
@@ -13336,6 +13582,12 @@
       "id": "app_abfallplus_de"
     },
     {
+      "title": "UBZ Umwelt- und Servicebetrieb Zweibr\u00fccken",
+      "module": "ubzzw_de",
+      "default_params": {},
+      "id": "ubzzw_de"
+    },
+    {
       "title": "Uckermark",
       "module": "jumomind_de",
       "default_params": {
@@ -13437,6 +13689,12 @@
         "app_id": "de.k4systems.regioentsorgung"
       },
       "id": "app_abfallplus_de"
+    },
+    {
+      "title": "VEVG Vorpommern-Greifswald",
+      "module": "vevg_karlsburg_de",
+      "default_params": {},
+      "id": "vevg_karlsburg_de"
     },
     {
       "title": "VIVO Landkreis Miesbach",
@@ -13608,6 +13866,14 @@
         "service_id": "mymuell"
       },
       "id": "jumomind_de"
+    },
+    {
+      "title": "Weilerswist",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
     },
     {
       "title": "Weilrod",
@@ -14031,6 +14297,14 @@
         "customer": "zv-muc-so"
       },
       "id": "awido_de"
+    },
+    {
+      "title": "Z\u00fclpich",
+      "module": "app_abfallplus_de",
+      "default_params": {
+        "app_id": "de.k4systems.abfallinfoapp"
+      },
+      "id": "app_abfallplus_de"
     },
     {
       "title": "\u00dcssinghausen",
@@ -16341,6 +16615,12 @@
       "id": "junker_app"
     },
     {
+      "title": "Torre de' Passeri",
+      "module": "junker_app",
+      "default_params": {},
+      "id": "junker_app"
+    },
+    {
       "title": "Traona",
       "module": "junker_app",
       "default_params": {},
@@ -18256,6 +18536,12 @@
       "id": "ichisystem_eu"
     },
     {
+      "title": "Kiedy Odpady (kiedyodpady.pl)",
+      "module": "kiedyodpady_pl",
+      "default_params": {},
+      "id": "kiedyodpady_pl"
+    },
+    {
       "title": "Kiedy \u015bmieci",
       "module": "kiedysmieci_info",
       "default_params": {},
@@ -18380,6 +18666,14 @@
       "id": "mpo_krakow_pl"
     },
     {
+      "title": "Pabianice",
+      "module": "kiedyodpady_pl",
+      "default_params": {
+        "municipality": "pabianice"
+      },
+      "id": "kiedyodpady_pl"
+    },
+    {
       "title": "Parafia \u015bw. Wojciecha Biskupa i M\u0119czennika w Nidzicy",
       "module": "sims_pl",
       "default_params": {
@@ -18472,7 +18766,15 @@
       "id": "warszawa19115_pl"
     },
     {
-      "title": "Wieliczka Kiedy Odpady",
+      "title": "Wieliczka",
+      "module": "kiedyodpady_pl",
+      "default_params": {
+        "municipality": "wieliczka"
+      },
+      "id": "kiedyodpady_pl"
+    },
+    {
+      "title": "Wieliczka Kiedy Odpady (Deprecated)",
       "module": "wieliczka_kiedyodpady_pl",
       "default_params": {},
       "id": "wieliczka_kiedyodpady_pl"
@@ -19279,6 +19581,12 @@
         "municipality": "Gasel"
       },
       "id": "koeniz_ch"
+    },
+    {
+      "title": "Gemeinde Hochfelden",
+      "module": "ics",
+      "default_params": {},
+      "id": "ics_hochfelden_ch"
     },
     {
       "title": "Gemeinde W\u00fcrenlos",
@@ -20424,6 +20732,12 @@
       "module": "cornwall_gov_uk",
       "default_params": {},
       "id": "cornwall_gov_uk"
+    },
+    {
+      "title": "Cotswold District Council",
+      "module": "cotswold_gov_uk",
+      "default_params": {},
+      "id": "cotswold_gov_uk"
     },
     {
       "title": "Coventry City Council",
@@ -22481,6 +22795,12 @@
       "module": "sunbury_ohio_org",
       "default_params": {},
       "id": "sunbury_ohio_org"
+    },
+    {
+      "title": "Vogel Disposal Service",
+      "module": "vogeldisposal_com",
+      "default_params": {},
+      "id": "vogeldisposal_com"
     },
     {
       "title": "Waste Connections",
