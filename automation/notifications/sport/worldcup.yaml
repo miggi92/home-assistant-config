@@ -1,0 +1,87 @@
+---
+# worldcup
+alias: World Cup Match Notifications
+id: ef479134-5d6f-4dd2-8f34-428bbe9a020b
+mode: queued
+trigger:
+  - platform: state
+    entity_id: sensor.team_tracker_fifa_wm
+    attribute: team_score
+    id: goal
+    alias: Trigger on team score update
+  - platform: state
+    entity_id: sensor.team_tracker_fifa_wm
+    attribute: opponent_score
+    id: goal
+    alias: Trigger on opponent score update
+  - platform: state
+    entity_id: sensor.team_tracker_fifa_wm
+    attribute: clock
+    to: HT
+    id: halftime
+    alias: Trigger on half time
+  - platform: state
+    entity_id: sensor.team_tracker_fifa_wm
+    to: POST
+    id: fulltime
+    alias: Trigger on full time
+condition:
+  - condition: template
+    alias: Verify valid state changes
+    value_template: >
+      {{ trigger.from_state is not none and trigger.to_state is not none }}
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: goal
+        sequence:
+          - alias: Calculate scoring variables
+            variables:
+              is_team_goal: >
+                {{ trigger.from_state.attributes.team_score is defined and trigger.to_state.attributes.team_score is defined and (trigger.to_state.attributes.team_score | int(0)) > (trigger.from_state.attributes.team_score | int(0)) }}
+              is_opponent_goal: >
+                {{ trigger.from_state.attributes.opponent_score is defined and trigger.to_state.attributes.opponent_score is defined and (trigger.to_state.attributes.opponent_score | int(0)) > (trigger.from_state.attributes.opponent_score | int(0)) }}
+              scoring_team: >
+                {% if is_team_goal %}
+                  {{ trigger.to_state.attributes.team_name }}
+                {% elif is_opponent_goal %}
+                  {{ trigger.to_state.attributes.opponent_name }}
+                {% else %}
+                  none
+                {% endif %}
+          - condition: template
+            alias: Stop if no goal was detected
+            value_template: "{{ scoring_team != 'none' }}"
+          - alias: Notify goal
+            service: script.notify_engine
+            data:
+              title: Tor
+              value1: "Tor für {{ scoring_team }}! Neuer Spielstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
+              who: home_audio
+              tag_id: information
+              group: Sport
+      - conditions:
+          - condition: trigger
+            id: halftime
+        sequence:
+          - alias: Notify half time
+            service: script.notify_engine
+            data:
+              title: Halbzeit
+              value1: "Halbzeit! Aktueller Spielstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
+              who: home_audio
+              tag_id: information
+              group: Sport
+      - conditions:
+          - condition: trigger
+            id: fulltime
+        sequence:
+          - alias: Notify full time
+            service: script.notify_engine
+            data:
+              title: Abpfiff
+              value1: "Das Spiel ist aus! Endstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
+              who: home_audio
+              tag_id: information
+              group: Sport
