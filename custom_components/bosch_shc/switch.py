@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
+
+import aiohttp
 
 from boschshcpy import (
     SHCCamera360,
@@ -287,6 +290,15 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:tune",
+    ),
+    "tamper_protection_enabled": SHCSwitchEntityDescription(
+        key="tamper_protection_enabled",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="tamper_protection_enabled",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:shield-lock",
     ),
     "silent_mode": SHCSwitchEntityDescription(
         key="silent_mode",
@@ -739,6 +751,15 @@ async def async_setup_entry(
                     attr_name="SmartSensitivity",
                 )
             )
+        if hasattr(switch, "tamper_protection_enabled"):
+            entities.append(
+                SHCSwitch(
+                    device=switch,
+                    entry_id=config_entry.entry_id,
+                    description=SWITCH_TYPES["tamper_protection_enabled"],
+                    attr_name="TamperProtection",
+                )
+            )
 
     for switch in getattr(session.device_helper, "twinguards", []):
         if device_excluded(switch, config_entry.options):
@@ -881,7 +902,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         except AttributeError:
             return None
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the switch on.
 
         Guard against AttributeError: some devices (e.g. MicromoduleRelay with
@@ -891,21 +912,37 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         (camera_360).
         """
         try:
-            setattr(self._device, self.entity_description.on_key, True)
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(True)
         except AttributeError:
             LOGGER.debug(
                 "turn_on skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            LOGGER.debug(
+                "turn_on skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the switch off.
 
-        Same guard as turn_on — see that docstring.
+        Same guard as async_turn_on — see that docstring.
         """
         try:
-            setattr(self._device, self.entity_description.on_key, False)
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(False)
         except AttributeError:
+            LOGGER.debug(
+                "turn_off skipped for %s: service not available (no load/service?)",
+                self.entity_id,
+            )
+        except (aiohttp.ClientError, asyncio.TimeoutError):
             LOGGER.debug(
                 "turn_off skipped for %s: service not available (no load/service?)",
                 self.entity_id,
@@ -916,9 +953,18 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         """Switch needs polling."""
         return self.entity_description.should_poll
 
-    def update(self) -> None:
-        """Trigger an update of the device."""
-        self._device.update()
+    async def async_update(self) -> None:
+        """Trigger an on-demand refresh of the device (async session).
+
+        The integration runs SHCSessionAsync, so the device's sync update() would
+        leave an un-awaited coroutine in the service state (TypeError on the next
+        read, #335). Use the async refresh; fall back to the executor + sync
+        update() only if the installed lib predates async_update.
+        """
+        if hasattr(self._device, "async_update"):
+            await self._device.async_update()
+        else:
+            await self.hass.async_add_executor_job(self._device.update)
 
 
 class SHCUserDefinedStateSwitch(SwitchEntity):
@@ -996,22 +1042,35 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             == self.entity_description.on_value
         )
 
-    def turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs) -> None:
         """Turn the switch on."""
-        setattr(self._device, self.entity_description.on_key, True)
+        await getattr(
+            self._device,
+            f"async_set_{self.entity_description.on_key}",
+        )(True)
 
-    def turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs) -> None:
         """Turn the switch off."""
-        setattr(self._device, self.entity_description.on_key, False)
+        await getattr(
+            self._device,
+            f"async_set_{self.entity_description.on_key}",
+        )(False)
 
     @property
     def should_poll(self) -> bool:
         """Switch needs polling."""
         return self.entity_description.should_poll
 
-    def update(self) -> None:
-        """Trigger an update of the device."""
-        self._device.update()
+    async def async_update(self) -> None:
+        """Trigger an on-demand refresh of the device (async session).
+
+        The sync device.update() leaves an un-awaited coroutine in the service
+        state under SHCSessionAsync (TypeError, #335) — use the async refresh.
+        """
+        if hasattr(self._device, "async_update"):
+            await self._device.async_update()
+        else:
+            await self.hass.async_add_executor_job(self._device.update)
 
     @property
     def device_name(self):

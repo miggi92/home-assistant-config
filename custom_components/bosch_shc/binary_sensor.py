@@ -181,8 +181,8 @@ async def async_setup_entry(
                 smoke_detection_system=smoke_detection_system,
                 hass=hass,
             )
-            # Initial refresh on executor so blocking HTTP stays off the event loop.
-            await hass.async_add_executor_job(tracker.refresh)
+            # Initial refresh (async; awaits get_messages on the loop).
+            await tracker.async_refresh()
 
             def _cleanup_tracker():
                 tracker.teardown()
@@ -360,6 +360,12 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
         self.hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (~24 h): the SHC
+        # re-delivers every service's current state, which must not re-fire as a
+        # fresh MOTION event.  Cache the last latestmotion timestamp we fired on;
+        # skip the event when the timestamp is unchanged (replay), fire when it
+        # advances (genuine new motion).
+        self._last_fired_latestmotion: str | None = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -383,7 +389,21 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last LatestMotion state unchanged.  Only fire when
+        latestmotion has advanced past the last value we fired on.
+        """
+        current_ts = self._device.latestmotion
+        if current_ts == self._last_fired_latestmotion:
+            LOGGER.debug(
+                "Skipping replayed LatestMotion event for %s (ts=%s unchanged)",
+                self._device.name,
+                current_ts,
+            )
+            return
+        self._last_fired_latestmotion = current_ts
         self.hass.loop.call_soon_threadsafe(
             self.hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -391,7 +411,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):
                 ATTR_DEVICE_ID: self._cached_device_id,
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
-                ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+                ATTR_LAST_TIME_TRIGGERED: current_ts,
                 ATTR_EVENT_TYPE: "MOTION",
                 ATTR_EVENT_SUBTYPE: "",
             },
@@ -451,6 +471,9 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (#336): cache the
+        # last alarmstate name we fired on and skip when it is unchanged.
+        self._last_fired_alarmstate: str | None = None
         super().__init__(device=device, entry_id=entry_id)
 
         for service in self._device.device_services:
@@ -474,7 +497,21 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last Alarm state unchanged.  Only fire when the
+        alarmstate name has changed since the last fired event.
+        """
+        current_state = self._device.alarmstate.name
+        if current_state == self._last_fired_alarmstate:
+            LOGGER.debug(
+                "Skipping replayed Alarm event for %s (state=%s unchanged)",
+                self._device.name,
+                current_state,
+            )
+            return
+        self._last_fired_alarmstate = current_state
         self._hass.loop.call_soon_threadsafe(
             self._hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -483,7 +520,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",
-                ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+                ATTR_EVENT_SUBTYPE: current_state,
             },
         )
 
@@ -516,7 +553,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         from boschshcpy.exceptions import SHCException, SHCConnectionError
         LOGGER.debug("Requesting smoke test on entity %s", self.name)
         try:
-            await self._hass.async_add_executor_job(self._device.smoketest_requested)
+            await self._device.async_smoketest_requested()
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
                 f"Smoke test request failed for {self.name}: {err}"
@@ -526,16 +563,11 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):
         """Request smokedetector alarm state."""
         from boschshcpy.exceptions import SHCException, SHCConnectionError
 
-        def set_alarmstate(device, command):
-            device.alarmstate = command
-
         LOGGER.debug(
             "Requesting custom alarm state %s on entity %s", command, self.name
         )
         try:
-            await self._hass.async_add_executor_job(
-                set_alarmstate, self._device, command
-            )
+            await self._device.async_set_alarmstate(command)
         except (SHCException, SHCConnectionError) as err:
             raise HomeAssistantError(
                 f"Set alarm state failed for {self.name}: {err}"
@@ -606,6 +638,9 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
         self._hass = hass
         self._service = None
         self._cached_device_id = None
+        # Guard against phantom events on poll-id resubscribe (#336): cache the
+        # last SurveillanceAlarm state name we fired on and skip when unchanged.
+        self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
         self._attr_name = None
@@ -631,7 +666,21 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
             )
 
     def _input_events_handler(self):
-        """Handle device input events (called from SHCPollingThread)."""
+        """Handle device input events (called from SHCPollingThread).
+
+        Replay-guard (#336): on the ~24 h poll-id resubscribe the SHC
+        re-delivers the last SurveillanceAlarm state unchanged.  Only fire
+        when the alarm state name has changed since the last fired event.
+        """
+        current_alarm = self._device.alarm.name
+        if current_alarm == self._last_fired_alarm:
+            LOGGER.debug(
+                "Skipping replayed SurveillanceAlarm event for %s (state=%s unchanged)",
+                self._device.name,
+                current_alarm,
+            )
+            return
+        self._last_fired_alarm = current_alarm
         self._hass.loop.call_soon_threadsafe(
             self._hass.bus.fire,
             EVENT_BOSCH_SHC,
@@ -640,7 +689,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):
                 ATTR_ID: self._device.id,
                 ATTR_NAME: self._device.name,
                 ATTR_EVENT_TYPE: "ALARM",
-                ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+                ATTR_EVENT_SUBTYPE: current_alarm,
             },
         )
 
@@ -739,8 +788,8 @@ class TwinguardAlarmTracker:
         """Return whether a smoke alarm is active for the given Twinguard device id."""
         return device_id in self._active_trigger_ids
 
-    def refresh(self) -> None:
-        """Refresh active trigger ids from the SHC (blocking HTTP — run on executor).
+    async def async_refresh(self) -> None:
+        """Refresh active trigger ids from the SHC (async; on the event loop).
 
         Safe to call multiple times; skips notification if state did not change.
         """
@@ -753,7 +802,7 @@ class TwinguardAlarmTracker:
         ):
             new_trigger_ids: set[str] = set()
         else:
-            new_trigger_ids = self._extract_trigger_ids_from_messages()
+            new_trigger_ids = await self._extract_trigger_ids_from_messages()
 
         if (
             new_trigger_ids == self._active_trigger_ids
@@ -785,20 +834,18 @@ class TwinguardAlarmTracker:
     # ------------------------------------------------------------------
 
     def _handle_alarm_update(self) -> None:
-        """Handle a SurveillanceAlarm update (called from SHCPollingThread).
+        """Handle a SurveillanceAlarm update (fired on the event loop).
 
-        refresh() does blocking HTTP and must NOT run inline on the poll thread.
-        Dispatch it via the event loop → executor so the poll thread is freed
-        immediately (M1 fix — prevents up-to-30s stall on get_messages()).
+        The async session fires this callback on the loop; schedule the async
+        refresh (it awaits get_messages) as a task so the poll loop isn't
+        blocked on the follow-up HTTP call.
         """
-        self._hass.loop.call_soon_threadsafe(
-            lambda: self._hass.async_add_executor_job(self.refresh)
-        )
+        self._hass.async_create_task(self.async_refresh())
 
-    def _extract_trigger_ids_from_messages(self) -> set[str]:
+    async def _extract_trigger_ids_from_messages(self) -> set[str]:
         """Extract active Twinguard trigger ids from SMOKE_ALARM messages."""
         try:
-            messages = self._session.api.get_messages()
+            messages = await self._session.api.get_messages()
 
             trigger_ids: set[str] = set()
             for message in messages:
@@ -908,7 +955,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):
     async def async_request_smoketest(self) -> None:
         """Request a Twinguard smoke test."""
         LOGGER.debug("Requesting smoke test on entity %s", self.name)
-        await self.hass.async_add_executor_job(self._device.smoketest_requested)
+        await self._device.async_smoketest_requested()
 
     @property
     def extra_state_attributes(self) -> dict:

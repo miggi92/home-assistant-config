@@ -307,7 +307,7 @@ SUPPORTED_DEVICES = {
     "DR-HPF015S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
         preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5), ("custom", 6)],
-        device_ranges={SPEED_RANGE: (1, 12)},
+        device_ranges={SPEED_RANGE: (1, 12), HORIZONTAL_ANGLE_RANGE: (-75, 75)},
     ),
     "DR-HPF017S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
@@ -336,6 +336,11 @@ SUPPORTED_DEVICES = {
         device_type=DreoDeviceType.AIR_CIRCULATOR,
         preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5)],
         device_ranges={SPEED_RANGE: (1, 9), HORIZONTAL_ANGLE_RANGE: (-60, 60), VERTICAL_ANGLE_RANGE: (0, 90)},
+    ),
+    "DR-HPF004S": DreoDeviceDetails(
+        device_type=DreoDeviceType.AIR_CIRCULATOR,
+        preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("auto", 4), ("turbo", 5), ("custom", 6)],
+        device_ranges={SPEED_RANGE: (1, 9), HORIZONTAL_ANGLE_RANGE: (-75, 75), VERTICAL_ANGLE_RANGE: (-30, 90)},
     ),
     # Ceiling Fans
     "DR-HCF": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN),
@@ -484,5 +489,13 @@ SUPPORTED_DEVICES = {
         device_type=DreoDeviceType.EVAPORATIVE_COOLER,
         preset_modes=[("Normal", 1), ("Turbo", 2)],
         device_ranges={SPEED_RANGE: (1, 6)},
+    ),
+    # DR-HEC005S is the TurboCool Misting Fan 765S.
+    # It has 12 fan speeds and can expose an empty controlsConf.
+    # Without an explicit mapping it falls back to generic DR-HEC defaults.
+    "DR-HEC005S": DreoDeviceDetails(
+        device_type=DreoDeviceType.EVAPORATIVE_COOLER,
+        preset_modes=[("Normal", 1), ("Natural", 4), ("Sleep", 3), ("Auto", 2)],
+        device_ranges={SPEED_RANGE: (1, 12)},
     ),
 }

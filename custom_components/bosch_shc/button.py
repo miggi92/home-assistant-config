@@ -4,7 +4,7 @@ from boschshcpy import (
     SHCDevice,
     SHCSession,
 )
-from boschshcpy.services_impl import WalkTestService
+from boschshcpy.services_impl import DetectionTestService, WalkTestService
 
 from homeassistant.components.button import (
     ButtonEntity,
@@ -88,6 +88,35 @@ async def async_setup_entry(
             )
         )
 
+    # DetectionTest start/stop + tamper reset for Motion Detector II.
+    # The local API exposes the walk test through the DetectionTest service
+    # (vs the APK-derived WalkTest service above); a given MD2 carries one or
+    # the other, so both are wired and each is guarded by its own service.
+    for button in getattr(session.device_helper, "motion_detectors2", []):
+        if device_excluded(button, config_entry.options):
+            continue
+        if getattr(button, "supports_detection_test", False):
+            entities.append(
+                SHCDetectionTestButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+            entities.append(
+                SHCDetectionTestStopButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        # resetTamperedState — LatestTamper is a standard MD2 service.
+        if hasattr(button, "reset_tampered_state"):
+            entities.append(
+                SHCTamperResetButton(
+                    device=button,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+
     if config_entry.options.get(OPT_SCENARIOS_AS_BUTTONS, False):
         entry_unique_id = config_entry.unique_id
         entry_id = config_entry.entry_id
@@ -129,9 +158,9 @@ class SHCRelayButton(SHCEntity, ButtonEntity):
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
 
-    def press(self) -> None:
-        """Triggers impulse."""
-        self._device.trigger_impulse_state()
+    async def async_press(self) -> None:
+        """Trigger the relay impulse (awaited — the session is async; #336)."""
+        await self._device.async_trigger_impulse_state()
 
 
 class SHCSmokeTestButton(SHCEntity, ButtonEntity):
@@ -145,9 +174,9 @@ class SHCSmokeTestButton(SHCEntity, ButtonEntity):
         self._attr_name = "Smoke Test"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_smoke_test"
 
-    def press(self) -> None:
-        """Trigger the device self-test."""
-        self._device.smoketest_requested()
+    async def async_press(self) -> None:
+        """Trigger the device self-test (awaited — the session is async; #336)."""
+        await self._device.async_smoketest_requested()
 
 
 class SHCScenarioButton(ButtonEntity):
@@ -188,9 +217,9 @@ class SHCScenarioButton(ButtonEntity):
             "model": self._shc_device.model,
         }
 
-    def press(self) -> None:
-        """Trigger the scenario (runs in executor — scenario.trigger() is sync)."""
-        self._scenario.trigger()
+    async def async_press(self) -> None:
+        """Trigger the scenario (awaited — the session is async; #336)."""
+        await self._scenario.async_trigger()
 
 
 class SHCWalkTestButton(SHCEntity, ButtonEntity):
@@ -211,12 +240,8 @@ class SHCWalkTestButton(SHCEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send WALK_STATE_START request to the WalkTest service."""
-        # The integration runs the synchronous SHCSession, so the device's
-        # async_* setter would await a sync API call. Use the sync setter in an
-        # executor instead (async path arrives with session_async, phase 3b).
-        await self.hass.async_add_executor_job(
-            self._device.set_walk_state_request,
-            WalkTestService.WalkStateRequest.WALK_STATE_START,
+        await self._device.async_set_walk_state_request(
+            WalkTestService.WalkStateRequest.WALK_STATE_START
         )
 
 
@@ -237,7 +262,64 @@ class SHCWalkTestStopButton(SHCEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send WALK_STATE_STOP request to the WalkTest service."""
-        await self.hass.async_add_executor_job(
-            self._device.set_walk_state_request,
-            WalkTestService.WalkStateRequest.WALK_STATE_STOP,
+        await self._device.async_set_walk_state_request(
+            WalkTestService.WalkStateRequest.WALK_STATE_STOP
         )
+
+
+class SHCDetectionTestButton(SHCEntity, ButtonEntity):
+    """Button that starts a detection (walk) test via the DetectionTest service.
+
+    The local Bosch API exposes the walk test through DetectionTest; only
+    created when the device carries that service (supports_detection_test).
+    """
+
+    _attr_icon = "mdi:walk"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the detection-test start button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Detection Test"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_test"
+
+    async def async_press(self) -> None:
+        """Send DETECTION_STATE_START to the DetectionTest service."""
+        await self._device.async_set_detection_state_request(
+            DetectionTestService.DetectionStateRequest.DETECTION_STATE_START
+        )
+
+
+class SHCDetectionTestStopButton(SHCEntity, ButtonEntity):
+    """Button that stops an in-progress detection (walk) test."""
+
+    _attr_icon = "mdi:stop"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the detection-test stop button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Detection Test Stop"
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_detection_test_stop"
+        )
+
+    async def async_press(self) -> None:
+        """Send DETECTION_STATE_STOP to the DetectionTest service."""
+        await self._device.async_set_detection_state_request(
+            DetectionTestService.DetectionStateRequest.DETECTION_STATE_STOP
+        )
+
+
+class SHCTamperResetButton(SHCEntity, ButtonEntity):
+    """Button that resets an active tamper condition (LatestTamper service)."""
+
+    _attr_icon = "mdi:restart-alert"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the tamper-reset button."""
+        super().__init__(device, entry_id)
+        self._attr_name = "Reset Tamper"
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_reset_tamper"
+
+    async def async_press(self) -> None:
+        """POST resetTamperedState to confirm the device is back in place."""
+        await self._device.async_reset_tampered_state()

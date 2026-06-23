@@ -1,0 +1,16 @@
+{
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "eco": "mdi:leaf",
+              "boost": "mdi:rocket-launch"
+            }
+          }
+        }
+      }
+    }
+  }
+}
