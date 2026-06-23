@@ -58,7 +58,7 @@ action:
             data:
               title: Tor
               value1: "Tor für {{ scoring_team }}! Neuer Spielstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
-              who: home_audio
+              who: "home_audio, home"
               tag_id: information
               group: Sport
       - conditions:
@@ -70,7 +70,7 @@ action:
             data:
               title: Halbzeit
               value1: "Halbzeit! Aktueller Spielstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
-              who: home_audio
+              who: "home_audio, home"
               tag_id: information
               group: Sport
       - conditions:
@@ -82,6 +82,6 @@ action:
             data:
               title: Abpfiff
               value1: "Das Spiel ist aus! Endstand: {{ trigger.to_state.attributes.team_name }} {{ trigger.to_state.attributes.team_score }}, {{ trigger.to_state.attributes.opponent_name }} {{ trigger.to_state.attributes.opponent_score }}."
-              who: home_audio
+              who: "home_audio, home"
               tag_id: information
               group: Sport
