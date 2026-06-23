@@ -43,6 +43,6 @@ action:
             tag_id: "information"
             group: "Work"
             photo:
-              path: "/config/www/downloaded/work_meals/{{ repeat.item }}.png"
+              path: "{{ states('input_text.local_url') }}{{ state_attr('image.work_meal_' ~ repeat.item, 'entity_picture') }}"
               caption: "{{ states('input_text.work_meal_' ~ repeat.item) }}"
 mode: single
