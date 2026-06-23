@@ -1,6 +1,9 @@
 """Platform for light integration."""
 
-from boschshcpy import SHCSession
+import asyncio
+
+import aiohttp
+from boschshcpy import SHCLightSwitch, SHCSession
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
@@ -11,8 +14,14 @@ from homeassistant.components.light import (
 from homeassistant.const import Platform
 from homeassistant.util import color as color_util
 
-from .const import DATA_SESSION, DOMAIN
-from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
+from .const import DATA_SESSION, DOMAIN, LOGGER
+from .entity import (
+    SHCEntity,
+    async_migrate_to_new_unique_id,
+    device_excluded,
+    light_switch_as_light,
+    light_switch_devices,
+)
 
 PARALLEL_UPDATES = 1
 
@@ -50,6 +59,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             )
         )
 
+    # #338: Light/Shutter Control II light channels (and BSM light switches) that
+    # the user opted in to present as a `light`.  These wrap a plain on/off
+    # PowerSwitch relay; the switch platform skips the matching `switch` so the
+    # device is exposed exactly once.  Default (no opt-in) -> nothing here.
+    for light in light_switch_devices(session):
+        if device_excluded(light, config_entry.options):
+            continue
+        if not light_switch_as_light(light, config_entry.options):
+            continue
+        entities.append(
+            RelayLight(
+                device=light,
+                entry_id=config_entry.entry_id,
+            )
+        )
+
     if entities:
         async_add_entities(entities)
 
@@ -73,12 +98,20 @@ class LightSwitch(SHCEntity, LightEntity):
         if self._device.supports_color_hsb or self._device.supports_color_temp:
             min_ct = self._device.min_color_temperature
             max_ct = self._device.max_color_temperature
-            if min_ct and max_ct:
+            # Need a real, non-degenerate range: 0 would ZeroDivide in
+            # mired_to_kelvin, and min == max gives equal kelvin bounds which
+            # HA's LightEntity rejects (a single-temperature bulb edge case).
+            if min_ct and max_ct and min_ct != max_ct:
+                # #340: Bosch reports the range in MIREDS (minCt/maxCt). Mireds
+                # are inverse to kelvin (kelvin = 1e6 / mired), so the SMALLEST
+                # mired is the LARGEST kelvin. HA wants kelvin bounds, so cross
+                # them: max mired -> min kelvin, min mired -> max kelvin.
+                # (Previously assigned straight, which swapped HA's min/max.)
                 self._attr_min_color_temp_kelvin = (
-                    color_util.color_temperature_mired_to_kelvin(min_ct)
+                    color_util.color_temperature_mired_to_kelvin(max_ct)
                 )
                 self._attr_max_color_temp_kelvin = (
-                    color_util.color_temperature_mired_to_kelvin(max_ct)
+                    color_util.color_temperature_mired_to_kelvin(min_ct)
                 )
         if self._device.supports_brightness:
             if (
@@ -196,3 +229,59 @@ class MotionDetectorLight(SHCEntity, LightEntity):
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the light off."""
         await self._device.async_set_binaryswitch(False)
+
+
+class RelayLight(SHCEntity, LightEntity):
+    """A Light/Shutter Control II (or BSM) light relay presented as a `light`.
+
+    These devices wrap a plain on/off PowerSwitch relay (no brightness/colour),
+    so this is an ONOFF light.  Created only when the device is opted in via the
+    "expose as light" option (#338); otherwise the switch platform owns it.  The
+    unique_id is the standard SHCEntity device id — in the `light` domain it does
+    not collide with the historical `switch` entity's id (uniqueness is scoped
+    per platform), so toggling the option swaps switch<->light cleanly.
+    """
+
+    _attr_supported_color_modes: set[ColorMode] = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.ONOFF
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return the relay on/off state, or None if the service is unavailable.
+
+        A relay with no connected load can expose a None PowerSwitch service
+        (mirrors SHCSwitch.is_on); return None (unknown) rather than crash.
+        """
+        try:
+            return (
+                self._device.switchstate
+                == SHCLightSwitch.PowerSwitchService.State.ON
+            )
+        except AttributeError:
+            return None
+
+    async def async_turn_on(self, **kwargs) -> None:
+        """Turn the relay on."""
+        try:
+            await self._device.async_set_switchstate(True)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_on skipped for %s: PowerSwitch service unavailable",
+                self.entity_id,
+            )
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            # Match SHCSwitch: a transient SHC outage must not raise to the
+            # service layer (error log / notification) for this relay.
+            LOGGER.debug("turn_on failed for %s: %s", self.entity_id, err)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        """Turn the relay off."""
+        try:
+            await self._device.async_set_switchstate(False)
+        except AttributeError:
+            LOGGER.debug(
+                "turn_off skipped for %s: PowerSwitch service unavailable",
+                self.entity_id,
+            )
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            LOGGER.debug("turn_off failed for %s: %s", self.entity_id, err)
