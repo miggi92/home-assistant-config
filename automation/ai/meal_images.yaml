@@ -24,16 +24,36 @@ actions:
           meals
         {% endif %}
       clean_name: "{{ trigger.entity_id.split('.')[1] }}"
+      gerichte_liste: >-
+        {% set raw = trigger.to_state.state %}
+        {% if '•' in raw %}
+          {{ raw.split('•') | map('trim') | select('ne','') | list }}
+        {% else %}
+          {{ raw.split(' oder ') | map('trim') | select('ne','') | list }}
+        {% endif %}
+      anzahl: "{{ gerichte_liste | count }}"
+      plating_instruction: >-
+        {% if anzahl | int > 1 %}
+          The image shows {{ anzahl }} separate dishes, each on its own plate,
+          arranged side by side on the same table:
+          {% for g in gerichte_liste %}
+          Plate {{ loop.index }}: {{ g }}.
+          {% endfor %}
+          Each plate is clearly distinct and fully visible.
+        {% else %}
+          The dish is appetizingly plated on a single appropriate plate:
+          {{ gerichte_liste | first }}.
+        {% endif %}
   - action: ai_task.generate_image
     data:
       task_name: "Meal {{ clean_name }}"
       instructions: |-
-        Professional, high-resolution food photography of: {{ trigger.to_state.state }}.
-        The dish is appetizingly plated on appropriate tableware and set on a stylish dining table.
-        Modern food styling aesthetics.
+        Professional, high-resolution food photography.
+        {{ plating_instruction }}
+        Set on a stylish dining table with modern food styling aesthetics.
         Natural, warm side lighting highlights the textures, gloss, and freshness of the ingredients.
         Subtly garnished with appropriate fresh herbs, spices, or sides to add color contrast.
-        Razor-sharp focus on the dish in the foreground, with a soft bokeh background suggesting a cozy restaurant or home setting.
+        Razor-sharp focus on the dishes in the foreground, with a soft bokeh background suggesting a cozy restaurant or home setting.
         No text, no words, no watermarks.
     response_variable: meal
 
