@@ -44,8 +44,20 @@ sections:
         name: Speiseplan bearbeiten
         icon: mdi:silverware-variant
         tap_action:
-          action: url
-          url_path: https://grocy.kohgeb.family/mealplan
+          action: navigate
+          navigation_path: /a0d7b954_grocy
+        show_state: false
+        styles:
+          card:
+            - height: 80px
+            - border-radius: 12px
+            - background: var(--card-background-color)
+          icon:
+            - color: "#4CAF50"
+            - width: 32px
+          name:
+            - font-size: 14px
+            - font-weight: 500
       - type: energy-sources-table
   - type: grid
     cards:
