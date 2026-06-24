@@ -18,6 +18,7 @@ action:
         Four: input_text.work_meal_four
         Five: input_text.work_meal_five
         "Five (100g Preis)": input_text.work_meal_five
+        Six: input_text.work_meal_six
 
   - repeat:
       for_each: "{{ mapping | dictsort }}"
