@@ -10,6 +10,8 @@ sections:
   - type: grid
     cards:
       - !include ../../../cards/nav-bar.yaml
+
+      # --- Ausstehende Medikamente ---
       - type: custom:auto-entities
         show_empty: false
         card:
@@ -19,8 +21,11 @@ sections:
         filter:
           template: >
             {% set result = namespace(items=[]) %}
-            {% for medi in states.input_select | selectattr('entity_id', 'match', 'input_select.medis_') | selectattr('state', 'eq', 'ausstehend') %}
-              {% set clean_name = medi.attributes.friendly_name | replace('Medis ', '') | replace('medis ', '') | replace('medis_', '') %}
+            {% for medi in states.input_select
+                  | selectattr('entity_id', 'match', 'input_select.medis_')
+                  | selectattr('state', 'eq', 'ausstehend') %}
+              {% set clean_name = medi.attributes.friendly_name
+                  | regex_replace('^[Mm]edis[ _]', '') %}
               {% set item = {
                 'type': 'custom:multiple-entity-row',
                 'entity': medi.entity_id,
@@ -56,6 +61,8 @@ sections:
               {% set result.items = result.items + [item] %}
             {% endfor %}
             {{ result.items }}
+
+  # --- Historie ---
   - type: grid
     cards:
       - type: "custom:auto-entities"
@@ -89,7 +96,9 @@ sections:
         sort:
           method: last_changed
           reverse: true
-          count: 5
+          count: 10
+
+  # --- Vorrat + Einstellungen ---
   - type: grid
     cards:
       - type: markdown
@@ -98,51 +107,74 @@ sections:
           | Produkt | Menge | Status |
           | :--- | :--- | :--- |
           {%- set items = state_attr('sensor.grocy_stock', 'products') %}
+          {%- if items is none %}
+          | _Grocy nicht erreichbar_ | | |
+          {%- else %}
           {%- set med_list = items | selectattr('product_group_id', 'eq', 14) | sort(attribute='name') %}
+          {%- if med_list | count == 0 %}
+          | _Keine Medikamente im Vorrat_ | | |
+          {%- else %}
+          {%- set agg_names = med_list
+                | selectattr('is_aggregated_amount', 'eq', true)
+                | map(attribute='name') | map('trim') | list %}
+          {%- set now_ts = as_timestamp(now()) %}
+          {%- set soon_ts = as_timestamp(now() + timedelta(days=90)) %}
           {%- for item in med_list -%}
-            {%- set expire_date = as_timestamp(item.best_before_date) %}
-            {%- set now_ts = as_timestamp(now()) %}
-            {%- set soon_ts = as_timestamp(now() + timedelta(days=90)) %}
-
-            {%- set is_expired = expire_date < now_ts %}
-            {%- set expires_soon = expire_date < soon_ts %}
+            {%- set expire_date = as_timestamp(item.best_before_date) if item.best_before_date else None %}
+            {%- set is_expired = expire_date is not none and expire_date < now_ts %}
+            {%- set expires_soon = expire_date is not none and expire_date < soon_ts %}
+            {%- set status = '➖' if expire_date is none else ('❌' if is_expired else ('⚠️' if expires_soon else '✅')) %}
 
             {%- if item.is_aggregated_amount == true %}
-          | **{{ item.name | trim }}** | {{ item.amount_aggregated | int(0) }} | {{ '❌' if is_expired else ('⚠️' if expires_soon else '✅') }} |
-            {%- elif items | selectattr('name', 'contains', item.name) | selectattr('is_aggregated_amount', 'eq', true) | list | count == 0 %}
-          | {{ item.name | trim }} | {{ item.available_amount | int(0) }} | {{ '❌' if is_expired else ('⚠️' if expires_soon else '✅') }} |
+          | **{{ item.name | trim }}** | {{ item.amount_aggregated | int(0) }} | {{ status }} |
+            {%- elif item.name | trim not in agg_names %}
+          | {{ item.name | trim }} | {{ item.available_amount | int(0) }} | {{ status }} |
             {%- endif -%}
           {%- endfor %}
-      - type: custom:mushroom-entity-card
-        entity: input_datetime.medis_reminder_time_morning
-        layout: vertical
-        tap_action:
-          action: more-info
-      - type: custom:mushroom-entity-card
-        entity: input_datetime.medis_reminder_time_evening
-        layout: vertical
-        tap_action:
-          action: more-info
-      - type: custom:mushroom-entity-card
-        entity: input_datetime.medis_reminder_time_night
-        layout: vertical
-        tap_action:
-          action: more-info
-      - type: custom:mushroom-entity-card
-        entity: input_boolean.medi_notification_silke
-        layout: vertical
-        name: Benachrichtigung Silke
-        tap_action:
-          action: more-info
-      - type: custom:mushroom-entity-card
-        entity: input_boolean.medi_notification_miguel
-        name: Benachrichtigung Miguel
-        layout: vertical
-        tap_action:
-          action: more-info
-      - type: custom:mushroom-entity-card
-        entity: input_boolean.medi_notification_milo
-        name: Benachrichtigung Milo
-        layout: vertical
-        tap_action:
-          action: more-info
+          {%- endif %}
+          {%- endif %}
+
+      # Erinnerungszeiten kompakt nebeneinander
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_datetime.medis_reminder_time_morning
+            layout: vertical
+            tap_action:
+              action: more-info
+          - type: custom:mushroom-entity-card
+            entity: input_datetime.medis_reminder_time_evening
+            layout: vertical
+            tap_action:
+              action: more-info
+          - type: custom:mushroom-entity-card
+            entity: input_datetime.medis_reminder_time_night
+            layout: vertical
+            tap_action:
+              action: more-info
+
+      # Benachrichtigungs-Toggles kompakt nebeneinander
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.medi_notification_silke
+            name: Silke
+            layout: vertical
+            tap_action:
+              action: more-info
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.medi_notification_miguel
+            name: Miguel
+            layout: vertical
+            tap_action:
+              action: more-info
+          - type: custom:mushroom-entity-card
+            entity: input_boolean.medi_notification_milo
+            name: Milo
+            layout: vertical
+            tap_action:
+              action: more-info
