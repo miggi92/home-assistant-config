@@ -31,6 +31,7 @@ action:
         - "three"
         - "four"
         - "five"
+        - "six"
       sequence:
         - action: script.notify_engine
           alias: "Send notification for current meal"
