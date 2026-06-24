@@ -38,6 +38,7 @@ action:
             - input_text.work_meal_three
             - input_text.work_meal_four
             - input_text.work_meal_five
+            - input_text.work_meal_six
         data:
           value: ""
   - if:
