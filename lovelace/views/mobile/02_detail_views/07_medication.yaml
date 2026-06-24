@@ -65,6 +65,18 @@ sections:
   # --- Historie ---
   - type: grid
     cards:
+      - type: markdown
+        title: Wochenstatistik (7 Tage)
+        content: |
+          | Medikament | ✅ genommen | ❌ geskippt |
+          | :--- | :---: | :---: |
+          {%- set log = state_attr('sensor.medis_wochenstatistik', 'log') or [] %}
+          {%- set meds = log | map(attribute='med') | unique | sort | list %}
+          {%- for m in meds %}
+            {%- set taken = log | selectattr('med','eq',m) | selectattr('state','eq','genommen') | list | count %}
+            {%- set skipped = log | selectattr('med','eq',m) | selectattr('state','eq','übersprungen') | list | count %}
+          | {{ m }} | {{ taken }} | {{ skipped }} |
+          {%- endfor %}
       - type: "custom:auto-entities"
         show_empty: false
         card:

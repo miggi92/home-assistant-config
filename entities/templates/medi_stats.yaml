@@ -1,0 +1,27 @@
+---
+# medis stats
+- trigger:
+    - platform: event
+      event_type: state_changed
+    - platform: time_pattern
+      minutes: "/30"
+  sensor:
+    - name: "Medis Wochenstatistik"
+      unique_id: medis_wochenstatistik
+      state: "{{ this.attributes.log | default([]) | length }}"
+      icon: mdi:chart-bell-curve-cumulative
+      attributes:
+        log: >
+          {% set ns = namespace(items = state_attr('sensor.medis_wochenstatistik', 'log') | default([])) %}
+          {% if trigger.platform == 'event'
+                and trigger.event.data.entity_id in label_entities('medis')
+                and trigger.event.data.new_state is not none
+                and trigger.event.data.new_state.state in ['genommen','übersprungen'] %}
+            {% set entry = {
+              'med': trigger.event.data.new_state.attributes.friendly_name | default('?') | regex_replace('^[Mm]edis ', ''),
+              'state': trigger.event.data.new_state.state,
+              'ts': as_timestamp(now())
+            } %}
+            {% set ns.items = ns.items + [entry] %}
+          {% endif %}
+          {{ ns.items }}
