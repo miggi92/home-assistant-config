@@ -5,11 +5,11 @@ id: 98c86575-db8b-4219-9877-8d5067660e00
 description: "Aktualisiert die Essensfelder anhand vom sensor"
 trigger:
   - platform: state
-    entity_id: sensor.aramark_kantine
+    entity_id: sensor.arbeit_miguel_aramark_kantine_heute
 condition: []
 action:
   - variables:
-      gerichte: "{{ state_attr('sensor.aramark_kantine', 'gerichte') | default([], true) }}"
+      gerichte: "{{ state_attr('sensor.arbeit_miguel_aramark_kantine_heute', 'gerichte') | default([], true) }}"
       mapping:
         One: input_text.work_meal_one
         "One two": input_text.work_meal_one_two
