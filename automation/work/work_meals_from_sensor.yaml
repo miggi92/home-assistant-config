@@ -1,0 +1,37 @@
+---
+# Parse via docker and post via mqtt
+alias: WorkMealsInput
+id: 98c86575-db8b-4219-9877-8d5067660e00
+description: "Aktualisiert die Essensfelder anhand vom sensor"
+trigger:
+  - platform: state
+    entity_id: sensor.aramark_kantine
+condition: []
+action:
+  - variables:
+      gerichte: "{{ state_attr('sensor.aramark_kantine', 'gerichte') | default([], true) }}"
+      mapping:
+        One: input_text.work_meal_one
+        "One two": input_text.work_meal_one_two
+        Two: input_text.work_meal_two
+        Three: input_text.work_meal_three
+        Four: input_text.work_meal_four
+        Five: input_text.work_meal_five
+        "Five (100g Preis)": input_text.work_meal_five
+
+  - repeat:
+      for_each: "{{ mapping | dictsort }}"
+      sequence:
+        - variables:
+            ausgabe: "{{ repeat.item[0] }}"
+            ziel: "{{ repeat.item[1] }}"
+            treffer: >-
+              {{ gerichte | selectattr('ausgabe', 'eq', ausgabe)
+                | map(attribute='name') | list }}
+        - service: input_text.set_value
+          target:
+            entity_id: "{{ ziel }}"
+          data:
+            value: "{{ (treffer | join(' oder '))[:255] if treffer else 'Kein Gericht' }}"
+
+mode: single
