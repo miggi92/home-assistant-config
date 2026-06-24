@@ -43,8 +43,8 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 📅 Eingabe-Datum/Zeit: 30
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
-- 📝 Eingabe-Texte: 42
-- 🧩 Entitäten: 3949
+- 📝 Eingabe-Texte: 43
+- 🧩 Entitäten: 3950
 - 🎮 Fernbedienungen: 17
 - 📱 Geräte: 564
 - 📍 Geräte-Tracker: 134
