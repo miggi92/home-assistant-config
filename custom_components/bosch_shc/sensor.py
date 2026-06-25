@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from boschshcpy import SHCSession
+from boschshcpy import SHCEmma, SHCSession
 from boschshcpy.device import SHCDevice
-
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -15,10 +14,10 @@ from homeassistant.const import (
     CONCENTRATION_PARTS_PER_MILLION,
     LIGHT_LUX,
     PERCENTAGE,
+    Platform,
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
-    Platform,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
@@ -30,7 +29,7 @@ from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(
+async def async_setup_entry(  # noqa: C901
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
@@ -320,7 +319,10 @@ async def async_setup_entry(
             )
         )
         # WalkTest state sensor: only created when WalkTest service is present.
-        if getattr(sensor, "supports_walk_test", False) and sensor.walk_state is not None:
+        if (
+            getattr(sensor, "supports_walk_test", False)
+            and sensor.walk_state is not None
+        ):
             entities.append(
                 WalkStateSensor(
                     device=sensor,
@@ -415,9 +417,29 @@ async def async_setup_entry(
         if device_excluded(siren, config_entry.options):
             continue
         if getattr(siren, "supports_power_supply", False):
-            entities.append(SirenBatterySensor(device=siren, entry_id=config_entry.entry_id))
-            entities.append(SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id))
-            entities.append(SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id))
+            entities.append(
+                SirenBatterySensor(device=siren, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id)
+            )
+            entities.append(
+                SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id)
+            )
+
+    # KeypadTrigger mapping (Universal Switch II button->scenario): diagnostic,
+    # only created when the device actually exposes the service (spec-grounded).
+    if diagnostic_enabled:
+        for sensor in session.device_helper.universal_switches:
+            if device_excluded(sensor, config_entry.options):
+                continue
+            if getattr(sensor, "supports_keypadtrigger", False):
+                entities.append(
+                    KeypadTriggerSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
 
     if entities:
         async_add_entities(entities)
@@ -609,6 +631,44 @@ class CommunicationQualitySensor(SHCEntity, SensorEntity):
             return None
 
 
+class KeypadTriggerSensor(SHCEntity, SensorEntity):
+    """Diagnostic: Universal Switch II button->scenario mapping (spec-grounded).
+
+    Reports the switchType; the scenario associations are exposed as state
+    attributes. Informational only — the actual press events arrive via the
+    Keypad service / device triggers, not this sensor.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "keypad_trigger"
+    _attr_icon = "mdi:gesture-tap-button"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a SHC keypad-trigger mapping sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_keypadtrigger"
+        # SHCEntity forces _attr_name=None, which shadows the translation_key in
+        # HA's name resolver — drop it so this entity is named "Button mapping".
+        del self._attr_name
+
+    @property
+    def native_value(self):
+        """Return the switch type of the keypad trigger service."""
+        service = self._device.keypadtrigger
+        return service.switch_type if service is not None else None
+
+    @property
+    def extra_state_attributes(self):
+        """Return scenario association state attributes."""
+        service = self._device.keypadtrigger
+        if service is None:
+            return None
+        return {
+            "scenario_id_associations": service.scenario_id_associations,
+            "ids_to_trigger": service.ids_to_trigger,
+        }
+
+
 class HumidityRatingSensor(SHCEntity, SensorEntity):
     """Representation of an SHC humidity rating sensor."""
 
@@ -624,9 +684,7 @@ class HumidityRatingSensor(SHCEntity, SensorEntity):
         try:
             return self._device.humidity_rating.name
         except ValueError as err:
-            LOGGER.warning(
-                "Unknown humidity rating for %s: %s", self._device.name, err
-            )
+            LOGGER.warning("Unknown humidity rating for %s: %s", self._device.name, err)
             return None
 
 
@@ -645,9 +703,7 @@ class PurityRatingSensor(SHCEntity, SensorEntity):
         try:
             return self._device.purity_rating.name
         except ValueError as err:
-            LOGGER.warning(
-                "Unknown purity rating for %s: %s", self._device.name, err
-            )
+            LOGGER.warning("Unknown purity rating for %s: %s", self._device.name, err)
             return None
 
 
@@ -673,8 +729,6 @@ class PowerSensor(SHCEntity, SensorEntity):
 
 class EmmaPowerSensor(SHCEntity, SensorEntity):
     """Representation of an SHC power reporting sensor."""
-
-    from boschshcpy import SHCEmma
 
     _attr_entity_registry_enabled_default = False
     _attr_device_class = SensorDeviceClass.POWER
@@ -747,9 +801,7 @@ class EnergyYieldSensor(SHCEntity, SensorEntity):
         """Initialize the energy yield sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Energy Yield"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{self._device.id}_energy_yield"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_energy_yield"
 
     @property
     def native_value(self):
@@ -775,9 +827,7 @@ class PowerYieldSensor(SHCEntity, SensorEntity):
         """Initialize the power yield sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Power Yield"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{self._device.id}_power_yield"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{self._device.id}_power_yield"
 
     @property
     def native_value(self):
@@ -887,9 +937,7 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
         """Initialize a battery-level sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Battery Level"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_battery_level"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_battery_level"
 
     @property
     def native_value(self):
@@ -897,9 +945,7 @@ class BatteryLevelSensor(SHCEntity, SensorEntity):
         try:
             return self._device.batterylevel.value
         except (ValueError, AttributeError) as err:
-            LOGGER.warning(
-                "Unknown battery level for %s: %s", self._device.name, err
-            )
+            LOGGER.warning("Unknown battery level for %s: %s", self._device.name, err)
             return None
 
 
@@ -920,9 +966,7 @@ class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
         """Initialize a Twinguard combined-rating diagnostic sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Combined Rating"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_combined_rating"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_combined_rating"
 
     @property
     def native_value(self):
@@ -930,9 +974,7 @@ class TwinguardCombinedRatingSensor(SHCEntity, SensorEntity):
         try:
             return self._device.combined_rating.name
         except (ValueError, AttributeError) as err:
-            LOGGER.warning(
-                "Unknown combined rating for %s: %s", self._device.name, err
-            )
+            LOGGER.warning("Unknown combined rating for %s: %s", self._device.name, err)
             return None
 
 
@@ -949,9 +991,7 @@ class TwinguardDescriptionSensor(SHCEntity, SensorEntity):
         """Initialize a Twinguard air-quality description diagnostic sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Air Quality Description"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_description"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_description"
 
     @property
     def native_value(self):
@@ -974,9 +1014,7 @@ class WalkStateSensor(SHCEntity, SensorEntity):
         """Initialize the walk-state sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Walk Test State"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_walk_state"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_walk_state"
 
     @property
     def native_value(self) -> str | None:
@@ -1009,9 +1047,7 @@ class DetectionStateSensor(SHCEntity, SensorEntity):
         """Initialize the detection-state sensor."""
         super().__init__(device, entry_id)
         self._attr_name = "Detection Test State"
-        self._attr_unique_id = (
-            f"{device.root_device_id}_{device.id}_detection_state"
-        )
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_detection_state"
 
     @property
     def native_value(self) -> str | None:
@@ -1070,11 +1106,13 @@ class SirenBatterySensor(SHCEntity, SensorEntity):
     _attr_translation_key = "siren_battery"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the outdoor siren battery sensor."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_battery"
 
     @property
     def native_value(self):
+        """Return the remaining battery percentage."""
         return getattr(self._device.power_supply, "battery_percentage_remaining", None)
 
 
@@ -1087,11 +1125,13 @@ class SirenMainPowerSensor(SHCEntity, SensorEntity):
     _attr_options = ["battery", "solar", "v12", "v230", "unknown"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the outdoor siren main power source sensor."""
         super().__init__(device, entry_id)
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_siren_main_power"
 
     @property
     def native_value(self):
+        """Return the active power source as a lowercase slug."""
         try:
             return self._device.power_supply.main_power_supply.name.lower()
         except AttributeError:
@@ -1108,6 +1148,7 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):
     _attr_options = ["bad", "medium", "good", "unknown"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the outdoor siren solar charging quality sensor."""
         super().__init__(device, entry_id)
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}_siren_solar_charging"
@@ -1115,6 +1156,7 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):
 
     @property
     def native_value(self):
+        """Return the solar charging score as a lowercase slug."""
         try:
             return self._device.power_supply.solar_charging_score.name.lower()
         except AttributeError:

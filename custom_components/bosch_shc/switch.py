@@ -3,27 +3,26 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from dataclasses import dataclass
 
 import aiohttp
-
 from boschshcpy import (
     SHCCamera360,
     SHCCameraEyes,
     SHCCameraOutdoorGen2,
     SHCLightSwitch,
-    SHCSession,
-    SHCSmartPlug,
     SHCMicromoduleRelay,
-    SHCSmartPlugCompact,
+    SHCSession,
     SHCShutterContact2,
     SHCShutterContact2Plus,
+    SHCSmartPlug,
+    SHCSmartPlugCompact,
     SHCThermostat,
     SHCUserDefinedState,
 )
 from boschshcpy.device import SHCDevice
-
 from homeassistant.components.switch import (
     ENTITY_ID_FORMAT,
     SwitchDeviceClass,
@@ -31,15 +30,15 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.util import slugify
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import slugify
 
-from .const import DATA_SESSION, DOMAIN, DATA_SHC
+from .const import DATA_SESSION, DATA_SHC, DOMAIN
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
@@ -189,6 +188,11 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
     ),
     "bypass": SHCSwitchEntityDescription(
         key="bypass",
+        # #342: name it clearly ("Alarm bypass") instead of inheriting the bare
+        # device name, so users understand it excludes the contact from the
+        # intrusion alarm (open/close while armed without triggering it).
+        translation_key="bypass",
+        icon="mdi:shield-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
         on_value=SHCShutterContact2.BypassService.State.BYPASS_ACTIVE,
@@ -341,7 +345,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
 }
 
 
-async def async_setup_entry(
+async def async_setup_entry(  # noqa: C901
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
@@ -611,11 +615,16 @@ async def async_setup_entry(
         # Frontlight uid; async_migrate skips if the target already exists, so
         # already-upgraded users are unaffected.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
-            attr_name="Frontlight", old_unique_id=f"{switch.serial}_light",
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="Frontlight",
+            old_unique_id=f"{switch.serial}_light",
         )
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
             attr_name="Frontlight",
             old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
@@ -631,11 +640,16 @@ async def async_setup_entry(
         # claimed by Frontlight above, so these no-op for upgraders but cover a
         # registry where only AmbientLight's id survived.
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
-            attr_name="AmbientLight", old_unique_id=f"{switch.serial}_light",
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
+            attr_name="AmbientLight",
+            old_unique_id=f"{switch.serial}_light",
         )
         await async_migrate_to_new_unique_id(
-            hass=hass, platform=Platform.SWITCH, device=switch,
+            hass=hass,
+            platform=Platform.SWITCH,
+            device=switch,
             attr_name="AmbientLight",
             old_unique_id=f"{switch.root_device_id}_{switch.id}_light",
         )
@@ -885,10 +899,8 @@ async def async_setup_entry(
     session.subscribe(_uds_subscriber)
 
     def _unsubscribe_uds():
-        try:
-            session._subscribers.remove(_uds_subscriber)
-        except ValueError:
-            pass
+        with contextlib.suppress(ValueError):
+            session._subscribers.remove(_uds_subscriber)  # noqa: SLF001
 
     config_entry.async_on_unload(_unsubscribe_uds)
 
@@ -914,6 +926,14 @@ class SHCSwitch(SHCEntity, SwitchEntity):
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
+        # #342: a description translation_key (e.g. bypass -> "Alarm bypass")
+        # should drive a translated entity name. SHCEntity.__init__ forces
+        # _attr_name=None, and HA's name resolver returns that before ever
+        # consulting the translation_key — so drop it here for the primary
+        # entity to let the translation through, keeping unique_id unchanged.
+        if attr_name is None and description.translation_key:
+            del self._attr_name
+        self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     @property
     def is_on(self) -> bool | None:
@@ -992,7 +1012,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         read, #335). Use the async refresh; fall back to the executor + sync
         update() only if the installed lib predates async_update.
         """
-        if hasattr(self._device, "async_update"):
+        if self._has_async_update:  # [S3] cached at init
             await self._device.async_update()
         else:
             await self.hass.async_add_executor_job(self._device.update)
@@ -1033,6 +1053,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     async def async_added_to_hass(self):
         """Subscribe to SHC events."""
@@ -1098,7 +1119,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         The sync device.update() leaves an un-awaited coroutine in the service
         state under SHCSessionAsync (TypeError, #335) — use the async refresh.
         """
-        if hasattr(self._device, "async_update"):
+        if self._has_async_update:  # [S3] cached at init
             await self._device.async_update()
         else:
             await self.hass.async_add_executor_job(self._device.update)
