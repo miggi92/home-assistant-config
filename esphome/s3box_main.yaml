@@ -5,6 +5,10 @@
 ##      -> Statusleiste aendern? NUR die statusbar-Zeile in substitutions.
 ##   2. Die frueheren 10 increment_digit_X-Skripte sind zu einem einzigen
 ##      parametrisierten Skript 'increment_digit' (digit: string) zusammengefasst.
+##   3. Tage/Monate auf Deutsch.
+##   4. Lichter (Wohnzimmer/Bett/Abstellkammer) auf lights_page,
+##      Ventilatoren (Buero/Tower/Wohnzimmer) auf template_page (= Fan-Kachel oben rechts im Idle).
+##      Jeweils Tap = toggle, Icon zeigt Live-Status aus HA (an=hell, aus=gedimmt).
 ##  Anpassungs-Stellen (external_media_player etc.) wie gehabt unten beachten.
 ###############################################################################
 
@@ -35,7 +39,7 @@ substitutions:
   friendly_name: ESP32-S3-Box-3
 
   external_media_player: your_media_player  ##change this to your external media player enity_id: do not include media_player.
-  home_assistant_host: http://192.168.0.76:8123 ##change to the full url or IP of your HA server including port
+  home_assistant_host: http://homeassistant.local:8123 ##change to the full url or IP of your HA server including port
   tts_voice_speed: "24000" #options #nabu casa "24000" #piper "16000" elevenlabs "44100" must include quotes
 
 #################### ON DEVICE WAKE WORDS #######################################
@@ -51,26 +55,26 @@ substitutions:
 
 #####  Days and months #####
 ## Change the values on the right to match your locale ##
-  monday: Monday
-  tuesday: Tuesday
-  wednesday: Wednesday
-  thursday: Thursday
-  friday: Friday
-  saturday: Saturday
-  sunday: Sunday
+  monday: Montag
+  tuesday: Dienstag
+  wednesday: Mittwoch
+  thursday: Donnerstag
+  friday: Freitag
+  saturday: Samstag
+  sunday: Sonntag
 
-  jan: January
-  feb: February
-  mar: March
+  jan: Januar
+  feb: Februar
+  mar: März
   apr: April
-  may: May
-  jun: June
-  jul: July
+  may: Mai
+  jun: Juni
+  jul: Juli
   aug: August
   sept: September
-  oct: October
+  oct: Oktober
   nov: November
-  dec: December
+  dec: Dezember
 #####################################################################
 
 ##### DO NOT CHANGE SUBSTITUTIONS BELOW THIS LINE ######
@@ -841,6 +845,40 @@ text_sensor:
     on_value:
       - component.update: s3_box_lcd
 
+  # --- Status der Lichter (live aus HA) ---
+  - platform: homeassistant
+    id: light_wohnzimmer_state
+    entity_id: light.wohnzimmer
+    on_value:
+      - component.update: s3_box_lcd
+  - platform: homeassistant
+    id: light_bett_state
+    entity_id: light.bett
+    on_value:
+      - component.update: s3_box_lcd
+  - platform: homeassistant
+    id: light_abstellkammer_state
+    entity_id: light.abstellkammer
+    on_value:
+      - component.update: s3_box_lcd
+
+  # --- Status der Ventilatoren (live aus HA) ---
+  - platform: homeassistant
+    id: fan_buro_state
+    entity_id: fan.buro_ventilator
+    on_value:
+      - component.update: s3_box_lcd
+  - platform: homeassistant
+    id: fan_tower_state
+    entity_id: fan.tower_fan
+    on_value:
+      - component.update: s3_box_lcd
+  - platform: homeassistant
+    id: fan_wohnzimmer_state
+    entity_id: fan.wohnzimmerventilator
+    on_value:
+      - component.update: s3_box_lcd
+
 text:
   - platform: template
     name: "Notification Text"
@@ -1379,16 +1417,17 @@ binary_sensor:
     internal: true
     x_min: 5
     x_max: 105
-    y_min: 90
+    y_min: 60
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
-    # on_click:
-      # min_length: 10ms
-      # max_length: 500ms
-      # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
-        # - component.update: s3_box_lcd
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: light.toggle
+            data:
+              entity_id: light.wohnzimmer
+        - component.update: s3_box_lcd
 
   - platform: touchscreen
     page_id: lights_page
@@ -1396,16 +1435,17 @@ binary_sensor:
     internal: true
     x_min: 110
     x_max: 210
-    y_min: 90
+    y_min: 60
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
-    # on_click:
-      # min_length: 10ms
-      # max_length: 500ms
-      # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
-        # - component.update: s3_box_lcd
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: light.toggle
+            data:
+              entity_id: light.bett
+        - component.update: s3_box_lcd
 
   - platform: touchscreen
     page_id: lights_page
@@ -1413,16 +1453,17 @@ binary_sensor:
     internal: true
     x_min: 215
     x_max: 315
-    y_min: 90
+    y_min: 60
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
-    # on_click:
-      # min_length: 10ms
-      # max_length: 500ms
-      # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
-        # - component.update: s3_box_lcd
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: light.toggle
+            data:
+              entity_id: light.abstellkammer
+        - component.update: s3_box_lcd
 
   - platform: touchscreen
     page_id: lights_page
@@ -1474,6 +1515,61 @@ binary_sensor:
       #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
 
         # - component.update: s3_box_lcd
+
+##### Ventilatoren (template_page) #####
+  - platform: touchscreen
+    page_id: template_page
+    id: fan_buro_btn
+    internal: true
+    x_min: 5
+    x_max: 105
+    y_min: 75
+    y_max: 175
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: fan.toggle
+            data:
+              entity_id: fan.buro_ventilator
+        - component.update: s3_box_lcd
+
+  - platform: touchscreen
+    page_id: template_page
+    id: fan_tower_btn
+    internal: true
+    x_min: 110
+    x_max: 210
+    y_min: 75
+    y_max: 175
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: fan.toggle
+            data:
+              entity_id: fan.tower_fan
+        - component.update: s3_box_lcd
+
+  - platform: touchscreen
+    page_id: template_page
+    id: fan_wohnzimmer_btn
+    internal: true
+    x_min: 215
+    x_max: 315
+    y_min: 75
+    y_max: 175
+    on_click:
+      min_length: 10ms
+      max_length: 500ms
+      then:
+        - homeassistant.service:
+            service: fan.toggle
+            data:
+              entity_id: fan.wohnzimmerventilator
+        - component.update: s3_box_lcd
 
 ##### media player #####
   - platform: touchscreen
@@ -3052,16 +3148,24 @@ display:
           it.printf(120, 155, id(icon_font_80), blue,"\U000F0FCE");
           it.printf(220, 155, id(icon_font_80), lime,"\U000F08D6");
 
-      - id: template_page ##### template page ##]##
+      - id: template_page ##### Ventilatoren-Seite #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          it.printf(20, 75, id(icon_font_80), light_blue,"\U000F06E8");
-          it.printf(120, 75, id(icon_font_80), light_blue,"\U000F06E8");
-          it.printf(220, 75, id(icon_font_80), light_blue, "\U000F06E8");
-          it.printf(20, 155, id(icon_font_80), light_blue,"\U000F06E8");
-          it.printf(120, 155, id(icon_font_80), light_blue,"\U000F06E8");
-          it.printf(220, 155, id(icon_font_80), light_blue, "\U000F06E8");
+          it.printf(160, 60, id(my_font5), light_blue, TextAlign::CENTER, "Ventilatoren");
+          // Obere Reihe: 3 Ventilatoren mit Live-Status (an = blau, aus = gedimmt)
+          // Buero
+          if(id(fan_buro_state).state == "on") { it.printf(50, 90, id(icon_font_80), blue, "\U000F0210"); }
+          else { it.printf(50, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
+          it.printf(50, 160, id(my_font), light_blue, TextAlign::CENTER, "Büro");
+          // Tower
+          if(id(fan_tower_state).state == "on") { it.printf(160, 90, id(icon_font_80), blue, "\U000F0210"); }
+          else { it.printf(160, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
+          it.printf(160, 160, id(my_font), light_blue, TextAlign::CENTER, "Tower");
+          // Wohnzimmer
+          if(id(fan_wohnzimmer_state).state == "on") { it.printf(270, 90, id(icon_font_80), blue, "\U000F0210"); }
+          else { it.printf(270, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
+          it.printf(270, 160, id(my_font), light_blue, TextAlign::CENTER, "Wohnz.");
 
       - id: info_page ##### info page #####
         lambda: |-
@@ -3145,12 +3249,19 @@ display:
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          it.printf(20, 75, id(icon_font_80), light_blue,"\U000F0335");
-          it.printf(120, 75, id(icon_font_80), light_blue,"\U000F0335");
-          it.printf(220, 75, id(icon_font_80), light_blue, "\U000F0335");
-          it.printf(20, 155, id(icon_font_80), light_blue,"\U000F0335");
-          it.printf(120, 155, id(icon_font_80), light_blue,"\U000F0335");
-          it.printf(220, 155, id(icon_font_80), light_blue, "\U000F0335");
+          // Obere Reihe: 3 Lichter mit Live-Status (an = gelb / Gluehbirne, aus = gedimmt)
+          // Wohnzimmer
+          if(id(light_wohnzimmer_state).state == "on") { it.printf(50, 75, id(icon_font_80), yellow, "\U000F06E8"); }
+          else { it.printf(50, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
+          it.printf(50, 145, id(my_font), light_blue, TextAlign::CENTER, "Wohnzimmer");
+          // Bett
+          if(id(light_bett_state).state == "on") { it.printf(160, 75, id(icon_font_80), yellow, "\U000F06E8"); }
+          else { it.printf(160, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
+          it.printf(160, 145, id(my_font), light_blue, TextAlign::CENTER, "Bett");
+          // Abstellkammer
+          if(id(light_abstellkammer_state).state == "on") { it.printf(270, 75, id(icon_font_80), yellow, "\U000F06E8"); }
+          else { it.printf(270, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
+          it.printf(270, 145, id(my_font), light_blue, TextAlign::CENTER, "Abstellk.");
 
       - id: media_page ##### media player page #####
         lambda: |-
