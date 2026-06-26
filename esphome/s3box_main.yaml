@@ -1,4 +1,14 @@
 ###############################################################################
+##  REFACTORED (wartungsfreundlich) — funktional identisch zur Vorversion:
+##   1. Statusleiste steht nur noch EINMAL als substitution 'statusbar'
+##      und wird in jeder Seite per ${statusbar} eingesetzt.
+##      -> Statusleiste aendern? NUR die statusbar-Zeile in substitutions.
+##   2. Die frueheren 10 increment_digit_X-Skripte sind zu einem einzigen
+##      parametrisierten Skript 'increment_digit' (digit: string) zusammengefasst.
+##  Anpassungs-Stellen (external_media_player etc.) wie gehabt unten beachten.
+###############################################################################
+
+###############################################################################
 ##  ESP32-S3-Box-3 — Custom UI Config (Basis: BigBobbas)
 ##  Vorbereitet fuer: S3 Box 3 + Dock (AHT20) + Radar-Praesenzsensor
 ##
@@ -66,6 +76,10 @@ substitutions:
 ##### DO NOT CHANGE SUBSTITUTIONS BELOW THIS LINE ######
 #####      UNLESS YOU KNOW WHAT YOU ARE DOING     ######
   font_glyphs: '&@!"''%()+=,-_.:°/$€£¥?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzÀàÁáÂâÃãÄäĀāĂăÅåǺǻẠạĄąÆæǼǽĆćĈĉČčĊċÇçĎďĐđÐðÈèÉéÊêẼẽĚěËëĒēĔĕĖėẸẹĘęĜĝǦǧĞğĠġĢģĤĥĦħıÌìÍíÎîĨĩÏïĪīĬĭİỊịĮįȷĴĵĶķĸĹĺĽľĻļŁłĿŀŃńÑñŇňŅņƝɲŊŋŉÒòÓóÔôÕõÖöŌōŎŏŐőỌọǪǫØøǾǿŒœŔŕŘřŖŗŚśŜŝŠšŞşȘșẞßŤťŢţȚțŦŧÞþÙùÚúÛûŨũÜüŪūŬŭŮůŰűỤụŲųẀẁẂẃŴŵẄẅỲỳÝýŶŷỸỹŸÿȲȳŹźŽžŻżĲĳƏə'
+
+  # >>> Statusleiste (oben) — EINMAL hier definiert, in jeder Seite via ${statusbar} genutzt.
+  #     Aenderung an Icons/Positionen/Farben der Statusleiste NUR hier noetig.
+  statusbar: 'if(id(api_connection) == true) { it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0"); } else { it.printf(15, 5, id(icon_font_55), red, "\U000F087B"); } if(id(wifi_connection) == true) { it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD"); } else { it.printf(80, 5, id(icon_font_55), red, "\U000F16BC"); } if(id(time_remaining_0).state == "0:00:00"){ it.printf(135, 5, id(icon_font_55), red, "\U000F0150"); } else { it.printf(135, 5, id(icon_font_55), lime, "\U000F0150"); } if(id(mute_switch).state) { it.printf(190, 5, id(icon_font_55), red, "\U000F036D"); } else { it.printf(190, 5, id(icon_font_55), lime, "\U000F036C"); } if(id(alarm_status).state == "disarmed") { it.printf(250, 5, id(icon_font_55), red, "\U000F099E"); } else if(id(alarm_status).state == "arming") { it.printf(250, 5, id(icon_font_55), amber, "\U000F0565"); } else if(id(alarm_status).state == "armed_home") { it.printf(250, 5, id(icon_font_55), green, "\U000F068A"); } else if(id(alarm_status).state == "armed_away") { it.printf(250, 5, id(icon_font_55), green, "\U000F099D"); } else if(id(alarm_status).state == "armed_night") { it.printf(250, 5, id(icon_font_55), green, "\U000F1828"); }'
 
 ############# END OF SUBSTITUTIONS #################
 ####################################################
@@ -354,65 +368,14 @@ script:
       - display.page.show: time_remaining_page
       - component.update: s3_box_lcd
 
-  - id: increment_digit_1
+  # Ein einziges parametrisiertes Skript ersetzt die frueheren 10 increment_digit_X.
+  - id: increment_digit
+    parameters:
+      digit: string
     then:
       - lambda: |-
-          id(current_pin) += "1";
-          ESP_LOGD("increment_digit_1", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_2
-    then:
-      - lambda: |-
-          id(current_pin) += "2";
-          ESP_LOGD("increment_digit_2", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_3
-    then:
-      - lambda: |-
-          id(current_pin) += "3";
-          ESP_LOGD("increment_digit_3", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_4
-    then:
-      - lambda: |-
-          id(current_pin) += "4";
-          ESP_LOGD("increment_digit_4", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_5
-    then:
-      - lambda: |-
-          id(current_pin) += "5";
-          ESP_LOGD("increment_digit_5", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_6
-    then:
-      - lambda: |-
-          id(current_pin) += "6";
-          ESP_LOGD("increment_digit_6", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_7
-    then:
-      - lambda: |-
-          id(current_pin) += "7";
-          ESP_LOGD("increment_digit_7", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_8
-    then:
-      - lambda: |-
-          id(current_pin) += "8";
-          ESP_LOGD("increment_digit_8", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_9
-    then:
-      - lambda: |-
-          id(current_pin) += "9";
-          ESP_LOGD("increment_digit_9", "Current PIN: %s", id(current_pin).c_str());
-
-  - id: increment_digit_0
-    then:
-      - lambda: |-
-          id(current_pin) += "0";
-          ESP_LOGD("increment_digit_0", "Current PIN: %s", id(current_pin).c_str());
+          id(current_pin) += digit;
+          ESP_LOGD("increment_digit", "Current PIN: %s", id(current_pin).c_str());
   - id: show_notification
     then:
       - lambda: id(led).turn_on().set_brightness(id(s_default_brightness).state /100).perform();
@@ -2148,7 +2111,9 @@ binary_sensor:
     y_min: 15
     y_max: 63
     on_press:
-      - script.execute: increment_digit_1
+      - script.execute:
+          id: increment_digit
+          digit: "1"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2163,7 +2128,9 @@ binary_sensor:
     y_min: 15
     y_max: 63
     on_press:
-      - script.execute: increment_digit_2
+      - script.execute:
+          id: increment_digit
+          digit: "2"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2178,7 +2145,9 @@ binary_sensor:
     y_min: 15
     y_max: 63
     on_press:
-      - script.execute: increment_digit_3
+      - script.execute:
+          id: increment_digit
+          digit: "3"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2193,7 +2162,9 @@ binary_sensor:
     y_min: 71
     y_max: 119
     on_press:
-      - script.execute: increment_digit_4
+      - script.execute:
+          id: increment_digit
+          digit: "4"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2208,7 +2179,9 @@ binary_sensor:
     y_min: 71
     y_max: 119
     on_press:
-      - script.execute: increment_digit_5
+      - script.execute:
+          id: increment_digit
+          digit: "5"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2223,7 +2196,9 @@ binary_sensor:
     y_min: 71
     y_max: 119
     on_press:
-      - script.execute: increment_digit_6
+      - script.execute:
+          id: increment_digit
+          digit: "6"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2238,7 +2213,9 @@ binary_sensor:
     y_min: 127
     y_max: 175
     on_press:
-      - script.execute: increment_digit_7
+      - script.execute:
+          id: increment_digit
+          digit: "7"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2253,7 +2230,9 @@ binary_sensor:
     y_min: 127
     y_max: 175
     on_press:
-      - script.execute: increment_digit_8
+      - script.execute:
+          id: increment_digit
+          digit: "8"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2268,7 +2247,9 @@ binary_sensor:
     y_min: 127
     y_max: 175
     on_press:
-      - script.execute: increment_digit_9
+      - script.execute:
+          id: increment_digit
+          digit: "9"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -2285,7 +2266,9 @@ binary_sensor:
     on_press:
       - media_player.play_media:
           media_url: '${home_assistant_host}/local/sounds/key.mp3'
-      - script.execute: increment_digit_0
+      - script.execute:
+          id: increment_digit
+          digit: "0"
       - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -3060,37 +3043,7 @@ display:
       - id: idle_page ##### home page ######
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-          it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(20, 75, id(icon_font_80), blue,"\U000F050F");
           it.printf(40, 120, id(my_font3), white, "%.f", id(s3temp).state); // remove for no sensor version
           it.printf(120, 75, id(icon_font_80), yellow,"\U000F06E8" );
@@ -3102,37 +3055,7 @@ display:
       - id: template_page ##### template page ##]##
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(20, 75, id(icon_font_80), light_blue,"\U000F06E8");
           it.printf(120, 75, id(icon_font_80), light_blue,"\U000F06E8");
           it.printf(220, 75, id(icon_font_80), light_blue, "\U000F06E8");
@@ -3143,37 +3066,7 @@ display:
       - id: info_page ##### info page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "IP Address");
           it.printf(160, 95, id(my_font5), yellow, TextAlign::CENTER, "%s", id(ip_addr).state.c_str());
           it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "Host Name");
@@ -3240,37 +3133,7 @@ display:
       - id: climate_page ##### climate page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(20, 75, id(icon_font_80), light_blue,"\U000F050F");
           it.printf(120, 75, id(icon_font_80), light_blue,"\U000F050F");
           it.printf(220, 75, id(icon_font_80), light_blue, "\U000F050F");
@@ -3281,37 +3144,7 @@ display:
       - id: lights_page ##### lights page ####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(20, 75, id(icon_font_80), light_blue,"\U000F0335");
           it.printf(120, 75, id(icon_font_80), light_blue,"\U000F0335");
           it.printf(220, 75, id(icon_font_80), light_blue, "\U000F0335");
@@ -3322,37 +3155,7 @@ display:
       - id: media_page ##### media player page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           if(id(media_state) == true) {
                  it.printf(160, 80, id(my_font5), lime, TextAlign::CENTER, "Playing");
           } else {
@@ -3369,37 +3172,7 @@ display:
       - id: ext_media_page ##### media player page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(160, 80, id(my_font5), lime, TextAlign::CENTER, id(ha_media_status).state.c_str());
           it.printf(20, 100, id(icon_font_80), blue,"\U000F04AE");
           it.printf(120, 100, id(icon_font_80), blue,"\U000F040E");
@@ -3415,37 +3188,7 @@ display:
       - id: scenes_page ##### scenes page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(20, 75, id(icon_font_80), light_blue,"\U000F0FCE");
           it.printf(120, 75, id(icon_font_80), light_blue,"\U000F0FCE");
           it.printf(220, 75, id(icon_font_80), light_blue, "\U000F0FCE");
@@ -3524,37 +3267,7 @@ display:
       - id: settings_page ##### settings parent page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(160, 65, id(my_font5), light_blue, TextAlign::CENTER, "settings");
           it.printf(20, 80, id(icon_font_55), light_blue,"\U000F036F");
           it.printf(140, 80, id(icon_font_55), light_blue,"\U000F0502");
@@ -3571,37 +3284,7 @@ display:
       - id: device_set_page ##### Device settings page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(15, 75, id(my_font5), light_blue, "Ext media player");
           if(id(output_audio).state) {
                  it.printf(255, 60, id(icon_font_60), lime, "\U000F0521");
@@ -3649,37 +3332,7 @@ display:
       - id: wifi_page ##### wifi info page #####
         lambda: |-
           it.fill(id(black));
-          if(id(api_connection) == true) {
-                  it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0");
-          } else {
-                  it.printf(15, 5, id(icon_font_55), red, "\U000F087B");
-          }
-          if(id(wifi_connection) == true) {
-                  it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD");
-          } else {
-                  it.printf(80, 5, id(icon_font_55), red, "\U000F16BC");
-          }
-          if(id(time_remaining_0).state == "0:00:00"){
-          it.printf(135, 5, id(icon_font_55), red, "\U000F0150");
-          } else {
-          it.printf(135, 5, id(icon_font_55), lime, "\U000F0150");
-          }
-          if(id(mute_switch).state) {
-                 it.printf(190, 5, id(icon_font_55), red, "\U000F036D");
-          } else {
-                 it.printf(190, 5, id(icon_font_55), lime, "\U000F036C");
-          }
-          if(id(alarm_status).state == "disarmed") {
-          it.printf(250, 5, id(icon_font_55), red, "\U000F099E");
-          } else if(id(alarm_status).state == "arming") {
-          it.printf(250, 5, id(icon_font_55), amber, "\U000F0565");
-          } else if(id(alarm_status).state == "armed_home") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F068A");
-          } else if(id(alarm_status).state == "armed_away") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F099D");
-          } else if(id(alarm_status).state == "armed_night") {
-          it.printf(250, 5, id(icon_font_55), green, "\U000F1828");
-          }
+          ${statusbar}
           it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "ssid");
           it.printf(160, 95, id(my_font5), yellow, TextAlign::CENTER, "%s", id(connected_ssid).state.c_str());
           it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "bssid");
