@@ -35,7 +35,7 @@ substitutions:
   friendly_name: ESP32-S3-Box-3
 
   external_media_player: your_media_player  ##change this to your external media player enity_id: do not include media_player.
-  home_assistant_host: http://homeassistant.local:8123 ##change to the full url or IP of your HA server including port
+  home_assistant_host: http://192.168.0.76:8123 ##change to the full url or IP of your HA server including port
   tts_voice_speed: "24000" #options #nabu casa "24000" #piper "16000" elevenlabs "44100" must include quotes
 
 #################### ON DEVICE WAKE WORDS #######################################
