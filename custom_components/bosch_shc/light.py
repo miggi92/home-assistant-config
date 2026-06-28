@@ -12,6 +12,7 @@ from homeassistant.components.light import (
     LightEntity,
 )
 from homeassistant.const import Platform
+from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.util import color as color_util
 
 from .const import (
@@ -38,16 +39,32 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
 
-    hue_lights = (
-        []
-        if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False)
-        else session.device_helper.hue_lights
-    )
-    ledvance_lights = (
-        []
-        if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False)
-        else session.device_helper.ledvance_lights
-    )
+    if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False):
+        hue_lights = []
+        dev_registry = get_dev_reg(hass)
+        for shc_device in session.device_helper.hue_lights:
+            dev_entry = dev_registry.async_get_device(
+                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            )
+            if dev_entry is not None:
+                dev_registry.async_update_device(
+                    dev_entry.id, remove_config_entry_id=config_entry.entry_id
+                )
+    else:
+        hue_lights = session.device_helper.hue_lights
+    if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False):
+        ledvance_lights = []
+        dev_registry = get_dev_reg(hass)
+        for shc_device in session.device_helper.ledvance_lights:
+            dev_entry = dev_registry.async_get_device(
+                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            )
+            if dev_entry is not None:
+                dev_registry.async_update_device(
+                    dev_entry.id, remove_config_entry_id=config_entry.entry_id
+                )
+    else:
+        ledvance_lights = session.device_helper.ledvance_lights
     for light in (
         ledvance_lights + session.device_helper.micromodule_dimmers + hue_lights
     ):
@@ -159,6 +176,8 @@ class LightSwitch(SHCEntity, LightEntity):
     def hs_color(self):
         """Return the rgb color of this light."""
         rgb_raw = self._device.rgb
+        if rgb_raw is None:
+            return None
         rgb = ((rgb_raw >> 16) & 0xFF, (rgb_raw >> 8) & 0xFF, rgb_raw & 0xFF)
         return color_util.color_RGB_to_hs(*rgb)
 
@@ -210,11 +229,11 @@ class MotionDetectorLight(SHCEntity, LightEntity):
 
     _attr_supported_color_modes: set[ColorMode] = {ColorMode.BRIGHTNESS}
     _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_translation_key = "motion_light"
 
     def __init__(self, device, entry_id: str) -> None:
         """Initialize the Motion Detector II light entity."""
         super().__init__(device=device, entry_id=entry_id)
-        self._attr_name = "Motion Light"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_motionlight"
 
     @property

@@ -186,9 +186,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: current_ts,
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
@@ -221,7 +219,6 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         # state change can replay the last eventTimestamp (cf. #192).
         self._last_fired_timestamp: int = -1
         self.entity_id = ENTITY_ID_FORMAT.format(f"{slugify(self._device.name)}_button")
-        self._attr_name = "Button"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_button"
 
     async def async_added_to_hass(self) -> None:
@@ -255,9 +252,7 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: current_ts,
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
@@ -328,9 +323,7 @@ class SHCScenarioEvent(EventEntity):
             ATTR_NAME: event_data["name"],
             ATTR_LAST_TIME_TRIGGERED: event_data["lastTimeTriggered"],
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
@@ -367,9 +360,7 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
             ATTR_NAME: self._device.name,
             ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
@@ -409,9 +400,7 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
@@ -451,9 +440,7 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
-        self.hass.loop.call_soon_threadsafe(
-            self._dispatch_event, event_type, event_attributes
-        )
+        self._dispatch_event(event_type, event_attributes)
 
     @callback
     def _dispatch_event(self, event_type, event_attributes):
