@@ -6,11 +6,14 @@ sensor:
   - name: "Birdnet Daily Count"
     unique_id: birdnet_daily_count
     value_template: "{{ value_json | length }}"
+    json_attributes_path: "$."
+    json_attributes:
+      - birds # siehe Hinweis unten
   - name: "Birdnet Latest Detection"
     unique_id: birdnet_latest_detection
     value_template: >
-      {% if value_json | length > 0 %}
-        {{ value_json[0].common_name }}
+      {% if value_json and value_json | length > 0 %}
+        {{ (value_json | sort(attribute='latest_heard', reverse=true) | first).common_name }}
       {% else %}
         none
       {% endif %}

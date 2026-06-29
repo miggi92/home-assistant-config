@@ -9,11 +9,7 @@ sensor:
   - name: "Birdnet Latest Summary Detection"
     unique_id: birdnet_latest_summary_detection
     value_template: >
-      {% if value_json | length > 0 %}
-        {{ value_json[0].common_name }}
-      {% else %}
-        none
-      {% endif %}
+      {{ value_json[0].common_name if value_json | length > 0 else 'none' }}
     json_attributes_path: "$[0]"
     json_attributes:
       - scientific_name

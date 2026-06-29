@@ -1,0 +1,48 @@
+---
+# Todays Birds.
+alias: todaysBirds
+description: "Generiert eine Collage der heute gehörten Vögel"
+id: 2cafed2b-add1-4d50-bb3c-d73292c17764
+triggers:
+  - trigger: state
+    entity_id: sensor.birdnet_daily
+conditions: []
+
+actions:
+  - variables:
+      todays_birds: >-
+        {% set today = now().strftime('%Y-%m-%d') %}
+        {% set ns = namespace(names=[]) %}
+        {% for bird in state_attr('sensor.birdnet_daily', 'birds') or [] %}
+          {% set ns.names = ns.names + [bird.scientific_name] %}
+        {% endfor %}
+        {{ ns.names | join(', ') }}
+  - action: ai_task.generate_image
+    data:
+      task_name: "Todays birds"
+      instructions: >-
+        A fine art painting in the style of a classic naturalist watercolour
+        illustration, reminiscent of vintage ornithological field guides.
+        An elegant composition featuring these European bird species, each
+        rendered with delicate brushwork, true to its real-life appearance:
+        {{ todays_birds }}.
+        Soft, painterly textures with visible brushstrokes and gentle washes
+        of colour. The birds are arranged harmoniously among hand-painted
+        branches, leaves, and foliage on a softly tinted parchment-like
+        background. Muted, natural tones with warm light. Detailed yet artistic,
+        evoking the work of John James Audubon.
+        No text, no words, no labels, no watermarks.
+    response_variable: birds
+
+  - action: downloader.download_file
+    data:
+      overwrite: true
+      url: "http://localhost:8123{{ birds.url }}"
+      filename: "todays_birds.png"
+      subdir: "birds"
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.meal_image_cache_buster
+    data:
+      value: "{{ as_timestamp(now()) }}"
+mode: queued

@@ -35,6 +35,13 @@ sections:
             tap_action:
               action: navigate
               navigation_path: "#birdnet_popup"
+      - type: picture-glance
+        fit_mode: cover
+        entities:
+          - entity: image.today_s_birds
+            show_state: false
+        image_entity: image.today_s_birds
+        title: "Heutige Vögel"
   - type: grid
     cards:
       - type: custom:bubble-card
