@@ -94,7 +94,8 @@ skyqDefaultRoom.yaml
 /www/logo/work_miguel_logo.svg
 zigbee2mqtt/state.json
 zigbee2mqtt/configuration.yaml
-zigbee2mqtt/coordinator_backup.json
+zigbee2mqtt/coordinator_backup.json#
+.device-builder.json
 
 # OS-spezifische unsichtbare Dateien
 .DS_Store
