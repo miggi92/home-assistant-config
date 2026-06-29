@@ -11,7 +11,6 @@ from boschshcpy import (
     SHCUniversalSwitch,
 )
 from homeassistant.components.event import (
-    ENTITY_ID_FORMAT,
     EventDeviceClass,
     EventEntity,
 )
@@ -24,8 +23,6 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util import slugify
-
 from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
@@ -143,9 +140,6 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         # (same keyName, same eventTimestamp) does not trigger a duplicate event.
         self._last_fired_timestamp: int = -1
 
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"{slugify(self._device.name)}_button_{key_id.casefold()}"
-        )
         self._attr_name = f"Button {key_id}"
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
@@ -218,7 +212,6 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         # Guard against phantom events: a Keypad update piggybacking on another
         # state change can replay the last eventTimestamp (cf. #192).
         self._last_fired_timestamp: int = -1
-        self.entity_id = ENTITY_ID_FORMAT.format(f"{slugify(self._device.name)}_button")
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_button"
 
     async def async_added_to_hass(self) -> None:
@@ -278,9 +271,6 @@ class SHCScenarioEvent(EventEntity):
         self._scenario = scenario
         self._session = session
 
-        self.entity_id = ENTITY_ID_FORMAT.format(
-            f"scenario_{slugify(self._scenario.name)}"
-        )
         # Scenario name is the feature label; HA prepends the device (controller) name.
         self._attr_name = f"{self._scenario.name} Scenario"
         self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
@@ -342,6 +332,9 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
         self._device = device
+        # Dedup guard (#192): phantom events replay the last latestmotion
+        # timestamp on unrelated long-poll updates (e.g. battery level).
+        self._last_fired_timestamp: str = ""
 
     async def async_added_to_hass(self) -> None:
         """Call when entity is added to hass."""
@@ -352,13 +345,17 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        ts = self._device.latestmotion or ""
+        if ts == self._last_fired_timestamp:
+            return
+        self._last_fired_timestamp = ts
         event_type = "MOTION"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
-            ATTR_LAST_TIME_TRIGGERED: self._device.latestmotion,
+            ATTR_LAST_TIME_TRIGGERED: ts,
         }
         self._dispatch_event(event_type, event_attributes)
 
@@ -392,11 +389,16 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        try:
+            subtype = self._device.alarm.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarm value for %s", self._device.name)
+            return
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
-            ATTR_EVENT_SUBTYPE: self._device.alarm.name,
+            ATTR_EVENT_SUBTYPE: subtype,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
@@ -432,11 +434,16 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
                 service.register_event(self._device.id, self._event_callback)
 
     def _event_callback(self) -> None:
+        try:
+            subtype = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            LOGGER.warning("Unexpected alarmstate value for %s", self._device.name)
+            return
         event_type = "ALARM"
         event_attributes = {
             ATTR_DEVICE_ID: self.device_id,
             ATTR_EVENT_TYPE: event_type,
-            ATTR_EVENT_SUBTYPE: self._device.alarmstate.name,
+            ATTR_EVENT_SUBTYPE: subtype,
             ATTR_ID: self._device.id,
             ATTR_NAME: self._device.name,
         }
