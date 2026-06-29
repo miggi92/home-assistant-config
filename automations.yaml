@@ -64,3 +64,27 @@
     data:
       brightness_step: 10
   mode: restart
+- id: '1782164572274'
+  alias: Bird detection
+  description: ''
+  triggers:
+  - trigger: webhook
+    allowed_methods:
+    - POST
+    - PUT
+    local_only: true
+    webhook_id: notify-bird-detection-birdnet
+  conditions: []
+  actions:
+  - action: script.notify_engine
+    metadata: {}
+    data:
+      who: home
+      tag_id: information
+      value1: "Time: {{ trigger.json.metadata.bg_detection_time }}   \nCamera: {{
+        trigger.json.metadata.location }}  \nConfidence: {{ trigger.json.metadata.bg_confidence_percent
+        }}\n  "
+      title: "\U0001F99C {{ trigger.json.metadata.species }} Detected!"
+      group: bird
+      icon: mdi:bird
+  mode: single
