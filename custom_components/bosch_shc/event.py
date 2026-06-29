@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from boschshcpy import (
     SHCLightControl,
     SHCMotionDetector,
+    SHCMotionDetector2,
     SHCSession,
     SHCSmokeDetectionSystem,
     SHCSmokeDetector,
@@ -23,6 +26,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from .const import (
     ATTR_EVENT_SUBTYPE,
     ATTR_EVENT_TYPE,
@@ -43,7 +47,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the BoschSHC event entities."""
-    entities = []
+    entities: list[Any] = []
     session: SHCSession = hass.data[DOMAIN][entry.entry_id][DATA_SESSION]
 
     entities = []
@@ -87,8 +91,8 @@ async def async_setup_entry(
             )
         )
 
-    for motion_detector in (
-        session.device_helper.motion_detectors + session.device_helper.motion_detectors2
+    for motion_detector in list(session.device_helper.motion_detectors) + list(
+        session.device_helper.motion_detectors2
     ):
         if device_excluded(motion_detector, entry.options):
             continue
@@ -123,7 +127,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class UniversalSwitchEvent(SHCEntity, EventEntity):
+class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC UniversalSwitch Entity."""
 
     _attr_device_class = EventDeviceClass.BUTTON
@@ -140,7 +144,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         # (same keyName, same eventTimestamp) does not trigger a duplicate event.
         self._last_fired_timestamp: int = -1
 
-        self._attr_name = f"Button {key_id}"
+        self._attr_name: str | None = f"Button {key_id}"  # type: ignore[assignment]
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
     async def async_added_to_hass(self) -> None:
@@ -182,8 +186,10 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         try:
             self._trigger_event(event_type, event_attributes)
@@ -193,7 +199,7 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):
         self.schedule_update_ha_state()
 
 
-class LightControlButtonEvent(SHCEntity, EventEntity):
+class LightControlButtonEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Wall push-button press from a Light Control II (#282)."""
 
     _attr_device_class = EventDeviceClass.BUTTON
@@ -247,8 +253,10 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         try:
             self._trigger_event(event_type, event_attributes)
@@ -258,14 +266,16 @@ class LightControlButtonEvent(SHCEntity, EventEntity):
         self.schedule_update_ha_state()
 
 
-class SHCScenarioEvent(EventEntity):
+class SHCScenarioEvent(EventEntity):  # type: ignore[misc]
     """Representation of a SHC Scenario Entity."""
 
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["SCENARIO"]
     _attr_has_entity_name = True
 
-    def __init__(self, scenario, session, hass, entry_id: str) -> None:
+    def __init__(
+        self, scenario: Any, session: SHCSession, hass: HomeAssistant, entry_id: str
+    ) -> None:
         """Initialize the Scenario device."""
 
         self._scenario = scenario
@@ -273,22 +283,23 @@ class SHCScenarioEvent(EventEntity):
 
         # Scenario name is the feature label; HA prepends the device (controller) name.
         self._attr_name = f"{self._scenario.name} Scenario"
-        self._attr_unique_id = f"{session.information.unique_id}_{self._scenario.id}"
+        info_uid = session.information.unique_id if session.information else ""
+        self._attr_unique_id = f"{info_uid}_{self._scenario.id}"
 
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
 
     @property
-    def device_name(self):
+    def device_name(self) -> str | None:
         """Name of the device."""
-        return self._shc.name
+        return self._shc.name  # type: ignore[no-any-return]
 
     @property
-    def device_id(self):
+    def device_id(self) -> str:
         """Device id of the entity."""
-        return self._shc.id
+        return self._shc.id  # type: ignore[no-any-return]
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         """Return the device info."""
         return {
             "identifiers": self._shc.identifiers,
@@ -305,7 +316,7 @@ class SHCScenarioEvent(EventEntity):
             self._scenario.id, self._event_callback
         )
 
-    def _event_callback(self, event_data) -> None:
+    def _event_callback(self, event_data: dict[str, Any]) -> None:
         event_type = "SCENARIO"
         event_attributes = {
             ATTR_EVENT_TYPE: event_type,
@@ -315,20 +326,24 @@ class SHCScenarioEvent(EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
 
-class MotionDetectorEvent(SHCEntity, EventEntity):
+class MotionDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC MotionDetector Entity."""
 
     _attr_device_class = EventDeviceClass.MOTION
     _attr_event_types = ["MOTION"]
 
-    def __init__(self, device: SHCMotionDetector, entry_id: str) -> None:
+    def __init__(
+        self, device: SHCMotionDetector | SHCMotionDetector2, entry_id: str
+    ) -> None:
         """Initialize the Universal Switch device."""
         super().__init__(device, entry_id)
         self._device = device
@@ -359,14 +374,16 @@ class MotionDetectorEvent(SHCEntity, EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
 
-class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
+class SmokeDetectionSystemEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC smoke detection system event entity."""
 
     _attr_event_types = ["ALARM"]
@@ -404,14 +421,16 @@ class SmokeDetectionSystemEvent(SHCEntity, EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()
 
 
-class SmokeDetectorEvent(SHCEntity, EventEntity):
+class SmokeDetectorEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC smoke detector event entity."""
 
     _attr_event_types = ["ALARM"]
@@ -449,8 +468,10 @@ class SmokeDetectorEvent(SHCEntity, EventEntity):
         }
         self._dispatch_event(event_type, event_attributes)
 
-    @callback
-    def _dispatch_event(self, event_type, event_attributes):
+    @callback  # type: ignore[untyped-decorator]
+    def _dispatch_event(
+        self, event_type: str, event_attributes: dict[str, Any]
+    ) -> None:
         """Dispatch the event on the event loop (thread-safe)."""
         self._trigger_event(event_type, event_attributes)
         self.schedule_update_ha_state()

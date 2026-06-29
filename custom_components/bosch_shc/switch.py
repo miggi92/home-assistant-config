@@ -6,21 +6,23 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import aiohttp
 from boschshcpy import (
-    SHCCamera360,
-    SHCCameraEyes,
-    SHCCameraOutdoorGen2,
-    SHCLightSwitch,
-    SHCMicromoduleRelay,
+    BypassService,
+    CameraAmbientLightService,
+    CameraFrontLightService,
+    CameraLightService,
+    CameraNotificationService,
+    PowerSwitchService,
+    PrivacyModeService,
+    RoutingService,
     SHCSession,
-    SHCShutterContact2,
     SHCShutterContact2Plus,
-    SHCSmartPlug,
-    SHCSmartPlugCompact,
-    SHCThermostat,
     SHCUserDefinedState,
+    SilentModeService,
+    ThermostatService,
 )
 from boschshcpy.device import SHCDevice
 from homeassistant.components.switch import (
@@ -35,7 +37,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import StateType
+
 from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
@@ -55,18 +57,15 @@ class SHCSwitchRequiredKeysMixin:
 
     key: str
     on_key: str
-    on_value: StateType
-    should_poll: bool | False
+    on_value: Any
+    should_poll: bool
     device_class: SwitchDeviceClass | None = None
     icon: str | None = None
     entity_category: EntityCategory | None = None
 
 
 @dataclass
-class SHCSwitchEntityDescription(
-    SwitchEntityDescription,
-    SHCSwitchRequiredKeysMixin,
-):
+class SHCSwitchEntityDescription(SwitchEntityDescription, SHCSwitchRequiredKeysMixin):  # type: ignore[misc]
     """Class describing SHC switch entities."""
 
 
@@ -75,14 +74,14 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="smartplug",
         device_class=SwitchDeviceClass.OUTLET,
         on_key="switchstate",
-        on_value=SHCSmartPlug.PowerSwitchService.State.ON,
+        on_value=PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "smartplug_routing": SHCSwitchEntityDescription(
         key="smartplug_routing",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="routing",
-        on_value=SHCSmartPlug.RoutingService.State.ENABLED,
+        on_value=RoutingService.State.ENABLED,
         should_poll=False,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:wifi",
@@ -91,28 +90,28 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="smartplugcompact",
         device_class=SwitchDeviceClass.OUTLET,
         on_key="switchstate",
-        on_value=SHCSmartPlugCompact.PowerSwitchService.State.ON,
+        on_value=PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "micromodule_relay_switch": SHCSwitchEntityDescription(
         key="micromodule_relay_switch",
         device_class=SwitchDeviceClass.OUTLET,
         on_key="switchstate",
-        on_value=SHCMicromoduleRelay.PowerSwitchService.State.ON,
+        on_value=PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "lightswitch": SHCSwitchEntityDescription(
         key="lightswitch",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="switchstate",
-        on_value=SHCLightSwitch.PowerSwitchService.State.ON,
+        on_value=PowerSwitchService.State.ON,
         should_poll=False,
     ),
     "cameraeyes": SHCSwitchEntityDescription(
         key="cameraeyes",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="privacymode",
-        on_value=SHCCameraEyes.PrivacyModeService.State.DISABLED,
+        on_value=PrivacyModeService.State.DISABLED,
         should_poll=True,
         icon="mdi:video",
     ),
@@ -120,7 +119,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="cameraeyes_cameralight",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameralight",
-        on_value=SHCCameraEyes.CameraLightService.State.ON,
+        on_value=CameraLightService.State.ON,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:light-flood-down",
@@ -129,7 +128,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="cameraeyes_notification",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameranotification",
-        on_value=SHCCameraEyes.CameraNotificationService.State.ENABLED,
+        on_value=CameraNotificationService.State.ENABLED,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:message-badge",
@@ -138,7 +137,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="camera360",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="privacymode",
-        on_value=SHCCamera360.PrivacyModeService.State.DISABLED,
+        on_value=PrivacyModeService.State.DISABLED,
         should_poll=True,
         icon="mdi:video",
     ),
@@ -146,7 +145,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="camera360_notification",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameranotification",
-        on_value=SHCCamera360.CameraNotificationService.State.ENABLED,
+        on_value=CameraNotificationService.State.ENABLED,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:message-badge",
@@ -155,7 +154,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="cameraoutdoorgen2",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="privacymode",
-        on_value=SHCCameraOutdoorGen2.PrivacyModeService.State.DISABLED,
+        on_value=PrivacyModeService.State.DISABLED,
         should_poll=True,
         icon="mdi:video",
     ),
@@ -163,7 +162,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="cameraoutdoorgen2_camerafrontlight",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="camerafrontlight",
-        on_value=SHCCameraOutdoorGen2.CameraFrontLightService.State.ON,
+        on_value=CameraFrontLightService.State.ON,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:light-flood-down",
@@ -172,7 +171,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="cameraoutdoorgen2_cameraambientlight",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="cameraambientlight",
-        on_value=SHCCameraOutdoorGen2.CameraAmbientLightService.State.ON,
+        on_value=CameraAmbientLightService.State.ON,
         should_poll=True,
         entity_category=EntityCategory.CONFIG,
         icon="mdi:wall-sconce-flat",
@@ -193,7 +192,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         icon="mdi:shield-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
-        on_value=SHCShutterContact2.BypassService.State.BYPASS_ACTIVE,
+        on_value=BypassService.State.BYPASS_ACTIVE,
         should_poll=False,
     ),
     "child_lock": SHCSwitchEntityDescription(
@@ -212,7 +211,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         # Thermostats expose child lock as a ThermostatService.State enum, not a
         # bool. State.ON != True, so reusing the bool "child_lock" description
         # made the switch read OFF permanently. Compare against the enum member.
-        on_value=SHCThermostat.ThermostatService.State.ON,
+        on_value=ThermostatService.State.ON,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:lock",
@@ -311,7 +310,7 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         key="silent_mode",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="silentmode",
-        on_value=SHCThermostat.SilentModeService.State.MODE_SILENT,
+        on_value=SilentModeService.State.MODE_SILENT,
         entity_category=EntityCategory.CONFIG,
         should_poll=False,
         icon="mdi:sleep",
@@ -401,9 +400,8 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in (
-        session.device_helper.light_switches_bsm
-        + session.device_helper.micromodule_light_attached
+    for switch in list(session.device_helper.light_switches_bsm) + list(  # type: ignore[assignment]
+        session.device_helper.micromodule_light_attached
     ):
         if device_excluded(switch, config_entry.options):
             continue
@@ -424,7 +422,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for switch in session.device_helper.smart_plugs_compact:
+    for switch in session.device_helper.smart_plugs_compact:  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -462,7 +460,7 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in session.device_helper.micromodule_relays:
+    for switch in session.device_helper.micromodule_relays:  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -543,7 +541,7 @@ async def async_setup_entry(  # noqa: C901
                 dev_registry.async_update_device(
                     dev_entry.id, remove_config_entry_id=config_entry.entry_id
                 )
-    for switch in session.device_helper.camera_eyes:
+    for switch in session.device_helper.camera_eyes:  # type: ignore[assignment]
         if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -581,7 +579,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for switch in session.device_helper.camera_360:
+    for switch in session.device_helper.camera_360:  # type: ignore[assignment]
         if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -606,7 +604,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for switch in session.device_helper.camera_outdoor_gen2:
+    for switch in session.device_helper.camera_outdoor_gen2:  # type: ignore[assignment]
         if suppress_cameras or device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -692,7 +690,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for switch in session.device_helper.shutter_contacts2:
+    for switch in session.device_helper.shutter_contacts2:  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -715,7 +713,7 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in session.device_helper.thermostats:
+    for switch in session.device_helper.thermostats:  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         if switch.supports_silentmode:
@@ -730,9 +728,9 @@ async def async_setup_entry(  # noqa: C901
 
     # Thermostats / room thermostats / wall thermostats expose child lock as a
     # ThermostatService.State enum (ON/OFF) -> needs the enum-aware description.
-    for switch in (
-        session.device_helper.thermostats
-        + session.device_helper.roomthermostats
+    for switch in (  # type: ignore[assignment]
+        list(session.device_helper.thermostats)
+        + list(session.device_helper.roomthermostats)
         # wall thermostats expose child_lock only with boschshcpy >= 0.2.119;
         # hasattr guard so an older (pinned) lib does not raise on device.child_lock
         + [d for d in session.device_helper.wallthermostats if hasattr(d, "child_lock")]
@@ -751,14 +749,14 @@ async def async_setup_entry(  # noqa: C901
     # ChildProtection devices expose child lock as a bool (childLockActive).
     # micromodule_dimmers and light_switches_bsm also carry the ChildProtection
     # service but were previously not wired -> no child-lock entity was created.
-    for switch in (
-        session.device_helper.micromodule_shutter_controls
-        + session.device_helper.micromodule_blinds
-        + session.device_helper.micromodule_light_attached
-        + session.device_helper.micromodule_relays
-        + session.device_helper.micromodule_impulse_relays
-        + session.device_helper.micromodule_dimmers
-        + session.device_helper.light_switches_bsm
+    for switch in (  # type: ignore[assignment]
+        list(session.device_helper.micromodule_shutter_controls)
+        + list(session.device_helper.micromodule_blinds)
+        + list(session.device_helper.micromodule_light_attached)
+        + list(session.device_helper.micromodule_relays)
+        + list(session.device_helper.micromodule_impulse_relays)
+        + list(session.device_helper.micromodule_dimmers)
+        + list(session.device_helper.light_switches_bsm)
     ):
         if device_excluded(switch, config_entry.options):
             continue
@@ -771,7 +769,7 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    for switch in session.device_helper.motion_detectors2:
+    for switch in session.device_helper.motion_detectors2:  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         await async_migrate_to_new_unique_id(
@@ -807,7 +805,7 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in getattr(session.device_helper, "twinguards", []):
+    for switch in getattr(session.device_helper, "twinguards", []):  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         if (
@@ -835,7 +833,7 @@ async def async_setup_entry(  # noqa: C901
                 )
             )
 
-    for switch in getattr(session.device_helper, "smoke_detectors", []):
+    for switch in getattr(session.device_helper, "smoke_detectors", []):  # type: ignore[assignment]
         if device_excluded(switch, config_entry.options):
             continue
         if (
@@ -865,8 +863,8 @@ async def async_setup_entry(  # noqa: C901
 
     # ThermostatGen2 / RoomThermostat2: humidity warning toggle.
     # Guarded by hasattr so old lib (no display_config) doesn't create it.
-    for switch in (
-        session.device_helper.thermostats + session.device_helper.roomthermostats
+    for switch in list(session.device_helper.thermostats) + list(  # type: ignore[assignment]
+        session.device_helper.roomthermostats
     ):
         if device_excluded(switch, config_entry.options):
             continue
@@ -886,7 +884,7 @@ async def async_setup_entry(  # noqa: C901
     if entities:
         async_add_entities(entities)
 
-    @callback
+    @callback  # type: ignore[untyped-decorator]
     def async_add_userdefinedstateswitch(
         device: SHCUserDefinedState,
     ) -> None:
@@ -901,8 +899,8 @@ async def async_setup_entry(  # noqa: C901
         async_add_entities([entity])
 
     # add all current items in session
-    for switch in session.userdefinedstates:
-        async_add_userdefinedstateswitch(device=switch)
+    for switch in session.userdefinedstates:  # type: ignore[assignment]
+        async_add_userdefinedstateswitch(device=switch)  # type: ignore[arg-type]
 
     # Register listener for new user-defined state switches and ensure it is
     # torn down on config entry unload.  session.subscribe() returns None, so
@@ -911,14 +909,14 @@ async def async_setup_entry(  # noqa: C901
     _uds_subscriber = (SHCUserDefinedState, async_add_userdefinedstateswitch)
     session.subscribe(_uds_subscriber)
 
-    def _unsubscribe_uds():
+    def _unsubscribe_uds() -> None:
         with contextlib.suppress(ValueError):
             session._subscribers.remove(_uds_subscriber)  # noqa: SLF001
 
     config_entry.async_on_unload(_unsubscribe_uds)
 
 
-class SHCSwitch(SHCEntity, SwitchEntity):
+class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
     """Representation of a SHC switch."""
 
     entity_description: SHCSwitchEntityDescription
@@ -933,7 +931,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         """Initialize a SHC switch."""
         super().__init__(device, entry_id)
         self.entity_description = description
-        self._attr_name = None if attr_name is None else attr_name
+        self._attr_name = None if attr_name is None else attr_name  # type: ignore[assignment]
         self._attr_unique_id = (
             f"{device.root_device_id}_{device.id}"
             if attr_name is None
@@ -959,14 +957,14 @@ class SHCSwitch(SHCEntity, SwitchEntity):
         state writer. See mosandlt/boschshc-hass branch fix/code-quality-improvements.
         """
         try:
-            return (
+            return bool(
                 getattr(self._device, self.entity_description.on_key)
                 == self.entity_description.on_value
             )
         except AttributeError:
             return None
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on.
 
         Guard against AttributeError: some devices (e.g. MicromoduleRelay with
@@ -991,7 +989,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
                 self.entity_id,
             )
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off.
 
         Same guard as async_turn_on — see that docstring.
@@ -1031,7 +1029,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):
             await self.hass.async_add_executor_job(self._device.update)
 
 
-class SHCUserDefinedStateSwitch(SwitchEntity):
+class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
     """Representation of a SHC User Defined State Entity."""
 
     entity_description: SHCSwitchEntityDescription
@@ -1065,14 +1063,14 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
         self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Subscribe to SHC events."""
         await super().async_added_to_hass()
 
-        def on_state_changed():
+        def on_state_changed() -> None:
             self.schedule_update_ha_state()
 
-        def update_entity_information():
+        def update_entity_information() -> None:
             if self._device.deleted:
                 self._attr_available = False
                 self.hass.async_create_task(self.async_will_remove_from_hass())
@@ -1085,7 +1083,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             self._device.id, update_entity_information
         )
 
-    async def async_will_remove_from_hass(self):
+    async def async_will_remove_from_hass(self) -> None:
         """Unsubscribe from SHC events."""
         await super().async_will_remove_from_hass()
         self._session.unsubscribe_userdefinedstate_callbacks(self._device.id)
@@ -1098,19 +1096,19 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state of the switch."""
-        return (
+        return bool(
             getattr(self._device, self.entity_description.on_key)
             == self.entity_description.on_value
         )
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         await getattr(
             self._device,
             f"async_set_{self.entity_description.on_key}",
         )(True)
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         await getattr(
             self._device,
@@ -1134,17 +1132,17 @@ class SHCUserDefinedStateSwitch(SwitchEntity):
             await self.hass.async_add_executor_job(self._device.update)
 
     @property
-    def device_name(self):
+    def device_name(self) -> str | None:
         """Name of the device."""
-        return self._shc.name
+        return self._shc.name  # type: ignore[no-any-return]
 
     @property
-    def device_id(self):
+    def device_id(self) -> str:
         """Device id of the entity."""
-        return self._shc.id
+        return self._shc.id  # type: ignore[no-any-return]
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         """Return the device info."""
         return {
             "identifiers": self._shc.identifiers,
