@@ -12,10 +12,17 @@ header:
     text_only: true
     content: |-
       # Hallo {{ user }}
+
       {% if states('binary_sensor.morgen') == 'on' %}
       {{ states('input_text.ai_morning_briefing') }}
       {% endif %}
       {{ states('input_text.klima_analyse') }}
+
+      <div class="news_ticker">
+      {% set news_items_list = state_attr('sensor.rss_feed_home', 'news_items') | default([], true) %}
+      {{ news_items_list | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
+      </div>
+text_only: true
 badges:
   - type: custom:mushroom-template-badge
     entity: alarm_control_panel.alarmo
