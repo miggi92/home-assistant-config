@@ -1,0 +1,26 @@
+---
+#
+- trigger:
+    - trigger: state
+      entity_id:
+        - event.spanien_rss_de_noticias_de_portada
+  action:
+    - alias: Update news array with latest state
+      variables:
+        current_news: "{{ state_attr('sensor.rss_feed_spanien', 'news_items') | default([], true) }}"
+        new_entry:
+          title: "{{ trigger.to_state.attributes.title | default('') }}"
+          description: "{{ trigger.to_state.attributes.description | default('') }}"
+          link: "{{ trigger.to_state.attributes.link | default('') }}"
+          source: "{{ trigger.to_state.attributes.friendly_name | default('') }}"
+        merged_news: >
+          {% set filtered_news = current_news | rejectattr('link', 'eq', new_entry.link) | list %}
+          {% set updated_list = [new_entry] + filtered_news %}
+          {{ updated_list[:10] }}
+  sensor:
+    - name: RSS Feed Spanien
+      icon: mdi:newspaper
+      unique_id: 9732f4ca-97fb-49d9-ace3-7a983b73d04c
+      state: "{{ now().strftime('%Y-%m-%d %H:%M') }}"
+      attributes:
+        news_items: "{{ merged_news }}"

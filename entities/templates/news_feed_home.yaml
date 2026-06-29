@@ -1,0 +1,27 @@
+---
+#
+- trigger:
+    - trigger: state
+      entity_id:
+        - event.regionalnachrichten_aus_baden_wurttemberg
+        - event.tagesschau_de_die_nachrichten_der_ard
+  action:
+    - alias: Update news array with latest state
+      variables:
+        current_news: "{{ state_attr('sensor.rss_feed_home', 'news_items') | default([], true) }}"
+        new_entry:
+          title: "{{ trigger.to_state.attributes.title | default('') }}"
+          description: "{{ trigger.to_state.attributes.description | default('') }}"
+          link: "{{ trigger.to_state.attributes.link | default('') }}"
+          source: "{{ trigger.to_state.attributes.friendly_name | default('') }}"
+        merged_news: >
+          {% set filtered_news = current_news | rejectattr('link', 'eq', new_entry.link) | list %}
+          {% set updated_list = [new_entry] + filtered_news %}
+          {{ updated_list[:10] }}
+  sensor:
+    - name: RSS Feed Home
+      icon: mdi:newspaper
+      unique_id: 18921526-c8d5-49bd-8cf4-a3f50adefa79
+      state: "{{ now().strftime('%Y-%m-%d %H:%M') }}"
+      attributes:
+        news_items: "{{ merged_news }}"
