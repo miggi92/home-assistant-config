@@ -7,6 +7,8 @@ description: "Hochzeitstag"
 trigger:
   - platform: state
     entity_id: sensor.anniversary_special_hochzeitstag
+  - platform: state
+    entity_id: sensor.anniversary_special_kirchliche_hochzeit
 condition:
   - condition: or
     conditions:
