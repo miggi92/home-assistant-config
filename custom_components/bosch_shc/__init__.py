@@ -474,25 +474,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 await _set_child_lock_one(device, lock_state)
 
         @callback  # type: ignore[untyped-decorator]
-        def _presence_state_changed(event: Any) -> None:
-            """Handle state changes for any tracked presence entity.
+        def _evaluate_child_lock(*_args: Any) -> None:
+            """(Re-)evaluate and apply the aggregate child-lock state.
 
             Semantics: child lock ON when ANY tracked entity is present;
             OFF when ALL are away. "Present" is auto-inferred per domain.
             Redundant writes are suppressed via _last_lock_state.
+            Called both on presence state-change events and once at startup
+            (see below) so a person already present across a restart/reload
+            still gets locked, instead of only on the next state transition.
             """
-            new_state = event.data.get("new_state")
-            if new_state is None:
-                return
-            # Skip unavailable/unknown — entity is in a transient state.
-            if new_state.state in ("unavailable", "unknown"):
-                return
-
             # Recompute aggregate: is ANY tracked entity present?
             any_present = False
             for eid in presence_entities:
                 state_obj = hass.states.get(eid)
-                if state_obj is None:
+                if state_obj is None or state_obj.state in ("unavailable", "unknown"):
                     continue
                 if _entity_is_present(eid, state_obj):
                     any_present = True
@@ -506,8 +502,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             hass.async_create_task(_apply_child_lock(lock_on))
 
         entry.runtime_data.presence_unsub = async_track_state_change_event(
-            hass, presence_entities, _presence_state_changed
+            hass, presence_entities, _evaluate_child_lock
         )
+        # Apply the correct state once at startup/reload — otherwise a
+        # presence entity already "home" across the restart would leave
+        # devices unlocked until its next state-change event. Trade-off:
+        # _last_lock_state is a fresh local (seeded to None) every time this
+        # runs, so this fires one API write on EVERY setup — including a
+        # lightweight config-entry reload (e.g. an unrelated options-flow
+        # change), not just a real restart — even if the device is already in
+        # the correct lock state. We don't read back the device's actual
+        # current child_lock (extra API round-trip) to dedupe that, since the
+        # write is idempotent and correctness (never leaving an already-home
+        # person unlocked) matters more here than avoiding a redundant write.
+        _evaluate_child_lock()
 
     # Presence + time-window driven silent mode: optional, default off.
     # When enabled and someone is present AND the current time is inside the
@@ -759,6 +767,19 @@ class SwitchDeviceEventListener:
         self._device = device
         self._keypad_service = None
         self.device_id = None
+        # Replay-guard (#336): the Keypad service callback is registered on the
+        # generic subscribe_callback channel, which the lib re-fires with the
+        # *current* state on the ~24 h poll-id resubscribe, on the resubscribe
+        # short-poll refresh, AND as the first long-poll snapshot after every
+        # HA restart / config-entry reload.  Without a guard every switch's last
+        # keypress replays as a fresh bosch_shc.event PRESS_SHORT at once,
+        # re-triggering device-trigger automations (e.g. "all lights on").
+        # Seed from the device's current eventtimestamp (already populated from
+        # the initial GET) so the first re-delivered snapshot is treated as a
+        # baseline and only a genuinely newer press fires — mirrors the lib's
+        # SHCDeviceService._last_event_timestamp seed / _is_replayed_event.
+        seed_ts = device.eventtimestamp
+        self._last_fired_timestamp: int = seed_ts if seed_ts is not None else -1
 
         for service in self._device.device_services:
             if service.id == "Keypad":
@@ -772,6 +793,20 @@ class SwitchDeviceEventListener:
         event_type = self._device.eventtype.name
 
         if event_type in SUPPORTED_INPUTS_EVENTS_TYPES:
+            # Replay-guard (#336): skip a re-delivered Keypad state whose
+            # eventtimestamp has not advanced past the last event we fired
+            # (resubscribe / restart re-deliver the last keypress unchanged).
+            # `<=` (not `==`) also rejects a non-advancing/backward timestamp,
+            # matching the lib's _is_replayed_event.
+            current_ts = self._device.eventtimestamp
+            if current_ts is not None and current_ts <= self._last_fired_timestamp:
+                LOGGER.debug(
+                    "Skipping replayed Keypad event for %s (ts=%s not advanced)",
+                    self._device.name,
+                    current_ts,
+                )
+                return
+            self._last_fired_timestamp = current_ts
             # The async session fires callbacks on the event loop, so fire the
             # bus event directly (no call_soon_threadsafe marshalling).
             self.hass.bus.async_fire(
@@ -780,7 +815,7 @@ class SwitchDeviceEventListener:
                     ATTR_DEVICE_ID: self.device_id,
                     ATTR_ID: self._device.id,
                     ATTR_NAME: self._device.name,
-                    ATTR_LAST_TIME_TRIGGERED: self._device.eventtimestamp,
+                    ATTR_LAST_TIME_TRIGGERED: current_ts,
                     ATTR_EVENT_SUBTYPE: self._device.keyname.name
                     if self._device.keyname
                     else None,

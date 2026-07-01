@@ -435,6 +435,10 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
         # advances (genuine new motion).
         self._last_fired_latestmotion: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom MOTION (the
+        # restart counterpart of the 24 h resubscribe replay, #336).
+        self._last_fired_latestmotion = self._device.latestmotion
 
         for service in self._device.device_services:
             if service.id == "LatestMotion":
@@ -553,6 +557,13 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         # last alarmstate name we fired on and skip when it is unchanged.
         self._last_fired_alarmstate: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom ALARM event
+        # (the restart counterpart of the 24 h resubscribe replay, #336).
+        try:
+            self._last_fired_alarmstate = self._device.alarmstate.name
+        except (ValueError, KeyError):
+            self._last_fired_alarmstate = None
 
         for service in self._device.device_services:
             if service.id == "Alarm":
@@ -736,6 +747,13 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
         # last SurveillanceAlarm state name we fired on and skip when unchanged.
         self._last_fired_alarm: str | None = None
         super().__init__(device=device, entry_id=entry_id)
+        # Seed from current state so the first snapshot re-delivered after an HA
+        # restart / config-entry reload is a baseline, not a phantom ALARM event
+        # (the restart counterpart of the 24 h resubscribe replay, #336).
+        try:
+            self._last_fired_alarm = self._device.alarm.name
+        except (ValueError, KeyError):
+            self._last_fired_alarm = None
 
         for service in self._device.device_services:
             if service.id == "SurveillanceAlarm":
@@ -852,6 +870,9 @@ class TwinguardAlarmTracker:
         self._active_trigger_ids: set[str] = set()
         self._last_alarm_state: str | None = None
         self._torn_down = False
+        # Monotonic counter to detect a newer async_refresh() superseding an
+        # in-flight one — see async_refresh().
+        self._refresh_generation = 0
 
         for service in self._smoke_detection_system.device_services:
             if service.id == "SurveillanceAlarm":
@@ -897,14 +918,31 @@ class TwinguardAlarmTracker:
         """Refresh active trigger ids from the SHC (async; on the event loop).
 
         Safe to call multiple times; skips notification if state did not change.
+
+        Concurrency: _handle_alarm_update() fires a new task per
+        SurveillanceAlarm callback with no de-dup — a burst of updates (e.g.
+        multiple Twinguards, or an ON immediately followed by an OFF) can have
+        two async_refresh() calls in flight at once, awaiting get_messages()
+        with no ordering guarantee on which HTTP response lands first. Guard
+        with a monotonic generation counter so only the most-recently-STARTED
+        call's result is applied — an in-flight call whose result arrives
+        after a newer call has already started is a stale/superseded read and
+        is discarded rather than overwriting fresher state.
         """
         if self._torn_down:
             return
+        self._refresh_generation += 1
+        my_generation = self._refresh_generation
         alarm_state = self.alarm_state
         if alarm_state == SurveillanceAlarmService.State.ALARM_OFF.name:
             new_trigger_ids: set[str] = set()
         else:
             new_trigger_ids = await self._extract_trigger_ids_from_messages()
+
+        if my_generation != self._refresh_generation:
+            # A newer async_refresh() started while we were awaiting
+            # get_messages() above — this result is stale, discard it.
+            return
 
         if (
             new_trigger_ids == self._active_trigger_ids
