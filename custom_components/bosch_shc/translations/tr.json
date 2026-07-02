@@ -294,7 +294,11 @@
         "name": "Kurulum Profili",
         "state": {
           "generic": "İç Mekan (Genel)",
-          "outdoor": "Dış Mekan"
+          "outdoor": "Dış Mekan",
+          "light": "Işık",
+          "heating_rcc": "Isıtma (RCC)",
+          "boiler": "Kombi",
+          "mini_pv": "Mini Güneş Paneli"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "İyi",
           "normal": "Normal",
-          "medium": "Orta",
+          "not_supported": "Desteklenmiyor",
           "bad": "Kötü",
           "unknown": "Bilinmiyor",
           "fetching": "Alınıyor"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Kurcalama"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC Hatası"
+      },
+      "siren_battery_defect": {
+        "name": "Pil Arızası"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Anormal Pil Sıcaklığı"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Güç Kesintisi"
       },
       "call_for_heat": {
         "name": "Isıtma Talebi"

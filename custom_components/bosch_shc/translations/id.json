@@ -294,7 +294,11 @@
         "name": "Profil Instalasi",
         "state": {
           "generic": "Dalam Ruangan (Umum)",
-          "outdoor": "Luar Ruangan"
+          "outdoor": "Luar Ruangan",
+          "light": "Lampu",
+          "heating_rcc": "Pemanas (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini PV"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Baik",
           "normal": "Normal",
-          "medium": "Sedang",
+          "not_supported": "Tidak Didukung",
           "bad": "Buruk",
           "unknown": "Tidak Diketahui",
           "fetching": "Mengambil"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Gangguan Fisik"
+      },
+      "siren_ac_dc_error": {
+        "name": "Kesalahan AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Baterai rusak"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Suhu baterai tidak normal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Pemadaman daya"
       },
       "call_for_heat": {
         "name": "Permintaan Pemanas"

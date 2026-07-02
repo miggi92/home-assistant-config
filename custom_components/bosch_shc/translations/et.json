@@ -294,7 +294,11 @@
         "name": "Paigaldusprofiil",
         "state": {
           "generic": "Siseruumis (üldine)",
-          "outdoor": "Välitingimustes"
+          "outdoor": "Välitingimustes",
+          "light": "Valgustus",
+          "heating_rcc": "Küte (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini päikesepaneel"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Hea",
           "normal": "Normaalne",
-          "medium": "Keskmine",
+          "not_supported": "Ei toetata",
           "bad": "Halb",
           "unknown": "Teadmata",
           "fetching": "Pärimine"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Võltsimiskaitse"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC viga"
+      },
+      "siren_battery_defect": {
+        "name": "Aku defekt"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Aku temperatuur ebanormaalne"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Toite katkestus"
       },
       "call_for_heat": {
         "name": "Soojusenõue"

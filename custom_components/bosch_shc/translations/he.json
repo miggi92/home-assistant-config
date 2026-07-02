@@ -294,7 +294,11 @@
         "name": "פרופיל התקנה",
         "state": {
           "generic": "פנים (כללי)",
-          "outdoor": "חוץ"
+          "outdoor": "חוץ",
+          "light": "תאורה",
+          "heating_rcc": "חימום (RCC)",
+          "boiler": "דוד",
+          "mini_pv": "מיני פוטו-וולטאי"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "טובה",
           "normal": "רגילה",
-          "medium": "בינונית",
+          "not_supported": "לא נתמך",
           "bad": "גרועה",
           "unknown": "לא ידוע",
           "fetching": "מאחזר"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "חבלה"
+      },
+      "siren_ac_dc_error": {
+        "name": "שגיאת AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "תקלת סוללה"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "טמפרטורת סוללה חריגה"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "הפסקת אספקת חשמל"
       },
       "call_for_heat": {
         "name": "קריאה לחימום"

@@ -294,7 +294,11 @@
         "name": "Профіль встановлення",
         "state": {
           "generic": "Внутрішній (загальний)",
-          "outdoor": "Зовнішній"
+          "outdoor": "Зовнішній",
+          "light": "Освітлення",
+          "heating_rcc": "Опалення (RCC)",
+          "boiler": "Бойлер",
+          "mini_pv": "Міні-сонячна панель"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Хороша",
           "normal": "Нормальна",
-          "medium": "Середня",
+          "not_supported": "Не підтримується",
           "bad": "Погана",
           "unknown": "Невідома",
           "fetching": "Отримання"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Втручання"
+      },
+      "siren_ac_dc_error": {
+        "name": "Помилка AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Несправність батареї"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Аномальна температура батареї"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Відключення живлення"
       },
       "call_for_heat": {
         "name": "Запит тепла"

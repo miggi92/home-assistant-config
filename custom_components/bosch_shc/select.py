@@ -112,6 +112,7 @@ _HEATER_TYPE_OPTIONS = [
     WallThermostatConfiguration.HeaterType.RADIATOR.name,
     WallThermostatConfiguration.HeaterType.CONVECTOR_PASSIVE.name,
     WallThermostatConfiguration.HeaterType.CONVECTOR_ACTIVE.name,
+    WallThermostatConfiguration.HeaterType.VOLT_FREE_HEATING.name,
 ]
 
 # SwitchConfiguration switch type: exclude UNKNOWN.
@@ -349,9 +350,20 @@ async def async_setup_entry(  # noqa: C901
             )
         )
 
-    # Installation profile (e.g. GENERIC / OUTDOOR) for Motion Detector II.
-    # Writable replacement for the former read-only InstallationProfileSensor.
-    for device in getattr(session.device_helper, "motion_detectors2", []):
+    # Installation profile (e.g. GENERIC / OUTDOOR / LIGHT / HEATING_RCC /
+    # BOILER / MINI_PV) — writable device-level "purpose of use" field.
+    # Not MD2-specific: micromodule relays and smart plugs also advertise a
+    # non-empty supportedProfiles list on real hardware (see
+    # knowledge-base/rawscan-database.md), so the same generic select is
+    # wired up for all of them, guarded by the device's own advertised
+    # supported_profiles. Writable replacement for the former read-only
+    # InstallationProfileSensor (MD2 only).
+    for device in (
+        list(getattr(session.device_helper, "motion_detectors2", []))
+        + list(getattr(session.device_helper, "micromodule_relays", []))
+        + list(getattr(session.device_helper, "smart_plugs", []))
+        + list(getattr(session.device_helper, "smart_plugs_compact", []))
+    ):
         if device_excluded(device, config_entry.options):
             continue
         if not getattr(device, "supported_profiles", None):
@@ -455,7 +467,6 @@ class OrientationLightResponseSelect(SHCEntity, SelectEntity):  # type: ignore[m
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "orientation_light_response_time"
-    _attr_icon = "mdi:timer-cog-outline"
     _attr_options = _POLL_CONTROL_OPTIONS
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -946,7 +957,6 @@ class DimmerPhaseControlSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "dimmer_phase_control"
-    _attr_icon = "mdi:sine-wave"
     _attr_options = ["TRAILING", "LEADING"]
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -992,7 +1002,6 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "installation_profile"
-    _attr_icon = "mdi:map-marker-radius-outline"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
         """Initialize the installation-profile select."""
@@ -1022,3 +1031,10 @@ class InstallationProfileSelect(SHCEntity, SelectEntity):  # type: ignore[misc]
     async def async_select_option(self, option: str) -> None:
         """Write the installation profile (uppercased back to the API value)."""
         await self._device.async_set_profile(option.upper())
+        # #356: switching the profile can add/remove capability-gated entities
+        # (e.g. the Motion Detector II [+M] indicator light) — reload so the
+        # entity list reflects the new profile immediately, instead of only
+        # after the user manually reloads the integration or restarts HA.
+        self.hass.async_create_task(
+            self.hass.config_entries.async_reload(self._entry_id)
+        )

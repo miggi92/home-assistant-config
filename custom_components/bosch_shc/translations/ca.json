@@ -294,7 +294,11 @@
         "name": "Perfil d'instal·lació",
         "state": {
           "generic": "Interior (genèric)",
-          "outdoor": "Exterior"
+          "outdoor": "Exterior",
+          "light": "Llum",
+          "heating_rcc": "Calefacció (RCC)",
+          "boiler": "Escalfador",
+          "mini_pv": "Mini fotovoltaica"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Bona",
           "normal": "Normal",
-          "medium": "Mitjana",
+          "not_supported": "No compatible",
           "bad": "Dolenta",
           "unknown": "Desconeguda",
           "fetching": "Obtenint"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Manipulació"
+      },
+      "siren_ac_dc_error": {
+        "name": "Error CA/CC"
+      },
+      "siren_battery_defect": {
+        "name": "Bateria defectuosa"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Temperatura de la bateria anormal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Tall del subministrament elèctric"
       },
       "call_for_heat": {
         "name": "Sol·licitud de calefacció"

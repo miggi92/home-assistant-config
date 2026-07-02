@@ -294,7 +294,11 @@
         "name": "Einsatzbereich",
         "state": {
           "generic": "Innen (Standard)",
-          "outdoor": "Außen"
+          "outdoor": "Außen",
+          "light": "Licht",
+          "heating_rcc": "Heizung (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini-PV"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Gut",
           "normal": "Normal",
-          "medium": "Mittel",
+          "not_supported": "Nicht unterstützt",
           "bad": "Schlecht",
           "unknown": "Unbekannt",
           "fetching": "Wird abgerufen"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Manipulation"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC-Fehler"
+      },
+      "siren_battery_defect": {
+        "name": "Batteriedefekt"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Batterietemperatur abnormal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Stromausfall"
       },
       "call_for_heat": {
         "name": "Wärmeanforderung"

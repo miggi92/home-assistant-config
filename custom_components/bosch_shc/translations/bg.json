@@ -294,7 +294,11 @@
         "name": "Профил на инсталация",
         "state": {
           "generic": "На закрито (общо)",
-          "outdoor": "На открито"
+          "outdoor": "На открито",
+          "light": "Осветление",
+          "heating_rcc": "Отопление (RCC)",
+          "boiler": "Бойлер",
+          "mini_pv": "Мини фотоволтаик"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Добро",
           "normal": "Нормално",
-          "medium": "Средно",
+          "not_supported": "Не се поддържа",
           "bad": "Лошо",
           "unknown": "Неизвестно",
           "fetching": "Извличане"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Подправяне"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC грешка"
+      },
+      "siren_battery_defect": {
+        "name": "Дефектна батерия"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Абнормална температура на батерията"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Прекъсване на захранването"
       },
       "call_for_heat": {
         "name": "Заявка за отопление"

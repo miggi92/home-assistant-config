@@ -295,7 +295,11 @@
         "name": "Installation Profile",
         "state": {
           "generic": "Indoor (Generic)",
-          "outdoor": "Outdoor"
+          "outdoor": "Outdoor",
+          "light": "Light",
+          "heating_rcc": "Heating (RCC)",
+          "boiler": "Boiler",
+          "mini_pv": "Mini PV"
         }
       }
     },
@@ -347,7 +351,7 @@
         "state": {
           "good": "Good",
           "normal": "Normal",
-          "medium": "Medium",
+          "not_supported": "Not Supported",
           "bad": "Bad",
           "unknown": "Unknown",
           "fetching": "Fetching"
@@ -403,6 +407,18 @@
       },
       "siren_tamper": {
         "name": "Tamper"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC Error"
+      },
+      "siren_battery_defect": {
+        "name": "Battery Defect"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Battery Temperature Abnormal"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Power Supply Outage"
       }
     },
     "light": {

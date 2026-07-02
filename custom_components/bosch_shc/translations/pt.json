@@ -294,7 +294,11 @@
         "name": "Perfil de instalação",
         "state": {
           "generic": "Interior (genérico)",
-          "outdoor": "Exterior"
+          "outdoor": "Exterior",
+          "light": "Luz",
+          "heating_rcc": "Aquecimento (RCC)",
+          "boiler": "Caldeira",
+          "mini_pv": "Mini fotovoltaico"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Boa",
           "normal": "Normal",
-          "medium": "Média",
+          "not_supported": "Não suportado",
           "bad": "Má",
           "unknown": "Desconhecida",
           "fetching": "A obter"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Adulteração"
+      },
+      "siren_ac_dc_error": {
+        "name": "Erro de CA/CC"
+      },
+      "siren_battery_defect": {
+        "name": "Bateria com defeito"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Temperatura da bateria anómala"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Falha de alimentação"
       },
       "call_for_heat": {
         "name": "Chamada de aquecimento"

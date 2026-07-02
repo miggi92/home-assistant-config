@@ -294,7 +294,11 @@
         "name": "Telepítési profil",
         "state": {
           "generic": "Beltéri (általános)",
-          "outdoor": "Kültéri"
+          "outdoor": "Kültéri",
+          "light": "Világítás",
+          "heating_rcc": "Fűtés (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini napelem"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Jó",
           "normal": "Normál",
-          "medium": "Közepes",
+          "not_supported": "Nem támogatott",
           "bad": "Rossz",
           "unknown": "Ismeretlen",
           "fetching": "Lekérés"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Illetéktelen beavatkozás"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC hiba"
+      },
+      "siren_battery_defect": {
+        "name": "Akkumulátor meghibásodás"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Akkumulátor hőmérséklete rendellenes"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Áramkimaradás"
       },
       "call_for_heat": {
         "name": "Fűtési igény"

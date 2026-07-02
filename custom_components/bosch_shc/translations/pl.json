@@ -294,7 +294,11 @@
         "name": "Profil instalacji",
         "state": {
           "generic": "Wewnętrzny (ogólny)",
-          "outdoor": "Zewnętrzny"
+          "outdoor": "Zewnętrzny",
+          "light": "Światło",
+          "heating_rcc": "Ogrzewanie (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini fotowoltaika"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Dobra",
           "normal": "Normalna",
-          "medium": "Średnia",
+          "not_supported": "Nieobsługiwane",
           "bad": "Zła",
           "unknown": "Nieznana",
           "fetching": "Pobieranie"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Ingerencja"
+      },
+      "siren_ac_dc_error": {
+        "name": "Błąd AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Uszkodzenie baterii"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Nieprawidłowa temperatura baterii"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Zanik zasilania"
       },
       "call_for_heat": {
         "name": "Zapotrzebowanie na ciepło"

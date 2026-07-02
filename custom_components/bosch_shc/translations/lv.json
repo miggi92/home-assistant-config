@@ -294,7 +294,11 @@
         "name": "Uzstādīšanas profils",
         "state": {
           "generic": "Iekštelpas (vispārīgs)",
-          "outdoor": "Ārtelpas"
+          "outdoor": "Ārtelpas",
+          "light": "Apgaismojums",
+          "heating_rcc": "Apkure (RCC)",
+          "boiler": "Boilers",
+          "mini_pv": "Mini saules panelis"
         }
       }
     },
@@ -316,7 +320,7 @@
         "state": {
           "good": "Laba",
           "normal": "Normāla",
-          "medium": "Vidēja",
+          "not_supported": "Netiek atbalstīts",
           "bad": "Slikta",
           "unknown": "Nezināma",
           "fetching": "Ielādē"
@@ -387,6 +391,18 @@
       },
       "siren_tamper": {
         "name": "Bojājums"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC kļūda"
+      },
+      "siren_battery_defect": {
+        "name": "Akumulatora defekts"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Akumulatora temperatūra nenormāla"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Strāvas padeves pārtraukums"
       },
       "call_for_heat": {
         "name": "Siltuma pieprasījums"
