@@ -22,6 +22,39 @@
       "winner_score": 0,
       "avg_score_per_round": 0.0,
       "total_points": 0
+    },
+    {
+      "id": "5d83e0dc",
+      "date": "2026-07-03T11:50:04.452480+00:00",
+      "playlist": "90er-hits",
+      "rounds": 2,
+      "player_count": 2,
+      "winner": "Miguel, Silke",
+      "winner_score": 0,
+      "avg_score_per_round": 0.0,
+      "total_points": 0
+    },
+    {
+      "id": "29997b65",
+      "date": "2026-07-03T11:53:19.587266+00:00",
+      "playlist": "90er-hits",
+      "rounds": 2,
+      "player_count": 2,
+      "winner": "Miguel",
+      "winner_score": 13,
+      "avg_score_per_round": 3.25,
+      "total_points": 13
+    },
+    {
+      "id": "2288aa64",
+      "date": "2026-07-03T12:00:11.973829+00:00",
+      "playlist": "hits-2010s-2020s",
+      "rounds": 6,
+      "player_count": 2,
+      "winner": "Miguel",
+      "winner_score": 168,
+      "avg_score_per_round": 18.0,
+      "total_points": 216
     }
   ],
   "playlists": {
@@ -29,12 +62,28 @@
       "times_played": 2,
       "total_rounds": 9,
       "avg_score_per_round": 0.0
+    },
+    "90er-hits": {
+      "times_played": 2,
+      "total_rounds": 4,
+      "avg_score_per_round": 1.62,
+      "total_weighted_score": 13.0,
+      "total_weight": 8
+    },
+    "hits-2010s-2020s": {
+      "times_played": 1,
+      "total_rounds": 6,
+      "avg_score_per_round": 18.0,
+      "total_weighted_score": 216.0,
+      "total_weight": 12
     }
   },
   "all_time": {
-    "games_played": 2,
-    "highest_avg_score": 13.88,
-    "highest_avg_game_id": "bf89cd04"
+    "games_played": 5,
+    "highest_avg_score": 18.0,
+    "highest_avg_game_id": "2288aa64",
+    "total_weighted_score": 229.0,
+    "total_weight": 20
   },
   "songs": {
     "spotify_track_2BgWv15eKCDfiubKo6o76k": {
@@ -156,6 +205,126 @@
         "/Config/Beatify/Playlists/80Er Hits": 1
       },
       "last_played": 1779383031
+    },
+    "spotify_track_2DnJjbjNTV9Nd5NOa1KGba": {
+      "times_played": 1,
+      "correct_guesses": 0,
+      "total_guesses": 2,
+      "total_years_off": 42,
+      "exact_matches": 0,
+      "close_matches": 0,
+      "title": "You're So Vain",
+      "artist": "Carly Simon",
+      "year": 1972,
+      "playlists": {
+        "/Config/Beatify/Playlists/90Er Hits": 1
+      },
+      "last_played": 1783079358
+    },
+    "spotify_track_4LwU4Vp6od3Sb08CsP99GC": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 1,
+      "total_years_off": 0,
+      "exact_matches": 1,
+      "close_matches": 0,
+      "title": "The Next Episode",
+      "artist": "Dr. Dre",
+      "year": 2000,
+      "playlists": {
+        "/Config/Beatify/Playlists/90Er Hits": 1
+      },
+      "last_played": 1783079584
+    },
+    "spotify_track_29p6UW08MXzwj9thWBW3uF": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 2,
+      "total_years_off": 6,
+      "exact_matches": 1,
+      "close_matches": 0,
+      "title": "Hero",
+      "artist": "AFROJACK",
+      "year": 2021,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783079836
+    },
+    "spotify_track_3C0nOe05EIt1390bVABLyN": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 2,
+      "total_years_off": 7,
+      "exact_matches": 1,
+      "close_matches": 0,
+      "title": "On The Floor",
+      "artist": "Jennifer Lopez",
+      "year": 2011,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783079878
+    },
+    "spotify_track_1kPpge9JDLpcj15qgrPbYX": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 2,
+      "total_years_off": 7,
+      "exact_matches": 0,
+      "close_matches": 1,
+      "title": "Good Time",
+      "artist": "Owl City",
+      "year": 2012,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783079925
+    },
+    "spotify_track_00vk0sEfb6mr2ehwSw0Uhn": {
+      "times_played": 1,
+      "correct_guesses": 1,
+      "total_guesses": 2,
+      "total_years_off": 4,
+      "exact_matches": 1,
+      "close_matches": 0,
+      "title": "Don't Be So Shy - Filatov & Karas Remix",
+      "artist": "Imany",
+      "year": 2017,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783079958
+    },
+    "spotify_track_0Z7nGFVCLfixWctgePsRk9": {
+      "times_played": 1,
+      "correct_guesses": 2,
+      "total_guesses": 2,
+      "total_years_off": 1,
+      "exact_matches": 1,
+      "close_matches": 1,
+      "title": "TEXAS HOLD 'EM",
+      "artist": "Beyonc\u00e9",
+      "year": 2024,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783079981
+    },
+    "spotify_track_4saklk6nie3yiGePpBwUoc": {
+      "times_played": 1,
+      "correct_guesses": 2,
+      "total_guesses": 2,
+      "total_years_off": 2,
+      "exact_matches": 1,
+      "close_matches": 1,
+      "title": "Dynamite",
+      "artist": "BTS",
+      "year": 2020,
+      "playlists": {
+        "/Config/Beatify/Playlists/Hits 2010S 2020S": 1
+      },
+      "last_played": 1783080007
     }
   }
 }

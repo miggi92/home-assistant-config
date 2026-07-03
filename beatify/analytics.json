@@ -38,6 +38,63 @@
       "streak_10_count": 0,
       "total_bets": 0,
       "bets_won": 0
+    },
+    {
+      "game_id": "5d83e0dc",
+      "started_at": 1783079250,
+      "ended_at": 1783079404,
+      "duration_seconds": 154,
+      "player_count": 2,
+      "playlist_names": [
+        "90er-hits"
+      ],
+      "rounds_played": 2,
+      "average_score": 0.0,
+      "difficulty": "normal",
+      "error_count": 0,
+      "streak_3_count": 0,
+      "streak_5_count": 0,
+      "streak_10_count": 0,
+      "total_bets": 0,
+      "bets_won": 0
+    },
+    {
+      "game_id": "29997b65",
+      "started_at": 1783079440,
+      "ended_at": 1783079599,
+      "duration_seconds": 159,
+      "player_count": 2,
+      "playlist_names": [
+        "90er-hits"
+      ],
+      "rounds_played": 2,
+      "average_score": 3.25,
+      "difficulty": "normal",
+      "error_count": 0,
+      "streak_3_count": 0,
+      "streak_5_count": 0,
+      "streak_10_count": 0,
+      "total_bets": 0,
+      "bets_won": 0
+    },
+    {
+      "game_id": "2288aa64",
+      "started_at": 1783079765,
+      "ended_at": 1783080011,
+      "duration_seconds": 246,
+      "player_count": 2,
+      "playlist_names": [
+        "hits-2010s-2020s"
+      ],
+      "rounds_played": 6,
+      "average_score": 18.0,
+      "difficulty": "normal",
+      "error_count": 0,
+      "streak_3_count": 2,
+      "streak_5_count": 1,
+      "streak_10_count": 0,
+      "total_bets": 0,
+      "bets_won": 0
     }
   ],
   "errors": [],
