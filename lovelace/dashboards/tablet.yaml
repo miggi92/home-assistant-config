@@ -1,6 +1,6 @@
 ---
 wallpanel:
-  enabled: true
+  # enabled: true
   hide_toolbar: true
   hide_toolbar_on_subviews: true
   hide_sidebar: true
@@ -68,6 +68,17 @@ background:
   size: cover
   repeat: repeat
   attachment: fixed
-  image: /api/image/serve/cae8dd3a0322d2f96cff441dcca0ec96/original
+  image:
+    media_content_id: media-source://image/image.background_image
+    media_content_type: image/jpeg
+    metadata:
+      title: Unsplash Background Picture
+      thumbnail: /api/image_proxy/image.background_image
+      media_class: video
+      children_media_class: null
+      navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://image
 decluttering_templates: !include_dir_merge_named ../templates
 views: !include_dir_list ../views/tablet

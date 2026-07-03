@@ -4,62 +4,10 @@ path: start
 icon: mdi:home
 type: sections
 max_columns: 3
-theme: ios-dark-mode-blue-red
-sections:
-  - !include ../../cards/tablet/left_side.yaml
-  - type: grid
-    cards:
-      - !include ../../cards/residents.yaml
-  - !include ../../cards/tablet/right_side.yaml
-cards: []
 header:
   layout: center
   badges_position: top
-badges:
-  - type: custom:mushroom-template-badge
-    entity: alarm_control_panel.alarmo
-    icon: |-
-      {% set alarm_mode = states(entity) %}
-      {% if alarm_mode == 'armed_home' %}
-        mdi:shield-account
-      {% elif alarm_mode == 'armed_away' %}
-        mdi:shield-lock
-      {% elif alarm_mode == 'armed_vacation' %}
-        mdi:palm-tree
-      {% elif alarm_mode == 'armed_night' %}
-        mdi:shield-moon
-      {% elif alarm_mode == 'arming' %}
-        mdi:shield
-      {% else %}
-        mdi:shield-off
-      {% endif %}
-    tap_action:
-      action: more-info
-  - type: custom:mushroom-template-badge
-    icon: mdi:lightbulb
-    color: yellow
-    entity: number.count_lights_on
-    tap_action:
-      action: navigate
-      navigation_path: lights
-    content: "{{ states(entity) }} an"
-  - type: custom:decluttering-card
-    template: temperature_badge_template
-    variables:
-      - entity: sensor.wohnungstemperatur
-  - type: custom:decluttering-card
-    template: humidity_badge_template
-    variables:
-      - entity: sensor.wohnungsfeuchtigkeit
-  - type: custom:mushroom-template-badge
-    entity: sensor.wohnungsluftdruck
-    content: "{{states(entity) }} hPa"
-    icon: mdi:gauge
-    tap_action:
-      action: more-info
-  - type: custom:mushroom-template-badge
-    icon: mdi:medication
-    color: red
-    tap_action:
-      action: navigate
-      navigation_path: medication
+badges: []
+sections:
+  - type: grid
+    cards: []
