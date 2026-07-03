@@ -46,7 +46,7 @@ wallpanel:
       entity: weather.home
       title: Home
       sun_entity: sun.sun
-      temperature_sensor: sensor.daikinap90134_outside_temperature
+      temperature_sensor: sensor.temperatur
       humidity_sensor: sensor.luftfeuchtigkeit
       weather_icon_type: line
       animated_icon: true
