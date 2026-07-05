@@ -12,7 +12,7 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.7"
+VERSION = "0.5.8"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -521,8 +521,15 @@ SENSOR_DATA = {
     },
     # Hermes.co.uk
     "hermes_delivered": {
-        "email": ["donotreply@myhermes.co.uk"],
-        "subject": ["Hermes has successfully delivered your"],
+        "email": [
+            "donotreply@myhermes.co.uk",
+            "noreply@paketankuendigung.myhermes.de",
+        ],
+        "subject": [
+            "Hermes has successfully delivered your",
+            "wurde an deinen WunschAblageort zugestellt",
+            "wurde zugestellt",
+        ],
     },
     "hermes_delivering": {
         "email": [
@@ -533,9 +540,11 @@ SENSOR_DATA = {
             "parcel is now with your local Hermes courier",
             "Ihre Hermes Sendung",
             "Deine Hermes Sendung",
+            "Deine Sendung kommt heute",
         ],
         "body": [
             "Voraussichtliche Zustellung",
+            "ist unterwegs",
         ],
     },
     "hermes_packages": {},

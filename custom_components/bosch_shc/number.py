@@ -8,6 +8,7 @@ import logging
 import aiohttp
 from boschshcpy import SHCSession, SHCThermostat
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.number import (
     NumberDeviceClass,
     NumberEntity,
@@ -16,10 +17,11 @@ from homeassistant.components.number import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfPower, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DOMAIN
 from .entity import SHCEntity, device_excluded
 
 LOGGER = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the SHC number platform."""
     entities: list[NumberEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     for number in (
         list(session.device_helper.thermostats)
@@ -259,6 +261,12 @@ class SirenConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.siren.async_set_configuration(**{self._field: clamped})
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -298,6 +306,12 @@ class SHCNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         clamped = max(self.native_min_value, min(self.native_max_value, value))
         try:
             await self._device.async_set_offset(clamped)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -366,6 +380,12 @@ class ImpulseLengthNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_impulse_length(round(clamped * 10))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -418,7 +438,11 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
             svc = getattr(self._device, "_heating_circuit_service", None)
             if svc is None:
                 return None
-            return float(getattr(svc, self._getter_name))
+            value = getattr(svc, self._getter_name)
+            # setpoint_temperature_eco/_comfort are typed float | None: a
+            # heating circuit that never had that preset configured
+            # legitimately returns None here, not an AttributeError.
+            return None if value is None else float(value)
         except (AttributeError, KeyError) as err:
             LOGGER.warning(
                 "Unable to read %s for %s: %s",
@@ -443,6 +467,12 @@ class HeatingCircuitSetpointNumber(SHCEntity, NumberEntity):  # type: ignore[mis
             return
         try:
             await async_setter(clamped)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -490,6 +520,12 @@ class PowerThresholdNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_power_threshold(clamped)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -538,6 +574,12 @@ class EnterDurationNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_enter_duration_seconds(int(clamped))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -604,6 +646,12 @@ class LedBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the LED brightness."""
         try:
             await self._device.async_set_led_brightness(round(value))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -666,6 +714,12 @@ class DisplayBrightnessNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the display brightness."""
         try:
             await self._device.async_set_display_brightness(round(value))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -735,6 +789,12 @@ class DisplayOnTimeNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
         """Set the display on-time."""
         try:
             await self._device.async_set_display_on_time(round(value))
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,
@@ -802,6 +862,12 @@ class DimmerConfigNumber(SHCEntity, NumberEntity):  # type: ignore[misc]
                 await svc.async_set_brightness_range(max_brightness=clamped)
             else:
                 await svc.async_set_dimming_speed(clamped)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to set {self._device.name} to {value}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="number_set_failed",
+            ) from err
         except (
             AttributeError,
             KeyError,

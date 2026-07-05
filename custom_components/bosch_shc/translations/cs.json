@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Nastavení",
-        "description": "Nastavte, které entity a automatizace integrace Bosch Smart Home Controller vytváří a spravuje.",
+        "description": "Nastavte, které entity a automatizace integrace Bosch Smart Home Controller vytváří a spravuje.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funkce",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Klientský certifikát Bosch SHC brzy vyprší",
-      "description": "Klientský certifikát Bosch SHC vyprší za {days} den/dní (dne {expiry}). Chcete-li jej obnovit: přepněte kontrolér do párovacího režimu (stiskněte přední tlačítko, dokud nezačnou blikat LED diody), poté přejděte na **Nastavení → Zařízení a služby → Bosch Smart Home Controller** a vyberte **Překonfigurovat**."
+      "description": "Klientský certifikát Bosch SHC pro **{title}** vyprší za {days} den/dní (dne {expiry}). Chcete-li jej obnovit: přepněte kontrolér do párovacího režimu (stiskněte přední tlačítko, dokud nezačnou blikat LED diody), poté přejděte na **Nastavení → Zařízení a služby → Bosch Smart Home Controller** a vyberte **Překonfigurovat**."
     }
   },
   "exceptions": {
@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Změna stavu alarmu se nezdařila."
+    },
+    "button_press_failed": {
+      "message": "Stisknutí tlačítka se nezdařilo."
+    },
+    "switch_action_failed": {
+      "message": "Změna stavu přepínače se nezdařila."
+    },
+    "select_option_failed": {
+      "message": "Nastavení možnosti se nezdařilo."
+    },
+    "number_set_failed": {
+      "message": "Nastavení hodnoty se nezdařilo."
     }
   }
 }

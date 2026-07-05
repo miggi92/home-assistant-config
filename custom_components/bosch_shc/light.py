@@ -23,7 +23,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import color as color_util
 
 from .const import (
-    DATA_SESSION,
     DOMAIN,
     LOGGER,
     OPT_SUPPRESS_HUE_LIGHTS,
@@ -49,7 +48,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the light platform."""
     entities: list[LightEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     hue_lights: list[SHCLight] = []
     if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False):
@@ -134,9 +133,17 @@ async def async_setup_entry(
     # PowerSwitch relay; the switch platform skips the matching `switch` so the
     # device is exposed exactly once.  Default (no opt-in) -> nothing here.
     for light in light_switch_devices(session):
-        if device_excluded(light, config_entry.options):
-            continue
-        if not light_switch_as_light(light, config_entry.options):
+        if device_excluded(light, config_entry.options) or not light_switch_as_light(
+            light, config_entry.options
+        ):
+            # The device may become excluded, or the "expose as light" option
+            # may get toggled off — in either case, an options change reloads
+            # the entry (OptionsFlowWithReload), so if a light entity was
+            # previously created for this device, remove the now-stale
+            # registry entry instead of leaving an orphaned entity behind.
+            await async_remove_stale_entity(
+                hass, Platform.LIGHT, f"{light.root_device_id}_{light.id}"
+            )
             continue
         entities.append(
             RelayLight(

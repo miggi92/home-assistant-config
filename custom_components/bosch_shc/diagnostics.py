@@ -29,8 +29,6 @@ from .const import (
     CONF_SHC_KEY,
     CONF_SSL_CERTIFICATE,
     CONF_SSL_KEY,
-    DATA_SESSION,
-    DOMAIN,
 )
 
 _MANIFEST: dict[str, Any] = json.loads(
@@ -97,17 +95,27 @@ async def async_get_config_entry_diagnostics(
         },
     }
 
-    container = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    session = container.get(DATA_SESSION) if container else None
+    session = entry.runtime_data.session if hasattr(entry, "runtime_data") else None
     if session is None:
         diag["session"] = "not loaded"
         return diag
 
     info = session.information
+    # This integration only ever constructs SHCSessionAsync (__init__.py), whose
+    # .information is _AsyncSHCInformation — it has no updateState, only a plain
+    # string update_state (see __init__.py's daily cert-check for the same
+    # compat guard). Reading updateState.name here crashed every diagnostics
+    # download unconditionally.
+    update_state_enum = getattr(info, "updateState", None)
+    update_state = (
+        update_state_enum.name
+        if update_state_enum is not None
+        else getattr(info, "update_state", None)
+    )
     diag["shc"] = async_redact_data(
         {
             "version": info.version,
-            "update_state": info.updateState.name,
+            "update_state": update_state,
             "macAddress": info.macAddress,
             "ip": info.shcIpAddress,
         },

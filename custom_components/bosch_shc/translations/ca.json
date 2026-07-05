@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Configuració",
-        "description": "Configura quines entitats i automatitzacions crea i gestiona la integració del Bosch Smart Home Controller.",
+        "description": "Configura quines entitats i automatitzacions crea i gestiona la integració del Bosch Smart Home Controller.{camera_tool}",
         "sections": {
           "features": {
             "name": "Funcionalitats",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "El certificat de client de Bosch SHC caducarà aviat",
-      "description": "El certificat de client de Bosch SHC caducarà d'aquí a {days} dia/dies (el {expiry}). Per renovar-lo: poseu el controlador en mode d'emparellament (premeu el botó frontal fins que els LED parpallegin) i aneu a **Configuració → Dispositius i serveis → Bosch Smart Home Controller** i seleccioneu **Reconfigura**."
+      "description": "El certificat de client de Bosch SHC per a **{title}** caducarà d'aquí a {days} dia/dies (el {expiry}). Per renovar-lo: poseu el controlador en mode d'emparellament (premeu el botó frontal fins que els LED parpallegin) i aneu a **Configuració → Dispositius i serveis → Bosch Smart Home Controller** i seleccioneu **Reconfigura**."
     }
   },
   "exceptions": {
@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "No s'ha pogut canviar l'estat de l'alarma."
+    },
+    "button_press_failed": {
+      "message": "La pulsació del botó ha fallat."
+    },
+    "switch_action_failed": {
+      "message": "No s'ha pogut canviar l'estat de l'interruptor."
+    },
+    "select_option_failed": {
+      "message": "No s'ha pogut establir l'opció."
+    },
+    "number_set_failed": {
+      "message": "No s'ha pogut establir el valor."
     }
   }
 }

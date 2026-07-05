@@ -292,7 +292,7 @@ class FordpassDataHandler:
     def get_gps_state(data, prev_state=None):
         return FordpassDataHandler.get_metrics(data).get("position", {}).get("value", {}).get("location", {})
 
-    def get_gps_attr(data, units:UnitSystem):
+    def get_gps_attrs(data, units:UnitSystem):
         attrs = FordpassDataHandler.get_metrics_dict(data, "position")
         data_metrics = FordpassDataHandler.get_metrics(data)
         if "compassDirection" in data_metrics:
@@ -301,7 +301,7 @@ class FordpassDataHandler:
             attrs["heading"] = data_metrics.get("heading", {}).get("value", UNSUPPORTED)
         return attrs or None
 
-    def get_gps_tracker_attr(data, units:UnitSystem):
+    def get_gps_tracker_attrs(data, units:UnitSystem):
         # units will be 'None' in this case (just to let you know)
         position_data = FordpassDataHandler.get_value_for_metrics_key(data, "position")
         attrs = {}
@@ -326,7 +326,7 @@ class FordpassDataHandler:
         return None
 
     # ALARM attributes
-    def get_alarm_attr(data, units:UnitSystem):
+    def get_alarm_attrs(data, units:UnitSystem):
         attrs = FordpassDataHandler.get_metrics_dict(data, "alarmStatus")
         data_metrics = FordpassDataHandler.get_metrics(data)
         if "panicAlarmStatus" in data_metrics:
@@ -1184,6 +1184,13 @@ class FordpassDataHandler:
                     attrs["tripDuration"] = str(dt.parse_duration(str(tripData["trip_duration"])))
                 if "distance_traveled" in tripData and isinstance(tripData["distance_traveled"], Number):
                     attrs["tripDistanceTraveled"] = FordpassDataHandler.localize_distance(tripData["distance_traveled"], units)
+                if "cabin_temperature" in tripData and isinstance(tripData["cabin_temperature"], Number):
+                    attrs["tripCabinTemperature"] = FordpassDataHandler.localize_temperature(tripData["cabin_temperature"], units)
+                if "ambient_temperature" in tripData and isinstance(tripData["ambient_temperature"], Number):
+                    attrs["tripAmbientTemperature"] = FordpassDataHandler.localize_temperature(tripData["ambient_temperature"], units)
+                if "outside_air_ambient_temperature" in tripData and isinstance(tripData["outside_air_ambient_temperature"], Number):
+                    attrs["tripOutsideAirAmbientTemperature"] = FordpassDataHandler.localize_temperature(tripData["outside_air_ambient_temperature"], units)
+
         return attrs or None
 
 

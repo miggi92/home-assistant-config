@@ -25,6 +25,7 @@ from boschshcpy import (
     ThermostatService,
 )
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCConnectionError, SHCException
 from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
@@ -33,15 +34,17 @@ from homeassistant.components.switch import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DATA_SHC, DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
+from .const import DOMAIN, OPT_SUPPRESS_CAMERA_SWITCHES
 from .entity import (
     SHCEntity,
     async_migrate_to_new_unique_id,
+    async_remove_stale_entity,
     device_excluded,
     light_switch_as_light,
 )
@@ -189,7 +192,6 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         # device name, so users understand it excludes the contact from the
         # intrusion alarm (open/close while armed without triggering it).
         translation_key="bypass",
-        icon="mdi:shield-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
         on_key="bypass",
         on_value=BypassService.State.BYPASS_ACTIVE,
@@ -349,7 +351,7 @@ async def async_setup_entry(  # noqa: C901
 ) -> None:
     """Set up the SHC switch platform."""
     entities: list[SwitchEntity] = []
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
 
     for switch in session.device_helper.smart_plugs:
         if device_excluded(switch, config_entry.options):
@@ -410,6 +412,14 @@ async def async_setup_entry(  # noqa: C901
         # the device is not exposed twice.  (Child-lock / swap config switches
         # below stay regardless, they are independent CONFIG entities.)
         if light_switch_as_light(switch, config_entry.options):
+            # An options change reloads the entry (OptionsFlowWithReload), so
+            # if a switch entity was previously created for this device
+            # (before the option was turned on), remove the now-stale
+            # registry entry — same unique_id as RelayLight's default, since
+            # neither passes attr_name.
+            await async_remove_stale_entity(
+                hass, Platform.SWITCH, f"{switch.root_device_id}_{switch.id}"
+            )
             continue
         await async_migrate_to_new_unique_id(
             hass=hass, platform=Platform.SWITCH, device=switch
@@ -988,6 +998,12 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_on skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off.
@@ -1009,6 +1025,12 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_off skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
 
     @property
     def should_poll(self) -> bool:
@@ -1060,7 +1082,9 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        self._shc: DeviceEntry = hass.data[DOMAIN][entry_id][DATA_SHC]
+        self._shc: DeviceEntry = hass.config_entries.async_get_entry(
+            entry_id
+        ).runtime_data.shc_device  # type: ignore[union-attr]
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
     async def async_added_to_hass(self) -> None:
@@ -1107,17 +1131,31 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
-        await getattr(
-            self._device,
-            f"async_set_{self.entity_description.on_key}",
-        )(True)
+        try:
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(True)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
-        await getattr(
-            self._device,
-            f"async_set_{self.entity_description.on_key}",
-        )(False)
+        try:
+            await getattr(
+                self._device,
+                f"async_set_{self.entity_description.on_key}",
+            )(False)
+        except (SHCException, SHCConnectionError) as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="switch_action_failed",
+            ) from err
 
     @property
     def should_poll(self) -> bool:

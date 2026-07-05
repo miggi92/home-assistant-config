@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — 設定",
-        "description": "Bosch Smart Home Controllerインテグレーションが作成・管理するエンティティおよびオートメーションを設定します。",
+        "description": "Bosch Smart Home Controllerインテグレーションが作成・管理するエンティティおよびオートメーションを設定します。{camera_tool}",
         "sections": {
           "features": {
             "name": "機能",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC クライアント証明書の有効期限が近づいています",
-      "description": "Bosch SHC クライアント証明書は {days} 日後（{expiry}）に有効期限が切れます。更新するには、コントローラーをペアリングモードにし（LED が点滅するまで前面ボタンを押す）、**設定 → デバイスとサービス → Bosch Smart Home Controller** に移動して **再設定** を選択してください。"
+      "description": "**{title}**の Bosch SHC クライアント証明書は {days} 日後（{expiry}）に有効期限が切れます。更新するには、コントローラーをペアリングモードにし（LED が点滅するまで前面ボタンを押す）、**設定 → デバイスとサービス → Bosch Smart Home Controller** に移動して **再設定** を選択してください。"
     }
   },
   "exceptions": {
@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "アラーム状態の変更に失敗しました。"
+    },
+    "button_press_failed": {
+      "message": "ボタンの押下に失敗しました。"
+    },
+    "switch_action_failed": {
+      "message": "スイッチの状態変更に失敗しました。"
+    },
+    "select_option_failed": {
+      "message": "オプションの設定に失敗しました。"
+    },
+    "number_set_failed": {
+      "message": "値の設定に失敗しました。"
     }
   }
 }

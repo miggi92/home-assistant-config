@@ -86,7 +86,7 @@
     "step": {
       "init": {
         "title": "Bosch SHC — Instellingen",
-        "description": "Configureer welke entiteiten en automatiseringen de Bosch Smart Home Controller integratie aanmaakt en beheert.",
+        "description": "Configureer welke entiteiten en automatiseringen de Bosch Smart Home Controller integratie aanmaakt en beheert.{camera_tool}",
         "sections": {
           "features": {
             "name": "Functies",
@@ -532,7 +532,7 @@
     },
     "cert_expiring": {
       "title": "Bosch SHC-clientcertificaat verloopt binnenkort",
-      "description": "Het Bosch SHC-clientcertificaat verloopt over {days} dag(en) (op {expiry}). Om het te vernieuwen: zet de controller in koppelingsmodus (druk op de voorknop totdat de LED's knipperen) en ga naar **Instellingen → Apparaten & diensten → Bosch Smart Home Controller** en selecteer **Opnieuw configureren**."
+      "description": "Het Bosch SHC-clientcertificaat voor **{title}** verloopt over {days} dag(en) (op {expiry}). Om het te vernieuwen: zet de controller in koppelingsmodus (druk op de voorknop totdat de LED's knipperen) en ga naar **Instellingen → Apparaten & diensten → Bosch Smart Home Controller** en selecteer **Opnieuw configureren**."
     }
   },
   "exceptions": {
@@ -559,6 +559,18 @@
     },
     "alarm_state_failed": {
       "message": "Wijziging van alarmstatus mislukt."
+    },
+    "button_press_failed": {
+      "message": "Knopdruk mislukt."
+    },
+    "switch_action_failed": {
+      "message": "Wijziging van schakelaarstatus mislukt."
+    },
+    "select_option_failed": {
+      "message": "Instellen van de optie mislukt."
+    },
+    "number_set_failed": {
+      "message": "Instellen van de waarde mislukt."
     }
   }
 }

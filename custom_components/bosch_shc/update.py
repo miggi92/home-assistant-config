@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_SESSION, DOMAIN
+from .const import DOMAIN
 from .entity import SHCEntity, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -39,7 +39,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the SHC controller + per-device update entities."""
-    session: SHCSession = hass.data[DOMAIN][config_entry.entry_id][DATA_SESSION]
+    session: SHCSession = config_entry.runtime_data.session
     entities: list[UpdateEntity] = []
 
     information = session.information
@@ -154,6 +154,11 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
             service.SwUpdateState.DOWNLOADING,
             service.SwUpdateState.INSTALLING,
             service.SwUpdateState.UPDATE_IN_PROGRESS,
+            # A failed install doesn't apply the pending version, so the
+            # update stays outstanding — without this, latest_version fell
+            # back to sw_installed_version right when the user most needs to
+            # see there's still a pending update.
+            service.SwUpdateState.UPDATE_FAILED,
         }
         if (
             service.sw_update_state in offered_or_running
