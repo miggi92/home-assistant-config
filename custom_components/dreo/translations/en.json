@@ -58,6 +58,7 @@
         "use_hours":               { "name": "Use Since Cleaning" },
         "reach_target_temp":       { "name": "Target Temp Reached" },
         "status":                  { "name": "Status" },
+        "cook_time_remaining":     { "name": "Cook Time Remaining" },
         "pm25":                    { "name": "PM2.5" },
         "water":                   { "name": "Water Level" },
         "use_hours_hm":            { "name": "Use Since Cleaning" },
@@ -97,6 +98,9 @@
             "humidity": "Humidity",
             "color": "Color"
           }
+        },
+        "three_d_angle_preset": {
+          "name": "3D Angle Preset"
         }
       }
     }
