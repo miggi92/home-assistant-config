@@ -3,7 +3,9 @@ title: Tablet Dashboard
 path: start
 icon: mdi:home
 type: sections
-max_columns: 3
+max_columns: 4
+dense_section_placement: true
+top_margin: true
 header:
   layout: center
   badges_position: top
@@ -11,3 +13,19 @@ badges: []
 sections:
   - type: grid
     cards: []
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []
+footer:
+  max_width: 1600
+  card:
+    type: markdown
+    content: |
+      <div class="news_ticker">
+        {% set news_items_list = state_attr('sensor.rss_feed_home', 'news_items') | default([], true) %}
+        {{ news_items_list | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
+      </div>
+    text_only: true
