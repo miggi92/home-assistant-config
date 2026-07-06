@@ -1,0 +1,36 @@
+---
+# Sync alexa shopping list
+alias: syncAlexaShoppinglist
+id: e659f106-14ea-47de-b4ea-581867e5967c
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: todo.alexa_einkaufsliste
+conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state | int(0) > trigger.from_state.state | int(0) }}"
+    alias: checkNewItemsAdded
+actions:
+  - action: todo.get_items
+    target:
+      entity_id: todo.alexa_einkaufsliste
+    data:
+      status: needs_action
+    response_variable: pending_items
+    alias: fetchAlexaItems
+  - repeat:
+      for_each: "{{ pending_items['todo.alexa_einkaufsliste']['items'] }}"
+      sequence:
+        - action: todo.add_item
+          target:
+            entity_id: todo.picnic_einkaufswagen
+          data:
+            item: "{{ repeat.item.summary }}"
+          alias: addToPicnic
+        - action: todo.update_item
+          target:
+            entity_id: todo.alexa_einkaufsliste
+          data:
+            item: "{{ repeat.item.summary }}"
+            status: completed
+          alias: completeInAlexa
