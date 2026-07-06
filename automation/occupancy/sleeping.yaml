@@ -1,0 +1,25 @@
+---
+# Sleeping
+id: 20da896b-e927-4517-8646-101ba49d0738
+alias: sleepingRoom
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.bett_tracker
+conditions: []
+actions:
+  - if:
+      - alias: "Check occupancy"
+        condition: state
+        entity_id: binary_sensor.bett_tracker
+        state: "on"
+    then:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.echo_schlafzimmer_bitte_nicht_storen
+    else:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.echo_schlafzimmer_bitte_nicht_storen
+mode: single
