@@ -94,7 +94,7 @@ notify_engine:
           miguel: input_select.miguel_notification_channel
           silke: input_select.silke_notification_channel
         recipient_list: "{{ (who | default('miguel')).split(',') | map('trim') | list }}"
-        message: "{{ value1 }} {{ value2 }} {{ value3 }}"
+        message: "{{ value1 }} {{ value2 | default('') }} {{ value3 | default('') }}"
         telegram_chatids:
           home: !secret telegram_home_group
           telegram_miguel: !secret telegram_miguel
