@@ -1,0 +1,15 @@
+---
+# remove completed list items
+alias: removeCompletedListItems
+id: b0c04e14-82fa-4591-9d45-2065ae914a7c
+mode: single
+triggers:
+  - trigger: time
+    at: "00:05:00"
+    weekday:
+      - sun
+conditions: []
+actions:
+  - action: todo.remove_completed_items
+    target:
+      entity_id: todo.alexa_einkaufsliste
