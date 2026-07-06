@@ -34,6 +34,12 @@ badges:
   - type: entity
     entity: input_number.schlafzimmer_komfort_max_temp
     color: red
+  - type: custom:mushroom-template-badge
+    entity: switch.echo_schlafzimmer_bitte_nicht_storen
+    content: "DnD"
+    icon: "{{ 'mdi:minus-circle' if is_state(entity, 'on') else 'mdi:minus-circle-off' }}"
+    tap_action:
+      action: more-info
 sections:
   - type: grid
     cards:
