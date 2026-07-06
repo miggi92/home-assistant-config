@@ -20,7 +20,7 @@ header:
 
       <div class="news_ticker">
       {% set news_items_list = state_attr('sensor.rss_feed_home', 'news_items') | default([], true) %}
-      {{ news_items_list | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
+      {{ news_items_list[:3] | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
       </div>
 text_only: true
 badges:
