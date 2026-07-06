@@ -2,7 +2,7 @@
 # navbar
 type: custom:navbar-card
 routes:
-  - url: /lovelace-mobile/start
+  - url: start
     icon_selected: mdi:home
     icon: mdi:home-outline
     label: Startseite
@@ -27,7 +27,7 @@ routes:
 
             return {
               label: area.name,
-              url: "/lovelace-mobile/room-ug-" + area.area_id,
+              url: "room-ug-" + area.area_id,
               icon: area.icon,
               badge: {
                 show: showBadge,
@@ -39,7 +39,7 @@ routes:
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/room-ug-');
+        return path.startsWith('room-ug-');
       ]]]
     badge:
       show: |
@@ -67,7 +67,7 @@ routes:
 
             return {
               label: area.name,
-              url: "/lovelace-mobile/room-eg-" + area.area_id,
+              url: "room-eg-" + area.area_id,
               icon: area.icon,
               badge: {
                 show: showBadge,
@@ -79,7 +79,7 @@ routes:
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/room-eg-');
+        return path.startsWith('room-eg-');
       ]]]
     badge:
       show: |
@@ -107,7 +107,7 @@ routes:
 
             return {
               label: area.name,
-              url: "/lovelace-mobile/room-1og-" + area.area_id,
+              url: "room-1og-" + area.area_id,
               icon: area.icon,
               badge: {
                 show: showBadge,
@@ -119,14 +119,14 @@ routes:
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/room-1og-');
+        return path.startsWith('room-1og-');
       ]]]
     badge:
       show: |
         [[[ return states['number.count_lights_1_og'].state > 0; ]]]
       count: |
         [[[  return Math.ceil(states['number.count_lights_1_og'].state); ]]]
-  - url: /lovelace-mobile/cams
+  - url: cams
     icon: mdi:cctv
     label: Kameras
     hidden: |
@@ -138,15 +138,15 @@ routes:
     label: Details
     popup:
       - icon: mdi:crane
-        url: /lovelace-mobile/details-bau
+        url: details-bau
         label: Hausbau
       - icon: mdi:weather-partly-snowy-rainy
-        url: /lovelace-mobile/details-weather
+        url: details-weather
         label: Wetter
     selected: |
       [[[
         const path = window.location.pathname;
-        return path.startsWith('/lovelace-mobile/details-');
+        return path.startsWith('details-');
       ]]]
     hidden: |
       [[[
@@ -158,7 +158,7 @@ routes:
       [[[
         return hass.states['person.miguel'].attributes.entity_picture;
       ]]]
-    url: /lovelace-mobile/miguel
+    url: miguel
     hidden: |
       [[[ return user.name !== 'Miguel' ]]]
   - icon: mdi:cog
@@ -167,7 +167,7 @@ routes:
       [[[
         return hass.states['person.silke'].attributes.entity_picture;
       ]]]
-    url: /lovelace-mobile/silke
+    url: silke
     hidden: |
       [[[ return user.name !== 'Silke' ]]]
   - icon: mdi:cog
@@ -176,7 +176,7 @@ routes:
       [[[
         return hass.states['image.tablet_picture'].attributes.entity_picture;
       ]]]
-    url: /lovelace-mobile/tablet
+    url: tablet
     hidden: |
       [[[ return user.name !== 'Tablet' ]]]
   - icon: mdi:dots-horizontal
