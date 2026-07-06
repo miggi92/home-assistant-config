@@ -1,0 +1,46 @@
+---
+# Recyclinghof automation
+alias: recyclingHof
+id: 99839e1c-659c-4d58-8a8d-c52dbc7630a2
+description: "Recyclinghof"
+trigger:
+  - trigger: zone.occupancy_detected
+    options:
+      for:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      zone: zone.recyclinghof
+    id: recycling
+condition: []
+action:
+  - if:
+      - alias: "Check trigger id"
+        condition: template
+        value_template: "{{ trigger.id == 'recycling' }}"
+      - alias: "Check if recycling is open"
+        condition: state
+        entity_id: schedule.offnungszeiten_recyclinghof
+        state: "on"
+    then:
+      - variables:
+          zone_persons: "{{ state_attr('zone.recyclinghof', 'persons') }}"
+          assigned_user: >
+            {% set miguel = 'person.miguel' in zone_persons %}
+            {% set silke = 'person.silke' in zone_persons %}
+            {% if miguel and silke %}
+              admin
+            {% elif miguel %}
+              miguel
+            {% elif silke %}
+              silke
+            {% else %}
+              unknown
+            {% endif %}
+      - condition: template
+        value_template: "{{ assigned_user != 'unknown' }}"
+      - action: script.grocy_chore
+        data:
+          id: "15"
+          user: "{{ assigned_user }}"
+mode: single
