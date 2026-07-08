@@ -34,7 +34,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🤖 Automatisierungen: 172
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 45
-- 🛡️ Binäre Sensoren: 262
+- 🛡️ Binäre Sensoren: 264
 - 🛠️ Custom Integrationen: 59
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
@@ -44,9 +44,9 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 44
-- 🧩 Entitäten: 3956
+- 🧩 Entitäten: 3970
 - 🎮 Fernbedienungen: 18
-- 📱 Geräte: 575
+- 📱 Geräte: 576
 - 📍 Geräte-Tracker: 141
 - 🔌 Integrationen: 200
 - 🗓️ Kalender: 31
@@ -60,14 +60,14 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 👤 Personen: 9
 - 🔌 Schalter: 368
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1762
+- 📟 Sensoren: 1773
 - 📢 Sirenen: 1
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 147
+- 🔘 Tasten: 148
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 48
 - 🚁 Ventilatoren: 4
