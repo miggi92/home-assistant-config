@@ -35,7 +35,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 45
 - 🛡️ Binäre Sensoren: 264
-- 🛠️ Custom Integrationen: 59
+- 🛠️ Custom Integrationen: 58
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
 - 🔡 Eingabe-Auswahlen: 10
