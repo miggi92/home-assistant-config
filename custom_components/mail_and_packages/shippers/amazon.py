@@ -104,12 +104,23 @@ class AmazonShipper(Shipper):
         days = self.config.get(CONF_AMAZON_DAYS, DEFAULT_AMAZON_DAYS)
         domain = self.config.get(CONF_AMAZON_DOMAIN)
 
-        if sensor_type in [AMAZON_PACKAGES, AMAZON_ORDER]:
-            param = "count" if sensor_type == AMAZON_PACKAGES else "order"
-            result = await self._parse_amazon_emails(
-                account, param, fwds, days, domain, cache, forwarding_header
+        if sensor_type == AMAZON_PACKAGES:
+            count = await self._parse_amazon_emails(
+                account, "count", fwds, days, domain, cache, forwarding_header
             )
-            return {sensor_type: result}
+            orders = await self._parse_amazon_emails(
+                account, "order", fwds, days, domain, cache, forwarding_header
+            )
+            return {
+                AMAZON_PACKAGES: count,
+                AMAZON_ORDER: orders,
+            }
+
+        if sensor_type == AMAZON_ORDER:
+            result = await self._parse_amazon_emails(
+                account, "order", fwds, days, domain, cache, forwarding_header
+            )
+            return {AMAZON_ORDER: result}
 
         if sensor_type == AMAZON_HUB:
             return await self._amazon_hub(account, fwds, cache, forwarding_header)
@@ -199,7 +210,17 @@ class AmazonShipper(Shipper):
 
         if param == "count":
             return final_count
-        return list(context["all_shipped_orders"])
+
+        return [
+            order_id
+            for order_id in context["all_shipped_orders"]
+            if context["packages_arriving_today"].get(order_id, 0)
+            > context["delivered_packages"].get(order_id, 0)
+            or (
+                context["packages_arriving_today"].get(order_id, 0) == 0
+                and context["delivered_packages"].get(order_id, 0) == 0
+            )
+        ]
 
     async def _process_amazon_email(
         self,

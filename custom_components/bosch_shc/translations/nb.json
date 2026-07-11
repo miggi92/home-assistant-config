@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenarioknappefilter",
               "suppress_ledvance_lights": "Skjul LEDVANCE-lys fra Bosch SHC",
               "suppress_motion_indicator_light": "Skjul bevegelsesdetektorens statusindikator",
-              "suppress_camera_switches": "Skjul Bosch-kamerabrytere"
+              "suppress_camera_switches": "Skjul Bosch-kamerabrytere",
+              "room_light_groups": "Aktiver lysgrupper per rom"
             },
             "data_description": {
               "scenarios_as_buttons": "Når PÅ: hvert Bosch SHC-scenario vises også som en knappenhet i Home Assistant (i tillegg til trigger_scenario-tjenesten). Nyttig for dashbordfliser og automatiseringer som utløser scenarier direkte. Standard: av.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "La stå tomt for knapper for ALLE scenarioer (standard). Velg ett eller flere for å begrense knapper. Gjelder kun når 'Vis scenarioer som knapper' er på.",
               "suppress_ledvance_lights": "Når PÅ: LEDVANCE-lys paret med SHC vises ikke lenger som entiteter. Bruk for å unngå duplikater med LEDVANCE- eller Zigbee-integrasjonen. Standard: av.",
               "suppress_motion_indicator_light": "Når PÅ: entiteten for bevegelsesdetektor II’s statusindikator opprettes ikke. Standard: av.",
-              "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av."
+              "suppress_camera_switches": "Når PÅ: personvern-, lys- og varslingsbrytere for Bosch-kameraer (Eyes / 360 / Outdoor Gen2) opprettes ikke. Bruk med Bosch Camera Tool. Standard: av.",
+              "room_light_groups": "Når PÅ: oppretter én samlet `light`-entitet per SHC-rom med 2 eller flere dimbare/fargelys (LEDVANCE, Hue, Light/Shutter Control II-dimmere), slik at du kan slå alle lysene i et rom av/på fra én entitet — på samme måte som oppvarming allerede har rombasert styring via Romklimastyring. Kun av/på, ingen aggregering av lysstyrke eller farge. Standard: av (ingen nye entiteter)."
             }
           },
           "presence": {
@@ -199,6 +201,12 @@
       },
       "preview_min_brightness": {
         "name": "Forhåndsvis minimal lysstyrke"
+      },
+      "reset_energy_summation": {
+        "name": "Nullstill energiteller"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrer på nytt"
       }
     },
     "number": {
@@ -231,6 +239,9 @@
       },
       "siren_flash_delay": {
         "name": "Blitsforsinkelse"
+      },
+      "bypass_timeout": {
+        "name": "Tidsavbrudd for forbikobling"
       }
     },
     "select": {
@@ -380,6 +391,21 @@
       },
       "detection_test_state": {
         "name": "Deteksjonstest tilstand"
+      },
+      "next_setpoint_temperature": {
+        "name": "Neste innstilte temperatur"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulering kjører til"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulering kjører fra"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referanse bevegelsestid (nedenfra og opp)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referanse bevegelsestid (ovenfra og ned)"
       }
     },
     "binary_sensor": {
@@ -418,6 +444,12 @@
       },
       "tamper": {
         "name": "Sabotasje"
+      },
+      "schedule_override_active": {
+        "name": "Tidsplanoverstyring aktiv"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrering kreves"
       }
     },
     "update": {
@@ -431,11 +463,17 @@
     "switch": {
       "bypass": {
         "name": "Alarmforbikobling"
+      },
+      "bypass_infinite": {
+        "name": "Forbikobling utløper aldri"
       }
     },
     "light": {
       "motion_light": {
         "name": "Bevegelseslys"
+      },
+      "room_light_group": {
+        "name": "Lys"
       }
     }
   },
@@ -565,6 +603,12 @@
     },
     "switch_action_failed": {
       "message": "Endring av bryterstatus mislyktes."
+    },
+    "light_action_failed": {
+      "message": "Endring av lysstatus mislyktes."
+    },
+    "cover_action_failed": {
+      "message": "Endring av persiennestatus mislyktes."
     },
     "select_option_failed": {
       "message": "Innstilling av alternativ mislyktes."
