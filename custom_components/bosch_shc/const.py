@@ -26,6 +26,7 @@ SERVICE_SMOKEDETECTOR_CHECK = "smokedetector_check"
 SERVICE_SMOKEDETECTOR_ALARMSTATE = "smokedetector_alarmstate"
 SERVICE_TRIGGER_SCENARIO = "trigger_scenario"
 SERVICE_TRIGGER_RAWSCAN = "trigger_rawscan"
+SERVICE_EXPORT_ZIGBEE_TOPOLOGY = "export_zigbee_topology"
 
 # Options flow keys
 OPT_SCENARIOS_AS_BUTTONS = "scenarios_as_buttons"
@@ -65,6 +66,12 @@ OPT_SUPPRESS_CAMERA_SWITCHES = "suppress_camera_switches"
 OPT_SILENT_MODE_ENABLED = "silent_mode_enabled"
 OPT_SILENT_MODE_START = "silent_mode_start"
 OPT_SILENT_MODE_END = "silent_mode_end"
+# #244: opt-in per-room "all lights" aggregate light entity. Groups the
+# dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers) that
+# share an SHC room into one master on/off control, mirroring the room-level
+# control heating already has via ROOM_CLIMATE_CONTROL. Default False = no new
+# entities (non-breaking). Only rooms with 2+ eligible lights get a group.
+OPT_ROOM_LIGHT_GROUPS = "room_light_groups"
 
 # Camera Tool companion project
 CAMERA_TOOL_URL = (
@@ -103,6 +110,13 @@ ALARM_EVENTS_SUBTYPES_SD = {
     "INTRUSION_ALARM",
     "SECONDARY_ALARM",
     "PRIMARY_ALARM",
+}
+
+# SD II reports ON/OFF_REQUESTED, not gen-1 SD's INTRUSION/SECONDARY/PRIMARY.
+ALARM_EVENTS_SUBTYPES_SD2 = {
+    "IDLE_OFF",
+    "INTRUSION_ALARM_ON_REQUESTED",
+    "INTRUSION_ALARM_OFF_REQUESTED",
 }
 
 ALARM_EVENTS_SUBTYPES_SDS = {

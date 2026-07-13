@@ -102,7 +102,8 @@
               "scenarios_filter": "Stsenaariumide nuppude filter",
               "suppress_ledvance_lights": "Peida LEDVANCE-tuled Bosch SHC-st",
               "suppress_motion_indicator_light": "Peida liikumisanduri indikaatortuli",
-              "suppress_camera_switches": "Peida Boschi kaamerakapslid"
+              "suppress_camera_switches": "Peida Boschi kaamerakapslid",
+              "room_light_groups": "Luba toapõhised valgusgrupid"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Jäta tühjaks, et luua nupud KÕIGILE stsenaariumidele (vaikimisi). Vali üks või mitu, et piirata nuppe. Rakendub ainult siis, kui 'Eksponeer stsenaariumid nuppudena' on sees.",
               "suppress_ledvance_lights": "Kui SEES: SHC-ga seotud LEDVANCE-tuled ei kuvata enam olemitena. Kasuta duplikaatide vältimiseks LEDVANCE või Zigbee integratsiooniga. Vaikimisi: väljas.",
               "suppress_motion_indicator_light": "Kui SEES: liikumisanduri II indikaatorlehe olemi ei looda. Vaikimisi: väljas.",
-              "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas."
+              "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas.",
+              "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Minimaalse heleduse eelvaade"
+      },
+      "reset_energy_summation": {
+        "name": "Lähtesta energiaarvesti"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibreeri uuesti"
+      },
+      "enable_all_diagnostics": {
+        "name": "Luba kõik diagnostikad"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Välgu viivitus"
+      },
+      "bypass_timeout": {
+        "name": "Möödaviigu ajalimit"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "Tuvastustesti olek"
+      },
+      "next_setpoint_temperature": {
+        "name": "Järgmine seadepunkti temperatuur"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulatsioon käib kuni"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulatsioon käib alates"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Kalibreeritud liikumisaeg (alt üles)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Kalibreeritud liikumisaeg (ülevalt alla)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee marsruutimise kvaliteet",
+        "state": {
+          "good": "Hea",
+          "medium": "Keskmine",
+          "bad": "Halb",
+          "no_connection": "Ühendus puudub",
+          "device_not_initialized": "Seade lähtestamata",
+          "not_supported": "Ei toetata",
+          "unknown": "Teadmata"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Rikkumine"
+      },
+      "schedule_override_active": {
+        "name": "Ajakava ülekirjutus aktiivne"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibreerimine vajalik"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Alarmi möödaviik"
+      },
+      "bypass_infinite": {
+        "name": "Möödaviik ilma aegumiseta"
       }
     },
     "light": {
       "motion_light": {
         "name": "Liikumisvalgus"
+      },
+      "room_light_group": {
+        "name": "Valgus"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Sissetungimisalarm",
       "SECONDARY_ALARM": "Teisene alarm",
       "PRIMARY_ALARM": "Esmane alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Sissetungimisalarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Sissetungimisalarm kustutatud",
       "ALARM_OFF": "Alarm väljas",
       "ALARM_ON": "Alarm sees",
       "ALARM_MUTED": "Alarm vaigistatud"
@@ -523,6 +578,16 @@
           "description": "Suitsuandurile saadetav käsustring."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Ekspordi Zigbee topoloogia",
+      "description": "Loob viimase marsruutimisskaneeringu põhjal Zigbee võrgu topoloogiagraafi (hüppetevahelise ühenduse kvaliteediga) ning kirjutab selle JSON-ina ja vaadatava HTML-lehena kataloogi www/bosch_shc/. Tagastab graafi ka JSON-ina ja Mermaid-diagrammi tekstina teenuse vastuses.",
+      "fields": {
+        "title": {
+          "name": "SHC nimi",
+          "description": "SHC pealkiri. Jäta tühjaks, et kasutada esimest seadistatud SHC-d."
+        }
+      }
     }
   },
   "issues": {
@@ -566,11 +631,26 @@
     "switch_action_failed": {
       "message": "Lüliti oleku muutmine ebaõnnestus."
     },
+    "light_action_failed": {
+      "message": "Tule oleku muutmine ebaõnnestus."
+    },
+    "cover_action_failed": {
+      "message": "Katte oleku muutmine ebaõnnestus."
+    },
     "select_option_failed": {
       "message": "Valiku määramine ebaõnnestus."
     },
     "number_set_failed": {
       "message": "Väärtuse määramine ebaõnnestus."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Selle SHC kontrolleri jaoks pole veel Zigbee marsruutimisandmeid saadaval (Zigbee-seadmeid pole lisatud või esimest 5-minutilist skaneeringut pole pärast Home Assistanti käivitamist veel lõpetatud)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Selle pealkirjaga laaditud Bosch SHC kirjet ei leitud."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Zigbee topoloogia eksporti kataloogi www/bosch_shc/ ei õnnestunud kirjutada."
     }
   }
 }

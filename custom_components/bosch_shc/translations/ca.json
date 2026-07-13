@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtre de botons d'escenari",
               "suppress_ledvance_lights": "Suprimeix els llums LEDVANCE del Bosch SHC",
               "suppress_motion_indicator_light": "Suprimeix la llum indicadora del detector de moviment",
-              "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch"
+              "suppress_camera_switches": "Suprimeix els interruptors de la càmera Bosch",
+              "room_light_groups": "Activa els grups de llums per habitació"
             },
             "data_description": {
               "scenarios_as_buttons": "Quan ACTIVAT: cada escenari del Bosch SHC també apareix com a entitat de botó a Home Assistant (a més del servei trigger_scenario). Útil per a panells i automatitzacions que activen escenaris directament. Per defecte: desactivat.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Deixa-ho buit per a botons per a TOTS els escenaris (predeterminat). Selecciona'n un o més per limitar els botons. Aplica només quan 'Exposa escenaris com a botons' està activat.",
               "suppress_ledvance_lights": "Quan està ACTIVAT: els llums LEDVANCE emparellats amb el SHC ja no s'exposen com a entitats. Utilitza-ho per evitar duplicats amb la integració LEDVANCE o Zigbee. Predeterminat: desactivat.",
               "suppress_motion_indicator_light": "Quan està ACTIVAT: l'entitat del LED indicador del detector de moviment II no es crea. Predeterminat: desactivat.",
-              "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat."
+              "suppress_camera_switches": "Quan està ACTIVAT: els interruptors de privadesa, llum i notificació per a les càmeres Bosch (Eyes / 360 / Outdoor Gen2) no es creen. Utilitza-ho amb Bosch Camera Tool. Predeterminat: desactivat.",
+              "room_light_groups": "Quan està ACTIVAT: crea una entitat `light` agregada per cada habitació del SHC amb 2 o més llums regulables/de color (LEDVANCE, Hue, reguladors Light/Shutter Control II), permetent encendre o apagar tots els llums d'una habitació des d'una sola entitat — reflectint el control per habitació que la calefacció ja té mitjançant Room Climate Control. Només encès/apagat, sense agregació de brillantor/color. Predeterminat: desactivat (sense entitats noves)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Previsualitza la brillantor mínima"
+      },
+      "reset_energy_summation": {
+        "name": "Restableix el comptador d'energia"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibra"
+      },
+      "enable_all_diagnostics": {
+        "name": "Activa tots els diagnòstics"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Retard del flaix"
+      },
+      "bypass_timeout": {
+        "name": "Temps d'espera del bypass"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "Estat del test de detecció"
+      },
+      "next_setpoint_temperature": {
+        "name": "Propera temperatura de consigna"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulació en curs fins a"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulació en curs des de"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Temps de referència de moviment (de baix a dalt)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Temps de referència de moviment (de dalt a baix)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Qualitat d'encaminament Zigbee",
+        "state": {
+          "good": "Bona",
+          "medium": "Mitjana",
+          "bad": "Dolenta",
+          "no_connection": "Sense connexió",
+          "device_not_initialized": "Dispositiu no inicialitzat",
+          "not_supported": "No compatible",
+          "unknown": "Desconeguda"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Manipulació"
+      },
+      "schedule_override_active": {
+        "name": "Anul·lació d'horari activa"
+      },
+      "shutter_calibration_required": {
+        "name": "Calibratge requerit"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Bypass d'alarma"
+      },
+      "bypass_infinite": {
+        "name": "Bypass sense caducitat"
       }
     },
     "light": {
       "motion_light": {
         "name": "Llum de moviment"
+      },
+      "room_light_group": {
+        "name": "Llum"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Alarma d'intrusió",
       "SECONDARY_ALARM": "Alarma secundària",
       "PRIMARY_ALARM": "Alarma primària",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarma d'intrusió",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarma d'intrusió esborrada",
       "ALARM_OFF": "Alarma desactivada",
       "ALARM_ON": "Alarma activada",
       "ALARM_MUTED": "Alarma silenciada"
@@ -523,6 +578,16 @@
           "description": "Cadena d'ordre a enviar al detector de fum."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exporta la topologia Zigbee",
+      "description": "Construeix un graf de la topologia de la xarxa mesh Zigbee (qualitat de l'enllaç per salt) a partir de l'última consulta d'encaminament i l'escriu com a JSON i una pàgina HTML visualitzable a www/bosch_shc/. També retorna el graf com a JSON i com a text de diagrama Mermaid a la resposta del servei.",
+      "fields": {
+        "title": {
+          "name": "Nom del SHC",
+          "description": "Títol del SHC. Deixeu-ho buit per utilitzar el primer SHC configurat."
+        }
+      }
     }
   },
   "issues": {
@@ -551,6 +616,15 @@
     "rawscan_entry_not_found": {
       "message": "No s'ha trobat cap entrada de Bosch SHC carregada amb aquest títol."
     },
+    "zigbee_topology_no_data": {
+      "message": "Encara no hi ha dades d'encaminament Zigbee disponibles per a aquest controlador SHC (no hi ha dispositius Zigbee aparellats, o l'última consulta de 5 minuts encara no s'ha completat des que es va iniciar Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "No s'ha trobat cap entrada de Bosch SHC carregada amb aquest títol."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "No s'ha pogut escriure l'exportació de la topologia Zigbee a www/bosch_shc/."
+    },
     "scenario_not_found": {
       "message": "Escenari no trobat."
     },
@@ -565,6 +639,12 @@
     },
     "switch_action_failed": {
       "message": "No s'ha pogut canviar l'estat de l'interruptor."
+    },
+    "light_action_failed": {
+      "message": "No s'ha pogut canviar l'estat del llum."
+    },
+    "cover_action_failed": {
+      "message": "No s'ha pogut canviar l'estat de la persiana."
     },
     "select_option_failed": {
       "message": "No s'ha pogut establir l'opció."

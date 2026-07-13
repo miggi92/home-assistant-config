@@ -8,6 +8,7 @@ from typing import Any
 import aiohttp
 from boschshcpy import PowerSwitchService, SHCLight, SHCSession
 from boschshcpy.device import SHCDevice
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
@@ -18,6 +19,8 @@ from homeassistant.components.light import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.device_registry import async_get as get_dev_reg
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import color as color_util
@@ -25,6 +28,7 @@ from homeassistant.util import color as color_util
 from .const import (
     DOMAIN,
     LOGGER,
+    OPT_ROOM_LIGHT_GROUPS,
     OPT_SUPPRESS_HUE_LIGHTS,
     OPT_SUPPRESS_LEDVANCE_LIGHTS,
     OPT_SUPPRESS_MOTION_INDICATOR_LIGHT,
@@ -76,6 +80,7 @@ async def async_setup_entry(
                 )
     else:
         ledvance_lights = list(session.device_helper.ledvance_lights)
+    room_lights: dict[str, list[SHCDevice]] = {}
     for light in (
         ledvance_lights + list(session.device_helper.micromodule_dimmers) + hue_lights
     ):
@@ -88,6 +93,30 @@ async def async_setup_entry(
                 entry_id=config_entry.entry_id,
             )
         )
+        room_id = getattr(light, "room_id", None)
+        if room_id:
+            room_lights.setdefault(room_id, []).append(light)
+
+    # #244: opt-in per-room "all lights" master control. Always evaluate (not
+    # just when enabled) so toggling the option off, or a room dropping below
+    # 2 eligible lights (exclusion, device removal), cleans up a previously
+    # created group instead of leaving an orphaned registry entry — same
+    # pattern as MotionDetectorLight/RelayLight above.
+    room_groups_enabled = config_entry.options.get(OPT_ROOM_LIGHT_GROUPS, False)
+    for room in getattr(session, "rooms", []):
+        unique_id = f"room_{room.id}_light_group"
+        devices = room_lights.get(room.id, [])
+        if room_groups_enabled and len(devices) >= 2:
+            entities.append(
+                SHCRoomLightGroup(
+                    devices=devices,
+                    room_id=room.id,
+                    room_name=room.name,
+                    entry_id=config_entry.entry_id,
+                )
+            )
+        else:
+            await async_remove_stale_entity(hass, Platform.LIGHT, unique_id)
 
     motion_light_suppressed = config_entry.options.get(
         OPT_SUPPRESS_MOTION_INDICATOR_LIGHT, False
@@ -243,34 +272,48 @@ class LightSwitch(SHCEntity, LightEntity):  # type: ignore[misc]
         color_temp_kelvin = kwargs.get(ATTR_COLOR_TEMP_KELVIN)
         brightness = kwargs.get(ATTR_BRIGHTNESS)
 
-        if brightness is not None and self._device.supports_brightness:
-            # Bosch API does not accept brightness=0; HA uses brightness=0 to
-            # mean "off", which is handled via binarystate. Clamp to 1 so that
-            # a near-zero HA value (e.g. 1/255) never silently turns off.
-            await self._device.async_set_brightness(
-                max(round(brightness * 100 / 255), 1)
-            )
+        try:
+            if brightness is not None and self._device.supports_brightness:
+                # Bosch API does not accept brightness=0; HA uses brightness=0 to
+                # mean "off", which is handled via binarystate. Clamp to 1 so that
+                # a near-zero HA value (e.g. 1/255) never silently turns off.
+                await self._device.async_set_brightness(
+                    max(round(brightness * 100 / 255), 1)
+                )
 
-        if color_temp_kelvin is not None and self._device.supports_color_temp:
-            await self._device.async_set_color(
-                color_util.color_temperature_kelvin_to_mired(color_temp_kelvin)
-            )
-            self._attr_color_mode = ColorMode.COLOR_TEMP
+            if color_temp_kelvin is not None and self._device.supports_color_temp:
+                await self._device.async_set_color(
+                    color_util.color_temperature_kelvin_to_mired(color_temp_kelvin)
+                )
+                self._attr_color_mode = ColorMode.COLOR_TEMP
 
-        if hs_color is not None and self._device.supports_color_hsb:
-            rgb = color_util.color_hs_to_RGB(*hs_color)
-            raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
-            await self._device.async_set_rgb(raw_rgb)
-            self._attr_color_mode = ColorMode.HS
+            if hs_color is not None and self._device.supports_color_hsb:
+                rgb = color_util.color_hs_to_RGB(*hs_color)
+                raw_rgb = (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]
+                await self._device.async_set_rgb(raw_rgb)
+                self._attr_color_mode = ColorMode.HS
 
-        if not self.is_on:
-            await self._device.async_set_binarystate(True)
+            if not self.is_on:
+                await self._device.async_set_binarystate(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
         self.schedule_update_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self._device.async_set_binarystate(False)
+        try:
+            await self._device.async_set_binarystate(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
 
 class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
@@ -301,16 +344,30 @@ class MotionDetectorLight(SHCEntity, LightEntity):  # type: ignore[misc]
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on, optionally setting brightness."""
         brightness = kwargs.get(ATTR_BRIGHTNESS)
-        if brightness is not None:
-            # Clamp to 1 so near-zero HA values don't silently turn the light off.
-            level = max(round(brightness * 100 / 255), 1)
-            await self._device.async_set_multi_level_switch(level)
-        if not self.is_on:
-            await self._device.async_set_binaryswitch(True)
+        try:
+            if brightness is not None:
+                # Clamp to 1 so near-zero HA values don't silently turn the light off.
+                level = max(round(brightness * 100 / 255), 1)
+                await self._device.async_set_multi_level_switch(level)
+            if not self.is_on:
+                await self._device.async_set_binaryswitch(True)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self._device.async_set_binaryswitch(False)
+        try:
+            await self._device.async_set_binaryswitch(False)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
 
 class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
@@ -335,7 +392,7 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
         (mirrors SHCSwitch.is_on); return None (unknown) rather than crash.
         """
         try:
-            return bool(self._device.switchstate == PowerSwitchService.State.ON)
+            return bool(self._device.switchstate is PowerSwitchService.State.ON)
         except AttributeError:
             return None
 
@@ -352,6 +409,12 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
             # Match SHCSwitch: a transient SHC outage must not raise to the
             # service layer (error log / notification) for this relay.
             LOGGER.debug("turn_on failed for %s: %s", self.entity_id, err)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn on {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the relay off."""
@@ -364,3 +427,115 @@ class RelayLight(SHCEntity, LightEntity):  # type: ignore[misc]
             )
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             LOGGER.debug("turn_off failed for %s: %s", self.entity_id, err)
+        except SHCException as err:
+            raise HomeAssistantError(
+                f"Failed to turn off {self._device.name}: {err}",
+                translation_domain=DOMAIN,
+                translation_key="light_action_failed",
+            ) from err
+
+
+class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
+    """Aggregate on/off control for all lights sharing one SHC room (#244).
+
+    Opt-in (``OPT_ROOM_LIGHT_GROUPS``); ON/OFF only, groups only the
+    ``binarystate``-based LightSwitch devices, not #338's ``switchstate`` relays.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "room_light_group"
+    _attr_should_poll = False
+    _attr_supported_color_modes: set[ColorMode] = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.ONOFF
+
+    def __init__(
+        self,
+        devices: list[SHCDevice],
+        room_id: str,
+        room_name: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize the room light group."""
+        self._devices = devices
+        self._entry_id = entry_id
+        self._attr_unique_id = f"room_{room_id}_light_group"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"room_{room_id}_light")},
+            name=room_name,
+            manufacturer=devices[0].manufacturer,
+            model="Room Light Group",
+            via_device=(DOMAIN, devices[0].root_device_id),
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True if any member light is on, None if all unknown."""
+        states = [d.binarystate for d in self._devices if d.binarystate is not None]
+        if not states:
+            return None
+        return any(bool(state) for state in states)
+
+    @property
+    def available(self) -> bool:
+        """Return True if at least one member device is reachable."""
+        return any(d.status == "AVAILABLE" for d in self._devices)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn all member lights on."""
+        await self._async_set_all(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn all member lights off."""
+        await self._async_set_all(False)
+
+    async def _async_set_all(self, state: bool) -> None:
+        """Write binarystate to every member, without one failure blocking others."""
+        results = await asyncio.gather(
+            *(device.async_set_binarystate(state) for device in self._devices),
+            return_exceptions=True,
+        )
+        for device, result in zip(self._devices, results, strict=True):
+            if isinstance(result, Exception):
+                LOGGER.debug(
+                    "Room light group %s failed for %s: %s",
+                    "turn_on" if state else "turn_off",
+                    device.id,
+                    result,
+                )
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to every member device's services for local_push updates."""
+        await super().async_added_to_hass()
+
+        def _on_state_change() -> None:
+            self.schedule_update_ha_state()
+
+        def _on_device_change() -> None:
+            # Unlike SHCEntity (one entity = one device), this group spans
+            # several devices and can't just detach itself when one member is
+            # unpaired/removed live on the SHC (no options change, no config
+            # entry reload). A stale member would otherwise keep contributing
+            # its last-known state/writes forever and the room's "2+ members"
+            # threshold would never get re-evaluated. Reloading the entry
+            # re-runs async_setup_entry, which rebuilds every room group (or
+            # removes it) from the current device list — the same recovery
+            # already used by InstallationProfileSelect (select.py).
+            if any(device.deleted for device in self._devices):
+                self.hass.async_create_task(
+                    self.hass.config_entries.async_reload(self._entry_id)
+                )
+            else:
+                self.schedule_update_ha_state()
+
+        for device in self._devices:
+            for service in device.device_services:
+                service.subscribe_callback(self.entity_id, _on_state_change)
+            device.subscribe_callback(self.entity_id, _on_device_change)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unsubscribe from every member device's services."""
+        await super().async_will_remove_from_hass()
+        for device in self._devices:
+            for service in device.device_services:
+                service.unsubscribe_callback(self.entity_id)
+            device.unsubscribe_callback(self.entity_id)

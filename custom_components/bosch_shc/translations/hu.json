@@ -1,0 +1,656 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Az eszköz már konfigurálva van",
+      "reauth_successful": "Az újrahitelesítés sikeres volt.",
+      "reconfigure_successful": "Az újrakonfigurálás sikerült",
+      "wrong_shc": "A megadott gazdagép egy másik Bosch SHC vezérlőhöz tartozik. Kérjük, adja meg a helyes gazdagépet ehhez a bejegyzéshez."
+    },
+    "error": {
+      "cannot_connect": "Sikertelen csatlakozás",
+      "invalid_auth": "Érvénytelen hitelesítés",
+      "pairing_failed": "A párosítás nem sikerült; Kérem, ellenőrizze, hogy a Bosch Smart Home Controller párosítási módban van-e (villog a LED), és hogy a jelszava helyes-e.",
+      "session_error": "Munkamenet hiba: Az API nem OK eredményt ad vissza.",
+      "unknown": "Váratlan hiba történt"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Kérem, addig nyomja a Bosch Smart Home Controller elülső gombját, amíg a LED villogni nem kezd.\nKészen áll {model} @ {host} beállításának folytatására Home Assistant segítségével?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Ügyfélazonosító neve a tanúsítványhoz",
+          "password": "A Smart Home Controller jelszava"
+        },
+        "data_description": {
+          "name": "Az SHC alkalmazásban a csatlakoztatott kliensek között megjelenő név.",
+          "password": "A Bosch Smart Home alkalmazásban beállított jelszó."
+        }
+      },
+      "reauth_confirm": {
+        "description": "A bosch_shc integrációnak újra hitelesítenie kell a fiókját",
+        "title": "Integráció újrahitelesítése",
+        "data": {
+          "host": "Gazdagép"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Bosch SHC újrakonfigurálása",
+        "description": "Válassza ki, mit szeretne újrakonfigurálni.",
+        "menu_options": {
+          "reconfigure_host": "Csak a gazdagép / IP-cím módosítása",
+          "repair_credentials": "Újrapárosítás (klienstanúsítvány újragenerálása)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Gazdagép / IP-cím módosítása",
+        "description": "Frissítse a Bosch Smart Home vezérlő IP-címét vagy hosztnevét. A tanúsítványok és hitelesítő adatok megmaradnak.",
+        "data": {
+          "host": "Gazdagép"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő új IP-címe vagy hosztneve (pl. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Újrapárosítás — klienstanúsítvány újragenerálása",
+        "description": "Nyomja meg a párosítás gombot az SHC-n (SHC I: elülső gomb, amíg a LED villog; SHC II: funkcióbillentyű röviden), majd töltse ki az alábbi űrlapot.",
+        "data": {
+          "host": "Gazdagép",
+          "password": "A Smart Home vezérlő jelszava",
+          "name": "Ügyfélazonosító neve a tanúsítványhoz"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y).",
+          "password": "A Bosch Smart Home alkalmazásban beállított jelszó.",
+          "name": "Az SHC alkalmazásban a csatlakoztatott kliensek között megjelenő név."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Cím"
+        },
+        "data_description": {
+          "host": "Az SHC vezérlő IP-címe vagy hosztneve (pl. 192.168.x.y)."
+        },
+        "description": "Állítsa be a Bosch intelligens otthoni vezérlőt, hogy lehetővé tegye a felügyeletet és a vezérlést Home Assistant segítségével.",
+        "title": "SHC hitelesítési paraméterek"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Beállítások",
+        "description": "Konfigurálja, hogy a Bosch Smart Home Controller integráció milyen entitásokat és automatizációkat hoz létre és kezel.{camera_tool}",
+        "sections": {
+          "features": {
+            "name": "Funkciók",
+            "description": "Kapcsolja be vagy ki az integráció által létrehozandó entitástípusokat.",
+            "data": {
+              "scenarios_as_buttons": "Forgatókönyvek megjelenítése gombentitásokként",
+              "diagnostic_entities": "Diagnosztikai érzékelők létrehozása",
+              "enable_rawscan_service": "Rawscan diagnosztikai szolgáltatás engedélyezése",
+              "all_light_switches_as_light": "AZ ÖSSZES Light/Shutter Control II megjelenítése fényként",
+              "light_switches_as_light": "Light/Shutter Control II megjelenítése lámpákként",
+              "suppress_hue_lights": "Hue-lámpák elrejtése a Bosch SHC-ből",
+              "suppress_power_sensors": "Teljesítmény- és energiaérzékelők elrejtése",
+              "scenarios_filter": "Forgatókönyv-gombok szűrője",
+              "suppress_ledvance_lights": "LEDVANCE-lámpák elrejtése a Bosch SHC-ből",
+              "suppress_motion_indicator_light": "Mozgásérzékelő jelzőfény elrejtése",
+              "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
+              "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
+              "diagnostic_entities": "Ha BE van kapcsolva (alapértelmezett): minden támogatott eszközhöz diagnosztikai érzékelőentitások jönnek létre — szelepbetét helyzete (termosztátok) és kommunikációs minőség (okos dugók). Kapcsolja ki az entitásszám csökkentéséhez, ha nincs szüksége ezekre az érzékelőkre.",
+              "enable_rawscan_service": "Ha BE van kapcsolva: regisztrálja a bosch_shc.trigger_rawscan szolgáltatást a nyers API hibakereséshez. Kapcsolja ki az elrejtéséhez. Alapértelmezett: be.",
+              "all_light_switches_as_light": "Kapcsolja be, hogy minden Light Control II / beépített fénykapcsoló eszközt egyszerre `light` entitásként jelenítsen meg — felülírja az alábbi eszközönkénti kiválasztást. Kikapcsolva (alapértelmezett) az eszközönkénti választás megmarad. Ugyanaz a figyelmeztetés: ez felcseréli az entitás tartományát (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásokra hivatkozó automatizálásokat és irányítópultokat.",
+              "light_switches_as_light": "Válassza ki azokat a Light Control II / falon belüli fénykapcsoló eszközöket, amelyeknek `light` entitásként kell megjelenniük a `switch` entitások helyett. Minden kiválasztott eszköz kapcsolója egy be/ki lámpával helyettesítődik. Hagyja üresen (alapértelmezett), hogy kapcsolókként maradjanak. A módosítás felcseréli az entitás doménjét (`switch.*` ↔ `light.*`), ezért frissítse a régi entitásra hivatkozó automatizálásokat vagy irányítópultokat.",
+              "suppress_hue_lights": "Ha BE van kapcsolva: az SHC-hez párosított Hue-lámpák nem kerülnek entitásként közzé. Használja a Hue integráció esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
+              "suppress_power_sensors": "Ha BE van kapcsolva: a teljesítmény- és energiaérzékelők (watt / kWh) nem jönnek létre okos dugókhoz, BSM kapcsolókhoz, mikromodulokhoz és az EMMA energiakezelőhöz. Alapértelmezett: ki.",
+              "scenarios_filter": "Hagyd ürösen, ha MINDEN forgatókönyvhez szeretnél gombot (alapértelmezett). Jelölj ki egyet vagy többet a gombok adott forgatókönyvekre való korlátozásához. Csak akkor érvényes, ha a 'Forgatókönyvek megjelenítése gombként' be van kapcsolva.",
+              "suppress_ledvance_lights": "Ha BE van kapcsolva: az SHC-hez párosított LEDVANCE-lámpák nem kerülnek entitásként közzé. Használja a LEDVANCE vagy Zigbee integráció esetén a duplikációk elkerüléséhez. Alapértelmezett: ki.",
+              "suppress_motion_indicator_light": "Ha BE van kapcsolva: a mozgásérzékelő II jelzőfény-entitása nem jön létre. Alapértelmezett: ki.",
+              "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
+              "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások)."
+            }
+          },
+          "presence": {
+            "name": "Jelenlét alapú gyermekzár",
+            "description": "Automatikusan zárolja az összes SHC termosztátot és kapcsolót, amikor valaki otthon van, és feloldja őket, amikor mindenki elmegy.",
+            "data": {
+              "child_lock_enabled": "Jelenlét alapú gyermekzár engedélyezése",
+              "child_lock_presence_entity": "Jelenléti entitások",
+              "silent_mode_enabled": "Jelenlét + időablak alapú csendes üzemmód engedélyezése",
+              "silent_mode_start": "Csendes üzemmód kezdési ideje",
+              "silent_mode_end": "Csendes üzemmód befejezési ideje"
+            },
+            "data_description": {
+              "child_lock_enabled": "Főkapcsoló. Amikor BE van kapcsolva, az összes SHC termosztát és kapcsolóeszköz gyermekzára az alábbi jelenléti entitásokat követi — zárolva, ha valaki otthon van, feloldva, ha mindenki távol van. Amikor KI van kapcsolva, az integráció soha nem nyúl a gyermekzárhoz.",
+              "child_lock_presence_entity": "A gyermekzárat meghatározó személyek/eszközök. Bekapcsol, amint BÁRMELY közülük otthon van, és csak akkor kapcsol ki, ha MINDEGYIK távol van. Válassza ki például a háztartás Person entitásait. Az 'otthon' automatikusan kerül felismerésre (home a person/device_tracker/zone/group esetén, on a binary_sensor/input_boolean esetén).",
+              "silent_mode_enabled": "Ha BE van kapcsolva, minden csendes üzemmódot támogató SHC termosztát csendes módra vált, amíg valaki (a fenti jelenlétentitások szerint) otthon van ÉS az aktuális idő a lenti időablakon belül van; egyébként visszavált normál módra. Alapértelmezett: ki.",
+              "silent_mode_start": "A napi csendes üzemmód időablakának kezdete (helyi idő). Az időablak átnyúlhat éjfélen (pl. 22:00 → 06:00).",
+              "silent_mode_end": "A napi csendes üzemmód időablakának vége (helyi idő)."
+            }
+          },
+          "advanced": {
+            "name": "Speciális",
+            "description": "Alacsony szintű kapcsolódási paraméterek. Ezek módosítása ritkán segít — a módosítás előtt olvassa el a dokumentációt.",
+            "data": {
+              "ssl_verify_hostname": "SHC tanúsítvány hosztnév ellenőrzése",
+              "long_poll_timeout": "Hosszú lekérdezés időtúllépése (másodperc)",
+              "excluded_devices": "Kizárt eszközök",
+              "excluded_rooms": "Kizárt szobák",
+              "ssl_skip_verify": "SHC tanúsítványellenőrzés kihagyása"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Szakértő: ha BE van kapcsolva, az SHC TLS-tanúsítványának hosztneve ellenőrzésre kerül. A Bosch SHC tanúsítványának hosztneve általában NEM egyezik az IP-jével, ezért az engedélyezés általában megszakítja a kapcsolatot — hagyja KI, hacsak nem biztos benne, hogy a beállítása megfelel. Alapértelmezett: ki.",
+              "long_poll_timeout": "Mennyi ideig vár minden hosszú lekérdezési kérés eseményekre az újracsatlakozás előtt. Alapértelmezett: 10. Növelje az újracsatlakozások csökkentéséhez, csökkentse, ha a hálózata bontja az inaktív kapcsolatokat.",
+              "excluded_devices": "Elrejtendő eszközök — nem jönnek létre entitások számukra. Hagyja üresen az összes bevételéhez. Az újonnan kizárt eszközök meglévő entitásai megmaradnak, amíg manuálisan el nem távolítja őket.",
+              "excluded_rooms": "Elrejti az összes eszközt ezekben a Bosch szobákban. Hagyja üresen az összes bevételéhez.",
+              "ssl_skip_verify": "Szakértői / csak helyi LAN hálózathoz: ha BE van kapcsolva, az SHC szerver tanúsítványa nem kerül ellenőrzésre — hasznos, ha a offline vezérlő tanúsítványa lejárt. A titkosított klienstanúsítvány-alapú bejelentkezés nem érintett. Csak megbízható helyi hálózaton engedélyezze. Alapértelmezett: ki."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Szobaklimatizálás",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Füstérzékelő teszt"
+      },
+      "walk_test": {
+        "name": "Mozgásteszt"
+      },
+      "walk_test_stop": {
+        "name": "Mozgásteszt leállítása"
+      },
+      "detection_test": {
+        "name": "Érzékelési teszt"
+      },
+      "detection_test_stop": {
+        "name": "Érzékelési teszt leállítása"
+      },
+      "reset_tamper": {
+        "name": "Illetéktelen hozzáférés jelzés visszaállítása"
+      },
+      "siren_test_alarm": {
+        "name": "Tesztriasztás"
+      },
+      "preview_max_brightness": {
+        "name": "Maximális fényerő előnézet"
+      },
+      "preview_min_brightness": {
+        "name": "Minimális fényerő előnézet"
+      },
+      "reset_energy_summation": {
+        "name": "Energiaszámláló visszaállítása"
+      },
+      "shutter_recalibrate": {
+        "name": "Újrakalibrálás"
+      },
+      "enable_all_diagnostics": {
+        "name": "Összes diagnosztika engedélyezése"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulzushossz"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Energiatakarékos teljesítményküszöb"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Energiatakarékos mód belépési ideje"
+      },
+      "led_brightness": {
+        "name": "LED fényereje"
+      },
+      "display_brightness": {
+        "name": "Kijelző fényereje"
+      },
+      "display_on_time": {
+        "name": "Kijelző bekapcsolási ideje"
+      },
+      "siren_alarm_duration": {
+        "name": "Riasztás időtartama"
+      },
+      "siren_flash_duration": {
+        "name": "Villogás időtartama"
+      },
+      "siren_alarm_delay": {
+        "name": "Riasztás késleltetése"
+      },
+      "siren_flash_delay": {
+        "name": "Villogás késleltetése"
+      },
+      "bypass_timeout": {
+        "name": "Kihagyás időtúllépése"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Mozgásérzékenység"
+      },
+      "vibration_sensitivity": {
+        "name": "Rezgésérzékenység"
+      },
+      "state_after_power_outage": {
+        "name": "Állapot áramszünet után"
+      },
+      "smoke_sensitivity": {
+        "name": "Füstérzékenység"
+      },
+      "display_direction": {
+        "name": "Kijelző iránya"
+      },
+      "displayed_temperature": {
+        "name": "Megjelenített hőmérséklet"
+      },
+      "terminal_type": {
+        "name": "Csatlakozó típusa"
+      },
+      "valve_type": {
+        "name": "Szelep típusa"
+      },
+      "heater_type": {
+        "name": "Fűtőberendezés típusa"
+      },
+      "switch_type": {
+        "name": "Kapcsoló típusa"
+      },
+      "actuator_type": {
+        "name": "Aktuátor típusa"
+      },
+      "output_mode": {
+        "name": "Kimeneti mód"
+      },
+      "siren_sound_level": {
+        "name": "Hangerő",
+        "state": {
+          "low": "Alacsony",
+          "medium": "Közepes",
+          "high": "Magas"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Tájékoztató fény reakcióideje"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Okos érzékenység biztonsági szintje"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Okos érzékenység kényelmi szintje"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmer fázisszabályozás"
+      },
+      "installation_profile": {
+        "name": "Telepítési profil",
+        "state": {
+          "generic": "Beltéri (általános)",
+          "outdoor": "Kültéri",
+          "light": "Világítás",
+          "heating_rcc": "Fűtés (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini napelem"
+        }
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Mozgásteszt állapota"
+      },
+      "battery_level": {
+        "name": "Akkumulátorszint"
+      },
+      "combined_rating": {
+        "name": "Összesített értékelés"
+      },
+      "air_quality_description": {
+        "name": "Levegőminőség leírása"
+      },
+      "communication_quality": {
+        "name": "Kommunikáció minősége",
+        "state": {
+          "good": "Jó",
+          "normal": "Normál",
+          "not_supported": "Nem támogatott",
+          "bad": "Rossz",
+          "unknown": "Ismeretlen",
+          "fetching": "Lekérés"
+        }
+      },
+      "siren_battery": {
+        "name": "Akkumulátor"
+      },
+      "siren_main_power": {
+        "name": "Tápforrás",
+        "state": {
+          "battery": "Akkumulátor",
+          "solar": "Napelem",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Napelemes töltés",
+        "state": {
+          "bad": "Gyenge",
+          "medium": "Közepes",
+          "good": "Jó",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "keypad_trigger": {
+        "name": "Gombhozzárendelés"
+      },
+      "floor_temperature": {
+        "name": "Padlóhőmérséklet"
+      },
+      "purity": {
+        "name": "Tisztaság"
+      },
+      "air_quality": {
+        "name": "Levegőminőség"
+      },
+      "temperature_rating": {
+        "name": "Hőmérséklet értékelés"
+      },
+      "humidity_rating": {
+        "name": "Páratartalom értékelés"
+      },
+      "purity_rating": {
+        "name": "Tisztasági értékelés"
+      },
+      "energy_yield": {
+        "name": "Energiahozam"
+      },
+      "power_yield": {
+        "name": "Teljesítményhozam"
+      },
+      "valve_tappet": {
+        "name": "Szeleptányér"
+      },
+      "detection_test_state": {
+        "name": "Érzékelési teszt állapota"
+      },
+      "next_setpoint_temperature": {
+        "name": "Következő célhőmérséklet"
+      },
+      "presence_simulation_running_end": {
+        "name": "Szimuláció futásának vége"
+      },
+      "presence_simulation_running_start": {
+        "name": "Szimuláció futásának kezdete"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Kalibrált mozgásidő (alulról felfelé)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Kalibrált mozgásidő (felülről lefelé)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee útválasztás minősége",
+        "state": {
+          "good": "Jó",
+          "medium": "Közepes",
+          "bad": "Rossz",
+          "no_connection": "Nincs kapcsolat",
+          "device_not_initialized": "Eszköz nincs inicializálva",
+          "not_supported": "Nem támogatott",
+          "unknown": "Ismeretlen"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akusztikus riasztás"
+      },
+      "siren_visual_alarm": {
+        "name": "Vizuális riasztás"
+      },
+      "siren_tamper": {
+        "name": "Illetéktelen beavatkozás"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC hiba"
+      },
+      "siren_battery_defect": {
+        "name": "Akkumulátor meghibásodás"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Akkumulátor hőmérséklete rendellenes"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Áramkimaradás"
+      },
+      "call_for_heat": {
+        "name": "Fűtési igény"
+      },
+      "vibration": {
+        "name": "Rezgés"
+      },
+      "smoke": {
+        "name": "Füst"
+      },
+      "occupancy": {
+        "name": "Jelenlét"
+      },
+      "tamper": {
+        "name": "Szabotázs"
+      },
+      "schedule_override_active": {
+        "name": "Ütemezés felülbírálása aktív"
+      },
+      "shutter_calibration_required": {
+        "name": "Kalibrálás szükséges"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Szoftverfrissítés"
+      },
+      "device_firmware": {
+        "name": "Firmware"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Riasztás kihagyása"
+      },
+      "bypass_infinite": {
+        "name": "Kihagyás lejárat nélkül"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Mozgásvezérelt lámpa"
+      },
+      "room_light_group": {
+        "name": "Lámpa"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Alsó gomb",
+      "UPPER_BUTTON": "Felső gomb",
+      "LOWER_LEFT_BUTTON": "Bal alsó gomb",
+      "UPPER_LEFT_BUTTON": "Bal felső gomb",
+      "LOWER_RIGHT_BUTTON": "Jobb alsó gomb",
+      "UPPER_RIGHT_BUTTON": "Jobb felső gomb",
+      "IDLE_OFF": "Riasztás kikapcsolva",
+      "INTRUSION_ALARM": "Behatolási riasztás",
+      "SECONDARY_ALARM": "Másodlagos riasztás",
+      "PRIMARY_ALARM": "Elsődleges riasztás",
+      "INTRUSION_ALARM_ON_REQUESTED": "Behatolási riasztás",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Behatolási riasztás törölve",
+      "ALARM_OFF": "Riasztás kikapcsolva",
+      "ALARM_ON": "Riasztás bekapcsolva",
+      "ALARM_MUTED": "Riasztás elnémítva"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} röviden megnyomva",
+      "PRESS_LONG": "{subtype} hosszan megnyomva",
+      "MOTION": "Mozgás észlelve",
+      "SCENARIO": "{subtype} forgatókönyv aktiválva",
+      "ALARM": "{subtype} aktiválva"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Füstérzékelő ellenőrzés",
+      "description": "Meghívja a füstérzékelő tesztelési rutinját.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitásazonosító",
+          "description": "A füstérzékelő entitás neve."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Forgatókönyv indítása",
+      "description": "Forgatókönyvet indít el a Bosch SHC-n.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése"
+        },
+        "name": {
+          "name": "Forgatókönyv neve",
+          "description": "Az indítandó forgatókönyv neve"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Nyers beolvasás indítása",
+      "description": "Nyers beolvasást indít a Bosch SHC-n az eszközök felderítéséhez. Az eredmény az info naplóba kerül.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése"
+        },
+        "command": {
+          "name": "Nyers beolvasási parancs",
+          "description": "Az indítandó nyers beolvasási parancs. Lehetséges parancsok: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Eszközazonosító",
+          "description": "Eszközazonosító — szükséges a 'device', 'device_services' vagy 'device_service' parancsokhoz"
+        },
+        "service_id": {
+          "name": "Szolgáltatásazonosító",
+          "description": "Szolgáltatásazonosító — szükséges a 'device_service' parancshoz"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Füstérzékelő riasztási állapota",
+      "description": "Egyéni parancsot küld egy füstérzékelőnek.",
+      "fields": {
+        "entity_id": {
+          "name": "Entitásazonosító",
+          "description": "A füstérzékelő entitás neve."
+        },
+        "command": {
+          "name": "Egyéni parancs",
+          "description": "A füstérzékelőnek küldendő parancsszöveg."
+        }
+      }
+    },
+    "export_zigbee_topology": {
+      "name": "Zigbee topológia exportálása",
+      "description": "Zigbee hálós topológia gráfot épít (ugrásonkénti kapcsolatminőséggel) az utolsó útválasztási lekérdezés alapján, és JSON formátumban, valamint megtekinthető HTML oldalként írja ki a www/bosch_shc/ mappába. A szolgáltatás válaszában a gráfot JSON és Mermaid diagram szövegként is visszaadja.",
+      "fields": {
+        "title": {
+          "name": "SHC neve",
+          "description": "Az SHC megnevezése. Hagyja üresen az első beállított SHC használatához."
+        }
+      }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Több a Bosch kameráihoz",
+      "description": "Bosch kamerák észlelve. Ez az integráció az alapokat fedi le; a dedikált **Bosch Smart Home Camera Tool** sokkal többet tud értük tenni (pillanatfelvételek, mozgás / FCM értesítések, fények, adatfolyamok). Nyissa meg a „További információ“ részt a projekthez, majd zárja be ezt az értesítést."
+    },
+    "cert_expiring": {
+      "title": "A Bosch SHC ügyféltanúsítvány hamarosan lejár",
+      "description": "A Bosch SHC ügyféltanúsítvány a(z) **{title}** számára {days} nap múlva lejár ({expiry}). A megújításhoz: állítsa a vezérlőt párosítási módba (nyomja meg az elülső gombot, amíg a LED-ek villogni nem kezdenek), majd lépjen ide: **Beállítások → Eszközök és szolgáltatások → Bosch Smart Home Controller**, és válassza az **Újrakonfigurálás** lehetőséget."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "A kriptográfiai könyvtár nem érhető el. Kérjük, győződjön meg róla, hogy telepítve van."
+    },
+    "cert_file_missing": {
+      "message": "Hiányzó tanúsítványfájl: {path}"
+    },
+    "cert_invalid": {
+      "message": "Érvénytelen tanúsítvány: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "A rawscan típus nem található."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
+    },
+    "scenario_not_found": {
+      "message": "A forgatókönyv nem található."
+    },
+    "smoke_test_failed": {
+      "message": "A füstérzékelő teszt sikertelen."
+    },
+    "alarm_state_failed": {
+      "message": "A riasztás állapotának megváltoztatása sikertelen."
+    },
+    "button_press_failed": {
+      "message": "A gombnyomás sikertelen."
+    },
+    "switch_action_failed": {
+      "message": "A kapcsoló állapotának megváltoztatása sikertelen."
+    },
+    "light_action_failed": {
+      "message": "A fény állapotának megváltoztatása sikertelen."
+    },
+    "cover_action_failed": {
+      "message": "A redőny állapotának megváltoztatása sikertelen."
+    },
+    "select_option_failed": {
+      "message": "A lehetőség beállítása sikertelen."
+    },
+    "number_set_failed": {
+      "message": "Az érték beállítása sikertelen."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Ehhez az SHC vezérlőhöz még nem áll rendelkezésre Zigbee útválasztási adat (nincs párosított Zigbee eszköz, vagy az első 5 perces lekérdezés még nem fejeződött be a Home Assistant indítása óta)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Nem sikerült kiírni a Zigbee topológia exportot a www/bosch_shc/ mappába."
+    }
+  }
+}

@@ -32,10 +32,21 @@
     "f_min": 80.0,
     "f_max": 7600.0,
     "log_floor": 1e-06,
+    "window_cmn": false,
     "window_samples": 20800,
     "frame_samples": 400,
     "hop_samples": 160,
     "frames": 128
+  },
+  "model": {
+    "architecture": "ctc",
+    "backbone": "tcresnet",
+    "conv_channels": [
+      20,
+      40,
+      60,
+      60
+    ]
   },
   "ctc": {
     "vocab_size": 52,
@@ -115,7 +126,7 @@
       [
         6,
         30,
-        10,
+        8,
         29,
         38,
         12
@@ -140,7 +151,7 @@
       [
         "ɐ",
         "l",
-        "ɛ",
+        "æ",
         "k",
         "s",
         "ə"
@@ -148,31 +159,39 @@
     ],
     "max_edit_distance": 1,
     "wake_word_trail_tolerance": 0,
-    "min_matched_confidence": 4.5,
-    "wake_word_target_anchors": [
-      [],
-      [],
-      []
+    "min_matched_confidence": 3.2,
+    "target_max_edit_distance": [
+      1,
+      0,
+      0
     ],
     "target_min_matched_confidence": [
       4.5,
-      7.0,
-      4.0
+      6.5,
+      6.5
     ],
-    "wake_word_target_groups": [
-      "full_fast",
-      "trunc_strict",
-      "full_sustained_low_conf"
+    "wake_word_target_anchors": [
+      [
+        2,
+        5
+      ],
+      [
+        2
+      ],
+      [
+        2,
+        5
+      ]
     ]
   },
   "runtime": {
     "required_hits": 2,
+    "cooldown_ms": 2000,
     "target_required_hits": [
       2,
-      5,
-      4
+      1,
+      1
     ],
-    "cooldown_ms": 2000,
     "hit_mode": "consecutive",
     "high_confidence_bypass": 8.2,
     "high_confidence_bypass_min_hits": 1

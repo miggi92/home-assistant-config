@@ -1,0 +1,656 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Ierīce jau pievienota Home Assistant.",
+      "reauth_successful": "Atkārtotā autentifikācija bija veiksmīga",
+      "reconfigure_successful": "Pārkonfigurēšana bija veiksmīga",
+      "wrong_shc": "Ievadītais resursdators pieder citam Bosch SHC kontrollerim. Lūdzu, ievadiet pareizo resursdatoru šim ierakstam."
+    },
+    "error": {
+      "cannot_connect": "Neizdevās izveidot savienojumu",
+      "invalid_auth": "Nederīga autentifikācija",
+      "pairing_failed": "Sapārošana neizdevās; lūdzu, pārbaudiet, vai Bosch Smart Home kontrolleris atrodas sapārošanas režīmā (LED mirgo), kā arī vai jūsu parole ir pareiza.",
+      "session_error": "Sesijas kļūda: API atgrieza neveiksmīgu rezultātu.",
+      "unknown": "Neparedzēta kļūda"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Lūdzu, nospiediet priekšpuses pogu, līdz LED sāk mirgot.\nSmart Home Controller II: Īsi nospiediet funkcijas pogu. Mākoņa un tīkla indikatori sāk mirgot oranžā krāsā.\nIerīce tagad ir gatava sapārošanai.\n\nVai esat gatavs turpināt {model} @ {host} iestatīšanu ar Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Klienta nosaukums sertifikātam",
+          "password": "Smart Home Controller parole"
+        },
+        "data_description": {
+          "name": "Nosaukums, kas tiek rādīts SHC lietotnē zem pievienotajiem klientiem.",
+          "password": "Parole, kas iestatīta Bosch Smart Home lietotnē."
+        }
+      },
+      "reauth_confirm": {
+        "description": "Bosch SHC integrācijai ir nepieciešams atkārtoti autentificēt jūsu kontu.",
+        "title": "Atkārtoti autentificēt integrāciju",
+        "data": {
+          "host": "Resursdators"
+        },
+        "data_description": {
+          "host": "SHC kontrollera IP adrese vai resursdatora nosaukums (piem., 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Pārkonfigurēt Bosch SHC",
+        "description": "Izvēlieties, ko vēlaties pārkonfigurēt.",
+        "menu_options": {
+          "reconfigure_host": "Mainīt tikai resursdatoru / IP adresi",
+          "repair_credentials": "Atkārtoti sapārot (atkārtoti ģenerēt klienta sertifikātu)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Mainīt resursdatoru / IP adresi",
+        "description": "Atjauniniet sava Bosch Smart Home kontrollera IP adresi vai resursdatora nosaukumu. Jūsu sertifikāti un akreditācijas dati tiks saglabāti.",
+        "data": {
+          "host": "Resursdators"
+        },
+        "data_description": {
+          "host": "Jaunā SHC kontrollera IP adrese vai resursdatora nosaukums (piem., 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Atkārtota sapārošana — klienta sertifikāta atkārtota ģenerēšana",
+        "description": "Nospiediet sapārošanas pogu uz SHC (SHC I: priekšpuses poga, līdz LED mirgo; SHC II: īsi nospiediet funkcijas pogu), pēc tam aizpildiet zemāk esošo veidlapu.",
+        "data": {
+          "host": "Resursdators",
+          "password": "Smart Home Controller parole",
+          "name": "Klienta nosaukums sertifikātam"
+        },
+        "data_description": {
+          "host": "SHC kontrollera IP adrese vai resursdatora nosaukums (piem., 192.168.x.y).",
+          "password": "Parole, kas iestatīta Bosch Smart Home lietotnē.",
+          "name": "Nosaukums, kas tiek rādīts SHC lietotnē zem pievienotajiem klientiem."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Resursdators"
+        },
+        "data_description": {
+          "host": "SHC kontrollera IP adrese vai resursdatora nosaukums (piem., 192.168.x.y)."
+        },
+        "description": "Iestatiet savu Bosch Smart Home kontrolleri, lai atļautu uzraudzību un vadību ar Home Assistant.",
+        "title": "SHC autentifikācijas parametri"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Iestatījumi",
+        "description": "Konfigurējiet, kuras entītijas un automatizācijas Bosch Smart Home Controller integrācija izveido un pārvalda.{camera_tool}",
+        "sections": {
+          "features": {
+            "name": "Funkcijas",
+            "description": "Pārslēdziet entītiju tipus, kurus integrācija izveido.",
+            "data": {
+              "scenarios_as_buttons": "Rādīt scenārijus kā pogu entītijas",
+              "diagnostic_entities": "Izveidot diagnostikas sensorus",
+              "enable_rawscan_service": "Iespējot rawscan diagnostikas pakalpojumu",
+              "all_light_switches_as_light": "Rādīt VISAS Light/Shutter Control II ierīces kā gaismas",
+              "light_switches_as_light": "Rādīt Light/Shutter Control II kā gaismas",
+              "suppress_hue_lights": "Slēpt Hue gaismas no Bosch SHC",
+              "suppress_power_sensors": "Slēpt jaudas un enerģijas sensorus",
+              "scenarios_filter": "Scenāriju poģu filtrs",
+              "suppress_ledvance_lights": "Slēpt LEDVANCE gaismas no Bosch SHC",
+              "suppress_motion_indicator_light": "Slēpt kustību detektora indikatora gaismu",
+              "suppress_camera_switches": "Slēpt Bosch kameras slēdžus",
+              "room_light_groups": "Iespējot telpu gaismas grupas"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
+              "diagnostic_entities": "Ieslēgts (noklusējums): katrai atbalstītajai ierīcei tiek izveidotas diagnostikas sensoru entītijas — vārsta kloķa pozīcija (termostati) un komunikācijas kvalitāte (viedās kontaktligzdas). Izslēdziet, lai samazinātu entītiju skaitu, ja šie sensori nav nepieciešami.",
+              "enable_rawscan_service": "Ieslēgts: reģistrē bosch_shc.trigger_rawscan pakalpojumu neapstrādātas API atkļūdošanai. Izslēdziet, lai to paslēptu. Noklusējums: ieslēgts.",
+              "all_light_switches_as_light": "Ieslēdziet, lai visas Light Control II / iebūvēto gaismas slēdžu ierīces vienlaikus attēlotu kā `light` entitāti — tas ignorē zemāk esošo katras ierīces izvēli. Izslēgts (noklusējums) saglabā katras ierīces individuālo izvēli. Tā pati piezīme: ar to tiek mainīts entitātes domēns (`switch.*` ↔ `light.*`), tādēļ atjauniniet automatizācijas un informācijas paneļus, kas atsaucas uz vecajām entitātēm.",
+              "light_switches_as_light": "Atlasiet Light Control II / iebūvētā gaismas slēdža ierīces, kurām jāparādās kā `light` entītijām, nevis `switch` entītijām. Katras atlasītās ierīces slēdzis tiek aizstāts ar ieslēgšanas/izslēgšanas gaismu. Atstājiet tukšu (noklusējums), lai tās saglabātu kā switches. Mainot šo iestatījumu, tiek nomainīts entītijas domēns (`switch.*` ↔ `light.*`), tāpēc atjauniniet visas automatizācijas vai informācijas paneļus, kas atsaucas uz veco entītiju.",
+              "suppress_hue_lights": "Kad IESLĒGTS: ar SHC savienotās Hue gaismas vairs netiek rādītas kā entītijas. Izmantojiet, lai izvairītos no duplikātiem ar Hue integrāciju. Nokluājums: izslēgts.",
+              "suppress_power_sensors": "Kad IESĖGSTS: jaudas un enerģijas sensori (W / kWh) netiek izveidoti viedajiem kontaktdažīm, BSM slēdžiem, mikromoļļem un EMMA pārvaldniekam. Nokluājums: izslēgts.",
+              "scenarios_filter": "Atklājiet tukšu, lai izveidotu pogas VISIEM scenārijiem (nokluājums). Atlāsīt vienu vai vairākus, lai ierobežotu pogas. Piemērojams tikai tad, kad ir ieslēgts 'Rādīt scenārijus kā pogas'.",
+              "suppress_ledvance_lights": "Kad IESĖGSTS: LEDVANCE gaismeļļi, kas savienoti ar SHC, vairs netiek rādīti kā entītijas. Izmantojiet, lai izvairītos no duplikātiem ar LEDVANCE vai Zigbee integrāciju. Nokluājums: izslēgts.",
+              "suppress_motion_indicator_light": "Kad IESĖGSTS: kustību detektora II indikatorgaīsmas entītija netiek izveidota. Nokluājums: izslēgts.",
+              "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts.",
+              "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav)."
+            }
+          },
+          "presence": {
+            "name": "Klātbūtnes bērnu bloķēšana",
+            "description": "Automātiski bloķējiet visus SHC termostatus un slēdžus, kad kāds ir mājās, un atbloķējiet, kad visi aiziet.",
+            "data": {
+              "child_lock_enabled": "Iespējot klātbūtnes bērnu bloķēšanu",
+              "child_lock_presence_entity": "Klātbūtnes entītijas",
+              "silent_mode_enabled": "Iespējot klātbūtnes + laika loga klusā režīma režīmu",
+              "silent_mode_start": "Klusā režīma sākuma laiks",
+              "silent_mode_end": "Klusā režīma beigu laiks"
+            },
+            "data_description": {
+              "child_lock_enabled": "Galvenais slēdzis. Kad IESLĒGTS, bērnu bloķēšana uz visiem SHC termostatiem un slēdžu ierīcēm seko zemāk norādītajām klātbūtnes entītijām — bloķēts, kad kāds ir mājās, atbloķēts, kad visi ir prom. Kad IZSLĒGTS, integrācija nekad nepieskaras bērnu bloķēšanai.",
+              "child_lock_presence_entity": "Cilvēki/ierīces, kas nosaka bērnu bloķēšanu. Ieslēdzas, tiklīdz JEBKURA no tām ir mājās, un izslēdzas tikai tad, kad VISAS ir prom. Izvēlieties, piemēram, savas mājsaimniecības locekļu Person entītijas. 'Mājās' tiek automātiski noteikts (home person/device_tracker/zone/group, on binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Kad ir IESLĒGTS, katrs klusā režīmu atbalstošais SHC termostats tiek pārslēgts klusajā režīmā, kamēr kāds (saskaņā ar augstāk esošajiem klātbūtnes entītijām) ir mājās UN pašreizējais laiks atrodas zemāk norādītajā logā; pretējā gadījumā atgriežas normālajā režīmā. Noklusējums: izslēgts.",
+              "silent_mode_start": "Ikdienas klusā režīma loga sākums (vietējais laiks). Logi var šķērsot pusnakti (piem., 22:00 → 06:00).",
+              "silent_mode_end": "Ikdienas klusā režīma loga beigas (vietējais laiks)."
+            }
+          },
+          "advanced": {
+            "name": "Papildu iestatījumi",
+            "description": "Zema līmeņa savienojuma parametri. Šo maiņa reti palīdz — pirms maiņas konsultējieties ar dokumentāciju.",
+            "data": {
+              "ssl_verify_hostname": "Pārbaudīt SHC sertifikāta resursdatora nosaukumu",
+              "long_poll_timeout": "Garā aptaujāšanas taimauts (sekundes)",
+              "excluded_devices": "Izslēgtās ierīces",
+              "excluded_rooms": "Izslēgtās telpas",
+              "ssl_skip_verify": "Izlaist SHC sertifikāta pārbaudi"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Eksperts: ieslēgts — tiek pārbaudīts SHC TLS sertifikāta resursdatora nosaukums. Bosch SHC sertifikāta resursdatora nosaukums parasti nesakrīt ar tā IP, tāpēc šīs opcijas ieslēgšana parasti pārrāvums savienojumu — atstājiet izslēgtu, ja vien neesat pārliecināts, ka jūsu iestatījums sakrīt. Noklusējums: izslēgts.",
+              "long_poll_timeout": "Cik ilgi katrs garais aptaujāšanas pieprasījums gaida notikumus pirms atkārtotas savienošanās. Noklusējums 10. Palieliniet, lai samazinātu atkārtotas savienošanās, samaziniet, ja tīkls pārtrauc dīkstāves savienojumus.",
+              "excluded_devices": "Ierīces, ko slēpt — tām netiek izveidotas entītijas. Atstājiet tukšu, lai iekļautu visas. Esošās entītijas jaunizsludinātajām ierīcēm paliek līdz manuālai noņemšanai.",
+              "excluded_rooms": "Slēpiet visas ierīces šajās Bosch telpās. Atstājiet tukšu, lai iekļautu visas.",
+              "ssl_skip_verify": "Eksperts / tikai lokālajiem LAN tīkliem: kad ir IESLĒGTS, SHC servera sertifikāts vairs netiek pārbaudīts — noderīgi, ja jūsu bezsaistes kontrollera sertifikāts ir beidzies. Šifrētā klienta sertifikāta pieteikšanās nav ietekmēta. Iespējojiet tikai uzticamā lokālajā tīklā. Noklusējums: izslēgts."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Telpas klimata vadība",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Dūmu tests"
+      },
+      "walk_test": {
+        "name": "Walk Test"
+      },
+      "walk_test_stop": {
+        "name": "Walk Test apturēšana"
+      },
+      "detection_test": {
+        "name": "Noteikšanas tests"
+      },
+      "detection_test_stop": {
+        "name": "Noteikšanas testa apturēšana"
+      },
+      "reset_tamper": {
+        "name": "Atiestatīt manipulācijas brīdinājumu"
+      },
+      "siren_test_alarm": {
+        "name": "Pārbaudes signāls"
+      },
+      "preview_max_brightness": {
+        "name": "Maksimālā spilgtuma priekšskatījums"
+      },
+      "preview_min_brightness": {
+        "name": "Minimālā spilgtuma priekšskatījums"
+      },
+      "reset_energy_summation": {
+        "name": "Atiestatīt enerģijas skaitītāju"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibrēt no jauna"
+      },
+      "enable_all_diagnostics": {
+        "name": "Iespējot visu diagnostiku"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Impulsa garums"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Enerģijas taupīšanas jaudas slieksnis"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Enerģijas taupīšanas iestāšanās ilgums"
+      },
+      "led_brightness": {
+        "name": "LED spilgtums"
+      },
+      "display_brightness": {
+        "name": "Displeja spilgtums"
+      },
+      "display_on_time": {
+        "name": "Displeja ieslēgšanas laiks"
+      },
+      "siren_alarm_duration": {
+        "name": "Signāla ilgums"
+      },
+      "siren_flash_duration": {
+        "name": "Mirgošanas ilgums"
+      },
+      "siren_alarm_delay": {
+        "name": "Signāla aizkave"
+      },
+      "siren_flash_delay": {
+        "name": "Mirgošanas aizkave"
+      },
+      "bypass_timeout": {
+        "name": "Apiešanas noildze"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Kustību jutīgums"
+      },
+      "vibration_sensitivity": {
+        "name": "Vibrāciju jutīgums"
+      },
+      "state_after_power_outage": {
+        "name": "Stāvoklis pēc strāvas zuduma"
+      },
+      "smoke_sensitivity": {
+        "name": "Dūmu jutīgums"
+      },
+      "display_direction": {
+        "name": "Displeja orientācija"
+      },
+      "displayed_temperature": {
+        "name": "Rādāmā temperatūra"
+      },
+      "terminal_type": {
+        "name": "Termināļa veids"
+      },
+      "valve_type": {
+        "name": "Vārsta veids"
+      },
+      "heater_type": {
+        "name": "Sildītāja veids"
+      },
+      "switch_type": {
+        "name": "Slēdža veids"
+      },
+      "actuator_type": {
+        "name": "Aktuatora veids"
+      },
+      "output_mode": {
+        "name": "Izvades režīms"
+      },
+      "siren_sound_level": {
+        "name": "Skaņas līmenis",
+        "state": {
+          "low": "Zems",
+          "medium": "Vidējs",
+          "high": "Augsts"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Orientācijas gaismas reaģēšanas laiks"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Viedās jutības drošības līmenis"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Viedās jutības komforta līmenis"
+      },
+      "dimmer_phase_control": {
+        "name": "Dimmera fāzes vadība"
+      },
+      "installation_profile": {
+        "name": "Uzstādīšanas profils",
+        "state": {
+          "generic": "Iekštelpas (vispārīgs)",
+          "outdoor": "Ārtelpas",
+          "light": "Apgaismojums",
+          "heating_rcc": "Apkure (RCC)",
+          "boiler": "Boilers",
+          "mini_pv": "Mini saules panelis"
+        }
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Walk Test stāvoklis"
+      },
+      "battery_level": {
+        "name": "Akumulatora līmenis"
+      },
+      "combined_rating": {
+        "name": "Apvienotais vērtējums"
+      },
+      "air_quality_description": {
+        "name": "Gaisa kvalitātes apraksts"
+      },
+      "communication_quality": {
+        "name": "Komunikācijas kvalitāte",
+        "state": {
+          "good": "Laba",
+          "normal": "Normāla",
+          "not_supported": "Netiek atbalstīts",
+          "bad": "Slikta",
+          "unknown": "Nezināma",
+          "fetching": "Ielādē"
+        }
+      },
+      "siren_battery": {
+        "name": "Akumulators"
+      },
+      "siren_main_power": {
+        "name": "Barošanas avots",
+        "state": {
+          "battery": "Akumulators",
+          "solar": "Saules enerģija",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Nezināms"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Saules uzlāde",
+        "state": {
+          "bad": "Slikts",
+          "medium": "Vidējs",
+          "good": "Labs",
+          "unknown": "Nezināms"
+        }
+      },
+      "keypad_trigger": {
+        "name": "Pogu piešķire"
+      },
+      "floor_temperature": {
+        "name": "Grīdas temperatūra"
+      },
+      "purity": {
+        "name": "Tīrība"
+      },
+      "air_quality": {
+        "name": "Gaisa kvalitāte"
+      },
+      "temperature_rating": {
+        "name": "Temperatūras novērtējums"
+      },
+      "humidity_rating": {
+        "name": "Mitruma novērtējums"
+      },
+      "purity_rating": {
+        "name": "Tīrības novērtējums"
+      },
+      "energy_yield": {
+        "name": "Enerģijas ražība"
+      },
+      "power_yield": {
+        "name": "Jaudas ražība"
+      },
+      "valve_tappet": {
+        "name": "Vārsta stūmējs"
+      },
+      "detection_test_state": {
+        "name": "Detektēšanas testa stāvoklis"
+      },
+      "next_setpoint_temperature": {
+        "name": "Nākamā iestatītā temperatūra"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulācijas darbības beigas"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulācijas darbības sākums"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Atskaites kustības laiks (no apakšas uz augšu)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Atskaites kustības laiks (no augšas uz apakšu)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee maršrutēšanas kvalitāte",
+        "state": {
+          "good": "Laba",
+          "medium": "Vidēja",
+          "bad": "Slikta",
+          "no_connection": "Nav savienojuma",
+          "device_not_initialized": "Ierīce nav inicializēta",
+          "not_supported": "Netiek atbalstīts",
+          "unknown": "Nezināma"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Akustiskais signāls"
+      },
+      "siren_visual_alarm": {
+        "name": "Vizuālais signāls"
+      },
+      "siren_tamper": {
+        "name": "Bojājums"
+      },
+      "siren_ac_dc_error": {
+        "name": "AC/DC kļūda"
+      },
+      "siren_battery_defect": {
+        "name": "Akumulatora defekts"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Akumulatora temperatūra nenormāla"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Strāvas padeves pārtraukums"
+      },
+      "call_for_heat": {
+        "name": "Siltuma pieprasījums"
+      },
+      "vibration": {
+        "name": "Vibrācija"
+      },
+      "smoke": {
+        "name": "Dūmi"
+      },
+      "occupancy": {
+        "name": "Aizņemtība"
+      },
+      "tamper": {
+        "name": "Manipulācija"
+      },
+      "schedule_override_active": {
+        "name": "Grafika pārrakstīšana aktīva"
+      },
+      "shutter_calibration_required": {
+        "name": "Nepieciešama kalibrēšana"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Programmatūras atjauninājums"
+      },
+      "device_firmware": {
+        "name": "Aparātprogrammatūra"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Signalizācijas apiešana"
+      },
+      "bypass_infinite": {
+        "name": "Apiešana nekad nebeidzas"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Kustības gaisma"
+      },
+      "room_light_group": {
+        "name": "Gaisma"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Apakšējā poga",
+      "UPPER_BUTTON": "Augšējā poga",
+      "LOWER_LEFT_BUTTON": "Apakšējā kreisā poga",
+      "UPPER_LEFT_BUTTON": "Augšējā kreisā poga",
+      "LOWER_RIGHT_BUTTON": "Apakšējā labā poga",
+      "UPPER_RIGHT_BUTTON": "Augšējā labā poga",
+      "IDLE_OFF": "Trauksme izslēgta",
+      "INTRUSION_ALARM": "Ielaušanās trauksme",
+      "SECONDARY_ALARM": "Sekundārā trauksme",
+      "PRIMARY_ALARM": "Primārā trauksme",
+      "INTRUSION_ALARM_ON_REQUESTED": "Ielaušanās trauksme",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Ielaušanās trauksme notīrīta",
+      "ALARM_OFF": "Trauksme izslēgta",
+      "ALARM_ON": "Trauksme ieslēgta",
+      "ALARM_MUTED": "Trauksme apklusināta"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} īsi nospiesta",
+      "PRESS_LONG": "{subtype} ilgi nospiesta",
+      "MOTION": "Konstatēta kustība",
+      "SCENARIO": "Scenārijs {subtype} aktivizēts",
+      "ALARM": "{subtype} aktivizēta"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Dūmu detektora pārbaude",
+      "description": "Izsauc dūmu detektora testa rutīnu.",
+      "fields": {
+        "entity_id": {
+          "name": "Entītijas ID",
+          "description": "Dūmu detektora entītijas nosaukums."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Aktivizēt scenāriju",
+      "description": "Aktivizē scenāriju Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "SHC nosaukums",
+          "description": "SHC virsraksts"
+        },
+        "name": {
+          "name": "Scenārija nosaukums",
+          "description": "Aktivizējamā scenārija nosaukums"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Aktivizēt neapstrādātu skenēšanu",
+      "description": "Aktivizē neapstrādātu skenēšanu Bosch SHC, lai atklātu ierīces. Rezultāts tiek straumēts uz informācijas žurnālu.",
+      "fields": {
+        "title": {
+          "name": "SHC nosaukums",
+          "description": "SHC virsraksts"
+        },
+        "command": {
+          "name": "Neapstrādātās skenēšanas komanda",
+          "description": "Aktivizējamā neapstrādātās skenēšanas komanda. Iespējamās komandas: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "Ierīces ID",
+          "description": "Ierīces ID — nepieciešams komandiņām 'device', 'device_services' vai 'device_service'"
+        },
+        "service_id": {
+          "name": "Pakalpojuma ID",
+          "description": "Pakalpojuma ID — nepieciešams komandai 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Dūmu detektora trauksmes stāvoklis",
+      "description": "Nosūtīt pielāgotu komandu dūmu detektoram.",
+      "fields": {
+        "entity_id": {
+          "name": "Entītijas ID",
+          "description": "Dūmu detektora entītijas nosaukums."
+        },
+        "command": {
+          "name": "Pielāgota komanda",
+          "description": "Dūmu detektoram nosūtāmā komandas virkne."
+        }
+      }
+    },
+    "export_zigbee_topology": {
+      "name": "Eksportēt Zigbee topoloģiju",
+      "description": "Izveido Zigbee tīkla topoloģijas grafu (saites kvalitāte katram posmam) no pēdējās maršrutēšanas aptaujas un saglabā to kā JSON un skatāmu HTML lapu mapē www/bosch_shc/. Pakalpojuma atbildē tiek atgriezts arī grafs JSON formātā un Mermaid diagrammas teksts.",
+      "fields": {
+        "title": {
+          "name": "SHC nosaukums",
+          "description": "SHC virsraksts. Atstājiet tukšu, lai izmantotu pirmo konfigurēto SHC."
+        }
+      }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Vairāk jūsu Bosch kamerām",
+      "description": "Tika atklātas Bosch kameras. Šī integrācija aptver pamatus; specializētais **Bosch Smart Home Camera Tool** dara daudz vairāk (momentuzņēmumi, kustība / FCM paziņojumi, gaismas, straumēšana). Atveriet „Uzzināt vairāk“ par projektu, pēc tam noraidiet šo paziņojumu."
+    },
+    "cert_expiring": {
+      "title": "Bosch SHC klienta sertifikāts drīz beigsies",
+      "description": "Bosch SHC klienta sertifikāts ierīcei **{title}** beigsies pēc {days} dienas(-ām) ({expiry}). Lai to atjaunotu: ievietojiet kontrolleri pārī savienošanas režīmā (nospiediet priekšējo pogu, līdz sāk mirgot LED indikatori), pēc tam dodieties uz **Iestatījumi → Ierīces un pakalpojumi → Bosch Smart Home Controller** un izvēlieties **Pārkonfigurēt**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Kriptogrāfijas bibliotēka nav pieejama. Lūdzu, pārliecinieties, ka tā ir instalēta."
+    },
+    "cert_file_missing": {
+      "message": "Trūkst sertifikāta faila: {path}"
+    },
+    "cert_invalid": {
+      "message": "Nederīgs sertifikāts: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Rawscan tips nav atrasts."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Nav atrasts ielādēts Bosch SHC ieraksts ar šādu nosaukumu."
+    },
+    "scenario_not_found": {
+      "message": "Scenārijs nav atrasts."
+    },
+    "smoke_test_failed": {
+      "message": "Dūmu tests neizdevās."
+    },
+    "alarm_state_failed": {
+      "message": "Trauksmes stāvokļa maiņa neizdevās."
+    },
+    "button_press_failed": {
+      "message": "Pogas nospiešana neizdevās."
+    },
+    "switch_action_failed": {
+      "message": "Slēdža stāvokļa maiņa neizdevās."
+    },
+    "light_action_failed": {
+      "message": "Gaismas stāvokļa maiņa neizdevās."
+    },
+    "cover_action_failed": {
+      "message": "Aizsega stāvokļa maiņa neizdevās."
+    },
+    "select_option_failed": {
+      "message": "Opcijas iestatīšana neizdevās."
+    },
+    "number_set_failed": {
+      "message": "Vērtības iestatīšana neizdevās."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Šim SHC kontrolierim vēl nav pieejami Zigbee maršrutēšanas dati (nav pievienota neviena Zigbee ierīce, vai kopš Home Assistant palaišanas vēl nav pabeigta pirmā 5 minūšu aptauja)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nav atrasts ielādēts Bosch SHC ieraksts ar šādu nosaukumu."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Neizdevās ierakstīt Zigbee topoloģijas eksportu mapē www/bosch_shc/."
+    }
+  }
+}

@@ -25,7 +25,7 @@ from boschshcpy import (
     ThermostatService,
 )
 from boschshcpy.device import SHCDevice
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
@@ -196,6 +196,20 @@ SWITCH_TYPES: dict[str, SHCSwitchEntityDescription] = {
         on_key="bypass",
         on_value=BypassService.State.BYPASS_ACTIVE,
         should_poll=False,
+    ),
+    "bypass_infinite": SHCSwitchEntityDescription(
+        key="bypass_infinite",
+        # hass#120 audit: fully modeled in boschshcpy (BypassService.infinite
+        # / SHCShutterContact2.bypass_infinite) but never wired into an HA
+        # entity. When off, an active bypass auto-expires after
+        # bypass_timeout seconds instead of staying active forever.
+        translation_key="bypass_infinite",
+        device_class=SwitchDeviceClass.SWITCH,
+        on_key="bypass_infinite",
+        on_value=True,
+        entity_category=EntityCategory.CONFIG,
+        should_poll=False,
+        icon="mdi:timer-off-outline",
     ),
     "child_lock": SHCSwitchEntityDescription(
         key="child_lock",
@@ -713,6 +727,14 @@ async def async_setup_entry(  # noqa: C901
                 description=SWITCH_TYPES["bypass"],
             )
         )
+        entities.append(
+            SHCSwitch(
+                device=switch,
+                entry_id=config_entry.entry_id,
+                description=SWITCH_TYPES["bypass_infinite"],
+                attr_name="BypassInfinite",
+            )
+        )
         if isinstance(switch, SHCShutterContact2Plus):
             entities.append(
                 SHCSwitch(
@@ -947,12 +969,13 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
             if attr_name is None
             else f"{device.root_device_id}_{device.id}_{attr_name.lower()}"
         )
-        # #342: a description translation_key (e.g. bypass -> "Alarm bypass")
-        # should drive a translated entity name. SHCEntity.__init__ forces
-        # _attr_name=None, and HA's name resolver returns that before ever
-        # consulting the translation_key — so drop it here for the primary
-        # entity to let the translation through, keeping unique_id unchanged.
-        if attr_name is None and description.translation_key:
+        # #342/#362-hunt: a description translation_key (e.g. bypass_infinite
+        # -> "Bypass Never Expires") should drive a translated entity name
+        # regardless of attr_name — attr_name only disambiguates unique_id
+        # for a second entity on the same device. HA's name resolver returns
+        # a literal _attr_name before ever consulting translation_key, so
+        # drop it here whenever a translation_key is present.
+        if description.translation_key:
             del self._attr_name
         self._has_async_update = hasattr(self._device, "async_update")  # [S3]
 
@@ -998,7 +1021,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_on skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn on {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1025,7 +1048,7 @@ class SHCSwitch(SHCEntity, SwitchEntity):  # type: ignore[misc]
                 "turn_off skipped for %s: service not available (no load/service?)",
                 self.entity_id,
             )
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn off {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1136,7 +1159,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
                 self._device,
                 f"async_set_{self.entity_description.on_key}",
             )(True)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn on {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -1150,7 +1173,7 @@ class SHCUserDefinedStateSwitch(SwitchEntity):  # type: ignore[misc]
                 self._device,
                 f"async_set_{self.entity_description.on_key}",
             )(False)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Failed to turn off {self._device.name}: {err}",
                 translation_domain=DOMAIN,

@@ -102,7 +102,8 @@
               "scenarios_filter": "Φίλτρο κουμπιών σεναρίων",
               "suppress_ledvance_lights": "Απόκρυψη φώτων LEDVANCE από το Bosch SHC",
               "suppress_motion_indicator_light": "Απόκρυψη ενδεικτικής λυχνίας ανιχνευτή κίνησης",
-              "suppress_camera_switches": "Απόκρυψη διακοπτών κάμερας Bosch"
+              "suppress_camera_switches": "Απόκρυψη διακοπτών κάμερας Bosch",
+              "room_light_groups": "Ενεργοποίηση ομάδων φωτισμού ανά δωμάτιο"
             },
             "data_description": {
               "scenarios_as_buttons": "Όταν είναι ΕΝΕΡΓΟ: κάθε σενάριο Bosch SHC εμφανίζεται επίσης ως οντότητα κουμπιού στο Home Assistant (επιπλέον της υπηρεσίας trigger_scenario). Χρήσιμο για πίνακες και αυτοματισμούς. Προεπιλογή: ανενεργό.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Αφήστε κενό για κουμπιά για ΌΛΑ τα σενάρια (προεπιλογή). Επιλέξτε ένα ή περισσότερα για περιορισμό. Εφαρμόζεται μόνο όταν είναι ενεργή 'Σενάρια ως κουμπιά'.",
               "suppress_ledvance_lights": "Όταν είναι ΕΝΕΡΓΟ: τα φώτα LEDVANCE συνδεδεμένα στο SHC δεν εμφανίζονται ως οντότητες. Χρησιμοποιήστε για αποφυγή διπλότυπων με LEDVANCE ή Zigbee. Προεπιλογή: ανενεργό.",
               "suppress_motion_indicator_light": "Όταν είναι ΕΝΕΡΓΟ: η οντότητα LED ένδειξης ανιχνευτή II δεν δημιουργείται. Προεπιλογή: ανενεργό.",
-              "suppress_camera_switches": "Όταν είναι ΕΝΕΡΓΟ: διακόπτες απορρήτου, φωτισμού και ειδοποιήσεων για κάμερες Bosch (Eyes / 360 / Outdoor Gen2) δεν δημιουργούνται. Χρησιμοποιήστε με Bosch Camera Tool. Προεπιλογή: ανενεργό."
+              "suppress_camera_switches": "Όταν είναι ΕΝΕΡΓΟ: διακόπτες απορρήτου, φωτισμού και ειδοποιήσεων για κάμερες Bosch (Eyes / 360 / Outdoor Gen2) δεν δημιουργούνται. Χρησιμοποιήστε με Bosch Camera Tool. Προεπιλογή: ανενεργό.",
+              "room_light_groups": "Όταν είναι ΕΝΕΡΓΟ: δημιουργεί μία συγκεντρωτική οντότητα `light` για κάθε δωμάτιο του SHC με 2 ή περισσότερα φώτα με ρύθμιση φωτεινότητας/χρώματος (LEDVANCE, Hue, dimmers Light/Shutter Control II), επιτρέποντας το άναμμα/σβήσιμο όλων των φώτων ενός δωματίου από μία μόνο οντότητα — αντανακλώντας τον έλεγχο ανά δωμάτιο που ήδη διαθέτει η θέρμανση μέσω του Room Climate Control. Μόνο on/off, χωρίς συγκέντρωση φωτεινότητας/χρώματος. Προεπιλογή: ανενεργό (καμία νέα οντότητα)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Προεπισκόπηση Ελάχιστης Φωτεινότητας"
+      },
+      "reset_energy_summation": {
+        "name": "Επαναφορά Μετρητή Ενέργειας"
+      },
+      "shutter_recalibrate": {
+        "name": "Επαναβαθμονόμηση"
+      },
+      "enable_all_diagnostics": {
+        "name": "Ενεργοποίηση όλων των διαγνωστικών"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Καθυστέρηση αναλαμπής"
+      },
+      "bypass_timeout": {
+        "name": "Χρονικό Όριο Παράκαμψης"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "Κατάσταση Δοκιμής Ανίχνευσης"
+      },
+      "next_setpoint_temperature": {
+        "name": "Επόμενη Θερμοκρασία Στόχου"
+      },
+      "presence_simulation_running_end": {
+        "name": "Προσομοίωση σε Εξέλιξη Έως"
+      },
+      "presence_simulation_running_start": {
+        "name": "Προσομοίωση σε Εξέλιξη Από"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Χρόνος Αναφοράς Κίνησης (Ανοδική Πορεία)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Χρόνος Αναφοράς Κίνησης (Καθοδική Πορεία)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Ποιότητα Δρομολόγησης Zigbee",
+        "state": {
+          "good": "Καλή",
+          "medium": "Μέτρια",
+          "bad": "Κακή",
+          "no_connection": "Καμία Σύνδεση",
+          "device_not_initialized": "Η Συσκευή Δεν Έχει Αρχικοποιηθεί",
+          "not_supported": "Δεν Υποστηρίζεται",
+          "unknown": "Άγνωστη"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Παραβίαση"
+      },
+      "schedule_override_active": {
+        "name": "Παράκαμψη Προγράμματος Ενεργή"
+      },
+      "shutter_calibration_required": {
+        "name": "Απαιτείται Βαθμονόμηση"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Παράκαμψη συναγερμού"
+      },
+      "bypass_infinite": {
+        "name": "Παράκαμψη χωρίς λήξη"
       }
     },
     "light": {
       "motion_light": {
         "name": "Φως Κίνησης"
+      },
+      "room_light_group": {
+        "name": "Φως"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Συναγερμός εισβολής",
       "SECONDARY_ALARM": "Δευτερεύων συναγερμός",
       "PRIMARY_ALARM": "Κύριος συναγερμός",
+      "INTRUSION_ALARM_ON_REQUESTED": "Συναγερμός εισβολής",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Ο συναγερμός εισβολής εκκαθαρίστηκε",
       "ALARM_OFF": "Συναγερμός off",
       "ALARM_ON": "Συναγερμός on",
       "ALARM_MUTED": "Συναγερμός σε σίγαση"
@@ -523,6 +578,16 @@
           "description": "Συμβολοσειρά εντολής προς αποστολή στον ανιχνευτή καπνού."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Εξαγωγή τοπολογίας Zigbee",
+      "description": "Δημιουργεί ένα γράφημα τοπολογίας δικτύου mesh Zigbee (ποιότητα σύνδεσης ανά άλμα) από την τελευταία δημοσκόπηση δρομολόγησης και το γράφει ως JSON και ως προβαλλόμενη σελίδα HTML στο www/bosch_shc/. Επιστρέφει επίσης το γράφημα ως JSON και ως κείμενο διαγράμματος Mermaid στην απόκριση της υπηρεσίας.",
+      "fields": {
+        "title": {
+          "name": "Όνομα SHC",
+          "description": "Τίτλος του SHC. Αφήστε το κενό για να χρησιμοποιήσετε το πρώτο διαμορφωμένο SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -551,6 +616,15 @@
     "rawscan_entry_not_found": {
       "message": "Δεν βρέθηκε φορτωμένη καταχώρηση Bosch SHC με αυτόν τον τίτλο."
     },
+    "zigbee_topology_no_data": {
+      "message": "Δεν υπάρχουν ακόμη διαθέσιμα δεδομένα δρομολόγησης Zigbee για αυτόν τον ελεγκτή SHC (δεν έχουν συζευχθεί συσκευές Zigbee, ή η πρώτη 5λεπτη δημοσκόπηση δεν έχει ολοκληρωθεί από την εκκίνηση του Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Δεν βρέθηκε φορτωμένη καταχώρηση Bosch SHC με αυτόν τον τίτλο."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Δεν ήταν δυνατή η εγγραφή της εξαγωγής τοπολογίας Zigbee στο www/bosch_shc/."
+    },
     "scenario_not_found": {
       "message": "Το σενάριο δεν βρέθηκε."
     },
@@ -565,6 +639,12 @@
     },
     "switch_action_failed": {
       "message": "Η αλλαγή της κατάστασης του διακόπτη απέτυχε."
+    },
+    "light_action_failed": {
+      "message": "Η αλλαγή της κατάστασης του φωτός απέτυχε."
+    },
+    "cover_action_failed": {
+      "message": "Η αλλαγή της κατάστασης του καλύμματος απέτυχε."
     },
     "select_option_failed": {
       "message": "Ο ορισμός της επιλογής απέτυχε."

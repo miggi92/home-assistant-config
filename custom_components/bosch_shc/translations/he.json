@@ -102,7 +102,8 @@
               "scenarios_filter": "סינון לחצני תרחישים",
               "suppress_ledvance_lights": "הסתר נורות LEDVANCE מ-Bosch SHC",
               "suppress_motion_indicator_light": "הסתר נורת חיישן התנועה",
-              "suppress_camera_switches": "הסתר את לחצני המצלמה של Bosch"
+              "suppress_camera_switches": "הסתר את לחצני המצלמה של Bosch",
+              "room_light_groups": "הפעל קבוצות תאורה לפי חדר"
             },
             "data_description": {
               "scenarios_as_buttons": "כאשר מופעל: כל תרחיש Bosch SHC מופיע גם כישות כפתור ב-Home Assistant (בנוסף לשירות trigger_scenario). שימושי לאריחי לוח מחוונים ואוטומציות המפעילות תרחישים ישירות. ברירת מחדל: כבוי.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "השאר ריק ליצירת לחצנים לכל התרחישים (ברירת מחדל). בחר אחד או יותר להגבלה. רלוונטי רק כש 'חשוף תרחישים כלחצנים' מופעל.",
               "suppress_ledvance_lights": "כאשר מופעל: נורות LEDVANCE המשויכות ל-SHC לא יוצגו עוד כישויות. מנע כפילויות עם Zigbee או LEDVANCE. ברירת מחדל: מכובה.",
               "suppress_motion_indicator_light": "כאשר מופעל: ישות נורת ה-LED של חיישן התנועה II לא תיוצר. ברירת מחדל: מכובה.",
-              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה."
+              "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה.",
+              "room_light_groups": "כאשר מופעל: נוצרת ישות `light` מצטברת אחת עבור כל חדר ב-SHC שבו יש 2 מנורות הניתנות לעמעום/צבע או יותר (LEDVANCE, Hue, עמעמי Light/Shutter Control II), המאפשרת להדליק או לכבות את כל מנורות החדר מישות אחת בלבד — בדומה לשליטה ברמת החדר שכבר קיימת לחימום דרך Room Climate Control. הפעלה/כיבוי בלבד, ללא צבירת בהירות או צבע. ברירת מחדל: מכובה (לא נוצרות ישויות חדשות)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "תצוגה מקדימה של בהירות מינימלית"
+      },
+      "reset_energy_summation": {
+        "name": "איפוס מונה האנרגיה"
+      },
+      "shutter_recalibrate": {
+        "name": "כיול מחדש"
+      },
+      "enable_all_diagnostics": {
+        "name": "הפעלת כל האבחונים"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "עיכוב ההבזק"
+      },
+      "bypass_timeout": {
+        "name": "פסק זמן לעקיפה"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "מצב בדיקת גילוי"
+      },
+      "next_setpoint_temperature": {
+        "name": "טמפרטורת היעד הבאה"
+      },
+      "presence_simulation_running_end": {
+        "name": "הדמיה פועלת עד"
+      },
+      "presence_simulation_running_start": {
+        "name": "הדמיה פועלת מאז"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "זמן תנועה מכויל (מלמטה למעלה)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "זמן תנועה מכויל (מלמעלה למטה)"
+      },
+      "zigbee_routing_quality": {
+        "name": "איכות ניתוב Zigbee",
+        "state": {
+          "good": "טובה",
+          "medium": "בינונית",
+          "bad": "גרועה",
+          "no_connection": "אין חיבור",
+          "device_not_initialized": "המכשיר לא אותחל",
+          "not_supported": "לא נתמך",
+          "unknown": "לא ידוע"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "חבלה"
+      },
+      "schedule_override_active": {
+        "name": "עקיפת לוח זמנים פעילה"
+      },
+      "shutter_calibration_required": {
+        "name": "נדרש כיול"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "עקיפת אזעקה"
+      },
+      "bypass_infinite": {
+        "name": "עקיפה ללא תפוגה"
       }
     },
     "light": {
       "motion_light": {
         "name": "אור תנועה"
+      },
+      "room_light_group": {
+        "name": "אור"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "אזעקת פריצה",
       "SECONDARY_ALARM": "אזעקה משנית",
       "PRIMARY_ALARM": "אזעקה ראשית",
+      "INTRUSION_ALARM_ON_REQUESTED": "אזעקת פריצה",
+      "INTRUSION_ALARM_OFF_REQUESTED": "אזעקת הפריצה נוקתה",
       "ALARM_OFF": "אזעקה כבויה",
       "ALARM_ON": "אזעקה פעילה",
       "ALARM_MUTED": "אזעקה מושתקת"
@@ -523,6 +578,16 @@
           "description": "מחרוזת הפקודה לשליחה לגלאי העשן."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "ייצוא טופולוגיית Zigbee",
+      "description": "בונה גרף טופולוגיה של רשת Zigbee (איכות קישור לכל קפיצה) מתוך סריקת הניתוב האחרונה, וכותב אותו כ-JSON וכעמוד HTML הניתן לצפייה תחת www/bosch_shc/. מחזיר גם את הגרף כ-JSON וכטקסט תרשים Mermaid בתגובת השירות.",
+      "fields": {
+        "title": {
+          "name": "שם SHC",
+          "description": "כותרת ה-SHC. השאירו ריק כדי להשתמש ב-SHC המוגדר הראשון."
+        }
+      }
     }
   },
   "issues": {
@@ -566,11 +631,26 @@
     "switch_action_failed": {
       "message": "שינוי מצב המתג נכשל."
     },
+    "light_action_failed": {
+      "message": "שינוי מצב האור נכשל."
+    },
+    "cover_action_failed": {
+      "message": "שינוי מצב התריס נכשל."
+    },
     "select_option_failed": {
       "message": "הגדרת האפשרות נכשלה."
     },
     "number_set_failed": {
       "message": "הגדרת הערך נכשלה."
+    },
+    "zigbee_topology_no_data": {
+      "message": "אין עדיין נתוני ניתוב Zigbee זמינים עבור בקר SHC זה (לא צומדו התקני Zigbee, או שסריקת חמש הדקות הראשונה טרם הושלמה מאז הפעלת Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "לא נמצאה רשומת Bosch SHC טעונה עם כותרת זו."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "לא ניתן היה לכתוב את ייצוא טופולוגיית ה-Zigbee לתיקייה www/bosch_shc/."
     }
   }
 }

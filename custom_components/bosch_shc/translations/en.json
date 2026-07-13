@@ -102,7 +102,8 @@
               "scenarios_filter": "Scenario button filter",
               "suppress_ledvance_lights": "Suppress LEDVANCE lights from Bosch SHC",
               "suppress_motion_indicator_light": "Suppress motion detector indicator light",
-              "suppress_camera_switches": "Suppress Bosch camera switches"
+              "suppress_camera_switches": "Suppress Bosch camera switches",
+              "room_light_groups": "Enable per-room light groups"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Leave empty to create buttons for ALL scenarios (default). Select one or more to limit buttons to only those scenarios. Applies only when 'Expose scenarios as button entities' is on.",
               "suppress_ledvance_lights": "When ON: LEDVANCE lights paired to the SHC are no longer exposed as entities by this integration. Use this to avoid duplicates when the LEDVANCE or Zigbee integration is also active. Default: off.",
               "suppress_motion_indicator_light": "When ON: the indicator-LED brightness entity for Motion Detector II devices is not created. Default: off (entity is shown).",
-              "suppress_camera_switches": "When ON: privacy-mode, light, and notification switch entities for Bosch cameras (Eyes / 360 / Outdoor Gen2) are not created. Use this when the Bosch Camera Tool is also active to avoid duplicate controls. Default: off."
+              "suppress_camera_switches": "When ON: privacy-mode, light, and notification switch entities for Bosch cameras (Eyes / 360 / Outdoor Gen2) are not created. Use this when the Bosch Camera Tool is also active to avoid duplicate controls. Default: off.",
+              "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Preview Min Brightness"
+      },
+      "reset_energy_summation": {
+        "name": "Reset Energy Counter"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibrate"
+      },
+      "enable_all_diagnostics": {
+        "name": "Enable All Diagnostics"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Flash Delay"
+      },
+      "bypass_timeout": {
+        "name": "Bypass Timeout"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "Detection Test State"
+      },
+      "next_setpoint_temperature": {
+        "name": "Next Setpoint Temperature"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulation Running Since"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulation Running Until"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Reference Moving Time (Top to Bottom)"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Reference Moving Time (Bottom to Top)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Zigbee Routing Quality",
+        "state": {
+          "good": "Good",
+          "medium": "Medium",
+          "bad": "Bad",
+          "no_connection": "No Connection",
+          "device_not_initialized": "Device Not Initialized",
+          "not_supported": "Not Supported",
+          "unknown": "Unknown"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Tamper"
+      },
+      "schedule_override_active": {
+        "name": "Schedule Override Active"
+      },
+      "shutter_calibration_required": {
+        "name": "Calibration Required"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Alarm bypass"
+      },
+      "bypass_infinite": {
+        "name": "Bypass Never Expires"
       }
     },
     "light": {
       "motion_light": {
         "name": "Motion Light"
+      },
+      "room_light_group": {
+        "name": "Light"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Intrusion alarm",
       "SECONDARY_ALARM": "Secondary alarm",
       "PRIMARY_ALARM": "Primary alarm",
+      "INTRUSION_ALARM_ON_REQUESTED": "Intrusion alarm",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Intrusion alarm cleared",
       "ALARM_OFF": "Alarm off",
       "ALARM_ON": "Alarm on",
       "ALARM_MUTED": "Alarm muted"
@@ -523,6 +578,16 @@
           "description": "Command string to send to the smoke detector."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Export Zigbee Topology",
+      "description": "Builds a Zigbee mesh topology graph (per-hop link quality) from the last routing poll and writes it as JSON + a viewable HTML page under www/bosch_shc/. Also returns the graph as JSON and as Mermaid diagram text in the service response.",
+      "fields": {
+        "title": {
+          "name": "SHC name",
+          "description": "Title of the SHC. Leave empty to use the first configured SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -566,11 +631,26 @@
     "switch_action_failed": {
       "message": "Failed to change the switch state."
     },
+    "light_action_failed": {
+      "message": "Failed to change the light state."
+    },
+    "cover_action_failed": {
+      "message": "Failed to change the cover state."
+    },
     "select_option_failed": {
       "message": "Failed to set the option."
     },
     "number_set_failed": {
       "message": "Failed to set the value."
+    },
+    "zigbee_topology_no_data": {
+      "message": "No Zigbee routing data available yet for this SHC controller (no Zigbee devices paired, or the first 5-minute poll hasn't completed since Home Assistant started)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "No loaded Bosch SHC entry with that title found."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Could not write the Zigbee topology export to www/bosch_shc/."
     }
   }
 }

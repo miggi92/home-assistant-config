@@ -44,6 +44,12 @@
       },
       "preview_min_brightness": {
         "default": "mdi:brightness-2"
+      },
+      "scenario": {
+        "default": "mdi:script-text-play"
+      },
+      "enable_all_diagnostics": {
+        "default": "mdi:radar"
       }
     },
     "sensor": {
@@ -61,6 +67,9 @@
       },
       "siren_solar_charging": {
         "default": "mdi:solar-power"
+      },
+      "zigbee_routing_quality": {
+        "default": "mdi:transit-connection-variant"
       }
     },
     "switch": {

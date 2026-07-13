@@ -102,7 +102,8 @@
               "scenarios_filter": "Филтър на бутоните за сценарии",
               "suppress_ledvance_lights": "Скриване на лампи LEDVANCE от Bosch SHC",
               "suppress_motion_indicator_light": "Скриване на индикатора на датчика за движение",
-              "suppress_camera_switches": "Скриване на превключвателите на камерата Bosch"
+              "suppress_camera_switches": "Скриване на превключвателите на камерата Bosch",
+              "room_light_groups": "Активиране на групи осветление по стая"
             },
             "data_description": {
               "scenarios_as_buttons": "При ВКЛ.: всеки сценарий на Bosch SHC се появява и като ентитет-бутон в Home Assistant (допълнително към услугата trigger_scenario). Полезно за панели и автомации. По подразбиране: изкл.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Оставете празно за бутони за ВСИЧКИ сценарии (по подразбиране). Изберете един или повече, за да ограничите бутоните. Важи само когато 'Scenarios as buttons' е включено.",
               "suppress_ledvance_lights": "При ВКЛЮЧЕНО: лампите LEDVANCE, свързани с SHC, вече не се показват като обекти. Използвайте за избягване на дубликати с LEDVANCE или Zigbee. По подразбиране: изключено.",
               "suppress_motion_indicator_light": "При ВКЛЮЧЕНО: обектът на LED индикатора на датчика за движение II не се създава. По подразбиране: изключено.",
-              "suppress_camera_switches": "При ВКЛЮЧЕНО: превключвателите за поверителност, светлина и известия за камери Bosch (Eyes / 360 / Outdoor Gen2) не се създават. Използвайте с Bosch Camera Tool. По подразбиране: изключено."
+              "suppress_camera_switches": "При ВКЛЮЧЕНО: превключвателите за поверителност, светлина и известия за камери Bosch (Eyes / 360 / Outdoor Gen2) не се създават. Използвайте с Bosch Camera Tool. По подразбиране: изключено.",
+              "room_light_groups": "При ВКЛЮЧЕНО: създава по един обобщен обект `light` за всяка стая в SHC с 2 или повече димируеми/цветни лампи (LEDVANCE, Hue, димери Light/Shutter Control II), позволявайки включване/изключване на всички лампи в стаята от един обект — по аналогия с контрола на отоплението по стаи чрез Room Climate Control. Само включване/изключване, без обобщаване на яркост/цвят. По подразбиране: изключено (без нови обекти)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Преглед на минимална яркост"
+      },
+      "reset_energy_summation": {
+        "name": "Нулиране на брояча за енергия"
+      },
+      "shutter_recalibrate": {
+        "name": "Прекалибриране"
+      },
+      "enable_all_diagnostics": {
+        "name": "Активиране на всички диагностики"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Закъснение на мигането"
+      },
+      "bypass_timeout": {
+        "name": "Изчакване за заобикаляне"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "Състояние на теста за откриване"
+      },
+      "next_setpoint_temperature": {
+        "name": "Следваща зададена температура"
+      },
+      "presence_simulation_running_end": {
+        "name": "Симулацията работи до"
+      },
+      "presence_simulation_running_start": {
+        "name": "Симулацията работи от"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Референтно време на движение (отдолу нагоре)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Референтно време на движение (отгоре надолу)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Качество на Zigbee маршрутизацията",
+        "state": {
+          "good": "Добро",
+          "medium": "Средно",
+          "bad": "Лошо",
+          "no_connection": "Няма връзка",
+          "device_not_initialized": "Устройството не е инициализирано",
+          "not_supported": "Не се поддържа",
+          "unknown": "Неизвестно"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Манипулиране"
+      },
+      "schedule_override_active": {
+        "name": "Активна отмяна на графика"
+      },
+      "shutter_calibration_required": {
+        "name": "Изисква се калибриране"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Заобикаляне на алармата"
+      },
+      "bypass_infinite": {
+        "name": "Заобикалянето никога не изтича"
       }
     },
     "light": {
       "motion_light": {
         "name": "Светлина за движение"
+      },
+      "room_light_group": {
+        "name": "Светлина"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Аларма при проникване",
       "SECONDARY_ALARM": "Вторична аларма",
       "PRIMARY_ALARM": "Основна аларма",
+      "INTRUSION_ALARM_ON_REQUESTED": "Аларма при проникване",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Алармата при проникване е изчистена",
       "ALARM_OFF": "Алармата е изключена",
       "ALARM_ON": "Алармата е включена",
       "ALARM_MUTED": "Алармата е заглушена"
@@ -523,6 +578,16 @@
           "description": "Командният низ, изпращан към детектора за дим."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Експортиране на Zigbee топология",
+      "description": "Изгражда графика на Zigbee мрежовата топология (качество на връзката за всяко стъпало) от последното маршрутизиращо запитване и я записва като JSON и преглеждаема HTML страница в www/bosch_shc/. Също връща графиката като JSON и като Mermaid диаграмен текст в отговора на услугата.",
+      "fields": {
+        "title": {
+          "name": "Наименование на SHC",
+          "description": "Заглавие на SHC. Оставете празно, за да използвате първия конфигуриран SHC."
+        }
+      }
     }
   },
   "issues": {
@@ -551,6 +616,15 @@
     "rawscan_entry_not_found": {
       "message": "Не е намерен зареден запис на Bosch SHC с това заглавие."
     },
+    "zigbee_topology_no_data": {
+      "message": "Все още няма налични данни за Zigbee маршрутизацията за този SHC контролер (няма сдвоени Zigbee устройства или първото 5-минутно запитване не е завършило от стартирането на Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Не е намерен зареден запис на Bosch SHC с това заглавие."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Неуспешен запис на Zigbee топологичния експорт в www/bosch_shc/."
+    },
     "scenario_not_found": {
       "message": "Сценарият не е намерен."
     },
@@ -565,6 +639,12 @@
     },
     "switch_action_failed": {
       "message": "Промяната на състоянието на превключвателя е неуспешна."
+    },
+    "light_action_failed": {
+      "message": "Промяната на състоянието на осветлението е неуспешна."
+    },
+    "cover_action_failed": {
+      "message": "Промяната на състоянието на щорите е неуспешна."
     },
     "select_option_failed": {
       "message": "Задаването на опцията е неуспешно."

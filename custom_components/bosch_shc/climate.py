@@ -88,30 +88,10 @@ async def async_setup_entry(
 class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     """Representation of a SHC room climate control.
 
-    #334 rework: AUTOMATIC is HVACMode.AUTO so the HA thermostat card renders
-    green (not red) while the schedule is running — matching the HeatingCircuit
-    pattern.  COOL remains gated on supports_cooling (field-presence).
-    Presets are now override-only: boost (if supportsBoostMode) and eco
-    (if supports_low).  AUTO and MANUAL are expressed directly as
-    HVACMode.AUTO / HVACMode.HEAT.
-
-    hvac_mode axis:
-      summer_mode=True                              → OFF
-      supports_cooling=True + cooling_mode=True    → COOL
-      operation_mode=AUTOMATIC                      → AUTO
-      otherwise (MANUAL)                            → HEAT
-
-    preset_mode axis (override states only):
-      boost_mode=True   → "boost"   (only if supportsBoostMode)
-      low=True          → "eco"     (only if supports_low)
-      otherwise         → None / HA default
-
-    hvac_modes exposed:
-      [AUTO, HEAT, (COOL if supports_cooling), OFF]
-
-    preset_modes exposed:
-      [boost] if supports_boost_mode, [eco] if supports_low.
-      If none, PRESET_MODE feature is not advertised.
+    hvac_mode: OFF if summer_mode; COOL if supports_cooling+cooling_mode;
+    AUTO if operation_mode==AUTOMATIC; otherwise HEAT (MANUAL). preset_mode
+    is override-only ("boost" if supportsBoostMode, "eco" if supports_low);
+    COOL/boost/eco are only advertised when the device reports that flag.
     """
 
     _attr_target_temperature_step = 0.5
@@ -126,11 +106,14 @@ class ClimateControl(SHCEntity, ClimateEntity):  # type: ignore[misc]
     ) -> None:
         """Initialize the SHC device."""
         super().__init__(device=device, entry_id=entry_id)
-        # Device name = room name (e.g. "Arbeitszimmer").
-        # Entity name comes from translation_key "room_climate_control" in strings.json
-        # (e.g. "Raumklima" / "Room climate control"), so the friendly name is
-        # "<room> Raumklima" — no doubling. _attr_name = None lets HA resolve
-        # the name from the translation_key.
+        # Device name = room name (e.g. "Arbeitszimmer"); _attr_name = None
+        # means the entity's friendly name IS the bare room name, no suffix
+        # (HA's Entity._name_internal returns _attr_name before ever
+        # consulting translation_key, once _attr_name is set at all -- even
+        # to None). translation_key stays set below purely to resolve the
+        # boost/eco preset_mode state + icon translations in
+        # strings.json/icons.json, which is a separate lookup unaffected by
+        # _attr_name.
         self._room_label = name
         self._attr_name = None
         self._attr_unique_id = f"{device.root_device_id}_{device.id}"
@@ -498,10 +481,24 @@ class HeatingCircuit(SHCEntity, ClimateEntity):  # type: ignore[misc]
     _attr_target_temperature_step = 0.5
     _enable_turn_on_off_backwards_compatibility = False
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
-    _attr_max_temp = 30.0
-    _attr_min_temp = 5.0
     _attr_hvac_modes = [HVACMode.AUTO, HVACMode.HEAT]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+
+    # hass#120 audit: the app reads a per-device setpoint range
+    # (HeatingCircuitVerticalSliderFragment.setMinMax) rather than a fixed
+    # constant — a floor-heating circuit commonly reports a raised minimum.
+    # Fall back to the previous 5-30°C constant until the SHC has reported it.
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum settable temperature."""
+        rng = getattr(self._device, "setpoint_temperature_range", None)
+        return rng[0] if rng is not None else 5.0
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum settable temperature."""
+        rng = getattr(self._device, "setpoint_temperature_range", None)
+        return rng[1] if rng is not None else 30.0
 
     def __init__(
         self,

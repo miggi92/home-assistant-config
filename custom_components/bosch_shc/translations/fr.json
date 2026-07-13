@@ -102,7 +102,8 @@
               "scenarios_filter": "Filtre des boutons de scénario",
               "suppress_ledvance_lights": "Supprimer les lumières LEDVANCE du Bosch SHC",
               "suppress_motion_indicator_light": "Supprimer le voyant du détecteur de mouvement",
-              "suppress_camera_switches": "Supprimer les interrupteurs de caméra Bosch"
+              "suppress_camera_switches": "Supprimer les interrupteurs de caméra Bosch",
+              "room_light_groups": "Activer les groupes de lumières par pièce"
             },
             "data_description": {
               "scenarios_as_buttons": "Quand ACTIVÉ : chaque scénario Bosch SHC apparaît également comme entité bouton dans Home Assistant (en plus du service `trigger_scenario`). Utile pour les tuiles de tableau de bord et les automatisations qui déclenchent des scénarios directement. Par défaut : désactivé.",
@@ -115,7 +116,8 @@
               "scenarios_filter": "Laissez vide pour des boutons pour TOUS les scénarios (défaut). Sélectionnez-en un ou plusieurs pour restreindre les boutons. S'applique uniquement quand 'Exposer les scénarios comme boutons' est activé.",
               "suppress_ledvance_lights": "Quand ACTIVÉ : les lumières LEDVANCE couplées au SHC ne sont plus exposées comme entités. Utilisez cela pour éviter les doublons avec l'intégration LEDVANCE ou Zigbee. Par défaut : désactivé.",
               "suppress_motion_indicator_light": "Quand ACTIVÉ : l'entité de luminosité de la LED indicatrice des détecteurs de mouvement II n'est pas créée. Par défaut : désactivé.",
-              "suppress_camera_switches": "Quand ACTIVÉ : les interrupteurs de confidentialité, lumière et notification pour les caméras Bosch (Eyes / 360 / Outdoor Gen2) ne sont pas créés. Utilisez cela avec Bosch Camera Tool. Par défaut : désactivé."
+              "suppress_camera_switches": "Quand ACTIVÉ : les interrupteurs de confidentialité, lumière et notification pour les caméras Bosch (Eyes / 360 / Outdoor Gen2) ne sont pas créés. Utilisez cela avec Bosch Camera Tool. Par défaut : désactivé.",
+              "room_light_groups": "Quand ACTIVÉ : crée une entité `light` agrégée par pièce SHC comptant 2 lumières variables/couleur ou plus (LEDVANCE, Hue, variateurs Light/Shutter Control II), permettant d'allumer ou d'éteindre toutes les lumières d'une pièce depuis une seule entité — à l'image du contrôle par pièce déjà disponible pour le chauffage via Room Climate Control. Allumage/extinction uniquement, pas d'agrégation de luminosité ni de couleur. Par défaut : désactivé (aucune nouvelle entité)."
             }
           },
           "presence": {
@@ -199,6 +201,15 @@
       },
       "preview_min_brightness": {
         "name": "Prévisualiser la luminosité minimale"
+      },
+      "reset_energy_summation": {
+        "name": "Réinitialiser le compteur d'énergie"
+      },
+      "shutter_recalibrate": {
+        "name": "Recalibrer"
+      },
+      "enable_all_diagnostics": {
+        "name": "Activer tous les diagnostics"
       }
     },
     "number": {
@@ -231,6 +242,9 @@
       },
       "siren_flash_delay": {
         "name": "Délai du flash"
+      },
+      "bypass_timeout": {
+        "name": "Délai de contournement"
       }
     },
     "select": {
@@ -380,6 +394,33 @@
       },
       "detection_test_state": {
         "name": "État du test de détection"
+      },
+      "next_setpoint_temperature": {
+        "name": "Prochaine température de consigne"
+      },
+      "presence_simulation_running_end": {
+        "name": "Simulation en cours jusqu'à"
+      },
+      "presence_simulation_running_start": {
+        "name": "Simulation en cours depuis"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Temps de déplacement de référence (bas vers haut)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Temps de déplacement de référence (haut vers bas)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Qualité de routage Zigbee",
+        "state": {
+          "good": "Bonne",
+          "medium": "Moyenne",
+          "bad": "Mauvaise",
+          "no_connection": "Aucune connexion",
+          "device_not_initialized": "Appareil non initialisé",
+          "not_supported": "Non pris en charge",
+          "unknown": "Inconnue"
+        }
       }
     },
     "binary_sensor": {
@@ -418,6 +459,12 @@
       },
       "tamper": {
         "name": "Sabotage"
+      },
+      "schedule_override_active": {
+        "name": "Dérogation de programme active"
+      },
+      "shutter_calibration_required": {
+        "name": "Étalonnage requis"
       }
     },
     "update": {
@@ -431,11 +478,17 @@
     "switch": {
       "bypass": {
         "name": "Contournement d'alarme"
+      },
+      "bypass_infinite": {
+        "name": "Contournement permanent"
       }
     },
     "light": {
       "motion_light": {
         "name": "Éclairage à détection de mouvement"
+      },
+      "room_light_group": {
+        "name": "Éclairage"
       }
     }
   },
@@ -451,6 +504,8 @@
       "INTRUSION_ALARM": "Alarme d'intrusion",
       "SECONDARY_ALARM": "Alarme secondaire",
       "PRIMARY_ALARM": "Alarme principale",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarme d'intrusion",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarme d'intrusion effacée",
       "ALARM_OFF": "Alarme désactivée",
       "ALARM_ON": "Alarme activée",
       "ALARM_MUTED": "Alarme mise en sourdine"
@@ -523,6 +578,16 @@
           "description": "Chaîne de commande à envoyer au détecteur de fumée."
         }
       }
+    },
+    "export_zigbee_topology": {
+      "name": "Exporter la topologie Zigbee",
+      "description": "Construit un graphe de topologie du maillage Zigbee (qualité de liaison par saut) à partir du dernier relevé de routage et l'écrit au format JSON ainsi que sous forme de page HTML consultable dans www/bosch_shc/. Renvoie également le graphe au format JSON et sous forme de diagramme Mermaid dans la réponse du service.",
+      "fields": {
+        "title": {
+          "name": "Nom du SHC",
+          "description": "Titre du SHC. Laisser vide pour utiliser le premier SHC configuré."
+        }
+      }
     }
   },
   "issues": {
@@ -566,11 +631,26 @@
     "switch_action_failed": {
       "message": "Échec du changement d'état de l'interrupteur."
     },
+    "light_action_failed": {
+      "message": "Échec du changement d'état de la lumière."
+    },
+    "cover_action_failed": {
+      "message": "Échec du changement d'état du volet."
+    },
     "select_option_failed": {
       "message": "Échec de la définition de l'option."
     },
     "number_set_failed": {
       "message": "Échec de la définition de la valeur."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Aucune donnée de routage Zigbee n'est encore disponible pour ce contrôleur SHC (aucun appareil Zigbee appairé, ou le premier relevé de 5 minutes n'est pas encore terminé depuis le démarrage de Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Aucune entrée Bosch SHC chargée avec ce titre n'a été trouvée."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Impossible d'écrire l'export de la topologie Zigbee dans www/bosch_shc/."
     }
   }
 }

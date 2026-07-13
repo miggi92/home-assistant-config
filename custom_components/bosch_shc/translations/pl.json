@@ -1,0 +1,656 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Urządzenie jest już skonfigurowane",
+      "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
+      "reconfigure_successful": "Ponowna konfiguracja powiodła się",
+      "wrong_shc": "Podany host należy do innego kontrolera Bosch SHC. Wprowadź właściwy host dla tego wpisu."
+    },
+    "error": {
+      "cannot_connect": "Nie można nawiązać połączenia",
+      "invalid_auth": "Niepoprawne uwierzytelnienie",
+      "pairing_failed": "Parowanie nie powiodło się. Sprawdź, czy kontroler Bosch Smart Home jest w trybie parowania (miga dioda LED) i czy Twoje hasło jest prawidłowe.",
+      "session_error": "Błąd sesji: API zwróciło niepoprawny wynik.",
+      "unknown": "Nieoczekiwany błąd"
+    },
+    "flow_title": "Bosch SHC: {name}",
+    "step": {
+      "confirm_discovery": {
+        "description": "Smart Home Controller I: Naciśnij przycisk z przodu kontrolera, aż dioda LED zacznie migać.\nSmart Home Controller II: Krótko naciśnij przycisk funkcyjny. Wskaźniki chmury i sieci zaczną migać na pomarańczowo.\nUrządzenie jest gotowe do sparowania.\n\nCzy chcesz kontynuować konfigurację {model} @ {host} w Home Assistant?"
+      },
+      "credentials": {
+        "data": {
+          "name": "Nazwa klienta dla certyfikatu",
+          "password": "Hasło kontrolera Smart Home"
+        },
+        "data_description": {
+          "name": "Nazwa wyświetlana w aplikacji SHC pod podłączonymi klientami.",
+          "password": "Hasło ustawione w aplikacji Bosch Smart Home."
+        }
+      },
+      "reauth_confirm": {
+        "description": "Integracja Bosch SHC wymaga ponownego uwierzytelnienia Twojego konta.",
+        "title": "Ponownie uwierzytelnij integrację",
+        "data": {
+          "host": "Nazwa hosta lub adres IP"
+        },
+        "data_description": {
+          "host": "Adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        }
+      },
+      "reconfigure": {
+        "title": "Skonfiguruj ponownie Bosch SHC",
+        "description": "Zaktualizuj adres IP lub nazwę hosta kontrolera Bosch Smart Home. Certyfikaty i dane logowania zostaną zachowane.",
+        "menu_options": {
+          "reconfigure_host": "Zmień tylko hosta / adres IP",
+          "repair_credentials": "Sparuj ponownie (wygeneruj nowy certyfikat klienta)"
+        }
+      },
+      "reconfigure_host": {
+        "title": "Zmień hosta / adres IP",
+        "description": "Zaktualizuj adres IP lub nazwę hosta Bosch Smart Home Controller. Twoje certyfikaty i dane uwierzytelniające zostaną zachowane.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "Nowy adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        }
+      },
+      "repair_credentials": {
+        "title": "Ponowne parowanie — generowanie nowego certyfikatu klienta",
+        "description": "Naciśnij przycisk parowania na SHC (SHC I: przedni przycisk, przytrzymaj aż LED zacznie migać; SHC II: krótkie naciśnięcie przycisku funkcyjnego), a następnie wypełnij poniższy formularz.",
+        "data": {
+          "host": "Host",
+          "password": "Hasło Smart Home Controller",
+          "name": "Nazwa klienta dla certyfikatu"
+        },
+        "data_description": {
+          "host": "Adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y).",
+          "password": "Hasło ustawione w aplikacji Bosch Smart Home.",
+          "name": "Nazwa wyświetlana w aplikacji SHC w sekcji połączonych klientów."
+        }
+      },
+      "user": {
+        "data": {
+          "host": "Nazwa hosta lub adres IP"
+        },
+        "data_description": {
+          "host": "Adres IP lub nazwa hosta kontrolera SHC (np. 192.168.x.y)."
+        },
+        "description": "Skonfiguruj kontroler Bosch Smart Home, aby umożliwić monitorowanie i sterowanie za pomocą Home Assistant.",
+        "title": "Parametry uwierzytelniania SHC"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bosch SHC — Ustawienia",
+        "description": "Skonfiguruj, jakie encje i automatyzacje integracja Bosch Smart Home Controller tworzy i zarządza.{camera_tool}",
+        "sections": {
+          "features": {
+            "name": "Funkcje",
+            "description": "Włącz lub wyłącz typy encji tworzonych przez integrację.",
+            "data": {
+              "scenarios_as_buttons": "Udostępnij scenariusze jako encje przycisków",
+              "diagnostic_entities": "Utwórz czujniki diagnostyczne",
+              "enable_rawscan_service": "Włącz diagnostyczną usługę rawscan",
+              "all_light_switches_as_light": "Udostępnij WSZYSTKIE Light/Shutter Control II jako światła",
+              "light_switches_as_light": "Eksponuj Light/Shutter Control II jako światła",
+              "suppress_hue_lights": "Ukryj lampki Hue z Bosch SHC",
+              "suppress_power_sensors": "Ukryj czujniki mocy i energii",
+              "scenarios_filter": "Filtr przycisków scenariuszy",
+              "suppress_ledvance_lights": "Ukryj lampki LEDVANCE z Bosch SHC",
+              "suppress_motion_indicator_light": "Ukryj wskaźnik LED czujnika ruchu",
+              "suppress_camera_switches": "Ukryj przełączniki kamery Bosch",
+              "room_light_groups": "Włącz grupy świateł dla poszczególnych pomieszczeń"
+            },
+            "data_description": {
+              "scenarios_as_buttons": "Gdy WŁĄCZONE: każdy scenariusz Bosch SHC pojawia się również jako encja przycisku w Home Assistant (oprócz usługi `trigger_scenario`). Przydatne do kafelków pulpitu nawigacyjnego i automatyzacji wyzwalających scenariusze bezpośrednio. Domyślnie: wyłączone.",
+              "diagnostic_entities": "Gdy WŁĄCZONE (domyślnie): encje czujników diagnostycznych są tworzone dla każdego obsługiwanego urządzenia — pozycja zaworu (termostaty) i jakość komunikacji (inteligentne wtyczki). Wyłącz, aby zmniejszyć liczbę encji, jeśli nie potrzebujesz tych czujników.",
+              "enable_rawscan_service": "Gdy WŁĄCZONE: rejestruje usługę bosch_shc.trigger_rawscan do debugowania surowego API. Wyłącz, aby ją ukryć. Domyślnie: włączone.",
+              "all_light_switches_as_light": "Włącz, aby wszystkie urządzenia Light Control II / podtynkowe przełączniki światła były jednocześnie przedstawiane jako encja `light` — zastępuje wybór dla poszczególnych urządzeń poniżej. Wyłączone (domyślnie) zachowuje wybór dla każdego urządzenia z osobna. Ta sama uwaga: powoduje to zmianę domeny encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj automatyzacje i pulpity nawigacyjne odwołujące się do starych encji.",
+              "light_switches_as_light": "Wybierz urządzenia Light Control II / podtynkowy włącznik światła, które mają być wyświetlane jako encje `light` zamiast encji `switch`. Przełącznik każdego wybranego urządzenia zostaje zastąpiony światłem włącz/wyłącz. Pozostaw puste (domyślnie), aby zachować je jako switches. Zmiana ta zamienia domenę encji (`switch.*` ↔ `light.*`), dlatego zaktualizuj wszelkie automatyzacje lub panele sterowania odwołujące się do starej encji.",
+              "suppress_hue_lights": "Gdy WŁĄCZONE: lampki Hue powiązane z SHC nie są wyświetlane jako encje. Użyj, aby uniknąć duplikatów z integracją Hue. Domyślnie: wyłączone.",
+              "suppress_power_sensors": "Gdy WŁĄCZONE: czujniki mocy i energii (W / kWh) nie są tworzone dla inteligentnych wtyczek, przełączników BSM, mikromodulów i menedżera EMMA. Domyślnie: wyłączone.",
+              "scenarios_filter": "Zostaw puste, aby utworzyć przyciski dla WSZYSTKICH scenariuszy (domyślnie). Wybierz jeden lub więcej, aby ograniczyć przyciski. Dotyczy tylko, gdy włączono 'Eksponuj scenariusze jako przyciski'.",
+              "suppress_ledvance_lights": "Gdy WŁĄCZONE: lampki LEDVANCE powiązane z SHC nie są wyświetlane jako encje. Użyj, aby uniknąć duplikatów z integracją LEDVANCE lub Zigbee. Domyślnie: wyłączone.",
+              "suppress_motion_indicator_light": "Gdy WŁĄCZONE: encja jasności diody LED czujnika ruchu II nie jest tworzona. Domyślnie: wyłączone.",
+              "suppress_camera_switches": "Gdy WŁĄCZONE: przełączniki trybu prywatności, świateł i powiadomień dla kamer Bosch (Eyes / 360 / Outdoor Gen2) nie są tworzone. Użyj z Bosch Camera Tool. Domyślnie: wyłączone.",
+              "room_light_groups": "Gdy WŁĄCZONE: dla każdego pomieszczenia SHC z 2 lub więcej ściemnialnymi/kolorowymi lampkami (LEDVANCE, Hue, ściemniacze Light/Shutter Control II) tworzona jest jedna zbiorcza encja `light`, dzięki której można włączyć/wyłączyć wszystkie lampki w pomieszczeniu za pomocą jednej encji — podobnie jak ogrzewanie ma już sterowanie na poziomie pomieszczenia dzięki funkcji Sterowanie klimatem pokoju. Tylko włącz/wyłącz, bez agregacji jasności/koloru. Domyślnie: wyłączone (brak nowych encji)."
+            }
+          },
+          "presence": {
+            "name": "Blokada rodzicielska oparta na obecności",
+            "description": "Automatycznie blokuj wszystkie termostaty i przełączniki SHC, gdy ktoś jest w domu, i odblokowuj, gdy wszyscy wyjdą.",
+            "data": {
+              "child_lock_enabled": "Włącz blokadę rodzicielską opartą na obecności",
+              "child_lock_presence_entity": "Encje obecności",
+              "silent_mode_enabled": "Włącz tryb cichy zależny od obecności i okna czasowego",
+              "silent_mode_start": "Godzina rozpoczęcia trybu cichego",
+              "silent_mode_end": "Godzina zakończenia trybu cichego"
+            },
+            "data_description": {
+              "child_lock_enabled": "Przełącznik główny. Gdy WŁĄCZONA, blokada rodzicielska na wszystkich termostatach i przełącznikach SHC podąża za poniższymi encjami obecności — zablokowane gdy ktoś jest w domu, odblokowane gdy wszyscy wyszli. Gdy WYŁĄCZONA, integracja nigdy nie dotyka blokady rodzicielskiej.",
+              "child_lock_presence_entity": "Osoby/urządzenia decydujące o blokadzie rodzicielskiej. Włącza się, gdy tylko KTÓRAKOLWIEK z nich jest w domu, i wyłącza się dopiero, gdy WSZYSTKIE wyjdą. Wybierz np. encje Person członków gospodarstwa domowego. 'W domu' jest wykrywane automatycznie (home dla person/device_tracker/zone/group, on dla binary_sensor/input_boolean).",
+              "silent_mode_enabled": "Gdy WŁĄCZONE, każdy termostat SHC obsługujący tryb cichy zostaje w nim przełączony, gdy ktoś (zgodnie z powyższymi encjami obecności) jest w domu ORAZ bieżący czas mieści się w poniższym oknie; w przeciwnym razie powraca do trybu normalnego. Domyślnie: wyłączone.",
+              "silent_mode_start": "Początek dziennego okna trybu cichego (czas lokalny). Okno może przekraczać północ (np. 22:00 → 06:00).",
+              "silent_mode_end": "Koniec dziennego okna trybu cichego (czas lokalny)."
+            }
+          },
+          "advanced": {
+            "name": "Zaawansowane",
+            "description": "Parametry połączenia niskiego poziomu. Ich zmiana rzadko pomaga — zapoznaj się z dokumentacją przed modyfikacją.",
+            "data": {
+              "ssl_verify_hostname": "Weryfikuj nazwę hosta SSL",
+              "long_poll_timeout": "Limit czasu długiego odpytywania (sekundy)",
+              "excluded_devices": "Wykluczone urządzenia",
+              "excluded_rooms": "Wykluczone pomieszczenia",
+              "ssl_skip_verify": "Pomiń weryfikację certyfikatu SHC"
+            },
+            "data_description": {
+              "ssl_verify_hostname": "Gdy WŁĄCZONE: biblioteka boschshcpy sprawdza, czy nazwa hosta certyfikatu SSL kontrolera SHC odpowiada jego adresowi IP/nazwie hosta. Obecnie nie ma żadnego efektu — wymagana jest przyszła aktualizacja boschshcpy. Domyślnie: wyłączone.",
+              "long_poll_timeout": "Jak długo (w sekundach) żądanie długiego odpytywania do kontrolera SHC czeka na zdarzenia push przed ponownym połączeniem. Zakres: 5–300. Domyślnie: 30. Zwiększ, jeśli widzisz częste ponowne połączenia w wolnej sieci; zmniejsz, jeśli router rozłącza bezczynne połączenia. Wymaga przyszłej aktualizacji boschshcpy.",
+              "excluded_devices": "Urządzenia do ukrycia — nie są dla nich tworzone żadne encje. Pozostaw puste, aby uwzględnić wszystkie. Istniejące encje nowo wykluczonych urządzeń pozostają do czasu ich ręcznego usunięcia.",
+              "excluded_rooms": "Ukryj wszystkie urządzenia w tych pomieszczeniach Bosch. Pozostaw puste, aby uwzględnić wszystkie.",
+              "ssl_skip_verify": "Dla ekspertów / sieci wyłącznie lokalnych LAN: gdy WŁĄCZONE, certyfikat serwera SHC nie jest już weryfikowany — przydatne, gdy certyfikat kontrolera offline wygasł. Szyfrowane logowanie za pomocą certyfikatu klienta pozostaje niezmienione. Włączaj tylko w zaufanej sieci lokalnej. Domyślnie: wyłączone."
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "room_climate_control": {
+        "name": "Sterowanie klimatem pokoju",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "boost": "Boost",
+              "eco": "Eco"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "smoke_test": {
+        "name": "Test dymu"
+      },
+      "walk_test": {
+        "name": "Test ruchu"
+      },
+      "walk_test_stop": {
+        "name": "Zatrzymaj test ruchu"
+      },
+      "detection_test": {
+        "name": "Test wykrywania"
+      },
+      "detection_test_stop": {
+        "name": "Zatrzymaj test wykrywania"
+      },
+      "reset_tamper": {
+        "name": "Resetuj sabotaż"
+      },
+      "siren_test_alarm": {
+        "name": "Alarm testowy"
+      },
+      "preview_max_brightness": {
+        "name": "Podgląd maksymalnej jasności"
+      },
+      "preview_min_brightness": {
+        "name": "Podgląd minimalnej jasności"
+      },
+      "reset_energy_summation": {
+        "name": "Resetuj licznik energii"
+      },
+      "shutter_recalibrate": {
+        "name": "Kalibruj ponownie"
+      },
+      "enable_all_diagnostics": {
+        "name": "Włącz wszystkie diagnostyki"
+      }
+    },
+    "number": {
+      "impulse_length": {
+        "name": "Długość impulsu"
+      },
+      "energy_saving_power_threshold": {
+        "name": "Próg mocy trybu oszczędzania energii"
+      },
+      "energy_saving_enter_duration": {
+        "name": "Czas wejścia w tryb oszczędzania energii"
+      },
+      "led_brightness": {
+        "name": "Jasność LED"
+      },
+      "display_brightness": {
+        "name": "Jasność wyświetlacza"
+      },
+      "display_on_time": {
+        "name": "Czas włączenia wyświetlacza"
+      },
+      "siren_alarm_duration": {
+        "name": "Czas trwania alarmu"
+      },
+      "siren_flash_duration": {
+        "name": "Czas trwania błysku"
+      },
+      "siren_alarm_delay": {
+        "name": "Opóźnienie alarmu"
+      },
+      "siren_flash_delay": {
+        "name": "Opóźnienie błysku"
+      },
+      "bypass_timeout": {
+        "name": "Limit czasu pominięcia"
+      }
+    },
+    "select": {
+      "motion_sensitivity": {
+        "name": "Czułość na ruch"
+      },
+      "vibration_sensitivity": {
+        "name": "Czułość na wibracje"
+      },
+      "state_after_power_outage": {
+        "name": "Stan po zaniku zasilania"
+      },
+      "smoke_sensitivity": {
+        "name": "Czułość na dym"
+      },
+      "display_direction": {
+        "name": "Orientacja wyświetlacza"
+      },
+      "displayed_temperature": {
+        "name": "Wyświetlana temperatura"
+      },
+      "terminal_type": {
+        "name": "Typ zacisku"
+      },
+      "valve_type": {
+        "name": "Typ zaworu"
+      },
+      "heater_type": {
+        "name": "Typ ogrzewania"
+      },
+      "switch_type": {
+        "name": "Typ przełącznika"
+      },
+      "actuator_type": {
+        "name": "Typ siłownika"
+      },
+      "output_mode": {
+        "name": "Tryb wyjścia"
+      },
+      "siren_sound_level": {
+        "name": "Poziom dźwięku",
+        "state": {
+          "low": "Niski",
+          "medium": "Średni",
+          "high": "Wysoki"
+        }
+      },
+      "orientation_light_response_time": {
+        "name": "Czas reakcji światła orientacyjnego"
+      },
+      "smart_sensitivity_security_level": {
+        "name": "Poziom bezpieczeństwa czułości inteligentnej"
+      },
+      "smart_sensitivity_comfort_level": {
+        "name": "Poziom komfortu czułości inteligentnej"
+      },
+      "dimmer_phase_control": {
+        "name": "Sterowanie fazą ściemniacza"
+      },
+      "installation_profile": {
+        "name": "Profil instalacji",
+        "state": {
+          "generic": "Wewnętrzny (ogólny)",
+          "outdoor": "Zewnętrzny",
+          "light": "Światło",
+          "heating_rcc": "Ogrzewanie (RCC)",
+          "boiler": "Bojler",
+          "mini_pv": "Mini fotowoltaika"
+        }
+      }
+    },
+    "sensor": {
+      "walk_test_state": {
+        "name": "Stan testu ruchu"
+      },
+      "battery_level": {
+        "name": "Poziom naładowania baterii"
+      },
+      "combined_rating": {
+        "name": "Ocena łączna"
+      },
+      "air_quality_description": {
+        "name": "Opis jakości powietrza"
+      },
+      "communication_quality": {
+        "name": "Jakość komunikacji",
+        "state": {
+          "good": "Dobra",
+          "normal": "Normalna",
+          "not_supported": "Nieobsługiwane",
+          "bad": "Zła",
+          "unknown": "Nieznana",
+          "fetching": "Pobieranie"
+        }
+      },
+      "siren_battery": {
+        "name": "Bateria"
+      },
+      "siren_main_power": {
+        "name": "Źródło zasilania",
+        "state": {
+          "battery": "Bateria",
+          "solar": "Słoneczne",
+          "v12": "12 V",
+          "v230": "230 V",
+          "unknown": "Nieznane"
+        }
+      },
+      "siren_solar_charging": {
+        "name": "Ładowanie solarne",
+        "state": {
+          "bad": "Słabe",
+          "medium": "Średnie",
+          "good": "Dobre",
+          "unknown": "Nieznane"
+        }
+      },
+      "keypad_trigger": {
+        "name": "Przypisanie przycisków"
+      },
+      "floor_temperature": {
+        "name": "Temperatura podłogi"
+      },
+      "purity": {
+        "name": "Czystość"
+      },
+      "air_quality": {
+        "name": "Jakość powietrza"
+      },
+      "temperature_rating": {
+        "name": "Ocena temperatury"
+      },
+      "humidity_rating": {
+        "name": "Ocena wilgotności"
+      },
+      "purity_rating": {
+        "name": "Ocena czystości"
+      },
+      "energy_yield": {
+        "name": "Uzysk energii"
+      },
+      "power_yield": {
+        "name": "Moc wyjściowa"
+      },
+      "valve_tappet": {
+        "name": "Popychacz zaworu"
+      },
+      "detection_test_state": {
+        "name": "Stan testu wykrywania"
+      },
+      "next_setpoint_temperature": {
+        "name": "Następna temperatura zadana"
+      },
+      "presence_simulation_running_end": {
+        "name": "Symulacja aktywna do"
+      },
+      "presence_simulation_running_start": {
+        "name": "Symulacja aktywna od"
+      },
+      "reference_moving_time_bottom_to_top": {
+        "name": "Referencyjny czas ruchu (z dołu do góry)"
+      },
+      "reference_moving_time_top_to_bottom": {
+        "name": "Referencyjny czas ruchu (z góry do dołu)"
+      },
+      "zigbee_routing_quality": {
+        "name": "Jakość routingu Zigbee",
+        "state": {
+          "good": "Dobra",
+          "medium": "Średnia",
+          "bad": "Zła",
+          "no_connection": "Brak połączenia",
+          "device_not_initialized": "Urządzenie niezainicjowane",
+          "not_supported": "Nieobsługiwane",
+          "unknown": "Nieznana"
+        }
+      }
+    },
+    "binary_sensor": {
+      "siren_acoustic_alarm": {
+        "name": "Alarm akustyczny"
+      },
+      "siren_visual_alarm": {
+        "name": "Alarm wizualny"
+      },
+      "siren_tamper": {
+        "name": "Ingerencja"
+      },
+      "siren_ac_dc_error": {
+        "name": "Błąd AC/DC"
+      },
+      "siren_battery_defect": {
+        "name": "Uszkodzenie baterii"
+      },
+      "siren_battery_temperature_abnormal": {
+        "name": "Nieprawidłowa temperatura baterii"
+      },
+      "siren_primary_power_supply_outage": {
+        "name": "Zanik zasilania"
+      },
+      "call_for_heat": {
+        "name": "Zapotrzebowanie na ciepło"
+      },
+      "vibration": {
+        "name": "Wibracje"
+      },
+      "smoke": {
+        "name": "Dym"
+      },
+      "occupancy": {
+        "name": "Obecność"
+      },
+      "tamper": {
+        "name": "Sabotaż"
+      },
+      "schedule_override_active": {
+        "name": "Nadpisanie harmonogramu aktywne"
+      },
+      "shutter_calibration_required": {
+        "name": "Wymagana kalibracja"
+      }
+    },
+    "update": {
+      "controller_update": {
+        "name": "Aktualizacja oprogramowania"
+      },
+      "device_firmware": {
+        "name": "Oprogramowanie układowe"
+      }
+    },
+    "switch": {
+      "bypass": {
+        "name": "Pominięcie alarmu"
+      },
+      "bypass_infinite": {
+        "name": "Pominięcie nigdy nie wygasa"
+      }
+    },
+    "light": {
+      "motion_light": {
+        "name": "Lampka ruchu"
+      },
+      "room_light_group": {
+        "name": "Lampka"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_subtype": {
+      "LOWER_BUTTON": "Dolny przycisk",
+      "UPPER_BUTTON": "Górny przycisk",
+      "LOWER_LEFT_BUTTON": "Dolny lewy przycisk",
+      "UPPER_LEFT_BUTTON": "Górny lewy przycisk",
+      "LOWER_RIGHT_BUTTON": "Dolny prawy przycisk",
+      "UPPER_RIGHT_BUTTON": "Górny prawy przycisk",
+      "IDLE_OFF": "Alarm wyłączony",
+      "INTRUSION_ALARM": "Alarm włamania",
+      "SECONDARY_ALARM": "Alarm pomocniczy",
+      "PRIMARY_ALARM": "Alarm główny",
+      "INTRUSION_ALARM_ON_REQUESTED": "Alarm włamania",
+      "INTRUSION_ALARM_OFF_REQUESTED": "Alarm włamania wyczyszczony",
+      "ALARM_OFF": "Alarm wyłączony",
+      "ALARM_ON": "Alarm włączony",
+      "ALARM_MUTED": "Alarm wyciszony"
+    },
+    "trigger_type": {
+      "PRESS_SHORT": "{subtype} krótkie naciśnięcie",
+      "PRESS_LONG": "{subtype} długie naciśnięcie",
+      "MOTION": "Wykryto ruch",
+      "SCENARIO": "Scenariusz {subtype} uruchomiony",
+      "ALARM": "{subtype} uruchomiony"
+    }
+  },
+  "services": {
+    "smokedetector_check": {
+      "name": "Test czujnika dymu",
+      "description": "Uruchamia procedurę testową czujnika dymu.",
+      "fields": {
+        "entity_id": {
+          "name": "ID encji",
+          "description": "Nazwa encji czujnika dymu."
+        }
+      }
+    },
+    "trigger_scenario": {
+      "name": "Uruchom scenariusz",
+      "description": "Uruchamia scenariusz na Bosch SHC.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC"
+        },
+        "name": {
+          "name": "Nazwa scenariusza",
+          "description": "Nazwa scenariusza do uruchomienia"
+        }
+      }
+    },
+    "trigger_rawscan": {
+      "name": "Uruchom rawscan",
+      "description": "Uruchamia rawscan na Bosch SHC w celu odkrycia urządzeń. Wynik jest przesyłany do rejestratora informacji.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC"
+        },
+        "command": {
+          "name": "Polecenie rawscan",
+          "description": "Możliwe polecenia: 'devices', 'device', 'services', 'device_services', 'device_service', 'rooms', 'scenarios', 'info', 'information', 'public_information', 'intrusion_detection'"
+        },
+        "device_id": {
+          "name": "ID urządzenia",
+          "description": "ID urządzenia dla poleceń 'device', 'device_services' lub 'device_service'"
+        },
+        "service_id": {
+          "name": "ID usługi",
+          "description": "ID usługi dla polecenia 'device_service'"
+        }
+      }
+    },
+    "smokedetector_alarmstate": {
+      "name": "Stan alarmu czujnika dymu",
+      "description": "Wysyła niestandardowe polecenie do czujnika dymu.",
+      "fields": {
+        "entity_id": {
+          "name": "ID encji",
+          "description": "Nazwa encji czujnika dymu."
+        },
+        "command": {
+          "name": "Niestandardowe polecenie",
+          "description": "Ciąg polecenia do wysłania do czujnika dymu."
+        }
+      }
+    },
+    "export_zigbee_topology": {
+      "name": "Eksportuj topologię Zigbee",
+      "description": "Buduje graf topologii sieci mesh Zigbee (jakość łącza dla każdego przeskoku) na podstawie ostatniego odpytania routingu i zapisuje go jako JSON oraz stronę HTML do podglądu w www/bosch_shc/. Zwraca również graf jako JSON oraz jako tekst diagramu Mermaid w odpowiedzi usługi.",
+      "fields": {
+        "title": {
+          "name": "Nazwa SHC",
+          "description": "Tytuł SHC. Pozostaw puste, aby użyć pierwszego skonfigurowanego SHC."
+        }
+      }
+    }
+  },
+  "issues": {
+    "camera_tool_available": {
+      "title": "Więcej dla kamer Bosch",
+      "description": "Wykryto kamery Bosch. Ta integracja obsługuje podstawowe funkcje; dedykowane **Bosch Smart Home Camera Tool** oferuje znacznie więcej (zrzuty ekranu, powiadomienia o ruchu / FCM, światła, strumienie). Otwórz „Dowiedz się więcej”, aby poznać projekt, a następnie odrzuć to powiadomienie."
+    },
+    "cert_expiring": {
+      "title": "Certyfikat klienta Bosch SHC wkrótce wygaśnie",
+      "description": "Certyfikat klienta Bosch SHC dla **{title}** wygaśnie za {days} dzień/dni (dnia {expiry}). Aby go odnowić: przełącz kontroler w tryb parowania (naciśnij przycisk z przodu, aż diody LED zaczną migać), a następnie przejdź do **Ustawienia → Urządzenia i usługi → Bosch Smart Home Controller** i wybierz **Skonfiguruj ponownie**."
+    }
+  },
+  "exceptions": {
+    "cert_cryptography_missing": {
+      "message": "Biblioteka kryptografii jest niedostępna. Upewnij się, że jest zainstalowana."
+    },
+    "cert_file_missing": {
+      "message": "Brak pliku certyfikatu: {path}"
+    },
+    "cert_invalid": {
+      "message": "Nieprawidłowy certyfikat: {path}"
+    },
+    "rawscan_type_unknown": {
+      "message": "Typ rawscan nie został znaleziony."
+    },
+    "rawscan_entry_not_found": {
+      "message": "Nie znaleziono załadowanego wpisu Bosch SHC o tej nazwie."
+    },
+    "scenario_not_found": {
+      "message": "Scenariusz nie został znaleziony."
+    },
+    "smoke_test_failed": {
+      "message": "Test dymu nie powiódł się."
+    },
+    "alarm_state_failed": {
+      "message": "Zmiana stanu alarmu nie powiodła się."
+    },
+    "button_press_failed": {
+      "message": "Naciśnięcie przycisku nie powiodło się."
+    },
+    "switch_action_failed": {
+      "message": "Nie udało się zmienić stanu przełącznika."
+    },
+    "light_action_failed": {
+      "message": "Nie udało się zmienić stanu światła."
+    },
+    "cover_action_failed": {
+      "message": "Nie udało się zmienić stanu rolety."
+    },
+    "select_option_failed": {
+      "message": "Nie udało się ustawić opcji."
+    },
+    "number_set_failed": {
+      "message": "Nie udało się ustawić wartości."
+    },
+    "zigbee_topology_no_data": {
+      "message": "Brak jeszcze dostępnych danych routingu Zigbee dla tego kontrolera SHC (nie sparowano żadnych urządzeń Zigbee lub pierwsze 5-minutowe odpytanie nie zostało jeszcze zakończone od uruchomienia Home Assistant)."
+    },
+    "zigbee_topology_entry_not_found": {
+      "message": "Nie znaleziono załadowanego wpisu Bosch SHC o tej nazwie."
+    },
+    "zigbee_topology_write_failed": {
+      "message": "Nie udało się zapisać eksportu topologii Zigbee do www/bosch_shc/."
+    }
+  }
+}

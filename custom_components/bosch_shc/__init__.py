@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 from datetime import time as dt_time
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -50,6 +52,7 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 from homeassistant.util import dt as dt_util
+from homeassistant.util import slugify
 
 from .certificate import parse_certificate
 from .const import (
@@ -76,11 +79,18 @@ from .const import (
     OPT_SILENT_MODE_END,
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
+    SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
     SUPPORTED_INPUTS_EVENTS_TYPES,
 )
+from .coordinator import SHCZigbeeRoutingCoordinator
 from .data import SHCData
+from .zigbee_topology import (
+    build_topology_graph,
+    topology_to_html,
+    topology_to_mermaid,
+)
 
 PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
@@ -115,6 +125,12 @@ RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
     }
 )
 
+EXPORT_ZIGBEE_TOPOLOGY_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_TITLE, default=""): cv.string,
+    }
+)
+
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Set up the Bosch SHC component.
@@ -140,7 +156,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                     if scenario.name == name:
                         try:
                             await scenario.async_trigger()
-                        except (SHCException, SHCConnectionError) as err:
+                        except SHCException as err:
                             raise ServiceValidationError(
                                 f"Failed to trigger scenario '{name}': {err}",
                                 translation_domain=DOMAIN,
@@ -218,6 +234,100 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
     )
 
 
+def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
+    """Register the export_zigbee_topology service if not already registered.
+
+    Always-on (unlike rawscan, this reads only already-polled diagnostic
+    data, no live SHC round-trip, no sensitive commands).
+    """
+    if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
+        return
+
+    async def export_topology_service_call(call: ServiceCall) -> ServiceResponse:
+        """Build a Zigbee mesh topology graph from the last routing poll."""
+        title = call.data[ATTR_TITLE]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title not in ("", runtime.title):
+                continue
+            coordinator = runtime.zigbee_routing_coordinator
+            if coordinator is None or not coordinator.data:
+                raise ServiceValidationError(
+                    "No Zigbee routing data available yet for this SHC "
+                    "controller (no Zigbee devices paired, or the first "
+                    "5-minute poll hasn't completed since HA started).",
+                    translation_domain=DOMAIN,
+                    translation_key="zigbee_topology_no_data",
+                )
+            device_names = {
+                device.id: device.name
+                for device in getattr(runtime.session, "devices", None) or []
+            }
+            graph = build_topology_graph(
+                coordinator.data, device_names, runtime.shc_device.name or runtime.title
+            )
+            mermaid = topology_to_mermaid(graph)
+            html = topology_to_html(graph, f"Zigbee topology — {runtime.title}")
+
+            def _write_files(
+                entry_title: str,
+                entry_id: str,
+                graph_data: dict[str, Any],
+                html_content: str,
+            ) -> str:
+                """Write JSON + HTML under www/bosch_shc/ (blocking I/O).
+
+                Takes the per-entry values as arguments (not a closure over
+                the loop's `runtime`/`graph`/`html`) so it can't ever observe
+                a later loop iteration's values. The filename includes a
+                short entry_id suffix so two entries whose titles normalize
+                to the same slug (e.g. "SHC Downstairs" / "shc-downstairs")
+                can't silently overwrite each other's export.
+                """
+                www_dir = Path(hass.config.path("www", "bosch_shc"))
+                www_dir.mkdir(parents=True, exist_ok=True)
+                base_name = f"{slugify(entry_title)}_{entry_id[:8]}_zigbee_topology"
+                (www_dir / f"{base_name}.json").write_text(
+                    json.dumps(graph_data, indent=2), encoding="utf-8"
+                )
+                (www_dir / f"{base_name}.html").write_text(
+                    html_content, encoding="utf-8"
+                )
+                return f"{base_name}.html"
+
+            try:
+                html_filename = await hass.async_add_executor_job(
+                    _write_files, runtime.title, config_entry.entry_id, graph, html
+                )
+            except OSError as err:
+                raise ServiceValidationError(
+                    f"Could not write the Zigbee topology export to "
+                    f"www/bosch_shc/: {err}",
+                    translation_domain=DOMAIN,
+                    translation_key="zigbee_topology_write_failed",
+                ) from err
+            return {
+                "graph": graph,
+                "mermaid": mermaid,
+                "url": f"/local/bosch_shc/{html_filename}",
+            }
+        raise ServiceValidationError(
+            f"No loaded Bosch SHC entry with title '{title}' found.",
+            translation_domain=DOMAIN,
+            translation_key="zigbee_topology_entry_not_found",
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
+        export_topology_service_call,
+        schema=EXPORT_ZIGBEE_TOPOLOGY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  # noqa: C901
     """Set up Bosch SHC from a config entry."""
     data = entry.data
@@ -272,9 +382,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # NumberSelector yields a float; the SHC long-poll RPC expects an integer
     # number of seconds, so coerce it.
     long_poll_timeout = int(entry.options.get(OPT_LONG_POLL_TIMEOUT, 10))
-    # Async migration (phase 3b): the integration runs SHCSessionAsync — aiohttp
-    # I/O + an asyncio.Task long-poll, no thread, no executor. Construction does
-    # NO network I/O; async_init() enumerates the device model on the loop.
     # TODO(async parity): SHCAPIAsync does not yet honor verify_hostname /
     # ssl_verify (#264 skip-SSL is sync-only) — port those into SHCAPIAsync.
     if entry.options.get(OPT_SSL_SKIP_VERIFY, False):
@@ -282,12 +389,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             "ssl_skip_verify is set but is not yet honored on the async path; "
             "the bundled Bosch CA is still used. Tracked for async parity."
         )
-    # Build the mTLS SSLContext off the event loop — it reads the cert/key/CA
-    # PEM files (blocking I/O) — then hand it to the session so construction on
-    # the loop stays non-blocking. Guard for older libs lacking the kwarg.
-    # HA-managed aiohttp session (Phase 3c inject-websession).
-    # verify_ssl=False: the per-request ssl= kwarg in SHCAPIAsync passes the
-    # mTLS SSLContext, so connector-level SSL verification is not needed.
+    # Build the mTLS SSLContext off the event loop (blocking PEM reads).
+    # verify_ssl=False: the per-request ssl= kwarg already passes the mTLS context.
     websession = async_get_clientsession(hass, verify_ssl=False)
     _session_kwargs = {"long_poll_timeout": long_poll_timeout}
     if "ssl_context" in inspect.signature(SHCSessionAsync.__init__).parameters:
@@ -334,19 +437,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         sw_version=shc_info.version,
     )
     device_id = device_entry.id
+
+    # Zigbee routing-quality data isn't delivered by the long-poll stream, so
+    # it gets its own coordinator (sensor.py reads it back via runtime_data).
+    zigbee_routing_coordinator = SHCZigbeeRoutingCoordinator(hass, entry, session)
+
     entry.runtime_data = SHCData(
         session=session,
         shc_device=device_entry,
         title=entry.title,
+        zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
+
+    # async_refresh(), not async_config_entry_first_refresh(): this backs an
+    # opt-in diagnostic sensor and must not fail the whole entry on a hiccup.
+    await zigbee_routing_coordinator.async_refresh()
 
     # Daily certificate re-check scheduling
     async def _scheduled_cert_check(_now: Any) -> None:
-        # async_track_time_interval dispatches sync callbacks to a worker
-        # thread, where hass.async_create_task triggers HA 2026.x's escalated
-        # report_non_thread_safe_operation RuntimeError for custom integrations.
-        # Making the callback async makes async_track_time_interval schedule it
-        # directly on the event loop, eliminating both the wrapper and the bug.
+        # Must stay async: a sync callback here gets dispatched off-thread by
+        # async_track_time_interval, triggering HA's non-thread-safe-operation error.
         if not cert_path:
             return  # no cert configured — nothing to check (mirrors startup guard)
         try:
@@ -445,7 +555,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             except (
                 JSONRPCError,
                 SHCException,
-                SHCConnectionError,
                 AttributeError,
                 aiohttp.ClientError,
                 asyncio.TimeoutError,
@@ -564,7 +673,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             except (
                 JSONRPCError,
                 SHCException,
-                SHCConnectionError,
                 AttributeError,
                 aiohttp.ClientError,
                 asyncio.TimeoutError,
@@ -674,6 +782,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     # entry enables it; unregister when the last enabling entry is unloaded.
     if entry.options.get(OPT_ENABLE_RAWSCAN, True):
         _register_rawscan_service(hass)
+    _register_export_zigbee_topology_service(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -742,6 +851,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not remaining:
             hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_RAWSCAN)
 
+    # Remove export_zigbee_topology service if no loaded entries remain at all
+    # (always-on, unlike rawscan — no per-entry option gates it).
+    if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
+        remaining_any = [
+            e
+            for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id and e.state is ConfigEntryState.LOADED
+        ]
+        if not remaining_any:
+            hass.services.async_remove(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY)
+
     return unload_ok
 
 
@@ -757,17 +877,8 @@ class SwitchDeviceEventListener:
         self._device = device
         self._keypad_service = None
         self.device_id = None
-        # Replay-guard (#336): the Keypad service callback is registered on the
-        # generic subscribe_callback channel, which the lib re-fires with the
-        # *current* state on the ~24 h poll-id resubscribe, on the resubscribe
-        # short-poll refresh, AND as the first long-poll snapshot after every
-        # HA restart / config-entry reload.  Without a guard every switch's last
-        # keypress replays as a fresh bosch_shc.event PRESS_SHORT at once,
-        # re-triggering device-trigger automations (e.g. "all lights on").
-        # Seed from the device's current eventtimestamp (already populated from
-        # the initial GET) so the first re-delivered snapshot is treated as a
-        # baseline and only a genuinely newer press fires — mirrors the lib's
-        # SHCDeviceService._last_event_timestamp seed / _is_replayed_event.
+        # Replay-guard (#336): seed from the current eventtimestamp so a stale
+        # keypress re-delivered on resubscribe/restart doesn't refire an automation.
         seed_ts = device.eventtimestamp
         self._last_fired_timestamp: int = seed_ts if seed_ts is not None else -1
 

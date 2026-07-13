@@ -18,6 +18,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
+    UnitOfTime,
 )
 
 try:
@@ -40,12 +41,14 @@ except ImportError:
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     LOGGER,
     OPT_DIAGNOSTIC_ENTITIES,
     OPT_SUPPRESS_POWER_SENSORS,
 )
+from .coordinator import SHCZigbeeRoutingCoordinator
 from .entity import SHCEntity, async_migrate_to_new_unique_id, device_excluded
 
 PARALLEL_UPDATES = 1
@@ -64,6 +67,39 @@ async def async_setup_entry(  # noqa: C901
     power_sensors_enabled = not config_entry.options.get(
         OPT_SUPPRESS_POWER_SENSORS, False
     )
+
+    # Presence simulation running-window (hass#120 audit): fully modeled in
+    # boschshcpy but never wired into an HA entity. Both are DIAGNOSTIC
+    # category, so gate on diagnostic_enabled like every other diagnostic
+    # sensor in this file.
+    if diagnostic_enabled:
+        presence_simulation_system = getattr(
+            session.device_helper, "presence_simulation_system", None
+        )
+        if presence_simulation_system and not device_excluded(
+            presence_simulation_system, config_entry.options
+        ):
+            entities.append(
+                PresenceSimulationRunningStartSensor(
+                    device=presence_simulation_system, entry_id=config_entry.entry_id
+                )
+            )
+            entities.append(
+                PresenceSimulationRunningEndSensor(
+                    device=presence_simulation_system, entry_id=config_entry.entry_id
+                )
+            )
+
+    if diagnostic_enabled:
+        for climate in getattr(session.device_helper, "climate_controls", []):
+            if device_excluded(climate, config_entry.options):
+                continue
+            entities.append(
+                NextSetpointTemperatureSensor(
+                    device=climate,
+                    entry_id=config_entry.entry_id,
+                )
+            )
 
     for sensor in session.device_helper.thermostats:
         if device_excluded(sensor, config_entry.options):
@@ -261,6 +297,29 @@ async def async_setup_entry(  # noqa: C901
                 entities.append(
                     PowerYieldSensor(device=sensor, entry_id=config_entry.entry_id)
                 )
+
+    # Shutter Control II diagnostic fields (hass audit): reference moving
+    # times recorded during the device's own calibration run. Diagnostic-only
+    # (EntityCategory.DIAGNOSTIC), gated behind the same option as the other
+    # audit-added diagnostic sensors.
+    if diagnostic_enabled:
+        for shutter in (
+            list(getattr(session.device_helper, "shutter_controls", []))
+            + list(getattr(session.device_helper, "micromodule_shutter_controls", []))
+            + list(getattr(session.device_helper, "micromodule_blinds", []))
+        ):
+            if device_excluded(shutter, config_entry.options):
+                continue
+            entities.append(
+                ReferenceMovingTimeTopToBottomSensor(
+                    device=shutter, entry_id=config_entry.entry_id
+                )
+            )
+            entities.append(
+                ReferenceMovingTimeBottomToTopSensor(
+                    device=shutter, entry_id=config_entry.entry_id
+                )
+            )
 
     for sensor in session.device_helper.smart_plugs_compact:
         if device_excluded(sensor, config_entry.options):
@@ -461,6 +520,27 @@ async def async_setup_entry(  # noqa: C901
                         entry_id=config_entry.entry_id,
                     )
                 )
+
+    # getattr: some test fixtures use a bare SimpleNamespace runtime_data lacking
+    # this field, and setup must degrade to zero Zigbee entities, not crash.
+    zigbee_routing_coordinator = getattr(
+        config_entry.runtime_data, "zigbee_routing_coordinator", None
+    )
+    if diagnostic_enabled and zigbee_routing_coordinator is not None:
+        for zb_device in getattr(session, "devices", None) or []:
+            zb_id = getattr(zb_device, "id", None)
+            if not zb_id or not zb_id.startswith("hdm:ZigBee:"):
+                continue
+            if device_excluded(zb_device, config_entry.options):
+                continue
+            entities.append(
+                ZigbeeRoutingQualitySensor(
+                    device=zb_device,
+                    session=session,
+                    entry_id=config_entry.entry_id,
+                    coordinator=zigbee_routing_coordinator,
+                )
+            )
 
     if entities:
         async_add_entities(entities)
@@ -891,17 +971,8 @@ class ValveTappetSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
 class IlluminanceLevelSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
     """Representation of an SHC illuminance level reporting sensor.
 
-    The Bosch SHC API spec defines illuminance as integer for both Gen1
-    (SHCMotionDetector, model "MD") and Gen2 (SHCMotionDetector2, model "MD2").
-    Gen1 devices report numeric lux values too (e.g. 13, 9, 22) — see #315.
-
-    Metadata (state_class/device_class/unit) is STATIC so it never flip-flops:
-    a previous conditional implementation dropped state_class whenever the
-    value was momentarily None (offline / between polls), which re-raised the
-    very state_class_removed repair this restores (and emitted "unit changed"
-    warnings). Instead the metadata stays put and native_value coerces any
-    non-numeric/qualitative value to None, so a hypothetical string-reporting
-    firmware degrades to "unknown" rather than conflicting with MEASUREMENT.
+    Metadata (state_class/device_class/unit) stays static; native_value alone
+    coerces a non-numeric value to None, so metadata never flip-flops (#315).
     """
 
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -1147,3 +1218,259 @@ class SirenSolarChargingSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
             return str(self._device.power_supply.solar_charging_score.name.lower())
         except AttributeError:
             return None
+
+
+class NextSetpointTemperatureSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Room-climate "next scheduled change" info (hass#120 audit).
+
+    Change time and next operation mode are exposed as attributes rather than
+    a second entity, matching the diagnostic-attribute pattern used by
+    KeypadTriggerSensor.
+    """
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "next_setpoint_temperature"
+    _unrecorded_attributes = frozenset({"next_change_at"})
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the next-setpoint-temperature sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_next_setpoint_temperature"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the next scheduled setpoint temperature, if known."""
+        return getattr(self._device, "next_setpoint_temperature", None)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the next change time and operation mode as attributes."""
+        next_mode = getattr(self._device, "next_operation_mode", None)
+        return {
+            "next_change_at": getattr(
+                self._device, "next_setpoint_temperature_change", None
+            ),
+            "next_operation_mode": next_mode.value if next_mode is not None else None,
+        }
+
+
+class PresenceSimulationRunningStartSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """When the current presence-simulation session started (hass#120 audit).
+
+    Fully modeled in boschshcpy (PresenceSimulationConfigurationService.
+    running_start_time) but never wired into an HA entity. None whenever no
+    simulation session is currently running (the app's own NO_TIME_SET
+    sentinel, "-", already normalizes to None in the library).
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "presence_simulation_running_start"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the presence-simulation running-start sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_start"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return when the current simulation session started, if running."""
+        return getattr(self._device, "running_start_time", None)
+
+
+class PresenceSimulationRunningEndSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """When the current presence-simulation session will end (hass#120 audit).
+
+    See PresenceSimulationRunningStartSensor for details.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "presence_simulation_running_end"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the presence-simulation running-end sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = f"{device.root_device_id}_{device.id}_running_end"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return when the current simulation session will end, if running."""
+        return getattr(self._device, "running_end_time", None)
+
+
+class ReferenceMovingTimeTopToBottomSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Shutter Control II: recorded top-to-bottom reference moving time.
+
+    Reads ShutterControl.reference_moving_time_top_to_bottom_ms, recorded by
+    the device's own end-position calibration run (hass audit). Exposed in
+    seconds; None on devices that have never completed a calibration run.
+    """
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "reference_moving_time_top_to_bottom"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the top-to-bottom reference moving time sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_reference_moving_time_ttb"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the recorded top-to-bottom moving time in seconds, if known."""
+        value_ms = getattr(self._device, "reference_moving_time_top_to_bottom_ms", None)
+        return value_ms / 1000 if value_ms is not None else None
+
+
+class ReferenceMovingTimeBottomToTopSensor(SHCEntity, SensorEntity):  # type: ignore[misc]
+    """Shutter Control II: recorded bottom-to-top reference moving time.
+
+    See ReferenceMovingTimeTopToBottomSensor for details.
+    """
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "reference_moving_time_bottom_to_top"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the bottom-to-top reference moving time sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_reference_moving_time_btt"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the recorded bottom-to-top moving time in seconds, if known."""
+        value_ms = getattr(self._device, "reference_moving_time_bottom_to_top_ms", None)
+        return value_ms / 1000 if value_ms is not None else None
+
+
+def _zigbee_hop_device_and_quality(hop: Any) -> tuple[Any, Any]:
+    """Extract (device_id, quality) from one Zigbee routing hop.
+
+    The documented contract is an object exposing .device_id/.quality, but the
+    ground-truth example response ("route hops [(self, GOOD), (router-plug,
+    GOOD)]") reads like a plain 2-tuple — accept either shape defensively.
+    """
+    device_id = getattr(hop, "device_id", None)
+    quality = getattr(hop, "quality", None)
+    if device_id is None and quality is None and isinstance(hop, (tuple, list)):
+        if len(hop) == 2:
+            device_id, quality = hop
+    return device_id, quality
+
+
+class ZigbeeRoutingQualitySensor(  # type: ignore[misc]
+    CoordinatorEntity[SHCZigbeeRoutingCoordinator], SHCEntity, SensorEntity
+):
+    """Zigbee mesh routing quality diagnostic sensor.
+
+    Ground truth from a real SHC: only devices whose id is a Zigbee endpoint
+    (``device.id`` starts with ``hdm:ZigBee:``) support
+    ``SHCSessionAsync.get_zigbee_routing_info``. Unlike almost every other
+    entity in this integration (iot_class local_push, state changes arrive via
+    the long-poll stream), this data is NOT delivered by the long-poll stream
+    at all — it requires an active HTTPS GET. Per HA's documented pattern for
+    polled data (developers.home-assistant.io/docs/
+    integration_fetching_data/), this is backed by a
+    ``SHCZigbeeRoutingCoordinator`` (created once in ``__init__.py``, shared
+    across every Zigbee device's sensor) rather than a per-entity
+    should_poll/async_update — reads its state from
+    ``self.coordinator.data``, keyed by this device's id.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "zigbee_routing_quality"
+    _attr_options = [
+        "good",
+        "medium",
+        "bad",
+        "no_connection",
+        "device_not_initialized",
+        "not_supported",
+        "unknown",
+    ]
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        session: SHCSession,
+        entry_id: str,
+        coordinator: SHCZigbeeRoutingCoordinator,
+    ) -> None:
+        """Initialize the Zigbee routing quality sensor."""
+        CoordinatorEntity.__init__(self, coordinator)
+        SHCEntity.__init__(self, device, entry_id)
+        self._session = session
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_zigbee_routing_quality"
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to both the underlying device's SHC events and the coordinator."""
+        await SHCEntity.async_added_to_hass(self)
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self._handle_coordinator_update)
+        )
+
+    @property
+    def _routing_info(self) -> Any:
+        """This device's routing info from the latest coordinator refresh, if any."""
+        return (self.coordinator.data or {}).get(self._device.id)
+
+    @property
+    def available(self) -> bool:
+        """False if the device is down, or absent from coordinator.data."""
+        return (
+            self.coordinator.last_update_success
+            and SHCEntity.available.fget(self)  # type: ignore[attr-defined]
+            and self._device.id in (self.coordinator.data or {})
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the aggregated routing quality as a lowercase slug."""
+        routing_info = self._routing_info
+        if routing_info is None:
+            return None
+        try:
+            return str(routing_info.aggregated_quality.name.lower())
+        except (AttributeError, ValueError) as err:
+            LOGGER.debug(
+                "Unknown Zigbee routing quality for %s: %s", self._device.name, err
+            )
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the routing hop list, resolving hop device ids to names."""
+        routing_info = self._routing_info
+        if routing_info is None:
+            return None
+        route = []
+        for hop in getattr(routing_info, "route", None) or []:
+            hop_device_id, hop_quality = _zigbee_hop_device_and_quality(hop)
+            device_name: Any = hop_device_id
+            if hop_device_id is not None:
+                try:
+                    device_name = self._session.device(hop_device_id).name
+                except (KeyError, AttributeError):
+                    device_name = hop_device_id
+            quality_slug = None
+            if hop_quality is not None:
+                try:
+                    quality_slug = str(hop_quality.name.lower())
+                except AttributeError:
+                    quality_slug = str(hop_quality).lower()
+            route.append({"device": device_name, "quality": quality_slug})
+        return {"route": route}

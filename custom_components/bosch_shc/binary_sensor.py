@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
@@ -24,10 +25,11 @@ from boschshcpy import (
     VibrationSensorService,
     WaterLeakageSensorService,
 )
-from boschshcpy.exceptions import SHCConnectionError, SHCException
+from boschshcpy.exceptions import SHCException
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -81,6 +83,7 @@ async def async_setup_entry(  # noqa: C901
         binary_sensor = ShutterContactSensor(
             device=device,
             entry_id=config_entry.entry_id,
+            entity_description=SHUTTER_CONTACT_DESCRIPTION,
         )
         async_add_entities([binary_sensor])
 
@@ -94,12 +97,7 @@ async def async_setup_entry(  # noqa: C901
         )
         async_add_shuttercontact(device=binary_sensor)
 
-    # Register listener for new binary sensors and ensure it is torn down on
-    # config entry unload.  session.subscribe() appends the tuple to
-    # session._subscribers but returns None, so we build the unsubscribe
-    # closure ourselves.  add_update_listener is NOT used here because it
-    # expects an options-update callback (hass, entry) -> None, not the SHC
-    # subscriber tuple.
+    # session.subscribe() returns None, so unsubscribe is built manually below.
     _shutter_subscriber = (SHCShutterContact, async_add_shuttercontact)
     session.subscribe(_shutter_subscriber)
 
@@ -282,6 +280,12 @@ async def async_setup_entry(  # noqa: C901
                 entry_id=config_entry.entry_id,
             )
         )
+        entities.append(
+            ScheduleOverrideActiveSensor(
+                device=climate,
+                entry_id=config_entry.entry_id,
+            )
+        )
 
     for siren in getattr(session.device_helper, "outdoor_sirens", []):
         if device_excluded(siren, config_entry.options):
@@ -310,6 +314,23 @@ async def async_setup_entry(  # noqa: C901
                     device=siren, entry_id=config_entry.entry_id
                 )
             )
+
+    # Shutter Control II diagnostic field (hass audit): surfaces whether the
+    # device still needs its end-position calibration run, mirroring the
+    # app's own "recalibrate" prompt and pairing with the recalibration
+    # button (button.py ShutterRecalibrateButton).
+    for shutter in (
+        list(getattr(session.device_helper, "shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_shutter_controls", []))
+        + list(getattr(session.device_helper, "micromodule_blinds", []))
+    ):
+        if device_excluded(shutter, config_entry.options):
+            continue
+        entities.append(
+            ShutterCalibrationRequiredSensor(
+                device=shutter, entry_id=config_entry.entry_id
+            )
+        )
 
     platform = entity_platform.current_platform.get()
 
@@ -349,6 +370,58 @@ class CallForHeatSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     def is_on(self) -> bool:
         """Return True when the room climate control is calling for heat."""
         return bool(getattr(self._device, "has_demand", False))
+
+
+class ScheduleOverrideActiveSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Room-climate schedule-override indicator (hass#120 audit).
+
+    Reads RoomClimateControl.setpoint_temperature_offset_active — the app's
+    "manual override of the schedule is active" indicator
+    (RoomClimateControlSetpointAndCurrentTemperatureFragment.showTemperature
+    OffsetActive / dashboard tile showOffsetApplied), never read before this
+    audit. getattr-guarded so it tolerates an older boschshcpy pin.
+    """
+
+    _attr_translation_key = "schedule_override_active"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize a schedule-override-active binary sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_schedule_override_active"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when a manual override of the schedule is active."""
+        return bool(getattr(self._device, "setpoint_temperature_offset_active", False))
+
+
+class ShutterCalibrationRequiredSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
+    """Shutter Control II: end-position calibration missing (hass audit).
+
+    Reads ShutterControl.calibrated — the app surfaces an uncalibrated
+    shutter as needing a manual recalibration run (see button.py
+    ShutterRecalibrateButton). Defaults to "no problem" if the attribute is
+    absent (older boschshcpy pin), matching this file's other getattr-guarded
+    audit sensors.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "shutter_calibration_required"
+
+    def __init__(self, device: SHCDevice, entry_id: str) -> None:
+        """Initialize the shutter calibration-required sensor."""
+        super().__init__(device, entry_id)
+        self._attr_unique_id = (
+            f"{device.root_device_id}_{device.id}_calibration_required"
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True when the shutter has not completed calibration."""
+        return not bool(getattr(self._device, "calibrated", True))
 
 
 class SirenAcousticAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
@@ -483,13 +556,38 @@ class SirenPrimaryPowerSupplyOutageSensor(SHCEntity, BinarySensorEntity):  # typ
         )
 
 
+@dataclass(frozen=True, kw_only=True)
+class SHCShutterContactSensorEntityDescription(BinarySensorEntityDescription):
+    """Describes a SHC shutter contact binary sensor."""
+
+    is_on_fn: Callable[[SHCShutterContact], bool]
+
+
+SHUTTER_CONTACT_DESCRIPTION = SHCShutterContactSensorEntityDescription(
+    key="shutter_contact",
+    is_on_fn=lambda device: bool(device.state is ShutterContactService.State.OPEN),
+)
+
+
 class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
     """Representation of a SHC shutter contact sensor."""
+
+    entity_description: SHCShutterContactSensorEntityDescription
+
+    def __init__(
+        self,
+        device: SHCDevice,
+        entry_id: str,
+        entity_description: SHCShutterContactSensorEntityDescription,
+    ) -> None:
+        """Initialize an SHC shutter contact sensor."""
+        self.entity_description = entity_description
+        super().__init__(device, entry_id)
 
     @property
     def is_on(self) -> bool:
         """Return the state of the sensor."""
-        return bool(self._device.state == ShutterContactService.State.OPEN)
+        return self.entity_description.is_on_fn(self._device)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:
@@ -500,7 +598,9 @@ class ShutterContactSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
             "FRENCH_WINDOW": BinarySensorDeviceClass.DOOR,
             "GENERIC": BinarySensorDeviceClass.WINDOW,
         }
-        return switcher.get(self._device.device_class, BinarySensorDeviceClass.WINDOW)
+        return switcher.get(
+            self._device.device_class or "GENERIC", BinarySensorDeviceClass.WINDOW
+        )
 
 
 class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
@@ -519,7 +619,7 @@ class ShutterContactVibrationSensor(SHCEntity, BinarySensorEntity):  # type: ign
         """Return the state of the sensor."""
         return bool(
             self._device.vibrationsensor
-            == VibrationSensorService.State.VIBRATION_DETECTED
+            is VibrationSensorService.State.VIBRATION_DETECTED
         )
 
 
@@ -527,6 +627,7 @@ class MotionDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc
     """Representation of a SHC motion detection sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.MOTION
+    _unrecorded_attributes = frozenset({"last_motion_detected"})
 
     def __init__(self, hass: HomeAssistant, device: SHCDevice, entry_id: str) -> None:
         """Initialize the motion detection device."""
@@ -765,7 +866,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         LOGGER.debug("Requesting smoke test on device %s", self._device.name)
         try:
             await self._device.async_smoketest_requested()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Smoke test request failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -779,7 +880,7 @@ class SmokeDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
         )
         try:
             await self._device.async_set_alarmstate(command)
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 f"Set alarm state failed for {self._device.name}: {err}",
                 translation_domain=DOMAIN,
@@ -816,7 +917,7 @@ class WaterLeakageDetectorSensor(SHCEntity, BinarySensorEntity):  # type: ignore
     def is_on(self) -> bool:
         """Return the state of the sensor."""
         return bool(
-            self._device.leakage_state != WaterLeakageSensorService.State.NO_LEAKAGE
+            self._device.leakage_state is not WaterLeakageSensorService.State.NO_LEAKAGE
         )
 
     @property
@@ -931,7 +1032,7 @@ class SmokeDetectionSystemSensor(SHCEntity, BinarySensorEntity):  # type: ignore
     @property
     def is_on(self) -> bool:
         """Return the state of the sensor."""
-        return bool(self._device.alarm != SurveillanceAlarmService.State.ALARM_OFF)
+        return bool(self._device.alarm is not SurveillanceAlarmService.State.ALARM_OFF)
 
     @property
     def icon(self) -> str:
@@ -1202,7 +1303,7 @@ class TwinguardSmokeAlarmSensor(SHCEntity, BinarySensorEntity):  # type: ignore[
         LOGGER.debug("Requesting smoke test on device %s", self._device.name)
         try:
             await self._device.async_smoketest_requested()
-        except (SHCException, SHCConnectionError) as err:
+        except SHCException as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="smoke_test_failed",
@@ -1266,6 +1367,7 @@ class OccupancyDetectionSensor(SHCEntity, BinarySensorEntity):  # type: ignore[m
 
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
     _attr_translation_key = "occupancy"
+    _unrecorded_attributes = frozenset({"last_occupancy_change"})
 
     def __init__(self, device: SHCMotionDetector2, entry_id: str) -> None:
         """Initialize the occupancy detection sensor."""
@@ -1294,6 +1396,7 @@ class TamperSensor(SHCEntity, BinarySensorEntity):  # type: ignore[misc]
 
     _attr_device_class = BinarySensorDeviceClass.TAMPER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unrecorded_attributes = frozenset({"last_tamper_time"})
     _attr_translation_key = "tamper"
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
