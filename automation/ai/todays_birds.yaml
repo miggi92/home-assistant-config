@@ -9,38 +9,54 @@ triggers:
 conditions: []
 
 actions:
-  - variables:
+  - alias: Set variables for bird count and image prompt
+    variables:
+      bird_count: "{{ states('sensor.birdnet_daily') | int(0) }}"
       todays_birds: >-
-        {% set today = now().strftime('%Y-%m-%d') %}
         {% set ns = namespace(names=[]) %}
-        {% for bird in state_attr('sensor.birdnet_daily', 'birds') or [] %}
-          {% set ns.names = ns.names + [bird.scientific_name] %}
-        {% endfor %}
+        {% if bird_count > 0 %}
+          {% for bird in state_attr('sensor.birdnet_daily', 'birds') or [] %}
+            {% set ns.names = ns.names + [bird.scientific_name] %}
+          {% endfor %}
+        {% endif %}
         {{ ns.names | join(', ') }}
-  - action: ai_task.generate_image
+      image_prompt: >-
+        {% if bird_count == 0 %}
+          A fine art painting in the style of a classic naturalist watercolour
+          illustration. An elegant composition featuring an empty, intricate bird nest
+          resting on a branch. Soft, painterly textures with visible brushstrokes
+          and gentle washes of colour. Hand-painted branches, leaves, and foliage
+          on a softly tinted parchment-like background. Muted, natural tones with warm light.
+          No text, no words, no labels, no watermarks.
+        {% else %}
+          A fine art painting in the style of a classic naturalist watercolour
+          illustration, reminiscent of vintage ornithological field guides.
+          An elegant composition featuring these European bird species, each
+          rendered with delicate brushwork, true to its real-life appearance:
+          {{ todays_birds }}.
+          Soft, painterly textures with visible brushstrokes and gentle washes
+          of colour. The birds are arranged harmoniously among hand-painted
+          branches, leaves, and foliage on a softly tinted parchment-like
+          background. Muted, natural tones with warm light. Detailed yet artistic,
+          evoking the work of John James Audubon.
+          No text, no words, no labels, no watermarks.
+        {% endif %}
+  - alias: Generate AI image based on bird count
+    action: ai_task.generate_image
     data:
       task_name: "Todays birds"
-      instructions: >-
-        A fine art painting in the style of a classic naturalist watercolour
-        illustration, reminiscent of vintage ornithological field guides.
-        An elegant composition featuring these European bird species, each
-        rendered with delicate brushwork, true to its real-life appearance:
-        {{ todays_birds }}.
-        Soft, painterly textures with visible brushstrokes and gentle washes
-        of colour. The birds are arranged harmoniously among hand-painted
-        branches, leaves, and foliage on a softly tinted parchment-like
-        background. Muted, natural tones with warm light. Detailed yet artistic,
-        evoking the work of John James Audubon.
-        No text, no words, no labels, no watermarks.
+      instructions: "{{ image_prompt }}"
     response_variable: birds
 
-  - action: downloader.download_file
+  - alias: Download the generated image file
+    action: downloader.download_file
     data:
       overwrite: true
       url: "http://localhost:8123{{ birds.url }}"
       filename: "todays_birds.png"
       subdir: "birds"
-  - action: input_text.set_value
+  - alias: Update cache buster to refresh UI
+    action: input_text.set_value
     target:
       entity_id: input_text.meal_image_cache_buster
     data:
