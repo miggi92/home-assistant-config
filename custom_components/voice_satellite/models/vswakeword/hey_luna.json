@@ -1,6 +1,6 @@
 {
   "format": "vs-wake-word-ctc-v1",
-  "name": "ok_luna",
+  "name": "hey_luna",
   "model": {
     "architecture": "ctc",
     "backbone": "tcresnet",
@@ -41,7 +41,7 @@
     "f_min": 80.0,
     "f_max": 7600.0,
     "log_floor": 1e-06,
-    "window_cmn": true,
+    "window_cmn": false,
     "window_samples": 20800,
     "frame_samples": 400,
     "hop_samples": 160,
@@ -108,20 +108,7 @@
     ],
     "wake_word_targets": [
       [
-        18,
-        21,
-        29,
-        9,
-        15,
-        2,
-        30,
-        20,
-        3,
-        32,
-        12
-      ],
-      [
-        29,
+        27,
         9,
         15,
         2,
@@ -134,20 +121,7 @@
     ],
     "wake_word_target_phonemes": [
       [
-        "o",
-        "ʊ",
-        "k",
-        "e",
-        "ɪ",
-        " ",
-        "l",
-        "u",
-        "ː",
-        "n",
-        "ə"
-      ],
-      [
-        "k",
+        "h",
         "e",
         "ɪ",
         " ",
@@ -158,33 +132,27 @@
         "ə"
       ]
     ],
-    "max_edit_distance": 1,
-    "wake_word_trail_tolerance": 1,
-    "min_matched_confidence": 5.5,
-    "target_max_edit_distance": [
-      1,
-      1
-    ],
-    "target_min_matched_confidence": [
-      5.5,
-      6.5
-    ],
     "wake_word_target_anchors": [
-      [
-        6,
-        9
-      ],
       [
         0,
         4,
         7
       ]
+    ],
+    "max_edit_distance": 1,
+    "wake_word_trail_tolerance": 1,
+    "min_matched_confidence": 8.0,
+    "target_max_edit_distance": [
+      1
+    ],
+    "target_min_matched_confidence": [
+      8.0
     ]
   },
   "runtime": {
     "required_hits": 1,
-    "cooldown_ms": 2000,
     "hit_mode": "consecutive",
+    "cooldown_ms": 2000,
     "high_confidence_bypass": 8.2,
     "high_confidence_bypass_min_hits": 1,
     "stream_match": true,
