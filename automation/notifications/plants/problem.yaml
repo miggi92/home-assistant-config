@@ -1,9 +1,8 @@
 ---
 # Plant got a problem.
 # Currently not in automation: DLI: {{ state_attr(trigger.entity_id, 'dli_status') }}
-alias: Pflanzenbenachrichtigung
+alias: Plant Notification
 id: 20f39a8b-975b-4406-99c2-91833f03dbfc
-description: "Benachrichtigt wenn eine Pflanze ein problem hat oder wieder in ordnung ist"
 trigger:
   - platform: state
     entity_id:
@@ -26,11 +25,30 @@ trigger:
     from:
       - ok
 condition:
-  - condition: state
+  - alias: Check if holiday mode is disabled
+    condition: state
     entity_id: input_boolean.holiday_mode
     state: "off"
+  - alias: Ignore illuminance problems during the night
+    condition: template
+    value_template: >-
+      {% set plant_statuses = [
+        state_attr(trigger.entity_id, 'moisture_status'),
+        state_attr(trigger.entity_id, 'temperature_status'),
+        state_attr(trigger.entity_id, 'conductivity_status'),
+        state_attr(trigger.entity_id, 'humidity_status'),
+        state_attr(trigger.entity_id, 'co2_status'),
+        state_attr(trigger.entity_id, 'soil_temperature_status'),
+        state_attr(trigger.entity_id, 'vpd_status')
+      ] %}
+      {% set other_problems_exist = plant_statuses | reject('in', ['ok', 'null', None]) | list | length > 0 %}
+      {% set is_night_time = is_state('sun.sun', 'below_horizon') %}
+      {% set light_is_problem = state_attr(trigger.entity_id, 'illuminance_status') in ['Low', 'High', 'problem'] %}
+
+      {{ not (trigger.to_state.state == 'problem' and is_night_time and light_is_problem and not other_problems_exist) }}
 action:
-  - action: ai_task.generate_data
+  - alias: Generate plant status message using AI
+    action: ai_task.generate_data
     data:
       entity_id: ai_task.google_ai_task
       task_name: plant state
@@ -52,7 +70,7 @@ action:
         Moisture: {{ state_attr(trigger.entity_id, 'moisture_status') }}
         Temperature: {{ state_attr(trigger.entity_id, 'temperature_status') }}
         Conductivity: {{ state_attr(trigger.entity_id, 'conductivity_status') }}
-        Illuminance: {{ state_attr(trigger.entity_id, 'illuminance_status') }}
+        Illuminance: {{ 'ok' if is_state('sun.sun', 'below_horizon') else state_attr(trigger.entity_id, 'illuminance_status') }}
         Humidity: {{ state_attr(trigger.entity_id, 'humidity_status') }}
         CO2: {{ state_attr(trigger.entity_id, 'co2_status') }}
         Soil temperature: {{ state_attr(trigger.entity_id, 'soil_temperature_status') }}
@@ -67,13 +85,14 @@ action:
         Watering: {{ state_attr(trigger.entity_id, 'care_watering') }}
         </care_data>
 
-    response_variable: response
-  - action: script.notify_engine
+    response_variable: ai_response
+  - alias: Send notification with AI message
+    action: script.notify_engine
     data:
       title: |
         🪴 Pflanze - {{ trigger.to_state.attributes.friendly_name }} 🪴
       value1: |
-        {{ response.data }}
+        {{ ai_response.data }}
         Standort: {{ area_name(trigger.entity_id) | default('Zuhause', true) }}
       who: "home"
       tag_id: "information"
