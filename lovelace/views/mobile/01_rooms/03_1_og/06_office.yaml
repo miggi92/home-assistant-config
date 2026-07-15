@@ -23,6 +23,12 @@ badges:
     variables:
       - entity: sensor.buroluftfeuchtigkeit
   - type: custom:mushroom-template-badge
+    entity: switch.echo_buro_bitte_nicht_storen
+    content: "DnD"
+    icon: "{{ 'mdi:minus-circle' if is_state(entity, 'on') else 'mdi:minus-circle-off' }}"
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
     entity: input_number.miguel_arbeit_woche
     icon: "{{ state_attr(entity, 'icon') }}"
     content: |-
