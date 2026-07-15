@@ -1,32 +1,24 @@
 ---
 # Meeting info
-alias: MeetingInfo
+alias: inMeeting
 id: d1c10388-a5c9-4749-b035-76776b593a00
 description: "Show in meeting info"
 trigger:
   - platform: state
     entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
+    to:
+      - "on"
+      - "off"
 condition: []
 action:
   - if:
       - condition: state
         entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
-        state: "off"
+        state: "on"
+        alias: "Check if meeting started"
     then:
-      - action: script.awtrix3delapp
-        data:
-          app_id: meeting
-      - service: notify.tvoverlaynotifyfixed
-        data:
-          data:
-            id: meeting
-            icon: mdi:video-plus
-            expiration: 30m
-            shape: rounded
-            visible: false
-          message: "null"
-    else:
       - action: script.awtrix3customapp
+        alias: "Show Meeting on Clock"
         data:
           app_id: meeting
           text: "In meeting"
@@ -41,5 +33,26 @@ action:
             iconColor: "#880808"
           message: "null"
           title: "Meeting"
+      - action: switch.turn_on
+        target:
+          entity_id: switch.echo_buro_bitte_nicht_storen
+    else:
+      - action: script.awtrix3delapp
+        alias: "Remove Meeting from Clock"
+        data:
+          app_id: meeting
+      - action: notify.tvoverlaynotifyfixed
+        data:
+          data:
+            id: meeting
+            icon: mdi:video-plus
+            expiration: 2m
+            shape: rounded
+            visible: false
+          message: "null"
+      - action: switch.turn_off
+        target:
+          entity_id: switch.echo_buro_bitte_nicht_storen
+
 mode: queued
 max: 5
