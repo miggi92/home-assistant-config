@@ -12,7 +12,7 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.14"
+VERSION = "0.5.15"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -83,6 +83,7 @@ CONF_ALLOW_FORWARDED_EMAILS = "allow_forwarded_emails"
 CONF_FORWARDED_EMAILS = "forwarded_emails"
 CONF_FORWARDING_HEADER = "forwarding_header"
 CONF_CUSTOM_DAYS = "custom_days"
+CONF_USPS_PLACEHOLDER = "usps_placeholder"
 
 # Defaults
 DEFAULT_CAMERA_NAME = "Mail USPS Camera"
@@ -130,6 +131,7 @@ DEFAULT_STORAGE = "custom_components/mail_and_packages/images/"
 DEFAULT_ALLOW_FORWARDED_EMAILS = False
 DEFAULT_FORWARDED_EMAILS = "(none)"
 DEFAULT_FORWARDING_HEADER = "(none)"
+DEFAULT_USPS_PLACEHOLDER = True
 
 # Amazon
 AMAZON_DOMAINS = [
@@ -173,6 +175,7 @@ AMAZON_SHIPMENT_SUBJECT = [
     "Shipped:",
     "Enviado:",
     "Out for delivery:",
+    "Spedito:",
 ]
 AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:"]
 AMAZON_EMAIL = [
@@ -218,6 +221,7 @@ AMAZON_TIME_PATTERN = [
     "Chega ",
     "Verwachte bezorgdatum:",
     "Votre date de livraison prévue est :",
+    "In arrivo",
 ]
 AMAZON_TIME_PATTERN_END = [
     "Previously expected:",
@@ -252,6 +256,10 @@ AMAZON_TIME_PATTERN_REGEX = [
     "Wordt bezorgd op (\\w+ \\d+ \\w+)",
     "Wordt bezorgd op (\\w+ \\d+)",
     "Wordt (\\w+) bezorgd",
+    "In arrivo (\\w+ \\d+) - (\\w+ \\d+)",
+    "In arrivo (\\w+ \\d+)",
+    "In arrivo (\\w+ \\d*)",
+    "In arrivo (\\w+)",
 ]
 AMAZON_EXCEPTION_SUBJECT = "Delivery update:"
 AMAZON_EXCEPTION_BODY = "running late"
