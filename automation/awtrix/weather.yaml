@@ -36,7 +36,7 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: weather_humidity
-      text: "{{ state_attr('weather.home', 'humidity') }} %"
+      text: "{{ states('sensor.luftfeuchtigkeit') }} %"
       icon: "2423"
   - action: script.awtrix3customapp
     data:
