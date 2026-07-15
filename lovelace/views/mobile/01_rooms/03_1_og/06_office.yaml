@@ -183,10 +183,10 @@ sections:
           - switch: sensor.bcwmc5cg4100cy0_sitzungstatus
           - switch_on_state: "Unlocked"
           - uptime: sensor.bcwmc5cg4100cy0_uptime
-          # - cpu_temp: sensor.bcwmc5cg4100cy0_cputemp
+          - cpu_load: sensor.bcwmc5cg4100cy0_cpulast
           - picture: /local/logo/work_miguel_logo.svg
           - battery: sensor.bcwmc5cg4100cy0_batterie_charge_remaining_percentage
-          - webcam: binary_sensor.teams_video
+          - webcam: sensor.bcwmc5cg4100cy0_kameraaktiv
           - powerline: sensor.bcwmc5cg4100cy0_batterie_powerline_status
           - camera: camera.bcwmc5cg4100cy0_bildschirmfoto
       - type: custom:mushroom-entity-card
