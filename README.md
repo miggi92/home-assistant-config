@@ -28,14 +28,14 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 
 <!-- Entities Stats - Start -->
 - 🏁 Abdeckungen: 4
-- 🆙 Aktualisierung: 194
+- 🆙 Aktualisierung: 196
 - 🚨 Alarmbedienfelder: 2
-- ↕️ Auswahlen: 92
+- ↕️ Auswahlen: 93
 - 🤖 Automatisierungen: 172
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 45
 - 🛡️ Binäre Sensoren: 270
-- 🛠️ Custom Integrationen: 59
+- 🛠️ Custom Integrationen: 60
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
 - 🔡 Eingabe-Auswahlen: 10
@@ -44,35 +44,35 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 44
-- 🧩 Entitäten: 3997
+- 🧩 Entitäten: 4010
 - 🎮 Fernbedienungen: 18
-- 📱 Geräte: 589
+- 📱 Geräte: 737
 - 📍 Geräte-Tracker: 141
-- 🔌 Integrationen: 200
+- 🔌 Integrationen: 202
 - 🗓️ Kalender: 31
-- 📷 Kameras: 15
+- 📷 Kameras: 16
 - 🌡️ Klima: 2
 - 💡 Lichter: 37
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
 - 🎵 Mediaplayer: 48
-- 🔟 Nummern: 146
+- 🔟 Nummern: 147
 - 👤 Personen: 9
-- 🔌 Schalter: 369
+- 🔌 Schalter: 370
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1787
+- 📟 Sensoren: 1791
 - 📢 Sirenen: 1
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 0
 - 🎬 Szenen: 3
-- 🔘 Tasten: 153
+- 🔘 Tasten: 155
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 48
 - 🚁 Ventilatoren: 4
 - 🔥 Wasserheizungen: 0
-- 🌤️ Wetter: 3
+- 🌤️ Wetter: 4
 - 🕒 Zeiten: 0
 - 🗺️ Zonen: 41
 <!-- Entities Stats - End -->
