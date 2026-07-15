@@ -6,39 +6,41 @@ description: "Benachrichtigt, ob die Pflanzen draußen gegossen werden müssen."
 trigger:
   - platform: time
     at: input_datetime.watering_time
-
 condition:
   - condition: not
+    alias: "Check if it is currently raining or will rain soon"
     conditions:
-      # currently raining
       - condition: state
+        alias: "Currently raining"
         entity_id: weather.home
         state: "rainy"
-      # will it rain soon?
       - condition: template
+        alias: "Will it rain soon"
         value_template: >
           {% set days = 1 %}
-          {{ 'rainy' in state_attr('weather.home', 'forecast')[:days]  | map(attribute='condition') }}
-  # mehr als 1h geregnet?
+          {{ 'rainy' in state_attr('weather.home', 'forecast')[:days] | map(attribute='condition') | list }}
   - condition: numeric_state
+    alias: "Rained less than 1h last day"
     entity_id: sensor.rained_last_day
     below: 1
-  # im Urlaub brauchen wir keine Info
   - condition: state
+    alias: "Holiday mode is off"
     entity_id: input_boolean.holiday_mode
     state: "off"
-  # Nur in bestimmten Jahreszeiten
   - condition: or
+    alias: "Only in specific seasons"
     conditions:
       - condition: state
+        alias: "Spring"
         entity_id: sensor.season
         state: "spring"
       - condition: state
+        alias: "Summer"
         entity_id: sensor.season
         state: "summer"
-
 action:
-  - service: script.notify_engine
+  - action: script.notify_engine
+    alias: "Send plant watering notification"
     data:
       title: |
         🌊🌿 Gießen 🌊🌿
