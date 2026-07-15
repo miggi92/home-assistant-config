@@ -31,7 +31,7 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: weather_temp
-      text: "{{ state_attr('weather.home', 'temperature') }} {{ state_attr('weather.home', 'temperature_unit') }}"
+      text: "{{ states('sensor.temperatur') }} {{ state_attr('sensor.temperatur', 'unit_of_measurement') }}"
       icon: "{{ weather_icon }}"
   - action: script.awtrix3customapp
     data:
@@ -41,6 +41,6 @@ action:
   - action: script.awtrix3customapp
     data:
       app_id: weather_wind
-      text: "{{ state_attr('weather.home', 'wind_speed') }} {{ state_attr('weather.home', 'wind_speed_unit') }}"
+      text: "{{ states('sensor.windgeschwindigkeit') }} {{ state_attr('sensor.windgeschwindigkeit', 'unit_of_measurement') }}"
       icon: "55032"
 mode: single
