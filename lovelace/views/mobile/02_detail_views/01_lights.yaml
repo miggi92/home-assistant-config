@@ -177,4 +177,23 @@ sections:
             entity: binary_sensor.weihnachtszeit
             state: "on"
   - type: grid
-    cards: []
+    cards:
+      - type: logbook
+        target:
+          entity_id:
+            - light.kameralichter
+            - light.bett
+            - light.tv_licht
+            - light.esstischlicht
+            - light.schreibtischlicht
+            - light.abstellkammerlicht
+            - light.hue_go
+            - light.lichterkette
+            - light.schlafzimmerlicht
+            - light.thekenlicht
+            - light.kinderzimmerlicht
+        name_detail: auto
+        state_filter:
+          - "off"
+          - "on"
+        hours_to_show: 1
