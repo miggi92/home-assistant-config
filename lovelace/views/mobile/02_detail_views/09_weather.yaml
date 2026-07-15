@@ -8,6 +8,10 @@ max_columns: 3
 badges:
   - type: entity
     entity: sensor.kohgeb_family_home_lightning_counter
+    visibility:
+      - condition: numeric_state
+        entity: sensor.kohgeb_family_home_lightning_counter
+        above: 0
   - type: custom:decluttering-card
     template: temperature_badge_template
     variables:
@@ -16,6 +20,8 @@ badges:
     template: humidity_badge_template
     variables:
       - entity: sensor.luftfeuchtigkeit
+  - type: entity
+    entity: sensor.luftdruck
   - type: entity
     entity: sensor.windgeschwindigkeit
   - type: entity
@@ -39,6 +45,10 @@ badges:
     tap_action:
       action: navigate
       navigation_path: dwd
+    visibility:
+      - condition: numeric_state
+        entity: sensor.home_aktuelle_warnstufe
+        above: 0
   - type: entity
     entity: sensor.aussen_home_kleidungsempfehlung
 sections:
