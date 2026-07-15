@@ -29,23 +29,20 @@ condition:
     condition: state
     entity_id: input_boolean.holiday_mode
     state: "off"
-  - alias: Ignore illuminance problems during the night
+  - alias: Block if only illuminance caused the state change
     condition: template
     value_template: >-
-      {% set plant_statuses = [
-        state_attr(trigger.entity_id, 'moisture_status'),
-        state_attr(trigger.entity_id, 'temperature_status'),
-        state_attr(trigger.entity_id, 'conductivity_status'),
-        state_attr(trigger.entity_id, 'humidity_status'),
-        state_attr(trigger.entity_id, 'co2_status'),
-        state_attr(trigger.entity_id, 'soil_temperature_status'),
-        state_attr(trigger.entity_id, 'vpd_status')
+      {% set problem_keys = [
+        'moisture_status', 'temperature_status', 'conductivity_status',
+        'humidity_status', 'co2_status', 'soil_temperature_status', 'vpd_status'
       ] %}
-      {% set other_problems_exist = plant_statuses | reject('in', ['ok', 'null', None]) | list | length > 0 %}
-      {% set is_night_time = is_state('sun.sun', 'below_horizon') %}
-      {% set light_is_problem = state_attr(trigger.entity_id, 'illuminance_status') in ['Low', 'High', 'problem'] %}
-
-      {{ not (trigger.to_state.state == 'problem' and is_night_time and light_is_problem and not other_problems_exist) }}
+      {% set ns = namespace(other_issues=false) %}
+      {% for key in problem_keys %}
+        {% if trigger.to_state.attributes.get(key) not in ['ok', 'null', None] or trigger.from_state.attributes.get(key) not in ['ok', 'null', None] %}
+          {% set ns.other_issues = true %}
+        {% endif %}
+      {% endfor %}
+      {{ ns.other_issues }}
 action:
   - alias: Generate plant status message using AI
     action: ai_task.generate_data
