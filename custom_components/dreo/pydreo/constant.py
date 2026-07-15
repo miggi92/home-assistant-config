@@ -1,0 +1,286 @@
+"""Constants for the PyDreo library."""
+
+from enum import Enum, IntEnum, StrEnum
+
+# Various keys read from server JSON responses.
+ACCESS_TOKEN_KEY = "access_token"
+REGION_KEY = "region"
+DATA_KEY = "data"
+LIST_KEY = "list"
+MIXED_KEY = "mixed"
+DEVICEID_KEY = "deviceid"
+DEVICESN_KEY = "deviceSn"
+REPORTED_KEY = "reported"
+STATE_KEY = "state"
+POWERON_KEY = "poweron"
+CONNECTED_KEY = "connected"
+WINDTYPE_KEY = "windtype"
+WINDLEVEL_KEY = "windlevel"
+MODE_KEY = "mode"
+HTALEVEL_KEY = "htalevel"
+OSCON_KEY = "oscon"
+OSCMODE_KEY = "oscmode"
+OSCANGLE_KEY = "oscangle"
+CRUISECONF_KEY = "cruiseconf"
+TEMPERATURE_KEY = "temperature"
+TARGET_TEMPERATURE_KEY = "templevel"
+SLEEPTEMPOFFSET_KEY = "sleeptempoffset"
+VOICEON_KEY = "voiceon"
+MISTON_KEY = "miston"
+LEDALWAYSON_KEY = "ledalwayson"
+LIGHTSENSORON_KEY = "lightsensoron"
+MUTEON_KEY = "muteon"
+PM25_KEY = "pm25"
+LOCATEMEON_KEY = "locatemeon"
+FIXEDCONF_KEY = "fixedconf"
+DEVON_KEY = "devon"
+TIMERON_KEY = "timeron"
+COOLDOWN_KEY = "cooldown"
+PTCON_KEY = "ptcon"
+LIGHTON_KEY = "lighton"
+BRIGHTNESS_KEY = "brightness"
+COLORTEMP_KEY = "colortemp"
+CTLSTATUS_KEY = "ctlstatus"
+TIMEROFF_KEY = "timeroff"
+ECOLEVEL_KEY = "ecolevel"
+ECOLEVEL_RANGE_KEY = "ecolevel_range"
+CHILDLOCKON_KEY = "childlockon"
+TEMPOFFSET_KEY = "tempoffset"
+HUMIDITY_KEY = "rh"
+WORKTIME_KEY = "worktime"
+TEMP_TARGET_REACHED_KEY = "reachtarget"
+TARGET_AUTO_HUMIDITY_KEY = "rhautolevel"
+TARGET_SLEEP_HUMIDITY_KEY = "rhsleeplevel"
+FOG_LEVEL_KEY = "foglevel"
+TARGET_HUMIDITY_KEY = "rhlevel"
+TARGET_SLEEP_HUMIDITY_KEY = "rhsleeplevel"
+ATMON_KEY = "atmon"
+ATMCOLOR_KEY = "atmcolor"
+ATMBRI_KEY = "atmbri"
+ATMMODE_KEY = "atmmode"
+AMBIENT_SWITCH_KEY = "ambient_switch"
+FOGLEVEL_KEY = "foglevel"
+LEDKEPTON_KEY = "ledkepton"
+LEDLEVEL_KEY = "ledlevel"
+RGB_LEVEL = "rgblevel"
+RGB_TH = "rgbth"
+RGB_MODE = "rgbmode"
+RGB_COLOR = "rgbcolor"
+LED_LEVEL_KEY = "ledlevel"
+SCHEDULE_ENABLE = "scheon"
+
+# Preferences Names
+# It's possible we should switch to IDs instead of names
+PREFERENCE_TYPE_TEMPERATURE_CALIBRATION = "Temperature Calibration"  # ID: 250
+
+# Tower Fans
+SHAKEHORIZON_KEY = "shakehorizon"
+SHAKEHORIZONANGLE_KEY = "shakehorizonangle"
+
+# Ceiling Fan
+FANON_KEY = "fanon"
+RGBPRESETSEL_KEY = "rgbpresetsel"
+RGBPRESETNUM_KEY = "rgbpresetnum"
+RGBEFFECTID_KEY = "rgbeffectid"
+
+
+DREO_API_URL_FORMAT = "https://app-api-{0}.dreo-tech.com"  # {0} is the 2 letter region code
+
+DREO_API_PATH = "path"
+DREO_API_METHOD = "method"
+
+DREO_API_LOGIN = "login"
+DREO_API_DEVICELIST = "devicelist"
+DREO_API_DEVICESTATE = "devicestate"
+DREO_API_SETTING_GET = "setting_get"
+DREO_API_SETTING_PUT = "setting_put"
+
+DREO_API_SETTING_DATA_KEY = "dataKey"
+DREO_API_SETTING_DATA_VALUE = "dataValue"
+
+DREO_APIS = {
+    DREO_API_LOGIN: {
+        DREO_API_PATH: "/api/oauth/login",
+        DREO_API_METHOD: "post",
+    },
+    DREO_API_DEVICELIST: {
+        DREO_API_PATH: "/api/v2/user-device/device/list",
+        DREO_API_METHOD: "get",
+    },
+    DREO_API_DEVICESTATE: {
+        DREO_API_PATH: "/api/user-device/device/state",
+        DREO_API_METHOD: "get",
+    },
+    DREO_API_SETTING_GET: {
+        DREO_API_PATH: "/api/user-device/setting",
+        DREO_API_METHOD: "get",
+    },
+    DREO_API_SETTING_PUT: {
+        DREO_API_PATH: "/api/user-device/setting",
+        DREO_API_METHOD: "put",
+    },
+}
+
+
+class DreoDeviceSetting(StrEnum):
+    """Dreo device settings"""
+
+    FAN_TEMP_OFFSET = "kHafFanTempOffsetKey"
+
+
+DREO_AUTH_REGION_NA = "NA"
+DREO_AUTH_REGION_EU = "EU"
+
+DREO_API_REGION_US = "us"
+DREO_API_REGION_EU = "eu"
+
+OSCANGLE_ANGLE_MAP = {"Oscillate": 0, "60°": 60, "90°": 90, "120°": 120}
+
+ANGLE_OSCANGLE_MAP = {0: "Oscillate", 60: "60°", 90: "90°", 120: "120°"}
+
+HORIZONTAL_OSCILLATION_KEY = "hoscon"
+HORIZONTAL_OSCILLATION_ANGLE_KEY = "hoscangle"
+HORIZONTAL_ANGLE_ADJ_KEY = "hangleadj"
+
+VERTICAL_OSCILLATION_KEY = "voscon"
+VERTICAL_OSCILLATION_ANGLE_KEY = "voscangle"
+
+MIN_OSC_ANGLE_DIFFERENCE = 30
+
+# Heater oscillation
+OSCILLATION_KEY = "oscon"
+OSCILLATION_ANGLE_KEY = "oscangle"
+
+WIND_MODE_KEY = "mode"
+
+HORIZONTAL_ANGLE_RANGE = "horizontal_angle_range"
+VERTICAL_ANGLE_RANGE = "vertical_angle_range"
+SPEED_RANGE = "speed_range"
+HEAT_RANGE = "heat_range"
+ECOLEVEL_RANGE = "ecolevel_range"
+TEMP_RANGE = "temp_range"
+TARGET_TEMP_RANGE = "target_temp_range"
+TARGET_TEMP_RANGE_ECO = "target_temp_range_eco"
+HUMIDITY_RANGE = "humidity_range"
+
+
+class TemperatureUnit(Enum):
+    """Valid possible temperature units."""
+
+    CELSIUS = 0
+    FAHRENHEIT = 1
+
+
+# Fan oscillation modes
+class OscillationMode(IntEnum):
+    """Possible oscillation modes.  These are bitwise flags."""
+
+    OFF = (0,)
+    HORIZONTAL = (1,)
+    VERTICAL = (2,)
+    BOTH = 3
+
+
+# Heater oscillation modes
+class HeaterOscillationAngles(StrEnum):
+    """Possible Heater oscillation angles"""
+
+    OSC = "Oscillate"
+    SIXTY = ("60°",)
+    NINETY = ("90°",)
+    ONE_TWENTY = "120°"
+
+
+#
+# The following is copied from homeassistant.components.climate
+
+# Possible swing state
+SWING_ON = "on"
+SWING_OFF = "off"
+
+# Maps oscmode integer values (used by newer heater firmware) to swing mode strings.
+# oscmode 0 = no oscillation; 1-4 correspond to oscillation modes in increasing angle.
+HEATER_OSCMODE_SWING_MAP = {
+    0: SWING_OFF,
+    1: HeaterOscillationAngles.OSC,
+    2: HeaterOscillationAngles.SIXTY,
+    3: HeaterOscillationAngles.NINETY,
+    4: HeaterOscillationAngles.ONE_TWENTY,
+}
+HEATER_SWING_OSCMODE_MAP = {v: k for k, v in HEATER_OSCMODE_SWING_MAP.items()}
+# Possible fan state
+FAN_ON = "on"
+FAN_OFF = "off"
+FAN_AUTO = "auto"
+FAN_LOW = "low"
+FAN_MEDIUM = "medium"
+FAN_HIGH = "high"
+FAN_TOP = "top"
+FAN_MIDDLE = "middle"
+FAN_FOCUS = "focus"
+FAN_DIFFUSE = "diffuse"
+# No preset is active
+PRESET_NONE = "none"
+
+# Device is running an energy-saving mode
+PRESET_ECO = "eco"
+
+# Device is running in sleep mode
+PRESET_SLEEP = "sleep"
+
+
+PRESET_MODE_STRINGS = {
+    "device_fans_mode_straight": "normal",
+    "device_fans_mode_natural": "natural",
+    "device_control_mode_sleep": "sleep",
+    "device_fans_mode_sleep": "sleep",
+    "device_fans_mode_auto": "auto",
+    "device_control_mode_auto": "auto",
+    "base_auto": "auto",
+    "device_control_mode_turbo": "turbo",
+    "base_reverse": "reverse",
+    "device_control_custom": "custom",
+    "fan_2in1_breeze": "2-in-1 Breeze Mode",
+    "device_control_mode_manual": "normal",
+    "device_heater_mode_heat": "Heat",
+    "device_heater_mode_eco": "Eco",
+    "device_heater_mode_fan_only": "Cool Air",
+}
+
+
+class DreoDeviceType(StrEnum):
+    """Product names for Dreo devices"""
+
+    TOWER_FAN = "Tower Fan"
+    AIR_CIRCULATOR = "Air Circulator"
+    AIR_PURIFIER = "Air Purifier"
+    CEILING_FAN = "Ceiling Fan"
+    HEATER = "Heater"
+    AIR_CONDITIONER = "Air Conditioner"
+    CHEF_MAKER = "Chef Maker"
+    HUMIDIFIER = "Humidifier"
+    DEHUMIDIFIER = "Dehumidifier"
+    EVAPORATIVE_COOLER = "Evaporative Cooler"
+    UNKNOWN = "Unknown"
+
+
+class DreoACMode(IntEnum):
+    COOL = 1
+    DRY = 2
+    FAN = 3
+    SLEEP = 4
+    ECO = 5
+
+
+class DreoACFanMode(IntEnum):
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    AUTO = 4
+
+
+class DreoHeaterMode(StrEnum):
+    COOLAIR = "coolair"
+    HOTAIR = "hotair"
+    ECO = "eco"
+    OFF = "off"
