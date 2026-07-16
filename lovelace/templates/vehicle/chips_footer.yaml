@@ -1,0 +1,15 @@
+---
+vehicle_chips_footer:
+  default:
+    - sensor_prefix: ""
+    - button_prefix: ""
+  card:
+    type: custom:mushroom-chips-card
+    alignment: center
+    card_mod:
+      style: |
+        ha-card {
+          padding: 12px;
+          --chip-spacing: 8px;
+        }
+    chips: []

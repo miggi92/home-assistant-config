@@ -48,3 +48,8 @@ vehicle_card_main:
         template: vehicle_driving_grid
         variables:
           - sensor_prefix: "[[sensor_prefix]]"
+      - type: custom:decluttering-card
+        template: vehicle_chips_footer
+        variables:
+          - sensor_prefix: "[[sensor_prefix]]"
+          - button_prefix: "[[button_prefix]]"
