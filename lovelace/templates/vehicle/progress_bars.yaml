@@ -5,12 +5,15 @@ vehicle_progress_bars:
   card:
     type: custom:stack-in-card
     mode: vertical
-    keep:
-      background: false
-      box_shadow: false
-      margin: false
-      outer_padding: false
-      border_radius: false
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 12px;
+          margin: 0px 12px 12px 12px;
+          box-shadow: none;
+          border: 1px solid rgba(128, 128, 128, 0.2);
+          background: rgba(128, 128, 128, 0.05);
+        }
     cards:
       - type: custom:entity-progress-card
         entity: "[[sensor_prefix]]_soc"
@@ -19,6 +22,11 @@ vehicle_progress_bars:
         bar_size: large
         card_mod:
           style: |
+            ha-card {
+              background: none !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
             .progress-bar {
               {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
                 background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0px, rgba(255, 255, 255, 0.15) 10px, rgba(0, 0, 0, 0.2) 10px, rgba(0, 0, 0, 0.2) 20px) !important;
@@ -60,6 +68,7 @@ vehicle_progress_bars:
               50% { transform: scale(1.4); }
               100% { transform: scale(1); }
             }
+
       - type: custom:entity-progress-card
         entity: "[[sensor_prefix]]_fuel"
         name: Tankfüllung
@@ -67,6 +76,11 @@ vehicle_progress_bars:
         icon: mdi:gas-station
         card_mod:
           style: |
+            ha-card {
+              background: none !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
             .progress-bar {
               background-color: rgba(128, 128, 128, 0.15) !important;
             }
