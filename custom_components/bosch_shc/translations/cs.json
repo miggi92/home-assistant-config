@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Otevřené dveře/okna"
+      },
       "walk_test_state": {
         "name": "Stav Walk Testu"
       },
@@ -684,6 +687,9 @@
     },
     "update_install_failed": {
       "message": "Nepodařilo se spustit aktualizaci firmwaru."
+    },
+    "update_not_ready": {
+      "message": "Aktualizaci firmwaru pro {name} nelze právě teď aktivovat (aktuální stav: {state})."
     }
   }
 }

@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Atvērtas durvis/logi"
+      },
       "walk_test_state": {
         "name": "Walk Test stāvoklis"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "Neizdevās sākt aparātprogrammatūras atjauninājumu."
+    },
+    "update_not_ready": {
+      "message": "Programmaparatūras atjauninājumu ierīcei {name} pašlaik nevar aktivizēt (pašreizējais statuss: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Šim SHC kontrolierim vēl nav pieejami Zigbee maršrutēšanas dati (nav pievienota neviena Zigbee ierīce, vai kopš Home Assistant palaišanas vēl nav pabeigta pirmā 5 minūšu aptauja)."

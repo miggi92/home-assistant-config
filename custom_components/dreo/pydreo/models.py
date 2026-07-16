@@ -163,7 +163,7 @@ SUPPORTED_MODEL_PREFIXES = {"DR-HTF", "DR-HAF", "DR-HAP", "DR-HPF", "DR-HCF", "W
 # MCU hardware model strings used to identify specific hardware revisions.
 _MCU_HAF004S_OLD_REV = "SC95F8613B"
 _MCU_HTF007S_OLD_REV = ("CMS89F7518", "CMS89F7518/EUR", "CMS89F7518/USA")
-_MCU_HAP003S_AUTO_SILENT_REV = "midea"
+_MCU_HAP003S_AUTO_SILENT_REV = ("midea", "001")
 
 
 def _haf004s_mcu_override(device) -> None:
@@ -199,9 +199,9 @@ def _htf007s_mcu_override(device) -> None:
 
 
 def _hap003s_mcu_override(device) -> None:
-    """Enable auto-silent command remapping for DR-HAP003S units with the "midea" MCU.
+    """Enable auto-silent command remapping for DR-HAP003S units with the "midea" or "001" MCU.
 
-    A newer hardware revision of the Macro Max S/AS uses a "midea" MCU that rejects the
+    Newer hardware and firmware revisions (mcu_hardware_model is "midea" or "001") reject the
     plain "auto" mode command string.  These units require "auto-silent" to be sent instead.
     Units with a different MCU (e.g. "meidi") accept "auto" directly and are left untouched.
     """
@@ -210,7 +210,7 @@ def _hap003s_mcu_override(device) -> None:
     mixed = device.raw_state.get("data", {}).get("mixed", {})
     mcu_obj = mixed.get("mcu_hardware_model", {})
     mcu_model = mcu_obj.get("state", "") if isinstance(mcu_obj, dict) else ""
-    if mcu_model == _MCU_HAP003S_AUTO_SILENT_REV:
+    if mcu_model in _MCU_HAP003S_AUTO_SILENT_REV:
         device._auto_mode_uses_auto_silent = True  # pylint: disable=protected-access
 
 
@@ -280,6 +280,16 @@ SUPPORTED_DEVICES = {
         ],
         device_ranges={SPEED_RANGE: (1, 12)},
     ),
+    "DR-HTF021AS": DreoDeviceDetails(
+        device_type=DreoDeviceType.TOWER_FAN,
+        preset_modes=[
+            ("normal", 1),
+            ("natural", 2),
+            ("sleep", 3),
+            ("auto", 4),
+        ],
+        device_ranges={SPEED_RANGE: (1, 12)},
+    ),
     "DR-HTF518S": DreoDeviceDetails(
         device_type=DreoDeviceType.TOWER_FAN,
         preset_modes=[
@@ -323,7 +333,7 @@ SUPPORTED_DEVICES = {
     ),
     "DR-HPF015S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
-        preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5), ("custom", 6)],
+        preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("auto", 4), ("turbo", 5), ("custom", 6)],
         device_ranges={SPEED_RANGE: (1, 12), HORIZONTAL_ANGLE_RANGE: (-75, 75)},
     ),
     "DR-HPF017S": DreoDeviceDetails(
@@ -372,14 +382,18 @@ SUPPORTED_DEVICES = {
     "DR-HCF007S": DreoDeviceDetails(
         device_type=DreoDeviceType.CEILING_FAN,
         preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("reverse", 4)],
-        device_ranges={SPEED_RANGE: (1, 12), "atm_brightness_range": (1, 100), "rgb_effect_range": (0, 7), "supports_direct_rgb_color": True},
+        # HCF007S uses rgbpresetsel/rgbpresetnum for RGB control (like the HCF002S CFRGB variant).
+        # The rgbeffectid field in device state is read-only metadata and does NOT respond
+        # to write commands; only RGBPRESETSEL_KEY commands actually change the LED ring.
+        # Direct RGB colour via ATMCOLOR_KEY is also not supported (no atmcolor in state).
+        device_ranges={SPEED_RANGE: (1, 12), "atm_brightness_range": (1, 100)},
     ),
     "DR-HCF521S": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN, device_ranges={SPEED_RANGE: (1, 12)}),
     # Air Purifiers
     "DR-HAP": DreoDeviceDetails(device_type=DreoDeviceType.AIR_PURIFIER),
     "DR-HAP003S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_PURIFIER,
-        # Newer hardware revision ("midea" MCU, seriesName "Macro Max S/AS") rejects the plain
+        # Newer hardware and firmware revisions ("midea" or "001" MCU, seriesName "Macro Max S/AS") reject the plain
         # "auto" mode command and requires "auto-silent" instead.  The override sets a flag on
         # the device instance so PyDreoAirPurifier._send_command can remap the command value.
         # The original revision ("meidi" MCU, seriesName "Macro Max S") is left untouched.

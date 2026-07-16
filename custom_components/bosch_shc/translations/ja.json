@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "開いているドア/窓"
+      },
       "walk_test_state": {
         "name": "ウォークテスト状態"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "ファームウェアの更新を開始できませんでした。"
+    },
+    "update_not_ready": {
+      "message": "{name} のファームウェア更新は現在アクティブ化できません（現在の状態: {state}）。"
     },
     "zigbee_topology_no_data": {
       "message": "このSHCコントローラーではまだZigbeeルーティングデータが利用できません（Zigbeeデバイスがペアリングされていないか、Home Assistant起動後の最初の5分間ポーリングがまだ完了していません）。"

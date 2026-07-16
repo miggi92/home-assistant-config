@@ -58,12 +58,18 @@ FIRMWARE_CAPABLE_MODELS = frozenset(
 )
 
 # FirmwareView.FirmwareState values (APK) meaning "nothing to install" --
-# anything else, incl. an unrecognized future string, counts as pending.
+# "Unknown" is NOT here: it's a live-confirmed mid-transfer transient (#373).
 _UP_TO_DATE_STATES = frozenset(
-    {None, "UpToDate", "UpToDateAwaitingUserInteraction", "Unknown", "Fetching"}
+    {None, "UpToDate", "UpToDateAwaitingUserInteraction", "Fetching"}
 )
-# States where the app itself shows an active progress indicator.
-_DEVICE_IN_PROGRESS_STATES = frozenset({"UpdateRunning", "TransferringUpdate"})
+# Live-confirmed on #373: app showed "updating" for 7+ min on UpdateAvailable.
+_DEVICE_IN_PROGRESS_STATES = frozenset(
+    {"UpdateRunning", "TransferringUpdate", "Unknown", "UpdateAvailable"}
+)
+
+# The ONLY state the live-confirmed PUT .../activate call is valid from --
+# every other pending state legitimately 409s if activated (again) (#373).
+_ACTIVATABLE_STATE = "AwaitingActivation"
 
 # Markers, not real versions -- the probe returns a lifecycle state, and
 # UpdateEntity only needs the two to differ to show "update available".
@@ -93,7 +99,9 @@ async def async_setup_entry(
         if device.device_model in FIRMWARE_CAPABLE_MODELS:
             entities.append(DeviceUpdate(device, config_entry.entry_id))
 
-    async_add_entities(entities)
+    # Without this, HA schedules the first poll a full SCAN_INTERVAL from now
+    # (#373) -- entities would sit unset for up to 6h after every restart.
+    async_add_entities(entities, update_before_add=True)
 
 
 class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
@@ -106,7 +114,9 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
 
     _attr_has_entity_name = True
     _attr_translation_key = "controller_update"
-    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
     _attr_should_poll = True
 
     def __init__(self, information: Any, title: str, entry_id: str) -> None:
@@ -152,7 +162,10 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
         """
         refresh = getattr(self._information, "async_refresh", None)
         if refresh is not None:
-            await refresh()
+            try:
+                await refresh()
+            except SHCException as err:
+                LOGGER.debug("Failed to poll controller update state: %s", err)
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
@@ -173,6 +186,8 @@ class ControllerUpdate(UpdateEntity):  # type: ignore[misc]
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
             ) from err
+        finally:
+            await self.async_update()
 
 
 class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
@@ -186,7 +201,9 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
     """
 
     _attr_translation_key = "device_firmware"
-    _attr_supported_features = UpdateEntityFeature.INSTALL
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
     _attr_should_poll = True
 
     def __init__(self, device: SHCDevice, entry_id: str) -> None:
@@ -238,7 +255,23 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
         Confirmed live against a real TRV_GEN2 — see module docstring.
         version/backup are ignored: the underlying endpoint takes no
         parameters (no specific-version install, no pre-update backup).
+
+        Only ever calls the activate endpoint from `_ACTIVATABLE_STATE`
+        (hass#373) — every other pending state means the SHC isn't ready to
+        activate yet and would just 409.
         """
+        state = self._firmware_state
+        if state != _ACTIVATABLE_STATE:
+            raise HomeAssistantError(
+                f"Firmware update for {self.device_name} cannot be activated "
+                f"right now (current state: {state}).",
+                translation_domain=DOMAIN,
+                translation_key="update_not_ready",
+                translation_placeholders={
+                    "name": self.device_name,
+                    "state": str(state),
+                },
+            )
         try:
             await self._device.async_activate_firmware_update()
         except SHCException as err:
@@ -247,3 +280,7 @@ class DeviceUpdate(SHCEntity, UpdateEntity):  # type: ignore[misc]
                 translation_domain=DOMAIN,
                 translation_key="update_install_failed",
             ) from err
+        finally:
+            # Re-poll now so a second click before the next 6h poll doesn't
+            # re-activate a since-moved-on state and 409 again (#373).
+            await self.async_update()

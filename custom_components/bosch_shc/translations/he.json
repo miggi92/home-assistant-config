@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "דלתות/חלונות פתוחים"
+      },
       "walk_test_state": {
         "name": "מצב בדיקת הליכה"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "נכשלה הפעלת עדכון הקושחה."
+    },
+    "update_not_ready": {
+      "message": "לא ניתן להפעיל כעת את עדכון הקושחה עבור {name} (מצב נוכחי: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "אין עדיין נתוני ניתוב Zigbee זמינים עבור בקר SHC זה (לא צומדו התקני Zigbee, או שסריקת חמש הדקות הראשונה טרם הושלמה מאז הפעלת Home Assistant)."

@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Portas/janelas abertas"
+      },
       "walk_test_state": {
         "name": "Estado do Teste de Circulação"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "Falha ao iniciar a atualização do firmware."
+    },
+    "update_not_ready": {
+      "message": "A atualização de firmware para {name} não pode ser ativada agora (estado atual: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Ainda não existem dados de encaminhamento Zigbee disponíveis para este controlador SHC (nenhum dispositivo Zigbee emparelhado, ou a primeira pesquisa de 5 minutos ainda não terminou desde que o Home Assistant foi iniciado)."

@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Porte/finestre aperte"
+      },
       "walk_test_state": {
         "name": "Stato Walk Test"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "Impossibile avviare l'aggiornamento del firmware."
+    },
+    "update_not_ready": {
+      "message": "L'aggiornamento del firmware per {name} non può essere attivato in questo momento (stato attuale: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Non sono ancora disponibili dati di routing Zigbee per questo controller SHC (nessun dispositivo Zigbee associato, oppure la prima scansione di 5 minuti non è ancora stata completata dall'avvio di Home Assistant)."

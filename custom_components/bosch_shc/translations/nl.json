@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Open deuren/ramen"
+      },
       "walk_test_state": {
         "name": "Walk Test-status"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "Starten van de firmware-update mislukt."
+    },
+    "update_not_ready": {
+      "message": "De firmware-update voor {name} kan momenteel niet worden geactiveerd (huidige status: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Er zijn nog geen Zigbee-routeringsgegevens beschikbaar voor deze SHC-controller (er zijn geen Zigbee-apparaten gekoppeld, of de eerste polling van 5 minuten is nog niet voltooid sinds Home Assistant is gestart)."

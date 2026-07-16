@@ -338,6 +338,9 @@
       }
     },
     "sensor": {
+      "open_windows_doors": {
+        "name": "Відчинені двері/вікна"
+      },
       "walk_test_state": {
         "name": "Стан Walk Test"
       },
@@ -675,6 +678,9 @@
     },
     "update_install_failed": {
       "message": "Не вдалося запустити оновлення прошивки."
+    },
+    "update_not_ready": {
+      "message": "Оновлення прошивки для {name} наразі не можна активувати (поточний стан: {state})."
     },
     "zigbee_topology_no_data": {
       "message": "Для цього контролера SHC ще немає даних маршрутизації Zigbee (не з'єднано жодного пристрою Zigbee, або перше 5-хвилинне опитування ще не завершилося з моменту запуску Home Assistant)."
