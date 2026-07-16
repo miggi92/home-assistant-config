@@ -1,0 +1,27 @@
+---
+vehicle_stats_grid:
+  default:
+    - sensor_prefix: ""
+  card:
+    type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: custom:mushroom-template-card
+        entity: "[[sensor_prefix]]_odometer"
+        primary: >
+          {% set distance = states(entity) | float(0) %}
+          {{ "{:,.0f}".format(distance) | replace(',', '.') }} {{ state_attr(entity, 'unit_of_measurement') }}
+        icon: mdi:counter
+        layout: vertical
+        card_mod:
+          style: |
+            ha-card { background: none; box-shadow: none; border: none; }
+      - type: custom:mushroom-template-card
+        entity: "[[sensor_prefix]]_battery"
+        primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement') | default('') }}"
+        icon: mdi:car-battery
+        layout: vertical
+        card_mod:
+          style: |
+            ha-card { background: none; box-shadow: none; border: none; }

@@ -1,0 +1,71 @@
+---
+vehicle_diagnostics_grid:
+  default:
+    - sensor_prefix: ""
+  card:
+    type: conditional
+    conditions:
+      - entity: "[[sensor_prefix]]_ignitionstatus"
+        state: "OFF"
+    card:
+      type: grid
+      columns: 3
+      square: false
+      cards:
+        - type: custom:mushroom-template-card
+          entity: "[[sensor_prefix]]_odometer"
+          primary: >
+            {% set distance = states(entity) | float(0) %}
+            {{ "{:,.0f}".format(distance) | replace(',', '.') }} {{ state_attr(entity, 'unit_of_measurement') }}
+          icon: mdi:counter
+          layout: vertical
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }
+        - type: custom:mushroom-template-card
+          entity: "[[sensor_prefix]]_battery"
+          primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement') | default('') }}"
+          secondary: "12 V Batterie"
+          icon: mdi:car-battery
+          layout: vertical
+          icon_color: >
+            {% set lvl = states(entity) | float(0) %}
+            {% if lvl < 20 %} red {% elif lvl < 50 %} orange {% else %} green {% endif %}
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }
+        - type: custom:mushroom-template-card
+          entity: "[[sensor_prefix]]_oil"
+          primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement') | default('%') }}"
+          secondary: "Öl-Zustand"
+          icon: mdi:oil
+          layout: vertical
+          icon_color: >
+            {{ 'red' if states(entity) | float(0) < 20 else 'green' }}
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }
+        - type: custom:mushroom-template-card
+          entity: "[[sensor_prefix]]_tirepressure"
+          primary: >
+            {{ 'OK' if is_state(entity, 'NORMAL_OPERATION') else 'Prüfen!' }}
+          secondary: Reifendruck
+          icon: mdi:car-tire-alert
+          layout: vertical
+          icon_color: >
+            {{ 'green' if is_state(entity, 'NORMAL_OPERATION') else 'red' }}
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }
+        - type: custom:mushroom-template-card
+          entity: "[[sensor_prefix]]_coolanttemp"
+          primary: "{{ states(entity) }} {{ state_attr(entity, 'unit_of_measurement') | default('°C') }}"
+          secondary: "Kühlmittel"
+          icon: mdi:coolant-temperature
+          layout: vertical
+          icon_color: >
+            {% set temp = states(entity) | float(0) %}
+            {% if temp > 115 %} red {% elif temp > 105 %} orange {% elif temp >= 60 %} green {% else %} blue {% endif %}
+          card_mod:
+            style: |
+              ha-card { background: none; box-shadow: none; border: none; }

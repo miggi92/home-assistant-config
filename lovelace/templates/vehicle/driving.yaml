@@ -1,0 +1,54 @@
+---
+vehicle_driving_grid:
+  default:
+    - sensor_prefix: ""
+  card:
+    type: conditional
+    conditions:
+      - entity: "[[sensor_prefix]]_ignitionstatus"
+        state: "ON"
+    card:
+      type: custom:stack-in-card
+      cards:
+        - type: custom:mushroom-title-card
+          subtitle: "Fahrdaten"
+          card_mod:
+            style: |
+              ha-card { padding-bottom: 0px; padding-top: 0px; }
+        - type: grid
+          columns: 3
+          square: false
+          cards:
+            - type: custom:mushroom-entity-card
+              entity: "[[sensor_prefix]]_speed"
+              name: km/h
+              icon: mdi:speedometer
+              layout: vertical
+              primary_info: state
+              secondary_info: name
+              icon_color: red
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }
+            - type: custom:mushroom-entity-card
+              entity: "[[sensor_prefix]]_enginespeed"
+              name: RPM
+              icon: mdi:engine
+              layout: vertical
+              primary_info: state
+              secondary_info: name
+              icon_color: orange
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }
+            - type: custom:mushroom-entity-card
+              entity: "[[sensor_prefix]]_gearleverposition"
+              name: Gang
+              icon: mdi:car-shift-pattern
+              layout: vertical
+              primary_info: state
+              secondary_info: name
+              icon_color: purple
+              card_mod:
+                style: |
+                  ha-card { background: none; box-shadow: none; border: none; }

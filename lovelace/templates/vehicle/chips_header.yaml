@@ -1,0 +1,140 @@
+---
+vehicle_chips_header:
+  default:
+    - sensor_prefix: ""
+    - tracker_entity: ""
+    - button_prefix: ""
+  card:
+    type: custom:mushroom-chips-card
+    alignment: center
+    card_mod:
+      style: |
+        ha-card {
+          padding: 12px;
+          --chip-spacing: 8px;
+        }
+    chips:
+      - type: conditional
+        conditions:
+          - entity: "[[sensor_prefix]]_indicators"
+            state_not: "0"
+        chip:
+          type: template
+          icon: mdi:alert-circle
+          icon_color: red
+          content: >
+            {% set labels = {
+              'lowwasherfluid_600E19': 'Wischwasser',
+              'tirepressuremonitorsystemwarning_600E27': 'Reifendruck',
+              'lowfuel_600E20': 'Wenig Kraftstoff',
+              'lowengineoilpressure_600E17': 'Öldruck',
+              'enginecoolantovertemp_600E16': 'Kühlmittel',
+              'brakewarning_600E28': 'Bremsen'
+            } %}
+            {% set entity_id = '[[sensor_prefix]]_indicators' %}
+            {% set ns = namespace(active=[]) %}
+            {% for key, value in states[entity_id].attributes.items() %}
+              {% if value == true and key in labels %}
+                {% set ns.active = ns.active + [labels[key]] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.active[0] if ns.active | length > 0 else 'Warnung' }}
+          tap_action:
+            action: more-info
+          card_mod:
+            style: |
+              ha-card {
+                --chip-background: rgba(220, 53, 69, 0.2) !important;
+                animation: blink 1.5s linear infinite;
+              }
+              @keyframes blink { 50% { opacity: 0.7; } }
+      - type: conditional
+        conditions:
+          - entity: "[[sensor_prefix]]_messages"
+            state_not: "0"
+          - entity: "[[sensor_prefix]]_messages"
+            state_not: "None"
+        chip:
+          type: template
+          icon: mdi:email-alert
+          icon_color: orange
+          content: "{{ states('[[sensor_prefix]]_messages') }}"
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: "[[button_prefix]]_msgdeleteall"
+          card_mod:
+            style: |
+              ha-card { --chip-background: rgba(255, 152, 0, 0.2) !important; }
+      - type: conditional
+        conditions:
+          - entity: "[[sensor_prefix]]_elvehcharging"
+            state_not: "NOT_READY"
+        chip:
+          type: template
+          entity: "[[sensor_prefix]]_elvehcharging"
+          icon: >
+            {{ 'mdi:battery-charging-high' if is_state(entity, 'IN_PROGRESS') else 'mdi:power-plug' }}
+          icon_color: >
+            {{ 'green' if is_state(entity, 'IN_PROGRESS') else 'blue' }}
+          content: "{{ states(entity) }}"
+          tap_action:
+            action: more-info
+          card_mod:
+            style: |
+              ha-card {
+                {% if is_state(config.entity, 'IN_PROGRESS') %}
+                  border: 1px solid #4CAF50;
+                  animation: pulse 2s infinite;
+                {% endif %}
+              }
+      - type: conditional
+        conditions:
+          - entity: "[[sensor_prefix]]_ignitionstatus"
+            state: "ON"
+          - entity: "[[sensor_prefix]]_seatbelt"
+            state_not: "BUCKLED"
+        chip:
+          type: template
+          icon: mdi:seatbelt
+          icon_color: red
+          tap_action:
+            action: more-info
+          card_mod:
+            style: |
+              ha-card {
+                --chip-background: rgba(220, 53, 69, 0.2) !important;
+                animation: blink 1s linear infinite;
+              }
+      - type: template
+        entity: "[[sensor_prefix]]_doorlock"
+        icon: mdi:car-door-lock
+        icon_color: >
+          {{ 'red' if is_state(entity, 'open') or is_state(entity, 'UNLOCKED') else 'green' }}
+        tap_action:
+          action: toggle
+        card_mod:
+          style: |
+            ha-card {
+              --chip-background: {{ 'rgba(244, 67, 54, 0.2)' if is_state(config.entity, 'open') or is_state(config.entity, 'UNLOCKED') else 'rgba(76, 175, 80, 0.2)' }} !important;
+            }
+      - type: template
+        entity: "[[tracker_entity]]"
+        icon: >
+          {% set current_zone = states(entity) %}
+          {% set matching_zones = states.zone | selectattr('name', 'eq', current_zone) | list %}
+          {{ matching_zones[0].attributes.icon if matching_zones and matching_zones[0].attributes.icon else 'mdi:road-variant' }}
+        content: >
+          {% set current_zone = states(entity) %}
+          {{ 'Abwesend' if current_zone == 'not_home' else current_zone }}
+        tap_action:
+          action: more-info
+      - type: template
+        entity: "[[sensor_prefix]]_lastrefresh"
+        icon: mdi:refresh
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: "[[button_prefix]]_request_refresh"

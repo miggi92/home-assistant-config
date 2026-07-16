@@ -1,0 +1,32 @@
+---
+vehicle_charging_log:
+  default:
+    - sensor_prefix: ""
+  card:
+    type: custom:mushroom-template-card
+    entity: "[[sensor_prefix]]_energytransferlogentry"
+    primary: >
+      Letzte Ladung: {{ states(entity) | replace('.', ',') }} {{ state_attr(entity, 'unit_of_measurement') }}
+    secondary: >
+      {% set attrs = states[entity].attributes %}
+      {% if attrs.plugDetails is defined and attrs.stateOfCharge is defined %}
+        {% set dist = attrs.plugDetails.totalDistanceAdded | default(0) | round(1) | string | replace('.', ',') %}
+        {% set start = attrs.stateOfCharge.firstSOC | default(0) %}
+        {% set end = attrs.stateOfCharge.lastSOC | default(0) %}
+        {% set loc = attrs.location.name | default('Unbekannt') %}
+        +{{ dist }} km • {{ start }}% ➔ {{ end }}% • {{ loc }}
+      {% else %}
+        Keine Details verfügbar
+      {% endif %}
+    icon: mdi:ev-plug-type2
+    icon_color: green
+    layout: horizontal
+    card_mod:
+      style: |
+        ha-card {
+          background: rgba(76, 175, 80, 0.05);
+          box-shadow: none;
+          border: 1px solid rgba(76, 175, 80, 0.2);
+          border-radius: 12px;
+          margin: 0px 12px 12px 12px;
+        }

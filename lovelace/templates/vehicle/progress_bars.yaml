@@ -1,0 +1,92 @@
+---
+vehicle_progress_bars:
+  default:
+    - sensor_prefix: ""
+  card:
+    type: custom:stack-in-card
+    mode: vertical
+    keep:
+      background: false
+      box_shadow: false
+      margin: false
+      outer_padding: false
+      border_radius: false
+    cards:
+      - type: custom:entity-progress-card
+        entity: "[[sensor_prefix]]_soc"
+        name: Akku Ladestand
+        icon: mdi:battery-charging
+        bar_size: large
+        card_mod:
+          style: |
+            .progress-bar {
+              {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
+                background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0px, rgba(255, 255, 255, 0.15) 10px, rgba(0, 0, 0, 0.2) 10px, rgba(0, 0, 0, 0.2) 20px) !important;
+                background-size: 28px 28px !important;
+                animation: moveStripes 2s linear infinite !important;
+              {% else %}
+                background-color: rgba(128, 128, 128, 0.15) !important;
+              {% endif %}
+            }
+            .progress-bar-inner {
+              {% set batteryLevel = states('[[sensor_prefix]]_soc') | float(0) %}
+              {% if batteryLevel <= 15 %}
+                background-color: #F44336 !important;
+              {% elif batteryLevel <= 40 %}
+                background-color: #FF9800 !important;
+              {% else %}
+                background-color: #4CAF50 !important;
+              {% endif %}
+            }
+            ha-icon {
+              {% set batteryLevel = states('[[sensor_prefix]]_soc') | float(0) %}
+              {% if batteryLevel <= 15 %}
+                color: #F44336 !important;
+              {% elif batteryLevel <= 40 %}
+                color: #FF9800 !important;
+              {% else %}
+                color: #4CAF50 !important;
+              {% endif %}
+              {% if is_state('[[sensor_prefix]]_elvehcharging', 'IN_PROGRESS') %}
+                animation: chargePulse 2s infinite ease-in-out;
+              {% endif %}
+            }
+            @keyframes moveStripes {
+              0% { background-position: 0 0; }
+              100% { background-position: 28px 0; }
+            }
+            @keyframes chargePulse {
+              0% { transform: scale(1); }
+              50% { transform: scale(1.4); }
+              100% { transform: scale(1); }
+            }
+      - type: custom:entity-progress-card
+        entity: "[[sensor_prefix]]_fuel"
+        name: Tankfüllung
+        bar_size: large
+        icon: mdi:gas-station
+        card_mod:
+          style: |
+            .progress-bar {
+              background-color: rgba(128, 128, 128, 0.15) !important;
+            }
+            .progress-bar-inner {
+              {% set fuelLevel = states('[[sensor_prefix]]_fuel') | float(0) %}
+              {% if fuelLevel <= 15 %}
+                background-color: #F44336 !important;
+              {% elif fuelLevel <= 40 %}
+                background-color: #FF9800 !important;
+              {% else %}
+                background-color: #2196F3 !important;
+              {% endif %}
+            }
+            ha-icon {
+              {% set fuelLevel = states('[[sensor_prefix]]_fuel') | float(0) %}
+              {% if fuelLevel <= 15 %}
+                color: #F44336 !important;
+              {% elif fuelLevel <= 40 %}
+                color: #FF9800 !important;
+              {% else %}
+                color: #2196F3 !important;
+              {% endif %}
+            }

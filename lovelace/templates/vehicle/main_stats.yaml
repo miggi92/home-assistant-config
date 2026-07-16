@@ -1,0 +1,59 @@
+---
+vehicle_main_stats:
+  default:
+    - sensor_prefix: ""
+    - switch_prefix: ""
+  card:
+    type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: "[[switch_prefix]]_ignition"
+        icon: mdi:engine
+        name: Klima/Start
+        layout: vertical
+        tap_action:
+          action: toggle
+        hold_action:
+          action: more-info
+        secondary_info: >
+          {% if is_state('[[sensor_prefix]]_remotestartstatus', 'Active') %}
+            {{ states('[[sensor_prefix]]_remotestartcountdown') }} min
+          {% else %}
+            state
+          {% endif %}
+        card_mod:
+          style: |
+            ha-card { background: none; box-shadow: none; border: none; }
+            mushroom-state-icon {
+              {{ 'animation: pulse 2s infinite;' if is_state(config.entity, 'on') else '' }}
+            }
+      - type: custom:mushroom-template-card
+        entity: "[[sensor_prefix]]_elveh"
+        primary: "{{ states('[[sensor_prefix]]_elveh') }} km"
+        secondary: >
+          {% set charging_state = states('[[sensor_prefix]]_elvehcharging') %}
+          {% set end_time_attr = state_attr('[[sensor_prefix]]_elvehcharging', 'estimatedEndTime') %}
+          {% if charging_state == 'IN_PROGRESS' and end_time_attr %}
+            Bis {{ as_timestamp(end_time_attr) | timestamp_custom('%H:%M') }} Uhr
+          {% else %}
+            Elektro
+          {% endif %}
+        icon: mdi:ev-station
+        layout: vertical
+        icon_color: green
+        tap_action: { action: none }
+        card_mod:
+          style: |
+            ha-card { background: none; box-shadow: none; border: none; }
+      - type: custom:mushroom-entity-card
+        entity: "[[sensor_prefix]]_fuel_range"
+        name: Benzin
+        icon: mdi:gas-station-outline
+        primary_info: state
+        secondary_info: name
+        layout: vertical
+        icon_color: blue
+        tap_action: { action: none }
+        card_mod:
+          style: |
+            ha-card { background: none; box-shadow: none; border: none; }

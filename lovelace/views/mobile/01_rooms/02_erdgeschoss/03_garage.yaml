@@ -19,7 +19,7 @@ sections:
     cards:
       - !include ../../../../cards/nav-bar.yaml
       - type: custom:decluttering-card
-        template: vehicle_card_template
+        template: vehicle_card_main
         variables:
           - image_path: /local/images/ford_tourneo.png
           - sensor_prefix: sensor.fordpass_tourneo
