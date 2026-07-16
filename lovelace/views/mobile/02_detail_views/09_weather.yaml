@@ -21,7 +21,7 @@ badges:
     variables:
       - entity: sensor.luftfeuchtigkeit
   - type: entity
-    entity: sensor.luftdruck
+    entity: sensor.aussen_luftdruck
   - type: entity
     entity: sensor.windgeschwindigkeit
   - type: entity
