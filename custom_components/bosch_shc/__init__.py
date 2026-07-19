@@ -79,7 +79,9 @@ from .const import (
     OPT_SILENT_MODE_END,
     OPT_SILENT_MODE_START,
     OPT_SSL_SKIP_VERIFY,
+    OPT_SSL_VERIFY_HOSTNAME,
     SERVICE_EXPORT_ZIGBEE_TOPOLOGY,
+    SERVICE_REFRESH_ZIGBEE_ROUTING,
     SERVICE_TRIGGER_RAWSCAN,
     SERVICE_TRIGGER_SCENARIO,
     SUPPORTED_INPUTS_EVENTS_TYPES,
@@ -126,6 +128,12 @@ RAWSCAN_TRIGGER_SCHEMA = vol.Schema(
 )
 
 EXPORT_ZIGBEE_TOPOLOGY_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_TITLE, default=""): cv.string,
+    }
+)
+
+REFRESH_ZIGBEE_ROUTING_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_TITLE, default=""): cv.string,
     }
@@ -256,16 +264,25 @@ def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
             if coordinator is None or not coordinator.data:
                 raise ServiceValidationError(
                     "No Zigbee routing data available yet for this SHC "
-                    "controller (no Zigbee devices paired, or the first "
-                    "5-minute poll hasn't completed since HA started).",
+                    "controller (no Zigbee devices paired, or the startup "
+                    "poll hasn't completed yet — try the "
+                    "refresh_zigbee_routing action first).",
                     translation_domain=DOMAIN,
                     translation_key="zigbee_topology_no_data",
                 )
             device_names = {
                 device.id: device.name for device in runtime.session.devices
             }
+            zigbee_device_ids = {
+                device_id
+                for device_id in device_names
+                if device_id.startswith("hdm:ZigBee:")
+            }
             graph = build_topology_graph(
-                coordinator.data, device_names, runtime.shc_device.name or runtime.title
+                coordinator.data,
+                device_names,
+                runtime.shc_device.name or runtime.title,
+                zigbee_device_ids,
             )
             mermaid = topology_to_mermaid(graph)
             html = topology_to_html(graph, f"Zigbee topology — {runtime.title}")
@@ -324,6 +341,45 @@ def _register_export_zigbee_topology_service(hass: HomeAssistant) -> None:
         export_topology_service_call,
         schema=EXPORT_ZIGBEE_TOPOLOGY_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+
+
+def _register_refresh_zigbee_routing_service(hass: HomeAssistant) -> None:
+    """Register the refresh_zigbee_routing service if not already registered.
+
+    The Zigbee routing coordinator only ever fetches once at startup (no
+    periodic polling — even a slow periodic interval is an unnecessary
+    battery/stability cost). This is the explicit, user-requested way to
+    get a fresh reading on demand, e.g. right before exporting the
+    topology map.
+    """
+    if hass.services.has_service(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING):
+        return
+
+    async def refresh_routing_service_call(call: ServiceCall) -> None:
+        """Trigger an on-demand Zigbee routing-info refresh."""
+        title = call.data[ATTR_TITLE]
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            if not hasattr(config_entry, "runtime_data"):
+                continue
+            runtime: SHCData = config_entry.runtime_data
+            if title not in ("", runtime.title):
+                continue
+            coordinator = runtime.zigbee_routing_coordinator
+            if coordinator is not None:
+                await coordinator.async_request_refresh()
+            return
+        raise ServiceValidationError(
+            f"No loaded Bosch SHC entry with title '{title}' found.",
+            translation_domain=DOMAIN,
+            translation_key="zigbee_topology_entry_not_found",
+        )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REFRESH_ZIGBEE_ROUTING,
+        refresh_routing_service_call,
+        schema=REFRESH_ZIGBEE_ROUTING_SCHEMA,
     )
 
 
@@ -387,6 +443,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         LOGGER.warning(
             "ssl_skip_verify is set but is not yet honored on the async path; "
             "the bundled Bosch CA is still used. Tracked for async parity."
+        )
+    if entry.options.get(OPT_SSL_VERIFY_HOSTNAME, False):
+        LOGGER.warning(
+            "ssl_verify_hostname is set but is not yet honored on the async "
+            "path; hostname verification is always disabled (the SHC's "
+            "certificate CN/SAN doesn't match its IP). Tracked for async parity."
         )
     # Build the mTLS SSLContext off the event loop (blocking PEM reads).
     # verify_ssl=False: the per-request ssl= kwarg already passes the mTLS context.
@@ -782,6 +844,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
     if entry.options.get(OPT_ENABLE_RAWSCAN, True):
         _register_rawscan_service(hass)
     _register_export_zigbee_topology_service(hass)
+    _register_refresh_zigbee_routing_service(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -850,16 +913,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not remaining:
             hass.services.async_remove(DOMAIN, SERVICE_TRIGGER_RAWSCAN)
 
-    # Remove export_zigbee_topology service if no loaded entries remain at all
-    # (always-on, unlike rawscan — no per-entry option gates it).
-    if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
-        remaining_any = [
-            e
-            for e in hass.config_entries.async_entries(DOMAIN)
-            if e.entry_id != entry.entry_id and e.state is ConfigEntryState.LOADED
-        ]
-        if not remaining_any:
+    # Remove export/refresh zigbee services if no loaded entries remain at all
+    # (always-on, unlike rawscan — no per-entry option gates them).
+    remaining_any = [
+        e
+        for e in hass.config_entries.async_entries(DOMAIN)
+        if e.entry_id != entry.entry_id and e.state is ConfigEntryState.LOADED
+    ]
+    if not remaining_any:
+        if hass.services.has_service(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY):
             hass.services.async_remove(DOMAIN, SERVICE_EXPORT_ZIGBEE_TOPOLOGY)
+        if hass.services.has_service(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING):
+            hass.services.async_remove(DOMAIN, SERVICE_REFRESH_ZIGBEE_ROUTING)
 
     return unload_ok
 
