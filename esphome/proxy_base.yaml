@@ -56,4 +56,4 @@ button:
 
 ota:
   - platform: esphome
-    password: hX4C9YjZ7t7cxfa
+    password: !secret proxy_base_ota_password
