@@ -37,6 +37,7 @@ wifi:
   password: !secret wifi_password
   domain: !secret home_domain
   fast_connect: true
+  power_save_mode: none
   manual_ip:
     static_ip: ${ip_address}
     gateway: !secret wifi_gateway
