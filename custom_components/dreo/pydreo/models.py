@@ -288,7 +288,7 @@ SUPPORTED_DEVICES = {
             ("sleep", 3),
             ("auto", 4),
         ],
-        device_ranges={SPEED_RANGE: (1, 12)},
+        device_ranges={SPEED_RANGE: (1, 12), "shakehorizonangle_range": (30, 150)},
     ),
     "DR-HTF518S": DreoDeviceDetails(
         device_type=DreoDeviceType.TOWER_FAN,
@@ -326,9 +326,7 @@ SUPPORTED_DEVICES = {
     # data that would allow auto-detection of preset modes for these devices.
     "DR-HPF008S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
-        # Note: Fan preset_modes use tuple format (name, value) despite type annotation.
-        # This is required for fans that map preset names to numeric mode values.
-        preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5)],
+        preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("auto", 4), ("turbo", 5)],
         device_ranges={SPEED_RANGE: (1, 9), VERTICAL_ANGLE_RANGE: (-30, 90), "atm_brightness_range": (1, 3)},
     ),
     "DR-HPF015S": DreoDeviceDetails(
@@ -398,6 +396,14 @@ SUPPORTED_DEVICES = {
         # the device instance so PyDreoAirPurifier._send_command can remap the command value.
         # The original revision ("meidi" MCU, seriesName "Macro Max S") is left untouched.
         override_fn=_hap003s_mcu_override,
+    ),
+    # DR-HAP009S diagnostics currently report an empty controlsConf object, so speed range and
+    # preset modes cannot be auto-detected from the API metadata. Hardcode the known fan
+    # capabilities to keep the Home Assistant fan entity available.
+    "DR-HAP009S": DreoDeviceDetails(
+        device_type=DreoDeviceType.AIR_PURIFIER,
+        preset_modes=[("auto", "auto"), ("manual", "manual"), ("sleep", "sleep"), ("turbo", "turbo")],
+        device_ranges={SPEED_RANGE: (1, 4)},
     ),
     # Heaters
     "DR-HSH017BS": DreoHeaterDeviceDetails(
