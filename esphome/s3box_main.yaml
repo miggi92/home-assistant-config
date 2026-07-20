@@ -2884,37 +2884,44 @@ voice_assistant:
               - component.update: s3_box_lcd
 
 image:
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/error.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/error.png
     id: error_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/idle.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/idle.png
     id: idle_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/listening.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/listening.png
     id: listening_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/thinking.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/thinking.png
     id: thinking_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/replying.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/replying.png
     id: replying_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/loading.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/loading.png
     id: loading_img
     resize: 320x240
     type: RGB
     transparency: alpha_channel
-  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/logo.png"
+  - platform: file
+    file: https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/images/logo.png
     id: logo_img
     resize: 80x75
     type: RGB
