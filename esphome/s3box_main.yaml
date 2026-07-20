@@ -125,6 +125,8 @@ psram:
   speed: 80MHz
 
 api:
+  encryption:
+    key: !secret proxy_encryption
   on_client_connected:
     - lambda: |-
         id(api_connection) = true;
