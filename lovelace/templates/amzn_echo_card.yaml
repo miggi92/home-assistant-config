@@ -7,8 +7,9 @@ amazon_echo_template:
   card:
     type: conditional
     conditions:
-      - entity: "media_player.[[echo_id]]"
-        state_not: "unavailable"
+      - condition: state
+        entity: media_player.[[echo_id]]
+        state_not: unavailable
     card:
       type: vertical-stack
       cards:
@@ -18,7 +19,7 @@ amazon_echo_template:
             columns: full
             rows: 1
         - type: custom:mini-media-player
-          entity: "media_player.[[echo_id]]"
+          entity: media_player.[[echo_id]]
           artwork: cover
           icon: "[[icon]]"
           info: scroll
@@ -32,70 +33,52 @@ amazon_echo_template:
             power_state: false
           tts:
             platform: alexa
-            enity_id: "media_player.[[echo_id]]"
+            entity_id: media_player.[[echo_id]]
         - type: grid
           square: false
           cards:
             - type: conditional
               conditions:
-                - entity: "sensor.[[echo_id]]_next_timer"
-                  state_not: "unknown"
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachster_timer
+                  state_not: unavailable
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachster_timer
+                  state_not: unknown
               card:
                 type: custom:mushroom-entity-card
-                entity: "sensor.[[echo_id]]_next_timer"
+                entity: sensor.[[echo_id]]_nachster_timer
                 name: Nächster Timer
             - type: conditional
               conditions:
-                - entity: "sensor.[[echo_id]]_next_alarm"
-                  state_not: "unknown"
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachster_wecker
+                  state_not: unavailable
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachster_wecker
+                  state_not: unknown
               card:
                 type: custom:mushroom-entity-card
-                entity: "sensor.[[echo_id]]_next_alarm"
+                entity: sensor.[[echo_id]]_nachster_wecker
                 name: Nächster Wecker
             - type: conditional
               conditions:
-                - entity: "sensor.[[echo_id]]_next_reminder"
-                  state_not: "unknown"
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachste_erinnerung
+                  state_not: unavailable
+                - condition: state
+                  entity: sensor.[[echo_id]]_nachste_erinnerung
+                  state_not: unknown
               card:
                 type: custom:mushroom-entity-card
-                entity: "sensor.[[echo_id]]_next_reminder"
+                entity: sensor.[[echo_id]]_nachste_erinnerung
                 name: Nächste Erinnerung
         - type: grid
           square: false
           columns: 2
           cards:
             - type: custom:mushroom-entity-card
-              entity: "switch.[[echo_id]]_do_not_disturb_switch"
+              entity: switch.[[echo_id]]_bitte_nicht_storen
               name: DnD
               tap_action:
                 action: toggle
-            - type: conditional
-              conditions:
-                - entity: "media_player.[[echo_id]]"
-                  state_not: "Standby"
-              card:
-                type: conditional
-                conditions:
-                  - entity: "sensor.[[echo_id]]_next_reminder"
-                    state_not: "unknown"
-                card:
-                  - type: custom:mushroom-entity-card
-                    entity: "switch.[[echo_id]]_repeat_switch"
-                    name: Repeat
-                    tap_action:
-                      action: toggle
-            - type: conditional
-              conditions:
-                - entity: "media_player.[[echo_id]]"
-                  state_not: "Standby"
-              card:
-                type: conditional
-                conditions:
-                  - entity: "sensor.[[echo_id]]_next_reminder"
-                    state_not: "unknown"
-                card:
-                  - type: custom:mushroom-entity-card
-                    entity: "switch.[[echo_id]]_shuffle_switch"
-                    name: Shuffle
-                    tap_action:
-                      action: toggle
