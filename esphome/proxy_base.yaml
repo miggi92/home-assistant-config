@@ -28,6 +28,7 @@ web_server:
   version: 3
   
 logger:
+  level: INFO
 
 improv_serial:
 
