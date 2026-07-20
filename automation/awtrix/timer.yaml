@@ -4,7 +4,7 @@ id: 2c96d793-ea37-49cb-89c2-972a4518789b
 trigger:
   - platform: state
     entity_id:
-      - sensor.echo_buro_nachster_timer
+      - sensor.buro_echo_buro_nachster_timer
       - sensor.echo_show_nachster_timer
       - sensor.milos_dot_nachster_timer
   - platform: time_pattern
@@ -13,7 +13,7 @@ trigger:
 action:
   - repeat:
       for_each:
-        - entity_id: sensor.echo_buro_nachster_timer
+        - entity_id: sensor.buro_echo_buro_nachster_timer
           text: Büro
           id: office
           icon: 8135
