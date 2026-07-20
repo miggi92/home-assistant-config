@@ -35,7 +35,7 @@ action:
           title: "Meeting"
       - action: switch.turn_on
         target:
-          entity_id: switch.echo_buro_bitte_nicht_storen
+          entity_id: switch.buro_echo_buro_bitte_nicht_storen
     else:
       - action: script.awtrix3delapp
         alias: "Remove Meeting from Clock"
@@ -52,7 +52,7 @@ action:
           message: "null"
       - action: switch.turn_off
         target:
-          entity_id: switch.echo_buro_bitte_nicht_storen
+          entity_id: switch.buro_echo_buro_bitte_nicht_storen
 
 mode: queued
 max: 5
