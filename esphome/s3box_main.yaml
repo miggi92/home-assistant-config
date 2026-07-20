@@ -290,7 +290,7 @@ script:
                   - voice_assistant.start_continuous:
             - if:
                 condition:
-                  lambda: return id(wake_word_engine_location).state == "On device";
+                  lambda: return id(wake_word_engine_location).current_option() == "On device";
                 then:
                   - lambda: id(va).set_use_wake_word(false);
                   - micro_wake_word.start
