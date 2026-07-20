@@ -3128,7 +3128,7 @@ spi:
 
 
 display:
-  - platform: ili9xxx
+  - platform: mipi_spi
     id: s3_box_lcd
     model: S3BOX
     data_rate: 40MHz
