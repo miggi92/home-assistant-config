@@ -28,7 +28,7 @@ substitutions:
 
   external_media_player: your_media_player   ## <-- anpassen (ohne "media_player.")
   home_assistant_host: http://homeassistant.local:8123  ## <-- anpassen
-  outside_temp_entity: sensor.aussentemperatur   ## <-- anpassen
+  outside_temp_entity: sensor.temperatur   ## <-- anpassen
   calendar_entity: calendar.familie              ## <-- anpassen
 
 #################### ON DEVICE WAKE WORDS #######################################
