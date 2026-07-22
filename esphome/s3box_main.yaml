@@ -1,20 +1,9 @@
 ###############################################################################
-##  REFACTORED (wartungsfreundlich) — funktional identisch zur Vorversion:
-##   1. Statusleiste steht nur noch EINMAL als substitution 'statusbar'
-##      und wird in jeder Seite per ${statusbar} eingesetzt.
-##      -> Statusleiste aendern? NUR die statusbar-Zeile in substitutions.
-##   2. Die frueheren 10 increment_digit_X-Skripte sind zu einem einzigen
-##      parametrisierten Skript 'increment_digit' (digit: string) zusammengefasst.
-##   3. Tage/Monate auf Deutsch.
-##   4. Lichter (Wohnzimmer/Bett/Abstellkammer) auf lights_page,
-##      Ventilatoren (Buero/Tower/Wohnzimmer) auf template_page (= Fan-Kachel oben rechts im Idle).
-##      Jeweils Tap = toggle, Icon zeigt Live-Status aus HA (an=hell, aus=gedimmt).
-##  Anpassungs-Stellen (external_media_player etc.) wie gehabt unten beachten.
-###############################################################################
-
-###############################################################################
 ##  ESP32-S3-Box-3 — Custom UI Config (Basis: BigBobbas)
-##  Vorbereitet fuer: S3 Box 3 + Dock (AHT20) + Radar-Praesenzsensor
+##  MINIMAL-DESIGN: alle Seiten im ruhigen Stil des Bildschirmschoners.
+##   - schwarzer Hintergrund, eine Akzentfarbe (light_blue), Werte in Weiss
+##   - "aus"-Zustaende gedimmt (blue_drk), "an" = hell
+##   - Statusleiste zeigt NUR Probleme/aktive Zustaende, sonst leer
 ##
 ##  >>> WAS DU TUN MUSST (nur diese 3 Zeilen unten in substitutions): <<<
 ##    1. external_media_player : Entity-ID deines HA-Media-Players OHNE "media_player."
@@ -23,16 +12,11 @@
 ##
 ##  >>> OPTIONAL / GUT ZU WISSEN: <<<
 ##    - Sound-Dateien key.mp3 / awake.mp3 / timer_finished.mp3 muessen unter
-##      <HA>/config/www/sounds/ liegen (sonst nur Log-Fehler bei genau diesen Aktionen).
+##      <HA>/config/www/sounds/ liegen.
 ##    - Alarm ist auf alarm_control_panel.alarmo verdrahtet (HA-Addon "Alarmo").
-##      Ohne Alarmo bleibt die Alarm-Seite ohne Status (kein Boot-Problem).
 ##    - Weitere Wake Words: unten in micro_wake_word das '#' vor model_1/2/4 entfernen.
-##    - Du HAST Sensoren -> alle "# remove for no sensor version"-Zeilen bleiben drin!
+##    - Farbe global aendern? Einfach unter color: den Hex-Wert von light_blue anpassen.
 ###############################################################################
-
-## You can change the friendly name if you wish on line below. The friendly name is how the device will show in HA
-## However the <name:> is how HA connects to the device eg. esp32-s3-box-3.local is the mDNS hostname for the device.
-## Once added to HA changing the device name can lead to connection issues, between HA and the device.
 
 substitutions:
   name: esp32-s3box-3
@@ -43,10 +27,6 @@ substitutions:
   tts_voice_speed: "24000" #options #nabu casa "24000" #piper "16000" elevenlabs "44100" must include quotes
 
 #################### ON DEVICE WAKE WORDS #######################################
-####          all of the below wakewords are installed on the device        #####
-####      you can use any of these without re-compiling - just say them!    #####
-#################################################################################
-# TO REMOVE A WAKE WORD - COMMENT OUT THE CORESPONDING LINE FROM THE CONFIG BELOW - CTRL + F to search for "models"
   micro_wake_word_model_1: alexa
   micro_wake_word_model_2: hey_jarvis
   micro_wake_word_model_3: okay_nabu
@@ -54,7 +34,6 @@ substitutions:
 ####################################################################
 
 #####  Days and months #####
-## Change the values on the right to match your locale ##
   monday: Montag
   tuesday: Dienstag
   wednesday: Mittwoch
@@ -78,12 +57,11 @@ substitutions:
 #####################################################################
 
 ##### DO NOT CHANGE SUBSTITUTIONS BELOW THIS LINE ######
-#####      UNLESS YOU KNOW WHAT YOU ARE DOING     ######
   font_glyphs: '&@!"''%()+=,-_.:°/$€£¥?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzÀàÁáÂâÃãÄäĀāĂăÅåǺǻẠạĄąÆæǼǽĆćĈĉČčĊċÇçĎďĐđÐðÈèÉéÊêẼẽĚěËëĒēĔĕĖėẸẹĘęĜĝǦǧĞğĠġĢģĤĥĦħıÌìÍíÎîĨĩÏïĪīĬĭİỊịĮįȷĴĵĶķĸĹĺĽľĻļŁłĿŀŃńÑñŇňŅņƝɲŊŋŉÒòÓóÔôÕõÖöŌōŎŏŐőỌọǪǫØøǾǿŒœŔŕŘřŖŗŚśŜŝŠšŞşȘșẞßŤťŢţȚțŦŧÞþÙùÚúÛûŨũÜüŪūŬŭŮůŰűỤụŲųẀẁẂẃŴŵẄẅỲỳÝýŶŷỸỹŸÿȲȳŹźŽžŻżĲĳƏə'
 
-  # >>> Statusleiste (oben) — EINMAL hier definiert, in jeder Seite via ${statusbar} genutzt.
-  #     Aenderung an Icons/Positionen/Farben der Statusleiste NUR hier noetig.
-  statusbar: 'if(id(api_connection) == true) { it.printf(15, 5, id(icon_font_55), blue, "\U000F07D0"); } else { it.printf(15, 5, id(icon_font_55), red, "\U000F087B"); } if(id(wifi_connection) == true) { it.printf(80, 5, id(icon_font_55), lime, "\U000F16BD"); } else { it.printf(80, 5, id(icon_font_55), red, "\U000F16BC"); } if(id(time_remaining_0).state == "0:00:00"){ it.printf(135, 5, id(icon_font_55), red, "\U000F0150"); } else { it.printf(135, 5, id(icon_font_55), lime, "\U000F0150"); } if(id(mute_switch).state) { it.printf(190, 5, id(icon_font_55), red, "\U000F036D"); } else { it.printf(190, 5, id(icon_font_55), lime, "\U000F036C"); } if(id(alarm_status).state == "disarmed") { it.printf(250, 5, id(icon_font_55), red, "\U000F099E"); } else if(id(alarm_status).state == "arming") { it.printf(250, 5, id(icon_font_55), amber, "\U000F0565"); } else if(id(alarm_status).state == "armed_home") { it.printf(250, 5, id(icon_font_55), green, "\U000F068A"); } else if(id(alarm_status).state == "armed_away") { it.printf(250, 5, id(icon_font_55), green, "\U000F099D"); } else if(id(alarm_status).state == "armed_night") { it.printf(250, 5, id(icon_font_55), green, "\U000F1828"); }'
+  # >>> Statusleiste (oben) — minimal: zeigt nur Auffaelligkeiten.
+  #     Normalbetrieb = komplett leer. Touch-Zonen bleiben aktiv.
+  statusbar: 'if(id(api_connection) != true) { it.printf(15, 5, id(icon_font_55), red, "\U000F087B"); } if(id(wifi_connection) != true) { it.printf(80, 5, id(icon_font_55), red, "\U000F16BC"); } if(id(time_remaining_0).state != "0:00:00") { it.printf(135, 5, id(icon_font_55), light_blue, "\U000F0150"); } if(id(mute_switch).state) { it.printf(190, 5, id(icon_font_55), red, "\U000F036D"); } if(id(alarm_status).state == "arming") { it.printf(250, 5, id(icon_font_55), amber, "\U000F0565"); } else if(id(alarm_status).state == "armed_home") { it.printf(250, 5, id(icon_font_55), light_blue, "\U000F068A"); } else if(id(alarm_status).state == "armed_away") { it.printf(250, 5, id(icon_font_55), light_blue, "\U000F099D"); } else if(id(alarm_status).state == "armed_night") { it.printf(250, 5, id(icon_font_55), light_blue, "\U000F1828"); }'
 
 ############# END OF SUBSTITUTIONS #################
 ####################################################
@@ -512,7 +490,7 @@ switch:
   - platform: gpio
     name: Speaker Enable
     id: speaker_enable
-    pin: 
+    pin:
       number: GPIO46
       ignore_strapping_warning: true
     restore_mode: ALWAYS_OFF
@@ -643,7 +621,6 @@ switch:
       - voice_assistant.stop:
       - micro_wake_word.stop:
       - delay: 150ms
-      # Turn on the repeat mode and pause for 1000 ms between playlist items/repeats
       - lambda: id(led).turn_on().set_brightness(1.0).perform();
       - lambda: |-
             id(speaker_media_player)
@@ -1318,14 +1295,10 @@ binary_sensor:
     x_max: 105
     y_min: 90
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1336,13 +1309,10 @@ binary_sensor:
     x_max: 210
     y_min: 90
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1353,13 +1323,10 @@ binary_sensor:
     x_max: 315
     y_min: 90
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1370,13 +1337,10 @@ binary_sensor:
     x_max: 105
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1387,13 +1351,10 @@ binary_sensor:
     x_max: 210
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1404,13 +1365,10 @@ binary_sensor:
     x_max: 315
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 ##### lights page #####
   - platform: touchscreen
@@ -1475,13 +1433,10 @@ binary_sensor:
     x_max: 105
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1492,13 +1447,10 @@ binary_sensor:
     x_max: 210
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1509,13 +1461,10 @@ binary_sensor:
     x_max: 315
     y_min: 175
     y_max: 240
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
 ##### Ventilatoren (template_page) #####
@@ -1769,13 +1718,10 @@ binary_sensor:
     x_max: 105
     y_min: 90
     y_max: 170
-          #### make sure that the following 4 lines are uncommented by removing the prefixed '#' ###
     # on_click:
       # min_length: 10ms
       # max_length: 500ms
       # then:
-      #### add your action here - make sure to uncomment the following  line by removing the prefixed '#' and keep these below your action #####
-
         # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1789,9 +1735,6 @@ binary_sensor:
     # on_click:
     #   min_length: 10ms
     #   max_length: 500ms
-
-        #### make sure that the following  line are uncommented and sit at the bottom of this block after your action ###
-
             # - component.update: s3_box_lcd
 
 
@@ -1806,9 +1749,6 @@ binary_sensor:
     # on_click:
     #   min_length: 10ms
     #   max_length: 500ms
-
-        #### make sure that the following  line are uncommented and sit at the bottom of this block after your action ###
-
             # - component.update: s3_box_lcd
 
   - platform: touchscreen
@@ -1822,9 +1762,6 @@ binary_sensor:
     # on_click:
     #   min_length: 10ms
     #   max_length: 500ms
-
-        #### make sure that the following  line are uncommented and sit at the bottom of this block after your action ###
-
             # - component.update: s3_box_lcd
 
 
@@ -1839,9 +1776,6 @@ binary_sensor:
     # on_click:
     #   min_length: 10ms
     #   max_length: 500ms
-
-        #### make sure that the following  line are uncommented and sit at the bottom of this block after your action ###
-
             # - component.update: s3_box_lcd
 
 
@@ -1856,9 +1790,6 @@ binary_sensor:
     # on_click:
     #   min_length: 10ms
     #   max_length: 500ms
-
-        #### make sure that the following  line are uncommented and sit at the bottom of this block after your action ###
-
             # - component.update: s3_box_lcd
 
 ##### Screensaver Settings #####
@@ -3081,6 +3012,7 @@ font:
     glyphs: *icon_glyphs
 
 color:
+  # >>> Akzentfarbe des gesamten UI: einfach hier den Hex-Wert von light_blue aendern.
   - id: green
     hex: '75D15F'
   - id: red
@@ -3088,7 +3020,7 @@ color:
   - id: blue
     hex: '47B7E9'
   - id: blue_drk
-    hex: '085296'
+    hex: '2A3F55'   # gedimmter "aus"-Zustand
   - id: amber
     hex: 'FBAB35'
   - id: lime
@@ -3104,7 +3036,7 @@ color:
   - id: purple
     hex: '73264D'
   - id: light_blue
-    hex: 'CFE2F3'
+    hex: 'CFE2F3'   # Akzentfarbe
   - id: bg_blue
     hex: '032341'
   - id: bg_purple
@@ -3126,7 +3058,6 @@ spi:
   clk_pin: 7
   mosi_pin: 6
 
-
 display:
   - platform: mipi_spi
     id: s3_box_lcd
@@ -3139,183 +3070,279 @@ display:
       inverted: true
     update_interval: never
     invert_colors: false
-    ##################################################################################################
-    ################ The below section defines, what is displayed on the screen,        ##############
-    ################ the colours and mdi icons are defined above under font: and Color: ##############
-    ################ they are then referenced in the config below.                      ##############
-    ##################################################################################################
     pages:
-      - id: idle_page ##### home page ######
+      - id: idle_page ##### Startseite — minimal: Uhr + Temp + dezente Navigation #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          it.printf(20, 75, id(icon_font_80), blue,"\U000F050F");
-          it.printf(40, 120, id(my_font3), white, "%.f", id(s3temp).state); // remove for no sensor version
-          it.printf(120, 75, id(icon_font_80), yellow,"\U000F06E8" );
-          it.printf(220, 75, id(icon_font_80), purple,"\U000F0210");
-          it.printf(20, 155, id(icon_font_80), red,"\U000F075A");
-          it.printf(120, 155, id(icon_font_80), blue,"\U000F0FCE");
-          it.printf(220, 155, id(icon_font_80), lime,"\U000F08D6");
+          if(id(time_display_format).state == "24 Hr") {
+            it.strftime(160, 62, id(my_font4), TextAlign::CENTER, "%H:%M", id(ha_time).now());
+          } else {
+            it.strftime(160, 62, id(my_font4), TextAlign::CENTER, "%l:%M%p", id(ha_time).now());
+          }
+          it.printf(160, 92, id(my_font5), light_blue, TextAlign::CENTER, "%.f°C", id(s3temp).state); // remove for no sensor version
+          // Navigations-Icons — Positionen = Mittelpunkte der bestehenden Touch-Zonen
+          it.printf(55, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F050F");
+          it.printf(160, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F0335");
+          it.printf(265, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F0210");
+          it.printf(55, 207, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F075A");
+          it.printf(160, 207, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(265, 207, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F08D6");
 
-      - id: template_page ##### Ventilatoren-Seite #####
+      - id: template_page ##### Ventilatoren — an = hell, aus = gedimmt #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          it.printf(160, 60, id(my_font5), light_blue, TextAlign::CENTER, "Ventilatoren");
-          // Obere Reihe: 3 Ventilatoren mit Live-Status (an = blau, aus = gedimmt)
-          // Buero
-          if(id(fan_buro_state).state == "on") { it.printf(50, 90, id(icon_font_80), blue, "\U000F0210"); }
-          else { it.printf(50, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
-          it.printf(50, 160, id(my_font), light_blue, TextAlign::CENTER, "Büro");
+          it.printf(160, 62, id(my_font16), light_blue, TextAlign::CENTER, "Ventilatoren");
+          // Büro
+          if(id(fan_buro_state).state == "on") { it.printf(55, 118, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F0210"); }
+          else { it.printf(55, 118, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0210"); }
+          it.printf(55, 162, id(my_font), light_blue, TextAlign::CENTER, "Büro");
           // Tower
-          if(id(fan_tower_state).state == "on") { it.printf(160, 90, id(icon_font_80), blue, "\U000F0210"); }
-          else { it.printf(160, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
-          it.printf(160, 160, id(my_font), light_blue, TextAlign::CENTER, "Tower");
+          if(id(fan_tower_state).state == "on") { it.printf(160, 118, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F0210"); }
+          else { it.printf(160, 118, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0210"); }
+          it.printf(160, 162, id(my_font), light_blue, TextAlign::CENTER, "Tower");
           // Wohnzimmer
-          if(id(fan_wohnzimmer_state).state == "on") { it.printf(270, 90, id(icon_font_80), blue, "\U000F0210"); }
-          else { it.printf(270, 90, id(icon_font_80), blue_drk, "\U000F0210"); }
-          it.printf(270, 160, id(my_font), light_blue, TextAlign::CENTER, "Wohnz.");
+          if(id(fan_wohnzimmer_state).state == "on") { it.printf(265, 118, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F0210"); }
+          else { it.printf(265, 118, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0210"); }
+          it.printf(265, 162, id(my_font), light_blue, TextAlign::CENTER, "Wohnz.");
 
-      - id: info_page ##### info page #####
+      - id: lights_page ##### Lichter — an = Glühbirne hell, aus = gedimmt #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "IP Address");
-          it.printf(160, 95, id(my_font5), yellow, TextAlign::CENTER, "%s", id(ip_addr).state.c_str());
-          it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "Host Name");
-          it.printf(160, 145, id(my_font5), yellow, TextAlign::CENTER, "${name}.local");
-          it.printf(160, 175, id(my_font5), light_blue, TextAlign::CENTER, "Device Uptime DDD:H:M:S");
-          it.printf(160, 195, id(my_font5), yellow, TextAlign::CENTER, "%s", id(up_sens_text).state.c_str());
-          it.printf(40, 210, id(my_font5), light_blue, TextAlign::LEFT, "Battery Level"); // remove for no sensor version
-          it.printf(265, 210, id(my_font5), yellow, TextAlign::RIGHT, "%.f%%", id(battery_percent).state); // remove for no sensor version
+          it.printf(160, 62, id(my_font16), light_blue, TextAlign::CENTER, "Lichter");
+          // Wohnzimmer
+          if(id(light_wohnzimmer_state).state == "on") { it.printf(55, 112, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F06E8"); }
+          else { it.printf(55, 112, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0335"); }
+          it.printf(55, 155, id(my_font), light_blue, TextAlign::CENTER, "Wohnzimmer");
+          // Bett
+          if(id(light_bett_state).state == "on") { it.printf(160, 112, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F06E8"); }
+          else { it.printf(160, 112, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0335"); }
+          it.printf(160, 155, id(my_font), light_blue, TextAlign::CENTER, "Bett");
+          // Abstellkammer
+          if(id(light_abstellkammer_state).state == "on") { it.printf(265, 112, id(icon_font_60), light_blue, TextAlign::CENTER, "\U000F06E8"); }
+          else { it.printf(265, 112, id(icon_font_60), blue_drk, TextAlign::CENTER, "\U000F0335"); }
+          it.printf(265, 155, id(my_font), light_blue, TextAlign::CENTER, "Abstellk.");
 
-
-      - id: ss_set_page ##### screen saver settings page #####
+      - id: climate_page ##### Klima — Temperatur groß statt Platzhalter-Grid #####
         lambda: |-
           it.fill(id(black));
-          it.printf(160, 70, id(icon_font_80), light_blue, TextAlign::CENTER, "\U000F08D6");
-          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Screensaver Settings");
+          ${statusbar}
+          it.printf(160, 135, id(my_font2), white, TextAlign::CENTER, "%.1f°C", id(s3temp).state); // remove for no sensor version
+          it.printf(160, 195, id(my_font16), light_blue, TextAlign::CENTER, "Innentemperatur");
+
+      - id: scenes_page ##### Szenen — dezente Platzhalter #####
+        lambda: |-
+          it.fill(id(black));
+          ${statusbar}
+          it.printf(160, 62, id(my_font16), light_blue, TextAlign::CENTER, "Szenen");
+          it.printf(55, 130, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(160, 130, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(265, 130, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(55, 207, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(160, 207, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+          it.printf(265, 207, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F0FCE");
+
+      - id: media_page ##### interner Media Player — minimal #####
+        lambda: |-
+          it.fill(id(black));
+          ${statusbar}
+          if(id(media_state) == true) {
+            it.printf(160, 75, id(my_font16), white, TextAlign::CENTER, "Wiedergabe läuft");
+          } else {
+            it.printf(160, 75, id(my_font16), light_blue, TextAlign::CENTER, "Nichts aktiv");
+          }
+          it.printf(55, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F075E");
+          it.printf(160, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F040E");
+          it.printf(265, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F075D");
+          if(id(media_mute).state) {
+            it.printf(160, 205, id(icon_font_55), red, TextAlign::CENTER, "\U000F0581");
+          } else {
+            it.printf(160, 205, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F057E");
+          }
+
+      - id: ext_media_page ##### externer Media Player — minimal #####
+        lambda: |-
+          it.fill(id(black));
+          ${statusbar}
+          it.printf(160, 75, id(my_font16), light_blue, TextAlign::CENTER, "%s", id(ha_media_status).state.c_str());
+          it.printf(55, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F04AE");
+          it.printf(160, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F040E");
+          it.printf(265, 130, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F04AD");
+          it.printf(55, 205, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F075E");
+          if(id(ext_media_mute).state) {
+            it.printf(160, 205, id(icon_font_55), red, TextAlign::CENTER, "\U000F0581");
+          } else {
+            it.printf(160, 205, id(icon_font_55), blue_drk, TextAlign::CENTER, "\U000F057E");
+          }
+          it.printf(265, 205, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F075D");
+
+      - id: settings_page ##### Einstellungen — 5 dezente Icons mit Label #####
+        lambda: |-
+          it.fill(id(black));
+          ${statusbar}
+          it.printf(160, 72, id(my_font16), light_blue, TextAlign::CENTER, "Einstellungen");
+          it.printf(55, 122, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F036F");
+          it.printf(55, 154, id(my_font), light_blue, TextAlign::CENTER, "Voice");
+          it.printf(160, 122, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F0502");
+          it.printf(160, 154, id(my_font), light_blue, TextAlign::CENTER, "Saver");
+          it.printf(265, 122, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F1C6F");
+          it.printf(265, 154, id(my_font), light_blue, TextAlign::CENTER, "Info");
+          it.printf(55, 197, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F08D6");
+          it.printf(55, 229, id(my_font), light_blue, TextAlign::CENTER, "Gerät");
+          it.printf(265, 197, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F05CB");
+          it.printf(265, 229, id(my_font), light_blue, TextAlign::CENTER, "Test");
+
+      - id: device_set_page ##### Geräte-Einstellungen — Layout gleich, Farben ruhig #####
+        lambda: |-
+          it.fill(id(black));
+          ${statusbar}
+          it.printf(15, 75, id(my_font5), light_blue, "Ext media player");
+          if(id(output_audio).state) {
+                 it.printf(255, 60, id(icon_font_60), light_blue, "\U000F0521");
+          } else {
+                 it.printf(255, 60, id(icon_font_60), blue_drk, "\U000F0A19");
+          }
+          it.printf(5, 190, id(icon_font_55), light_blue, "\U000F0B28");
+          it.printf(15, 135, id(my_font5), light_blue, "Brightness");
+          it.printf(238, 148, id(my_font5), white, TextAlign::CENTER, "%.f", id(s_default_brightness).state);
+          it.printf(160, 125, id(icon_font_55), light_blue, TextAlign::LEFT, "\U000F0B2C");
+          it.printf(315, 125, id(icon_font_55), light_blue, TextAlign::RIGHT, "\U000F0B26");
+          it.rectangle(215 , 125 , 46 , 40 , blue_drk);
+          it.printf(65, 180, id(my_font5), light_blue, "Time Format:");
+          it.printf(210, 180, id(my_font5), white, "%s", id(time_display_format).state.c_str());
+
+      - id: ss_set_page ##### Screensaver-Einstellungen — Farben ruhig #####
+        lambda: |-
+          it.fill(id(black));
+          it.printf(160, 25, id(my_font16), light_blue, TextAlign::CENTER, "Screensaver Settings");
           it.printf(250, 115, id(my_font5), light_blue, TextAlign::RIGHT, "Timeout Settings :");
-          it.printf(255, 95, id(icon_font_55), lime, "\U000F08D6");
+          it.printf(255, 95, id(icon_font_55), light_blue, "\U000F08D6");
           it.printf(250, 145, id(my_font5), light_blue, TextAlign::RIGHT, "Enable screensaver :");
           if(id(s_saver).state) {
-                 it.printf(255, 135, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 135, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 135, id(icon_font_55), blue_drk, "\U000F0A19");
           }
           it.printf(250, 175, id(my_font5), light_blue, TextAlign::RIGHT, "Wake on presence :"); // remove for no sensor version 6 lines
           if(id(s_saver_presc).state) {
-                 it.printf(255, 165, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 165, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 165, id(icon_font_55), blue_drk, "\U000F0A19");
           }
           it.printf(250, 205, id(my_font5), light_blue, TextAlign::RIGHT, "Timeout to blank :");
           if(id(s_saver_mode).state) {
-                 it.printf(255, 195, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 195, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 195, id(icon_font_55), blue_drk, "\U000F0A19");
           }
 
-      - id: ww_set_page ##### voice settings page #####
+      - id: ww_set_page ##### Voice-Einstellungen — Farben ruhig #####
         lambda: |-
           it.fill(id(black));
-          it.printf(160, 50, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F08D6");
-          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Voice Settings");
-          it.printf(155, 85, id(my_font5), light_blue, TextAlign::CENTER, "tap to change");
+          it.printf(160, 25, id(my_font16), light_blue, TextAlign::CENTER, "Voice Settings");
+          it.printf(155, 85, id(my_font), light_blue, TextAlign::CENTER, "tap to change");
           it.printf(135, 115, id(my_font5), light_blue, TextAlign::RIGHT, "WakeWord :");
-          it.printf(310, 115, id(my_font5), lime, TextAlign::RIGHT, "%s", id(wakeword_location).state.c_str());
+          it.printf(310, 115, id(my_font5), white, TextAlign::RIGHT, "%s", id(wakeword_location).state.c_str());
           it.printf(250, 145, id(my_font5), light_blue, TextAlign::RIGHT, "Mute responses :");
           if(id(mute_response_switch).state) {
-                 it.printf(255, 135, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 135, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 135, id(icon_font_55), blue_drk, "\U000F0A19");
           }
           it.printf(250, 175, id(my_font5), light_blue, TextAlign::RIGHT, "Wake up sound :");
           if(id(wake_sound).state) {
-                 it.printf(255, 165, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 165, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 165, id(icon_font_55), blue_drk, "\U000F0A19");
           }
           it.printf(250, 205, id(my_font5), light_blue, TextAlign::RIGHT, "Show Conversation :");
           if(id(display_conversation).state) {
-                 it.printf(255, 195, id(icon_font_55), lime, "\U000F0521");
+                 it.printf(255, 195, id(icon_font_55), light_blue, "\U000F0521");
           } else {
                  it.printf(255, 195, id(icon_font_55), blue_drk, "\U000F0A19");
           }
 
-      - id: climate_page ##### climate page #####
+      - id: timeout_settings_page ##### Timeout-Einstellungen — einfarbig #####
         lambda: |-
           it.fill(id(black));
-          ${statusbar}
-          it.printf(20, 75, id(icon_font_80), light_blue,"\U000F050F");
-          it.printf(120, 75, id(icon_font_80), light_blue,"\U000F050F");
-          it.printf(220, 75, id(icon_font_80), light_blue, "\U000F050F");
-          it.printf(20, 155, id(icon_font_80), light_blue,"\U000F050F");
-          it.printf(120, 155, id(icon_font_80), light_blue,"\U000F050F");
-          it.printf(220, 155, id(icon_font_80), light_blue, "\U000F050F");
+          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Screen Settings");
+          it.printf(160, 60, id(my_font5), light_blue, TextAlign::CENTER, "Screen Saver");
+          it.printf(50, 80, id(my_font), light_blue, "Delay secs");
+          it.printf(185, 80, id(my_font), light_blue, "Dim Brightness");
+          it.printf(105, 100, id(icon_font_55), light_blue, TextAlign::LEFT, "\U000F0B2C");
+          it.printf(65, 100, id(icon_font_55), light_blue, TextAlign::RIGHT, "\U000F0B26");
+          it.rectangle(65 , 105 , 40 , 40 , blue_drk);
+          it.printf(85, 125, id(my_font5), white, TextAlign::CENTER, "%.f", id(s_saver_delay).state);
+          it.printf(20, 160, id(my_font), light_blue, "Screen off delay");
+          it.printf(105, 180, id(icon_font_55), light_blue, TextAlign::LEFT, "\U000F0B2C");
+          it.printf(65, 180, id(icon_font_55), light_blue, TextAlign::RIGHT, "\U000F0B26");
+          it.rectangle(65 , 180 , 40 , 40 , blue_drk);
+          it.printf(85, 200, id(my_font5), white, TextAlign::CENTER, "%.f", id(s_saver_blank_delay).state);
+          it.printf(255, 100, id(icon_font_55), light_blue, TextAlign::LEFT, "\U000F0B2C");
+          it.printf(215, 100, id(icon_font_55), light_blue, TextAlign::RIGHT, "\U000F0B26");
+          it.rectangle(215 , 105 , 40 , 40 , blue_drk);
+          it.printf(235, 125, id(my_font5), white, TextAlign::CENTER, "%.f", id(s_saver_brightness).state);
 
-      - id: lights_page ##### lights page ####
+      - id: info_page ##### Info — Werte in Weiß #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          // Obere Reihe: 3 Lichter mit Live-Status (an = gelb / Gluehbirne, aus = gedimmt)
-          // Wohnzimmer
-          if(id(light_wohnzimmer_state).state == "on") { it.printf(50, 75, id(icon_font_80), yellow, "\U000F06E8"); }
-          else { it.printf(50, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
-          it.printf(50, 145, id(my_font), light_blue, TextAlign::CENTER, "Wohnzimmer");
-          // Bett
-          if(id(light_bett_state).state == "on") { it.printf(160, 75, id(icon_font_80), yellow, "\U000F06E8"); }
-          else { it.printf(160, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
-          it.printf(160, 145, id(my_font), light_blue, TextAlign::CENTER, "Bett");
-          // Abstellkammer
-          if(id(light_abstellkammer_state).state == "on") { it.printf(270, 75, id(icon_font_80), yellow, "\U000F06E8"); }
-          else { it.printf(270, 75, id(icon_font_80), blue_drk, "\U000F0335"); }
-          it.printf(270, 145, id(my_font), light_blue, TextAlign::CENTER, "Abstellk.");
+          it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "IP Address");
+          it.printf(160, 95, id(my_font5), white, TextAlign::CENTER, "%s", id(ip_addr).state.c_str());
+          it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "Host Name");
+          it.printf(160, 145, id(my_font5), white, TextAlign::CENTER, "${name}.local");
+          it.printf(160, 175, id(my_font5), light_blue, TextAlign::CENTER, "Device Uptime DDD:H:M:S");
+          it.printf(160, 195, id(my_font5), white, TextAlign::CENTER, "%s", id(up_sens_text).state.c_str());
+          it.printf(40, 210, id(my_font5), light_blue, TextAlign::LEFT, "Battery Level"); // remove for no sensor version
+          it.printf(265, 210, id(my_font5), white, TextAlign::RIGHT, "%.f%%", id(battery_percent).state); // remove for no sensor version
 
-      - id: media_page ##### media player page #####
+      - id: wifi_page ##### WLAN-Info — Werte in Weiß #####
         lambda: |-
           it.fill(id(black));
           ${statusbar}
-          if(id(media_state) == true) {
-                 it.printf(160, 80, id(my_font5), lime, TextAlign::CENTER, "Playing");
+          it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "ssid");
+          it.printf(160, 95, id(my_font5), white, TextAlign::CENTER, "%s", id(connected_ssid).state.c_str());
+          it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "bssid");
+          it.printf(160, 145, id(my_font5), white, TextAlign::CENTER, "%s", id(connected_bssid).state.c_str());
+          it.printf(160, 175, id(my_font5), light_blue, TextAlign::CENTER, "Device MAC");
+          it.printf(160, 195, id(my_font5), white, TextAlign::CENTER, "%s", id(device_mac).state.c_str());
+          it.printf(38, 210, id(my_font5), light_blue, TextAlign::LEFT, "Signal Strength");
+          it.printf(283, 210, id(my_font5), white, TextAlign::RIGHT, "%4.f%%", id(wifi_percent).state);
+
+      - id: time_remaining_page ##### Timer-Countdown #####
+        lambda: |-
+          it.fill(id(black));
+          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Active Timers");
+          it.printf(160, 70, id(icon_font_80), light_blue, TextAlign::CENTER, "\U000F0150");
+          it.printf(160, 155, id(my_font6), white, TextAlign::CENTER, "%s", id(time_remaining_0).state.c_str());
+
+      - id: timer_finished_page
+        lambda: |-
+          it.fill(id(black));
+          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Timer Finished");
+          it.printf(160, 120, id(icon_font_180), light_blue, TextAlign::CENTER, "\U000F009E");
+          it.printf(160, 215, id(my_font5), light_blue, TextAlign::CENTER, "tap screen to dismiss");
+
+      - id: muted_page
+        lambda: |-
+          it.fill(Color::BLACK);
+          it.printf(160, 120, id(my_font3), light_blue, TextAlign::CENTER, "Mic & Speaker - Muted");
+
+      - id: saver_page ##### Bildschirmschoner — unverändert #####
+        lambda: |-
+          it.fill(id(black));
+
+          const char *days[] {"${sunday}","${monday}","${tuesday}","${wednesday}","${thursday}","${friday}","${saturday}"};
+          const char *months[] {"${jan}","${feb}","${mar}","${apr}","${may}","${jun}","${jul}","${aug}","${sept}","${oct}","${nov}","${dec}"};
+          it.printf(160, 28, id(my_font5), light_blue, TextAlign::CENTER, "%s %d %s", days[id(ha_time).now().day_of_week - 1], id(ha_time).now().day_of_month, months[id(ha_time).now().month - 1]);
+          if(id(time_display_format).state == "24 Hr") {
+            it.strftime(160, 88, id(my_font82), TextAlign::CENTER, "%H:%M", id(ha_time).now());
           } else {
-                 it.printf(160, 80, id(my_font5), light_blue, TextAlign::CENTER, "Nothing Playing");
+            it.strftime(160, 88, id(my_font2), TextAlign::CENTER, "%l:%M%p", id(ha_time).now());
           }
-          it.printf(20, 100, id(icon_font_80), blue,"\U000F075E");
-          it.printf(120, 100, id(icon_font_80), blue,"\U000F040E");
-          it.printf(220, 100, id(icon_font_80), blue,"\U000F075D");
-          if(id(media_mute).state) {
-                  it.printf(120, 165, id(icon_font_80), red,"\U000F0581");
-          } else {
-                  it.printf(120, 165, id(icon_font_80), lime,"\U000F057E");
-          }
-      - id: ext_media_page ##### media player page #####
-        lambda: |-
-          it.fill(id(black));
-          ${statusbar}
-          it.printf(160, 80, id(my_font5), lime, TextAlign::CENTER, id(ha_media_status).state.c_str());
-          it.printf(20, 100, id(icon_font_80), blue,"\U000F04AE");
-          it.printf(120, 100, id(icon_font_80), blue,"\U000F040E");
-          it.printf(220, 100, id(icon_font_80), blue,"\U000F04AD");
-          if(id(ext_media_mute).state) {
-                  it.printf(120, 165, id(icon_font_80), red,"\U000F0581");
-          } else {
-                  it.printf(120, 165, id(icon_font_80), lime,"\U000F057E");
-          }
-          it.printf(20, 165, id(icon_font_80), blue,"\U000F075E");
-          it.printf(220, 165, id(icon_font_80), blue,"\U000F075D");
-
-      - id: scenes_page ##### scenes page #####
-        lambda: |-
-          it.fill(id(black));
-          ${statusbar}
-          it.printf(20, 75, id(icon_font_80), light_blue,"\U000F0FCE");
-          it.printf(120, 75, id(icon_font_80), light_blue,"\U000F0FCE");
-          it.printf(220, 75, id(icon_font_80), light_blue, "\U000F0FCE");
-          it.printf(20, 155, id(icon_font_80), light_blue,"\U000F0FCE");
-          it.printf(120, 155, id(icon_font_80), light_blue,"\U000F0FCE");
-          it.printf(220, 155, id(icon_font_80), light_blue, "\U000F0FCE");
-
+          it.printf(160, 181, id(my_font2), light_blue, TextAlign::CENTER, "%.f°C", id(s3temp).state); // remove for no sensor version
 
       - id: loading_page ### loading page #####
         lambda: |-
@@ -3350,119 +3377,16 @@ display:
           it.fill(Color::BLACK);
           it.image((it.get_width() / 2), (it.get_height() / 2), id(error_img), ImageAlign::CENTER);
 
-      - id: timer_finished_page
-        lambda: |-
-          it.fill(id(black));
-          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Timer Finished");
-          it.printf(160, 120, id(icon_font_180), light_blue, TextAlign::CENTER, "\U000F009E");
-          it.printf(160, 215, id(my_font5), light_blue, TextAlign::CENTER, "tap screen to dismiss");
-
-      - id: muted_page
-        lambda: |-
-          it.fill(Color::BLACK);
-          it.printf(160, 120, id(my_font4), yellow, TextAlign::CENTER, "Mic & Speaker - Muted");
-
-      - id: saver_page ##### screen saver display page #####
-        lambda: |-
-          it.fill(id(black));
-
-          const char *days[] {"${sunday}","${monday}","${tuesday}","${wednesday}","${thursday}","${friday}","${saturday}"};
-          const char *months[] {"${jan}","${feb}","${mar}","${apr}","${may}","${jun}","${jul}","${aug}","${sept}","${oct}","${nov}","${dec}"};
-          it.printf(160, 28, id(my_font5), light_blue, TextAlign::CENTER, "%s %d %s", days[id(ha_time).now().day_of_week - 1], id(ha_time).now().day_of_month, months[id(ha_time).now().month - 1]);
-          if(id(time_display_format).state == "24 Hr") {
-            it.strftime(160, 88, id(my_font82), TextAlign::CENTER, "%H:%M", id(ha_time).now());
-          } else {
-            it.strftime(160, 88, id(my_font2), TextAlign::CENTER, "%l:%M%p", id(ha_time).now());
-          }
-          it.printf(160, 181, id(my_font2), light_blue, TextAlign::CENTER, "%.f°C", id(s3temp).state); // remove for no sensor version
-
       - id: ota_page ##### firmware uploading page #####
         lambda: |-
           it.fill(Color::BLACK);
           it.printf(160, 60, id(icon_font_80), red, TextAlign::CENTER, "\U000F08D6");
           it.printf((it.get_width() / 2), (it.get_height() / 2), id(my_font3), red, TextAlign::CENTER, "FIRMWARE UPDATING");
-          it.printf(160,155, id(my_font5), blue, TextAlign::CENTER, "Once restarted");
-          it.printf(160,190, id(my_font5), blue, TextAlign::CENTER, "press the reboot button");
-          it.printf(160,225, id(my_font5), blue, TextAlign::CENTER, "to enable touch");
-      - id: settings_page ##### settings parent page #####
-        lambda: |-
-          it.fill(id(black));
-          ${statusbar}
-          it.printf(160, 65, id(my_font5), light_blue, TextAlign::CENTER, "settings");
-          it.printf(20, 80, id(icon_font_55), light_blue,"\U000F036F");
-          it.printf(140, 80, id(icon_font_55), light_blue,"\U000F0502");
-          it.printf(255, 80, id(icon_font_55), light_blue, "\U000F1C6F");
-          it.printf(15, 210, id(my_font5), light_blue,"Device");
-          it.printf(245, 130, id(my_font5), light_blue, "Info");
-          it.printf(20, 160, id(icon_font_55), light_blue,"\U000F08D6");
-          it.printf(255, 160, id(icon_font_55), light_blue, "\U000F05CB");
-          it.printf(15, 130, id(my_font5), light_blue,"Voice");
-          it.printf(135, 130, id(my_font5), light_blue,"Saver");
-          it.printf(245, 210, id(my_font5), light_blue, "Test");
-          it.image((it.get_width() / 2), 195, id(logo_img), ImageAlign::CENTER);
+          it.printf(160,155, id(my_font5), light_blue, TextAlign::CENTER, "Once restarted");
+          it.printf(160,190, id(my_font5), light_blue, TextAlign::CENTER, "press the reboot button");
+          it.printf(160,225, id(my_font5), light_blue, TextAlign::CENTER, "to enable touch");
 
-      - id: device_set_page ##### Device settings page #####
-        lambda: |-
-          it.fill(id(black));
-          ${statusbar}
-          it.printf(15, 75, id(my_font5), light_blue, "Ext media player");
-          if(id(output_audio).state) {
-                 it.printf(255, 60, id(icon_font_60), lime, "\U000F0521");
-          } else {
-                 it.printf(255, 60, id(icon_font_60), blue_drk, "\U000F0A19");
-          }
-          it.printf(5, 190, id(icon_font_55), light_blue, "\U000F0B28");
-          it.printf(15, 135, id(my_font5), light_blue, "Brightness");
-          it.printf(238, 148, id(my_font5), light_blue, TextAlign::CENTER, "%.f", id(s_default_brightness).state);
-          it.printf(160, 125, id(icon_font_55), lime, TextAlign::LEFT, "\U000F0B2C");
-          it.printf(315, 125, id(icon_font_55), lime, TextAlign::RIGHT, "\U000F0B26");
-          it.rectangle(215 , 125 , 46 , 40 , light_blue);
-          it.printf(65, 180, id(my_font5), light_blue, "Time Format:");
-          it.printf(210, 180, id(my_font5), lime, "%s", id(time_display_format).state.c_str());
-
-      - id: timeout_settings_page ##### Timeout Settings page #####
-        lambda: |-
-          it.fill(id(black));
-          //it.printf(160, 50, id(icon_font_55), light_blue, TextAlign::CENTER, "\U000F0150");
-          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Screen Settings");
-          it.printf(160, 60, id(my_font5), light_blue, TextAlign::CENTER, "Screen Saver");
-          it.printf(50, 80, id(my_font), light_blue, "Delay secs");
-          it.printf(185, 80, id(my_font), light_blue, "Dim Brightness");
-          it.printf(105, 100, id(icon_font_55), lime, TextAlign::LEFT, "\U000F0B2C");
-          it.printf(65, 100, id(icon_font_55), lime, TextAlign::RIGHT, "\U000F0B26");
-          it.rectangle(65 , 105 , 40 , 40 , lime);
-          it.printf(85, 125, id(my_font5), light_blue, TextAlign::CENTER, "%.f", id(s_saver_delay).state);
-          it.printf(20, 160, id(my_font), light_blue, "Screen off delay");
-          it.printf(105, 180, id(icon_font_55), lime, TextAlign::LEFT, "\U000F0B2C");
-          it.printf(65, 180, id(icon_font_55), lime, TextAlign::RIGHT, "\U000F0B26");
-          it.rectangle(65 , 180 , 40 , 40 , lime);
-          it.printf(85, 200, id(my_font5), light_blue, TextAlign::CENTER, "%.f", id(s_saver_blank_delay).state);
-          it.printf(255, 100, id(icon_font_55), pink, TextAlign::LEFT, "\U000F0B2C");
-          it.printf(215, 100, id(icon_font_55), pink, TextAlign::RIGHT, "\U000F0B26");
-          it.rectangle(215 , 105 , 40 , 40 , pink);
-          it.printf(235, 125, id(my_font5), light_blue, TextAlign::CENTER, "%.f", id(s_saver_brightness).state);
-
-      - id: time_remaining_page ##### timer countdown page #####
-        lambda: |-
-          it.fill(id(black));
-          it.printf(160, 20, id(my_font5), light_blue, TextAlign::CENTER, "Active Timers");
-          it.printf(160, 70, id(icon_font_80), light_blue, TextAlign::CENTER, "\U000F0150");
-          it.printf(160, 155, id(my_font6), light_blue, TextAlign::CENTER, "%s", id(time_remaining_0).state.c_str());
-
-      - id: wifi_page ##### wifi info page #####
-        lambda: |-
-          it.fill(id(black));
-          ${statusbar}
-          it.printf(160, 75, id(my_font5), light_blue, TextAlign::CENTER, "ssid");
-          it.printf(160, 95, id(my_font5), yellow, TextAlign::CENTER, "%s", id(connected_ssid).state.c_str());
-          it.printf(160, 125, id(my_font5), light_blue, TextAlign::CENTER, "bssid");
-          it.printf(160, 145, id(my_font5), yellow, TextAlign::CENTER, "%s", id(connected_bssid).state.c_str());
-          it.printf(160, 175, id(my_font5), light_blue, TextAlign::CENTER, "Device MAC");
-          it.printf(160, 195, id(my_font5), yellow, TextAlign::CENTER, "%s", id(device_mac).state.c_str());
-          it.printf(38, 210, id(my_font5), light_blue, TextAlign::LEFT, "Signal Strength");
-          it.printf(283, 210, id(my_font5), yellow, TextAlign::RIGHT, "%4.f%%", id(wifi_percent).state);
-
-      - id: alarm_page   #### alarm page #####
+      - id: alarm_page   #### alarm page — unverändert #####
         lambda: |-
           if(id(alarm_status).state == "disarmed") {
           it.printf(10, 10, id(icon_font_180), red, "\U000F099E");
@@ -3501,7 +3425,7 @@ display:
           it.printf(225, 155, id(icon_font_60), blue_drk, "\U000F1828");
           it.printf(228, 215, id(my_font18), light_blue, "Night");
           }
-      - id: alarm_home_activate_page ##### alarm  home activation page #####
+      - id: alarm_home_activate_page ##### alarm home activation page — unverändert #####
         lambda: |-
           auto pin_state = id(current_pin).c_str();
           it.print(310, 80, id(my_font3), TextAlign::RIGHT, pin_state);
@@ -3509,17 +3433,16 @@ display:
           for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++) {
           int number = i * 3 + j + 1;
-          int x_position = 15 + j * 56;  // Ajustement de la position en X
-          int y_position = 15 + i * 56;  // Ajustement de la position en Y
-          it.rectangle(x_position, y_position, 48, 48, light_blue);  // Taille du rectangle ajustée
+          int x_position = 15 + j * 56;
+          int y_position = 15 + i * 56;
+          it.rectangle(x_position, y_position, 48, 48, light_blue);
           char num_str[2];
           snprintf(num_str, sizeof(num_str), "%d", number);
-          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);  // Centrage du chiffre
+          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);
           }
            }
-          it.rectangle(71, 183, 48, 48, light_blue);  // Position et taille du rectangle ajustées
-          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");  // Centrage du chiffre "0"
-          //it.filled_rectangle(198, 110, 108, 50, green);
+          it.rectangle(71, 183, 48, 48, light_blue);
+          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");
           if(id(alarm_status).state == "disarmed"){
           it.filled_rectangle(198, 110, 108, 50, red);
           it.print(255, 135, id(my_font3), white, TextAlign::CENTER, "Arm");
@@ -3539,7 +3462,7 @@ display:
           it.printf(255, 30, id(icon_font_55), green, TextAlign::CENTER, "\U000F068A");
           it.printf(255, 70, id(my_font3), green, TextAlign::CENTER, "Armed");
           }
-      - id: alarm_away_activate_page ##### alarm away activation page #####
+      - id: alarm_away_activate_page ##### alarm away activation page — unverändert #####
         lambda: |-
           auto pin_state = id(current_pin).c_str();
           it.print(310, 80, id(my_font3), TextAlign::RIGHT, pin_state);
@@ -3547,16 +3470,16 @@ display:
           for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++) {
           int number = i * 3 + j + 1;
-          int x_position = 15 + j * 56;  // Ajustement de la position en X
-          int y_position = 15 + i * 56;  // Ajustement de la position en Y
-          it.rectangle(x_position, y_position, 48, 48, light_blue);  // Taille du rectangle ajustée
+          int x_position = 15 + j * 56;
+          int y_position = 15 + i * 56;
+          it.rectangle(x_position, y_position, 48, 48, light_blue);
           char num_str[2];
           snprintf(num_str, sizeof(num_str), "%d", number);
-          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);  // Centrage du chiffre
+          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);
           }
            }
-          it.rectangle(71, 183, 48, 48, light_blue);  // Position et taille du rectangle ajustées
-          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");  // Centrage du chiffre "0"
+          it.rectangle(71, 183, 48, 48, light_blue);
+          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");
           if(id(alarm_status).state == "disarmed"){
           it.filled_rectangle(198, 110, 108, 50, red);
           it.print(255, 135, id(my_font3), white, TextAlign::CENTER, "Arm");
@@ -3576,7 +3499,7 @@ display:
           it.printf(255, 30, id(icon_font_55), green, TextAlign::CENTER, "\U000F099D");
           it.printf(255, 70, id(my_font3), green, TextAlign::CENTER, "Armed");
           }
-      - id: alarm_night_activate_page ##### alarm night activation page #####
+      - id: alarm_night_activate_page ##### alarm night activation page — unverändert #####
         lambda: |-
           auto pin_state = id(current_pin).c_str();
           it.print(310, 80, id(my_font3), TextAlign::RIGHT, pin_state);
@@ -3584,16 +3507,16 @@ display:
           for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++) {
           int number = i * 3 + j + 1;
-          int x_position = 15 + j * 56;  // Ajustement de la position en X
-          int y_position = 15 + i * 56;  // Ajustement de la position en Y
-          it.rectangle(x_position, y_position, 48, 48, light_blue);  // Taille du rectangle ajustée
+          int x_position = 15 + j * 56;
+          int y_position = 15 + i * 56;
+          it.rectangle(x_position, y_position, 48, 48, light_blue);
           char num_str[2];
           snprintf(num_str, sizeof(num_str), "%d", number);
-          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);  // Centrage du chiffre
+          it.print(x_position + 24, y_position + 24, id(my_font3), TextAlign::CENTER, num_str);
           }
            }
-          it.rectangle(71, 183, 48, 48, light_blue);  // Position et taille du rectangle ajustées
-          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");  // Centrage du chiffre "0"
+          it.rectangle(71, 183, 48, 48, light_blue);
+          it.print(95, 207, id(my_font3), TextAlign::CENTER, "0");
           if(id(alarm_status).state == "disarmed"){
           it.filled_rectangle(198, 110, 108, 50, red);
           it.print(255, 135, id(my_font3), white, TextAlign::CENTER, "Arm");
@@ -3613,7 +3536,7 @@ display:
           it.printf(255, 30, id(icon_font_55), green, TextAlign::CENTER, "\U000F1828");
           it.printf(255, 70, id(my_font3), green, TextAlign::CENTER, "Armed");
           }
-      - id: notification_page
+      - id: notification_page ##### unverändert #####
         lambda: |-
           it.fill(Color::BLACK);
           const char* text = id(notification_text).state.c_str();
@@ -3623,7 +3546,7 @@ display:
           int display_height = 240;
           int y = 60;                   // Starting Y position for text
           std::vector<std::string> lines;
-          
+
           // Split text into lines of max_chars_per_line
           std::string current_line;
           for (const char* p = text; *p != '\0'; ++p) {
@@ -3640,7 +3563,7 @@ display:
           if (!current_line.empty()) {
             lines.push_back(current_line);
           }
-      
+
           // Calculate the starting Y position to center the text vertically
           int total_height = lines.size() * line_height;
           y = (display_height - total_height) / 2;
