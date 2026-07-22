@@ -5,7 +5,7 @@ id: a601d3fe-17d3-4cff-9eb1-ea4bbca2c549
 description: "Notify about the work meals"
 trigger:
   - trigger: time
-    at: "11:00:00"
+    at: "11:15:00"
     alias: "Trigger at 11:00 AM"
 condition:
   - condition: state
@@ -46,4 +46,18 @@ action:
             photo:
               path: "{{ states('input_text.local_url') }}{{ state_attr('image.work_meal_' ~ repeat.item, 'entity_picture') }}"
               caption: "{{ states('input_text.work_meal_' ~ repeat.item) }}"
+  - action: notify.kohgeb_family_home
+    data:
+      title: Speiseplan
+      message: Heutiger Speiseplan
+      data:
+        images:
+          - /config/www/downloaded/work_meals/work_meal_one.png
+          - /config/www/downloaded/work_meals/work_meal_one_two.png
+          - /config/www/downloaded/work_meals/work_meal_three.png
+          - /config/www/downloaded/work_meals/work_meal_four.png
+          - /config/www/downloaded/work_meals/work_meal_five.png
+          - /config/www/downloaded/work_meals/work_meal_six.png
+      target:
+        - "{{ states('input_text.miguel_work_mail') }}"
 mode: single
