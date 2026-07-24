@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 def get_next_departure(hass, _data):
     _LOGGER.debug("Get next departure with data: %s", _data)
     if check_extracting(hass, _data['gtfs_dir'],_data['file']):
-        _LOGGER.debug("Cannot get next depurtures on this datasource as still unpacking: %s", self._data["file"])
+        _LOGGER.debug("Cannot get next departures on this datasource as still unpacking: %s", _data["file"])
         return {}
 
     """Get next departures from data."""
@@ -209,22 +209,25 @@ def get_next_departure(hass, _data):
 		{tomorrow_calendar_date_where}
         ORDER BY calendar_date,origin_depart_date, today_cd, origin_depart_time
         """  # noqa: S608
-    result = schedule.engine.connect().execute(
-        text(sql_query),
-        {
-            "origin_station_id": start_station_id,
-            "end_station_id": end_station_id,
-            "limit": limit,
-            "route_type": route_type,
-        },
-    )
     # Create lookup timetable for today and possibly tomorrow, taking into
     # account any departures from yesterday scheduled after midnight,
     # as long as all departures are within the calendar date range.
     timetable = {}
     yesterday_start = today_start = tomorrow_start = None
-    yesterday_last = today_last = ""
-    for row_cursor in result:
+    yesterday_last = today_last = ""        
+    with schedule.engine.connect() as conn:
+        result = conn.execute(
+            text(sql_query),
+            {
+                "origin_station_id": start_station_id,
+                "end_station_id": end_station_id,
+                "limit": limit,
+                "route_type": route_type,
+            },
+        )
+        rows = result.fetchall()
+        
+    for row_cursor in rows:
         row = row_cursor._asdict()
         if row["yesterday"] == 1 and yesterday_date >= row["start_date"]:
             extras = {"day": "yesterday", "first": None, "last": False}
@@ -606,13 +609,11 @@ def get_route_list(schedule, data):
     {agency_where}
     order by agency_name, cast(route_id as decimal)
     """  # noqa: S608
-    result = schedule.engine.connect().execute(
-        text(sql_routes),
-        {"q": "q"},
-    )
     routes_list = []
     routes = []
-    for row_cursor in result:
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_routes), {"q": "q"}).fetchall()
+    for row_cursor in rows:
         row = row_cursor._asdict()
         routes_list.append(list(row_cursor))
     for x in routes_list:
@@ -632,13 +633,11 @@ def get_stop_list(schedule, route_id, direction):
     and (t.direction_id = {direction} or t.direction_id is null)
     order by st.stop_sequence
     """  # noqa: S608
-    result = schedule.engine.connect().execute(
-        text(sql_stops),
-        {"q": "q"},
-    )
     stops_list = []
     stops = []
-    for row_cursor in result:
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_stops), {"q": "q"}).fetchall()
+    for row_cursor in rows:
         row = row_cursor._asdict()
         stops_list.append(list(row_cursor))
     for x in stops_list:
@@ -654,13 +653,11 @@ def get_agency_list(schedule, data):
     from agency a
     order by a.agency_name
     """
-    result = schedule.engine.connect().execute(
-        text(sql_agencies),
-        {"q": "q"},
-    )
     agencies_list = []
     agencies = []
-    for row_cursor in result:
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_agencies), {"q": "q"}).fetchall()
+    for row_cursor in rows:
         row = row_cursor._asdict()
         agencies_list.append(list(row_cursor))
     for x in agencies_list:
@@ -768,83 +765,60 @@ def check_datasource_index(hass, schedule, gtfs_dir, file):
         where agency_id='None'
     """
     
-    result_1a = schedule.engine.connect().execute(
-        text(sql_index_1),
-        {"q": "q"},
-    )
-    for row_cursor in result_1a:
+    with schedule.engine.connect() as conn:
+        rows_1a = conn.execute(text(sql_index_1), {"q": "q"}).fetchall()
+    for row_cursor in rows_1a:
         _LOGGER.debug("IDX result1: %s", row_cursor._asdict())
         if row_cursor._asdict()['checkidx'] == 0:
             _LOGGER.warning("Adding index 1 to improve performance")
-            result_1b = schedule.engine.connect().execute(
-            text(sql_add_index_1),
-            {"q": "q"},
-            )        
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_add_index_1), {"q": "q"})       
         
-    result_2a = schedule.engine.connect().execute(
-        text(sql_index_2),
-        {"q": "q"},
-    )
-    for row_cursor in result_2a:
+    with schedule.engine.connect() as conn:
+        rows_2a = conn.execute(text(sql_index_2), {"q": "q"}).fetchall()
+    for row_cursor in rows_2a:
         _LOGGER.debug("IDX result2: %s", row_cursor._asdict())
         if row_cursor._asdict()['checkidx'] == 0:
             _LOGGER.warning("Adding index 2 to improve performance")
-            result_2b = schedule.engine.connect().execute(
-            text(sql_add_index_2),
-            {"q": "q"},
-            )
-            
-    result_3a = schedule.engine.connect().execute(
-        text(sql_index_3),
-        {"q": "q"},
-    )
-    for row_cursor in result_3a:
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_add_index_2), {"q": "q"})
+                
+    with schedule.engine.connect() as conn:
+        rows_3a = conn.execute(text(sql_index_3), {"q": "q"}).fetchall()
+    for row_cursor in rows_3a:
         _LOGGER.debug("IDX result3: %s", row_cursor._asdict())
         if row_cursor._asdict()['checkidx'] == 0:
             _LOGGER.warning("Adding index 3 to improve performance")
-            result_3b = schedule.engine.connect().execute(
-            text(sql_add_index_3),
-            {"q": "q"},
-            )    
-    result_4a = schedule.engine.connect().execute(
-        text(sql_index_4),
-        {"q": "q"},
-    )
-    for row_cursor in result_4a:
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_add_index_3), {"q": "q"})
+                
+    with schedule.engine.connect() as conn:
+        rows_4a = conn.execute(text(sql_index_4), {"q": "q"}).fetchall()
+    for row_cursor in rows_4a:
         _LOGGER.debug("IDX result4: %s", row_cursor._asdict())
         if row_cursor._asdict()['checkidx'] == 0:
             _LOGGER.warning("Adding index 4 to improve performance")
-            result_4b = schedule.engine.connect().execute(
-            text(sql_add_index_4),
-            {"q": "q"},
-            )  
-    result_5a = schedule.engine.connect().execute(
-        text(sql_index_5),
-        {"q": "q"},  
-    )
-    for row_cursor in result_5a:
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_add_index_4), {"q": "q"})
+                
+    with schedule.engine.connect() as conn:
+        rows_5a = conn.execute(text(sql_index_5), {"q": "q"}).fetchall()
+    for row_cursor in rows_5a:
         _LOGGER.debug("IDX result5: %s", row_cursor._asdict())
         if row_cursor._asdict()['checkidx'] == 0:
             _LOGGER.warning("Adding index 5 to improve performance")
-            result_5b = schedule.engine.connect().execute(
-            text(sql_add_index_5),
-            {"q": "q"},
-            )  
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_add_index_5), {"q": "q"}) 
     
-    result_6a = schedule.engine.connect().execute(
-        text(sql_check_route_agency),
-        {"q": "q"},  
-    )
-    for row_cursor in result_6a:
+    with schedule.engine.connect() as conn:
+        rows_6a = conn.execute(text(sql_check_route_agency), {"q": "q"}).fetchall()
+    for row_cursor in rows_6a:
         _LOGGER.debug("Agency 'None' in routes: %s", row_cursor._asdict())
         if row_cursor._asdict()['check_agency'] > 0:
             _LOGGER.warning("Fix missing agency_id in routes table")
-            conn = schedule.engine.connect()
-            result_6b = conn.execute(
-            text(sql_fix_route_agency),
-            {"q": "q"},
-            )
-            conn.commit()
+            with schedule.engine.connect() as conn:
+                conn.execute(text(sql_fix_route_agency), {"q": "q"})
+                conn.commit()
 
     
             
@@ -861,13 +835,11 @@ def create_trip_geojson(self):
     and t.trip_id = '{self._trip_id}'
     order by s.shape_pt_sequence
     """
-    result = schedule.engine.connect().execute(
-        text(sql_shape),
-        {"q": "q"},
-    )
     shapes_list = []
     coordinates = []
-    for row_cursor in result:
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_shape), {"q": "q"}).fetchall()
+    for row_cursor in rows:
         row = row_cursor._asdict()
         shapes_list.append(list(row_cursor))
     for x in shapes_list:
@@ -890,16 +862,10 @@ def get_local_stop_list(hass, schedule, data):
         FROM stops stop
         where abs(stop.stop_lat - :latitude) < :radius and abs(stop.stop_lon - :longitude) < :radius
         """  
-    result = schedule.engine.connect().execute(
-        text(sql_query),
-        {
-            "latitude": latitude,
-            "longitude": longitude,
-            "radius": radius
-        },
-    )   
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_query), {"latitude": latitude, "longitude": longitude, "radius": radius}).fetchall()
     rowcount = 0
-    for row_cursor in result:
+    for row_cursor in rows:
         rowcount += 1
     _LOGGER.debug("Local stops list output: %s", rowcount)
     return rowcount
@@ -999,17 +965,8 @@ def get_local_stops_next_departures(self):
         )
         order by stop_id, tomorrow, departure_time
         """  # noqa: S608
-    result = schedule.engine.connect().execute(
-        text(sql_query),
-        {
-            "latitude": latitude,
-            "longitude": longitude,
-            "timerange": time_range,
-            "timerange_history": time_range_history,
-            "radius": radius,
-            "now_offset": now
-        },
-    )        
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_query), {"latitude": latitude, "longitude": longitude, "timerange": time_range, "timerange_history": time_range_history, "radius": radius, "now_offset": now}).fetchall()
     timetable = []
     local_stops_list = []
     prev_stop_id = ""
@@ -1047,7 +1004,7 @@ def get_local_stops_next_departures(self):
             # use local file created as new url
             self._trip_update_url = "file://" + DEFAULT_PATH_RT + "/" + self._data["name"] + "_localstop.rt"
 
-    for row_cursor in result:
+    for row_cursor in rows:
         row = row_cursor._asdict()
         _LOGGER.debug("Row from query: %s", row)
         
@@ -1234,7 +1191,7 @@ async def get_route_departures(hass, data):
     } 
      
     _LOGGER.debug("Departures returned: %s", _departures)   
-    
+    _pygtfs.engine.dispose()
     return _departures
     
 async def get_trip_stops(hass, data):
@@ -1272,13 +1229,11 @@ async def get_trip_stops(hass, data):
     where  st.trip_id in {trip_list}
     order by st.trip_id, st.departure_time, st.stop_sequence
     """  # noqa: S608
-    result = schedule.engine.connect().execute(
-        text(sql_stops),
-        {"q": "q"},
-    )
     stops_list = []
     stops = []
-    for row_cursor in result:
+    with schedule.engine.connect() as conn:
+        rows = conn.execute(text(sql_stops), {"q": "q"}).fetchall()
+    for row_cursor in rows:
         row = row_cursor._asdict()
         stops_list.append(list(row_cursor))
     for x in stops_list:
@@ -1306,5 +1261,5 @@ async def get_trip_stops(hass, data):
     }
     
     _LOGGER.debug("Tripstops returned: %s", _tripstops)
-    
+    _pygtfs.engine.dispose()
     return _tripstops       

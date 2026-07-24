@@ -60,6 +60,13 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
         previous_data = None if self.data is None else self.data.copy()
         _LOGGER.debug("Previous data: %s", previous_data)  
 
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass
+
         self._pygtfs = get_gtfs(
             self.hass, DEFAULT_PATH, data, False
         )        
@@ -81,7 +88,7 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
             "alert": {}
         }           
         
-        if check_extracting(self.hass, self._data['gtfs_dir'],self._data['file']):    
+        if check_extracting(self.hass, self.hass.config.path(self._data['gtfs_dir']), self._data['file']):   
             _LOGGER.debug("Cannot update this sensor as still unpacking: %s", self._data["file"])
             previous_data["extracting"] = True
             return previous_data
@@ -102,7 +109,7 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
             self._data = previous_data
         else:
             check_index = await self.hass.async_add_executor_job(
-                    check_datasource_index, self.hass, self._pygtfs, DEFAULT_PATH, data["file"]
+                    check_datasource_index, self.hass, self._pygtfs, self.hass.config.path(DEFAULT_PATH), data["file"]
                 )
 
             try:
@@ -210,6 +217,14 @@ class GTFSLocalStopUpdateCoordinator(DataUpdateCoordinator):
                     self._headers[CONF_API_KEY] = options.get(CONF_API_KEY, None)
                     self._headers[CONF_ACCEPT_HEADER_PB] = options.get(CONF_ACCEPT_HEADER_PB, False)
                 _LOGGER.debug("RT header: %s", self._headers)
+                
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass
+                
         self._pygtfs = get_gtfs(
             self.hass, DEFAULT_PATH, data, False
         )        
@@ -227,7 +242,7 @@ class GTFSLocalStopUpdateCoordinator(DataUpdateCoordinator):
         }           
         self._data["gtfs_updated_at"] = dt_util.utcnow().isoformat() 
         
-        if check_extracting(self.hass, self._data['gtfs_dir'],self._data['file']):    
+        if check_extracting(self.hass, self.hass.config.path(self._data['gtfs_dir']), self._data['file']):   
             _LOGGER.debug("Cannot update this sensor as still unpacking: %s", self._data["file"])
             previous_data["extracting"] = True
             return previous_data

@@ -67,13 +67,13 @@ from .gtfs_helper import (
 _LOGGER = logging.getLogger(__name__)
 
 TRANSLATION_DESCRIPTION_PLACEHOLDERS = {
-    "docu_extracting": "https://github.com/vingerha/gtfs2/wiki/1.-Initial-setup:-the-static-data-source#performance",
-    "docu_menu_options": "https://github.com/vingerha/gtfs2/wiki/0.-Installation-and-Main-menu",
-    "docu_select_source": "https://github.com/vingerha/gtfs2/wiki/1.-Initial-setup:-the-static-data-source",
-    "docu_local_stops": "https://github.com/vingerha/gtfs2/wiki/2c.-Acquire-local-stops-&-departures",
-    "docu_new_route": "https://github.com/vingerha/gtfs2/wiki/2.-Setup-a-new-route",
-    "docu_setup_train": "https://github.com/vingerha/gtfs2/wiki/2b.-Setup-route-for-trains",
-    "docu_configuring_options": "https://github.com/vingerha/gtfs2/wiki/3.-Configuring-options",
+    "docu_extracting": "https://github.com/vingerha/gtfs2/wiki/01:-Initial-Setup-of-the-Static-GTFS-Data-Source#extraction-of-data-from-the-datasource",
+    "docu_menu_options": "https://github.com/vingerha/gtfs2/wiki/00:-Installation-and-Main-Menu",
+    "docu_select_source": "https://github.com/vingerha/gtfs2/wiki/01:-Initial-Setup-of-the-Static-GTFS-Data-Source",
+    "docu_local_stops": "https://github.com/vingerha/gtfs2/wiki/03:-Adding-a-location%E2%80%90based-dynamic-departures-sensor",
+    "docu_new_route": "https://github.com/vingerha/gtfs2/wiki/02:-Adding-a-route",
+    "docu_setup_train": "https://github.com/vingerha/gtfs2/wiki/02b:-Adding-a-route-(using-city-method)",
+    "docu_configuring_options": "https://github.com/vingerha/gtfs2/wiki/04:-Configuring-a-route's-options-(inc.-adding-real%E2%80%90time)",
     "model": "Example model",
 }
 
@@ -220,6 +220,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_agency(self, user_input: dict | None = None) -> FlowResult:
         """Handle the agency."""
         errors: dict[str, str] = {}
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass
         self._pygtfs = get_gtfs(
             self.hass,
             DEFAULT_PATH,
@@ -285,6 +291,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if check_data :
             errors["base"] = check_data
             return self.async_abort(reason=check_data)
+            
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass            
         self._pygtfs = get_gtfs(
             self.hass,
             DEFAULT_PATH,
@@ -426,6 +439,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )            
 
     async def _check_data(self, data):
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass
         self._pygtfs = await self.hass.async_add_executor_job(
             get_gtfs, self.hass, DEFAULT_PATH, data, False
         )
@@ -438,6 +457,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return None
         
     async def _check_config(self, data):
+        if self._pygtfs and hasattr(self._pygtfs, 'session'):
+            try:
+                self._pygtfs.session.close()
+                self._pygtfs.engine.dispose()
+            except Exception:
+                pass
         self._pygtfs = await self.hass.async_add_executor_job(
             get_gtfs, self.hass, DEFAULT_PATH, data, False
         )
@@ -587,6 +612,12 @@ class GTFSOptionsFlowHandler(config_entries.OptionsFlow):
     
 async def _check_stop_list(self, data):
     _LOGGER.debug("Checkstops option with data: %s", data)
+    if self._pygtfs and hasattr(self._pygtfs, 'session'):
+        try:
+            self._pygtfs.session.close()
+            self._pygtfs.engine.dispose()
+        except Exception:
+            pass    
     self._pygtfs = await self.hass.async_add_executor_job(
         get_gtfs, self.hass, DEFAULT_PATH, data, False
     )
