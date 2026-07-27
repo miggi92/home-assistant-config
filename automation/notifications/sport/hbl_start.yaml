@@ -11,6 +11,10 @@ triggers:
     entity_id: calendar.2_hbl_spielplan
     event: start
     offset: -0:30:0
+  - trigger: calendar
+    entity_id: calendar.dhb_pokal_manner_spielplan
+    event: start
+    offset: -0:30:0
 conditions: []
 actions:
   - action: script.notify_engine
