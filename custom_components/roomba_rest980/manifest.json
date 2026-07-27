@@ -1,0 +1,45 @@
+{
+  "domain": "roomba_rest980",
+  "name": "Roomba (Rest980)",
+  "codeowners": [
+    "@ia74"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "dhcp": [
+    {
+      "hostname": "irobot-*",
+      "macaddress": "501479*"
+    },
+    {
+      "hostname": "roomba-*",
+      "macaddress": "80A589*"
+    },
+    {
+      "hostname": "roomba-*",
+      "macaddress": "DCF505*"
+    },
+    {
+      "hostname": "roomba-*",
+      "macaddress": "204EF6*"
+    }
+  ],
+  "documentation": "https://github.com/ia74/roomba_rest980",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/ia74/roomba_rest980/issues",
+  "quality_scale": "bronze",
+  "requirements": [
+    "aiofiles==24.1.0"
+  ],
+  "version": "1.19.2",
+  "zeroconf": [
+    {
+      "type": "_amzn-alexa._tcp.local.",
+      "name": "irobot-*"
+    },
+    {
+      "type": "_amzn-alexa._tcp.local.",
+      "name": "roomba-*"
+    }
+  ]
+}

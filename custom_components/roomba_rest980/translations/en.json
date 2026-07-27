@@ -1,0 +1,47 @@
+{
+  "common": {},
+  "config": {
+    "step": {
+      "user": {
+        "title": "Setup Roomba for integration",
+        "data": {
+          "base_url": "rest980 Base URL (ex: http://localhost:3000)",
+          "cloud_api": "Enable cloud features?"
+        },
+        "data_description": {
+          "cloud_api": "Use iRobot's API to add extra features like dynamic rooms and maps."
+        }
+      },
+      "cloud": {
+        "title": "Enter iRobot Home credentials",
+        "data": {
+          "irobot_username": "iRobot Username",
+          "irobot_password": "iRobot Password"
+        }
+      }
+    },
+    "error": {
+      "cloud_authentication_error": "Could not login to the iRobot Home API.",
+      "local_cannot_connect": "Could not connect to rest980 on that URL.",
+      "local_connected_no_data": "Rest980 did not output valid Roomba data.",
+      "unknown": "Unknown error occurred.",
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    },
+    "abort": {
+      "missing_user_data": "Forgot the local Rest980 data."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Map options",
+        "data": {
+          "show_zones": "Show zones on the map"
+        },
+        "data_description": {
+          "show_zones": "Draw keep-out, clean, and observed zones on the map image. Turn this off for a rooms-only map."
+        }
+      }
+    }
+  }
+}

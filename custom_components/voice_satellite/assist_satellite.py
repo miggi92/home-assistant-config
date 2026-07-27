@@ -46,7 +46,7 @@ except ImportError:
     HAS_HASSIL = False
 
 
-from .const import DOMAIN, INTEGRATION_VERSION
+from .const import DOMAIN, EVENT_TIMER, INTEGRATION_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1643,3 +1643,36 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
 
         # Push state update so the card sees the change immediately
         self.async_write_ha_state()
+
+        # Fire a bus event so user automations can react to timers (notify a
+        # phone when a kitchen timer finishes, announce on another satellite,
+        # etc.). Fired server-side, so it works with no dashboard open.
+        self.hass.bus.async_fire(
+            EVENT_TIMER,
+            {
+                "entity_id": self.entity_id,
+                "device_id": (
+                    self.registry_entry.device_id
+                    if self.registry_entry
+                    else None
+                ),
+                "satellite_name": self._satellite_name,
+                "area_id": timer_info.area_id,
+                "area_name": timer_info.area_name,
+                "event_type": event_type.value,
+                "timer_id": timer_id,
+                "name": timer_info.name or "",
+                # Original spoken duration. HA core keeps start_* immutable, so
+                # after add_time/pause this still reports what the user asked
+                # for; seconds_left carries the live value.
+                "total_seconds": (
+                    (timer_info.start_hours or 0) * 3600
+                    + (timer_info.start_minutes or 0) * 60
+                    + (timer_info.start_seconds or 0)
+                ),
+                "seconds_left": timer_info.seconds_left,
+                # UPDATED covers add-time, pause and unpause; is_active is the
+                # only way for an automation to tell paused from resumed.
+                "is_active": timer_info.is_active,
+            },
+        )

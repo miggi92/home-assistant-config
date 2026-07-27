@@ -51,7 +51,7 @@ async def async_setup_entry(
 ):
     """Set up the sensor entities."""
     coordinator = entry.runtime_data.coordinator
-    resources = entry.data.get(CONF_RESOURCES, [])
+    resources = coordinator.config.get(CONF_RESOURCES, [])
 
     sensors = [
         PackagesSensor(entry, SENSOR_TYPES[variable], coordinator)
@@ -138,11 +138,6 @@ class PackagesSensor(CoordinatorEntity, SensorEntity):
     def should_poll(self) -> bool:
         """No need to poll. Coordinator notifies entity of updates."""
         return False
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        return self.coordinator.data is not None
 
     @property
     def extra_state_attributes(self) -> str | None:
@@ -238,7 +233,7 @@ class ImagePathSensors(CoordinatorEntity, SensorEntity):
 
         path = self.coordinator.data.get(
             ATTR_IMAGE_PATH,
-            self._config.data.get(CONF_PATH),
+            self.coordinator.config.get(CONF_PATH),
         )
 
         if self.type == "usps_mail_image_system_path" and image:
@@ -265,8 +260,3 @@ class ImagePathSensors(CoordinatorEntity, SensorEntity):
     def should_poll(self) -> bool:
         """No need to poll. Coordinator notifies entity of updates."""
         return False
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        return self.coordinator.data is not None

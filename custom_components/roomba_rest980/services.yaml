@@ -1,0 +1,12 @@
+# services.yaml
+action:
+  fields:
+    command:
+      required: true
+      example: "dock"
+
+clean:
+  fields:
+    payload:
+      required: true
+      example: '{"regions": [{"region_id": "11", "type": "rid"}]}'

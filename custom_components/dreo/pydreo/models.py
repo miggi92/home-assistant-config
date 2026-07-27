@@ -21,6 +21,7 @@ from .constant import (
     DreoACMode,
     DreoACFanMode,
     POWERON_KEY,
+    RGB_MODE_RANGE,
 )
 
 COOKING_MODES = [
@@ -213,6 +214,16 @@ def _hap003s_mcu_override(device) -> None:
     mcu_model = mcu_obj.get("state", "") if isinstance(mcu_obj, dict) else ""
     if mcu_model in _MCU_HAP003S_AUTO_SILENT_REV:
         device._auto_mode_uses_auto_silent = True  # pylint: disable=protected-access
+
+
+def _hap009s_override(device) -> None:
+    """Remap the "auto" mode command to "auto-regular" for DR-HAP009S air purifiers.
+
+    The DR-HAP009S rejects the plain "auto" mode command ("instruction validate failed",
+    error 500003) and requires "auto-regular" instead (issue #860).  The device reports
+    "auto-regular" back as its state, which PyDreoFanBase.preset_mode normalizes to "auto".
+    """
+    device._auto_mode_command_value = "auto-regular"  # pylint: disable=protected-access
 
 
 def _hpf015s_mcu_override(device) -> None:
@@ -428,6 +439,8 @@ SUPPORTED_DEVICES = {
         device_type=DreoDeviceType.AIR_PURIFIER,
         preset_modes=[("auto", "auto"), ("manual", "manual"), ("sleep", "sleep"), ("turbo", "turbo")],
         device_ranges={SPEED_RANGE: (1, 4)},
+        # The device rejects the plain "auto" mode command and requires "auto-regular" (issue #860).
+        override_fn=_hap009s_override,
     ),
     # Heaters
     "DR-HSH017BS": DreoHeaterDeviceDetails(
@@ -563,6 +576,8 @@ SUPPORTED_DEVICES = {
     # DR-HEC006S is the TurboCool Misting Fan 516S.
     # controlsConf is empty so speed range and preset modes must be hardcoded.
     # DR-HEC006S has +/-75° oscillation range and the turbo-mode is 4
+    # DR-HEC006S supports rgbmode (0=humidity indicator, 1=fixed color, 2=breathing, 3=cycling),
+    # rgbcolor, and rgbth (humidity thresholds).  Brightness is low/mid/high.
     # Asymmetric horizontal oscillation is also supported with left/right angles
     "DR-HEC006S": DreoDeviceDetails(
         device_type=DreoDeviceType.EVAPORATIVE_COOLER,
@@ -572,7 +587,9 @@ SUPPORTED_DEVICES = {
             HORIZONTAL_ANGLE_RANGE: (-75, 75),
             "horizontal_osc_angle_left_range": (-75, 75),
             "horizontal_osc_angle_right_range": (-75, 75),
+            RGB_MODE_RANGE: (0, 3),
         },
+        ambient_light_levels=(0, 1, 2, 3),
     ),
     # DR-HEC005S is the TurboCool Misting Fan 765S.
     # It has 12 fan speeds and can expose an empty controlsConf.

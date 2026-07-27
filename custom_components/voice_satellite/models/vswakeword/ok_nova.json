@@ -1,0 +1,198 @@
+{
+  "name": "ok_nova",
+  "format": "vs-wake-word-ctc-v1",
+  "recommended_threshold": 0.5,
+  "attribution": {
+    "author": "Xavier Larrea",
+    "url": "https://github.com/jxlarrea/voice-satellite-card-integration",
+    "license": "AGPL-3.0 (GNU Affero General Public License v3.0): https://www.gnu.org/licenses/agpl-3.0.html"
+  },
+  "input": {
+    "name": "input",
+    "shape": [
+      1,
+      128,
+      40
+    ],
+    "dtype": "float32",
+    "feature": "log_mel"
+  },
+  "output": {
+    "name": "log_probs",
+    "shape": [
+      1,
+      64,
+      52
+    ],
+    "dtype": "float32",
+    "meaning": "frame_level_phoneme_log_probabilities"
+  },
+  "feature_config": {
+    "sample_rate": 16000,
+    "window_ms": 1300,
+    "frame_ms": 25,
+    "hop_ms": 10,
+    "n_fft": 512,
+    "n_mels": 40,
+    "f_min": 80.0,
+    "f_max": 7600.0,
+    "log_floor": 1e-06,
+    "window_cmn": true,
+    "window_samples": 20800,
+    "frame_samples": 400,
+    "hop_samples": 160,
+    "frames": 128
+  },
+  "model": {
+    "architecture": "ctc",
+    "backbone": "tcresnet",
+    "conv_channels": [
+      20,
+      40,
+      60,
+      60
+    ]
+  },
+  "ctc": {
+    "vocab_size": 52,
+    "blank_id": 1,
+    "pad_id": 0,
+    "word_sep_id": 2,
+    "inventory": [
+      "<pad>",
+      "<blank>",
+      " ",
+      "\u02d0",
+      "a",
+      "\u0251",
+      "\u0250",
+      "\u0254",
+      "\u00e6",
+      "e",
+      "\u025b",
+      "\u025c",
+      "\u0259",
+      "\u025a",
+      "i",
+      "\u026a",
+      "\u0268",
+      "\u1d7b",
+      "o",
+      "\u0252",
+      "u",
+      "\u028a",
+      "\u028c",
+      "b",
+      "d",
+      "f",
+      "\u0261",
+      "h",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "\u014b",
+      "p",
+      "r",
+      "\u0279",
+      "\u027e",
+      "s",
+      "\u0283",
+      "t",
+      "v",
+      "w",
+      "z",
+      "\u0292",
+      "\u00f0",
+      "\u03b8",
+      "\u0294",
+      "t\u0283",
+      "d\u0292",
+      "x",
+      "\u02b2"
+    ],
+    "wake_word_targets": [
+      [
+        18,
+        21,
+        29,
+        9,
+        15,
+        2,
+        32,
+        18,
+        21,
+        41,
+        12
+      ],
+      [
+        29,
+        9,
+        15,
+        2,
+        32,
+        18,
+        21,
+        41,
+        12
+      ]
+    ],
+    "wake_word_target_phonemes": [
+      [
+        "o",
+        "\u028a",
+        "k",
+        "e",
+        "\u026a",
+        " ",
+        "n",
+        "o",
+        "\u028a",
+        "v",
+        "\u0259"
+      ],
+      [
+        "k",
+        "e",
+        "\u026a",
+        " ",
+        "n",
+        "o",
+        "\u028a",
+        "v",
+        "\u0259"
+      ]
+    ],
+    "max_edit_distance": 1,
+    "wake_word_trail_tolerance": 1,
+    "min_matched_confidence": 9.0,
+    "target_max_edit_distance": [
+      1,
+      0
+    ],
+    "target_min_matched_confidence": [
+      9.0,
+      9.5
+    ],
+    "wake_word_target_anchors": [
+      [
+        2,
+        6,
+        9
+      ],
+      [
+        0,
+        4,
+        7
+      ]
+    ]
+  },
+  "runtime": {
+    "required_hits": 1,
+    "cooldown_ms": 2000,
+    "hit_mode": "consecutive",
+    "high_confidence_bypass": 10.5,
+    "high_confidence_bypass_min_hits": 1
+  }
+}

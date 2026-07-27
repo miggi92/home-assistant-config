@@ -1,0 +1,19 @@
+rules:
+  # Bronze
+  action-setup: todo
+  appropriate-polling: done
+  brands: done
+  common-modules: done
+  config-flow-test-coverage: todo
+  config-flow: done
+  dependency-transparency: done
+  docs-actions: todo
+  docs-installation-instructions: todo
+  docs-removal-instructions: todo
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: todo
+  runtime-data: todo
+  test-before-configure: todo
+  test-before-setup: todo
+  unique-config-entry: todo
