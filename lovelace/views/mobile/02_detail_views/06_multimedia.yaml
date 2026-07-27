@@ -45,34 +45,6 @@ sections:
         entity: sensor.radarr_upcoming_media
   - type: grid
     cards:
-      - type: custom:mushroom-template-card
-        primary: "{{ state_attr(entity, 'subject') }}"
-        secondary: >
-          Angefragt von {{ state_attr(entity, 'request').requested_by_username }}
-        icon: mdi:home
-        entity: event.overseerr_letztes_medienereignis
-        fill_container: true
-        multiline_secondary: true
-        layout: horizontal
-        badge_color: >
-          {% set eventType = state_attr(entity, 'event_type') %}
-          {% if eventType == 'pending' %}
-            orange
-          {% elsif eventType == 'failed' or eventType == 'declined'  %}
-            red
-          {% else %}
-            green
-          {% endif %}
-        badge_icon: >
-          {% set eventType = state_attr(entity, 'event_type') %}
-          {% if eventType == 'pending' %}
-            mdi:download
-          {% elsif eventType == 'failed' or eventType == 'declined'  %}
-            mdi:alert-octagon
-          {% endif %}
-        tap_action:
-          action: more-info
-        picture: "{{ state_attr(entity, 'entity_picture') }}"
       - type: custom:mushroom-entity-card
         entity: sensor.radarr_filme
       - type: custom:mushroom-entity-card
