@@ -14,6 +14,7 @@ class HandballNetAPI:
 
     LEAGUE_TABLE_CACHE_TTL = 3600  # 1 hour
     TEAM_SCHEDULE_CACHE_TTL = 3600  # 1 hour
+    TEAM_INFO_CACHE_TTL = 21600  # 6 hours
 
     def __init__(self, hass: HomeAssistant):
         self.hass = hass
@@ -22,6 +23,7 @@ class HandballNetAPI:
         self.session = async_get_clientsession(hass)
         self._league_table_cache = {}
         self._team_schedule_cache = {}
+        self._team_info_cache = {}
 
     async def _make_request(self, endpoint: str) -> Optional[Dict[str, Any]]:
         """Make HTTP request to handball.net API"""
@@ -58,6 +60,13 @@ class HandballNetAPI:
 
     async def get_team_info(self, team_id: str) -> Optional[Dict[str, Any]]:
         """Get team information including logo"""
+        now = time.time()
+
+        if team_id in self._team_info_cache:
+            timestamp, cached_data = self._team_info_cache[team_id]
+            if now - timestamp < self.TEAM_INFO_CACHE_TTL:
+                return cached_data
+
         data = await self._make_request(f"teams/{team_id}")
         if not data:
             return None
@@ -65,6 +74,12 @@ class HandballNetAPI:
         team_data = data.get("data")
         if team_data and team_data.get("logo"):
             team_data["logo"] = self.utils.normalize_logo_url(team_data["logo"])
+
+        if team_data is not None:
+            # Prevent unbounded growth
+            if len(self._team_info_cache) >= 50:
+                self._team_info_cache.clear()
+            self._team_info_cache[team_id] = (now, team_data)
 
         return team_data
 
@@ -96,28 +111,37 @@ class HandballNetAPI:
     async def get_tournament_team_ids(self, tournament_id: str) -> list[str]:
         """Resolve tournament participants using team search fallback."""
         query = quote_plus(tournament_id)
-        data = await self._make_request(f"teams/search?query={query}")
-        teams = data.get("data", []) if data else []
 
         team_ids: list[str] = []
         seen: set[str] = set()
-        for team in teams:
-            if not isinstance(team, dict):
-                continue
 
-            default_tournament = team.get("defaultTournament")
-            if not isinstance(default_tournament, dict):
-                continue
+        page = 1
+        page_count = 1
+        while page <= page_count:
+            data = await self._make_request(f"teams/search?query={query}&page={page}")
+            teams = data.get("data", []) if data else []
+            meta = data.get("meta", {}) if data else {}
+            page_count = meta.get("pageCount", page_count) or page_count
 
-            if default_tournament.get("id") != tournament_id:
-                continue
+            for team in teams:
+                if not isinstance(team, dict):
+                    continue
 
-            team_id = team.get("id")
-            if not team_id or team_id in seen:
-                continue
+                default_tournament = team.get("defaultTournament")
+                if not isinstance(default_tournament, dict):
+                    continue
 
-            seen.add(team_id)
-            team_ids.append(team_id)
+                if default_tournament.get("id") != tournament_id:
+                    continue
+
+                team_id = team.get("id")
+                if not team_id or team_id in seen:
+                    continue
+
+                seen.add(team_id)
+                team_ids.append(team_id)
+
+            page += 1
 
         return team_ids
 

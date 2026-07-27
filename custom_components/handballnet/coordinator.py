@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -49,6 +50,7 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._team_items = self._build_team_items(entry)
         self._tournament_id = entry.data.get(CONF_TOURNAMENT_ID)
+        self._perf_snapshot: dict[str, Any] = {}
 
         super().__init__(
             hass,
@@ -73,15 +75,32 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return []
 
     async def _async_update_data(self) -> dict[str, Any]:
+        self._reset_perf_snapshot()
+        update_started = time.perf_counter()
         if self._entity_type == ENTITY_TYPE_TOURNAMENT:
-            return await self._async_update_tournament_data()
+            result = await self._async_update_tournament_data()
+            self._log_perf(
+                "update_total",
+                update_started,
+                entity_type=self._entity_type,
+                teams=0,
+                is_live=False,
+            )
+            result["perf"] = self._perf_snapshot
+            return result
 
+        teams_fetch_started = time.perf_counter()
         team_results = await asyncio.gather(
             *(
                 self._load_team_bucket(team_id, team_name)
                 for team_id, team_name in self._team_items
             ),
             return_exceptions=True,
+        )
+        self._log_perf(
+            "teams_fetch",
+            teams_fetch_started,
+            team_count=len(self._team_items),
         )
 
         teams: dict[str, dict[str, Any]] = {}
@@ -108,42 +127,69 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for team_id, team_bucket in teams.items():
             self._store_team_bucket(team_id, team_bucket)
 
-        return {
+        result = {
             "entity_type": self._entity_type,
             "teams": teams,
             "tournament": None,
             "is_live": is_live,
+            "perf": self._perf_snapshot,
         }
+        self._log_perf(
+            "update_total",
+            update_started,
+            entity_type=self._entity_type,
+            teams=len(teams),
+            is_live=is_live,
+        )
+        return result
 
     async def _async_update_tournament_data(self) -> dict[str, Any]:
+        tournament_started = time.perf_counter()
         if not self._tournament_id:
             raise UpdateFailed("Tournament ID is missing")
 
+        tournament_info = await self._get_tournament_info()
+
+        table_started = time.perf_counter()
         table_data = await self._api.get_league_table(self._tournament_id)
+        self._log_perf("tournament_table_fetch", table_started, tournament_id=self._tournament_id)
         if not table_data:
             tournament_bucket = {
                 "tournament_id": self._tournament_id,
-                "tournament_info": {
-                    "name": self._tournament_id,
-                    "acronym": "",
-                    "organization": "",
-                    "logo": "",
-                },
+                "tournament_info": tournament_info,
+                "has_table": tournament_info.get("has_table", False),
                 "table_rows": [],
                 "team_positions": {},
                 "matches": [],
             }
             self._store_tournament_bucket(tournament_bucket)
+            self._log_perf(
+                "tournament_update_total",
+                tournament_started,
+                tournament_id=self._tournament_id,
+                rows=0,
+                matches=0,
+            )
             return {
                 "entity_type": self._entity_type,
                 "teams": {},
                 "tournament": tournament_bucket,
                 "is_live": False,
+                "perf": self._perf_snapshot,
             }
 
-        tournament_info = await self._get_tournament_info()
+        tournament_info = self._merge_tournament_info(
+            tournament_info,
+            self._extract_tournament_info_from_table_data(table_data),
+        )
+
+        rows_started = time.perf_counter()
         table_rows = await self._extract_table_rows_with_logos(table_data)
-        matches = await self._fetch_tournament_matches(table_rows)
+        self._log_perf("tournament_rows_prepare", rows_started, rows=len(table_rows))
+
+        matches_started = time.perf_counter()
+        matches = await self._fetch_tournament_matches(table_rows, tournament_info)
+        self._log_perf("tournament_matches_fetch", matches_started, matches=len(matches))
         team_positions = {
             row.get("team_id"): row for row in table_rows if row.get("team_id")
         }
@@ -151,30 +197,53 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         tournament_bucket = {
             "tournament_id": self._tournament_id,
             "tournament_info": tournament_info,
+            "has_table": tournament_info.get("has_table", bool(table_rows)),
             "table_rows": table_rows,
             "team_positions": team_positions,
             "matches": matches,
         }
 
         self._store_tournament_bucket(tournament_bucket)
-        return {
+        result = {
             "entity_type": self._entity_type,
             "teams": {},
             "tournament": tournament_bucket,
             "is_live": False,
+            "perf": self._perf_snapshot,
         }
+        self._log_perf(
+            "tournament_update_total",
+            tournament_started,
+            tournament_id=self._tournament_id,
+            rows=len(table_rows),
+            matches=len(matches),
+        )
+        return result
 
     async def _load_team_bucket(self, team_id: str, team_name: str) -> dict[str, Any]:
-        schedule_data = await self._api.get_team_schedule(team_id)
+        team_started = time.perf_counter()
+        schedule_result, team_info_result = await asyncio.gather(
+            self._api.get_team_schedule(team_id),
+            self._api.get_team_info(team_id),
+            return_exceptions=True,
+        )
+
+        if isinstance(schedule_result, Exception):
+            _LOGGER.debug("Could not fetch schedule for %s: %s", team_id, schedule_result)
+            schedule_data = None
+        else:
+            schedule_data = schedule_result
+
         schedule_unavailable = schedule_data is None
         matches = schedule_data or []
         essential_matches = self._extract_essential_match_data(team_id, matches)
+        sorted_matches = self._sort_matches_by_start(essential_matches)
 
         team_info = None
-        try:
-            team_info = await self._api.get_team_info(team_id)
-        except Exception as err:
-            _LOGGER.debug("Could not fetch team info for %s: %s", team_id, err)
+        if isinstance(team_info_result, Exception):
+            _LOGGER.debug("Could not fetch team info for %s: %s", team_id, team_info_result)
+        else:
+            team_info = team_info_result
 
         if team_info and team_info.get("logo"):
             team_logo_url = team_info.get("logo")
@@ -184,16 +253,26 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if team_info and team_info.get("name"):
             team_name = team_info.get("name")
 
-        live_matches = self._get_live_matches(essential_matches)
-        live_events = await self._load_live_events(live_matches)
-        tournament_id = self._find_tournament_id(essential_matches, team_info)
-        table_position = await self._load_table_position(team_id, tournament_id)
+        live_matches = self._get_live_matches(sorted_matches)
+        tournament_id = self._find_tournament_id(sorted_matches, team_info)
+        live_events, table_position = await asyncio.gather(
+            self._load_live_events(live_matches),
+            self._load_table_position(team_id, tournament_id),
+        )
         health = self._build_health_data(
-            essential_matches,
+            sorted_matches,
             schedule_unavailable=schedule_unavailable,
         )
-        next_match = self._get_next_match(essential_matches)
-        last_match = self._get_last_match(essential_matches)
+        next_match = self._get_next_match(sorted_matches)
+        last_match = self._get_last_match(sorted_matches)
+
+        self._log_perf(
+            "team_bucket_update",
+            team_started,
+            team_id=team_id,
+            matches=len(sorted_matches),
+            live=bool(live_matches),
+        )
 
         return {
             "team_id": team_id,
@@ -201,7 +280,7 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "team_name": team_name,
             "team_info": team_info,
             "team_logo_url": team_logo_url,
-            "matches": essential_matches,
+            "matches": sorted_matches,
             "next_match": next_match,
             "last_match": last_match,
             "live_matches": live_matches,
@@ -210,7 +289,35 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "table_position": table_position,
             "health": health,
             "is_live": bool(live_matches),
+            "perf": {
+                "team_bucket_update_ms": self._perf_snapshot.get(
+                    "team_bucket_ms", {}
+                ).get(team_id)
+            },
         }
+
+    def _reset_perf_snapshot(self) -> None:
+        self._perf_snapshot = {
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "phases_ms": {},
+            "team_bucket_ms": {},
+        }
+
+    def _log_perf(self, phase: str, started: float, **meta: Any) -> float:
+        elapsed_ms = round((time.perf_counter() - started) * 1000, 1)
+        if phase == "team_bucket_update":
+            team_id = meta.get("team_id")
+            if team_id:
+                self._perf_snapshot.setdefault("team_bucket_ms", {})[team_id] = elapsed_ms
+        else:
+            self._perf_snapshot.setdefault("phases_ms", {})[phase] = elapsed_ms
+
+        if meta:
+            meta_string = ", ".join(f"{key}={value}" for key, value in meta.items())
+            _LOGGER.debug("perf %s: %.1fms (%s)", phase, elapsed_ms, meta_string)
+            return elapsed_ms
+        _LOGGER.debug("perf %s: %.1fms", phase, elapsed_ms)
+        return elapsed_ms
 
     def _create_error_team_bucket(
         self, team_id: str, team_name: str, error: str
@@ -231,6 +338,7 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "health": {"state": "error", "attributes": {}, "error": error},
             "is_live": False,
             "error": error,
+            "perf": {},
         }
 
     async def _load_live_events(
@@ -337,6 +445,11 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return essential_matches
 
+    def _sort_matches_by_start(
+        self, matches: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        return sorted(matches, key=lambda item: item.get("startsAt") or 0)
+
     def _get_live_matches(self, matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
         now_ts = datetime.now(timezone.utc).timestamp()
         return [
@@ -349,7 +462,7 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _get_next_match(self, matches: list[dict[str, Any]]) -> dict[str, Any] | None:
         now = datetime.now(timezone.utc)
-        for match in sorted(matches, key=lambda item: item.get("startsAt", 0)):
+        for match in matches:
             start_ts = match.get("startsAt")
             if not isinstance(start_ts, int):
                 continue
@@ -481,21 +594,55 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
 
     async def _get_tournament_info(self) -> dict[str, Any]:
-        data = await self._api._make_request(f"tournaments/{self._tournament_id}/table")
+        data = await self._api._make_request(f"tournaments/{self._tournament_id}")
         if data and "data" in data:
-            tournament_data = data["data"].get("tournament", {})
+            tournament_data = data.get("data", {})
+            meta = data.get("meta", {})
             return {
                 "name": tournament_data.get("name", self._tournament_id),
                 "acronym": tournament_data.get("acronym", ""),
                 "organization": tournament_data.get("organization", {}).get("name", ""),
                 "logo": tournament_data.get("logo", ""),
+                "has_table": bool(meta.get("hasTable", False)),
             }
         return {
             "name": self._tournament_id,
             "acronym": "",
             "organization": "",
             "logo": "",
+            "has_table": False,
         }
+
+    def _extract_tournament_info_from_table_data(
+        self, table_data: Any
+    ) -> dict[str, Any]:
+        if isinstance(table_data, dict):
+            tournament_data = table_data.get("tournament", {})
+            if isinstance(tournament_data, dict):
+                return {
+                    "name": tournament_data.get("name", self._tournament_id),
+                    "acronym": tournament_data.get("acronym", ""),
+                    "organization": tournament_data.get("organization", {}).get("name", ""),
+                    "logo": tournament_data.get("logo", ""),
+                }
+
+        return {
+            "name": self._tournament_id,
+            "acronym": "",
+            "organization": "",
+            "logo": "",
+        }
+
+    def _merge_tournament_info(
+        self,
+        base_info: dict[str, Any],
+        extra_info: dict[str, Any],
+    ) -> dict[str, Any]:
+        merged = dict(base_info)
+        for key, value in extra_info.items():
+            if key not in merged or merged[key] in (None, ""):
+                merged[key] = value
+        return merged
 
     async def _extract_table_rows_with_logos(
         self, table_data: Any
@@ -510,6 +657,26 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         formatted_rows: list[dict[str, Any]] = []
         total_teams = len(rows)
 
+        row_team_ids = [
+            row.get("team", {}).get("id")
+            for row in rows
+            if isinstance(row, dict) and row.get("team", {}).get("id")
+        ]
+        unique_team_ids = list(dict.fromkeys(row_team_ids))
+        team_info_map: dict[str, dict[str, Any] | None] = {}
+
+        if unique_team_ids:
+            team_results = await asyncio.gather(
+                *(self._api.get_team_info(team_id) for team_id in unique_team_ids),
+                return_exceptions=True,
+            )
+            for team_id, result in zip(unique_team_ids, team_results, strict=False):
+                if isinstance(result, Exception):
+                    _LOGGER.debug("Could not fetch logo for team %s: %s", team_id, result)
+                    team_info_map[team_id] = None
+                else:
+                    team_info_map[team_id] = result
+
         for row in rows:
             if not isinstance(row, dict):
                 continue
@@ -519,12 +686,9 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             team_logo = None
 
             if team_id:
-                try:
-                    team_data = await self._api.get_team_info(team_id)
-                    if team_data and team_data.get("logo"):
-                        team_logo = team_data.get("logo")
-                except Exception as err:
-                    _LOGGER.debug("Could not fetch logo for team %s: %s", team_id, err)
+                team_data = team_info_map.get(team_id)
+                if team_data and team_data.get("logo"):
+                    team_logo = team_data.get("logo")
 
             if not team_logo:
                 team_logo = team_info.get("logo")
@@ -556,7 +720,9 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return formatted_rows
 
     async def _fetch_tournament_matches(
-        self, table_rows: list[dict[str, Any]]
+        self,
+        table_rows: list[dict[str, Any]],
+        tournament_info: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         team_ids = [row.get("team_id") for row in table_rows if row.get("team_id")]
 
@@ -567,35 +733,76 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not team_ids:
             return []
 
-        team_ids_set = set(team_ids)
-        unique_matches: dict[str, dict[str, Any]] = {}
-        schedule_results = await asyncio.gather(
-            *(self._api.get_team_schedule(team_id) for team_id in team_ids),
-            return_exceptions=True,
+        target_tournament_name = (
+            (tournament_info or {}).get("name", "") if tournament_info else ""
         )
 
-        for team_id, matches_result in zip(team_ids, schedule_results, strict=False):
-            if isinstance(matches_result, Exception):
-                _LOGGER.debug(
-                    "Could not get tournament matches for team %s: %s",
-                    team_id,
-                    matches_result,
-                )
-                continue
+        known_team_ids: set[str] = set(team_ids)
+        pending_team_ids: set[str] = set(team_ids)
+        processed_team_ids: set[str] = set()
+        unique_matches: dict[str, dict[str, Any]] = {}
+        max_teams = 256
 
-            for match in matches_result or []:
-                match_id = match.get("id")
-                if not match_id or match_id in unique_matches:
+        while pending_team_ids and len(processed_team_ids) < max_teams:
+            batch_team_ids = [
+                team_id for team_id in pending_team_ids if team_id not in processed_team_ids
+            ]
+            pending_team_ids.clear()
+            if not batch_team_ids:
+                break
+
+            schedule_results = await asyncio.gather(
+                *(self._api.get_team_schedule(team_id) for team_id in batch_team_ids),
+                return_exceptions=True,
+            )
+
+            for team_id, matches_result in zip(
+                batch_team_ids, schedule_results, strict=False
+            ):
+                processed_team_ids.add(team_id)
+                if isinstance(matches_result, Exception):
+                    _LOGGER.debug(
+                        "Could not get tournament matches for team %s: %s",
+                        team_id,
+                        matches_result,
+                    )
                     continue
 
-                home_team_id = match.get("homeTeam", {}).get("id")
-                away_team_id = match.get("awayTeam", {}).get("id")
-                match_tournament_id = match.get("tournament", {}).get("id")
+                for match in matches_result or []:
+                    match_id = match.get("id")
+                    if not match_id:
+                        continue
 
-                if match_tournament_id == self._tournament_id:
+                    tournament_data = match.get("tournament", {})
+                    match_tournament_id = tournament_data.get("id")
+                    match_tournament_name = tournament_data.get("name", "")
+                    is_target_tournament = match_tournament_id == self._tournament_id
+
+                    if (
+                        not is_target_tournament
+                        and not match_tournament_id
+                        and target_tournament_name
+                        and match_tournament_name == target_tournament_name
+                    ):
+                        is_target_tournament = True
+
+                    if not is_target_tournament:
+                        continue
+
                     unique_matches[match_id] = match
-                elif home_team_id in team_ids_set and away_team_id in team_ids_set:
-                    unique_matches[match_id] = match
+
+                    for participant in (
+                        match.get("homeTeam", {}),
+                        match.get("awayTeam", {}),
+                    ):
+                        participant_id = participant.get("id")
+                        if (
+                            participant_id
+                            and participant_id not in known_team_ids
+                            and len(known_team_ids) < max_teams
+                        ):
+                            known_team_ids.add(participant_id)
+                            pending_team_ids.add(participant_id)
 
         return self._extract_essential_match_data(
             "",
@@ -618,6 +825,7 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "last_match": team_bucket.get("last_match"),
                 "tournament_id": team_bucket.get("tournament_id"),
                 "health": team_bucket.get("health", {}),
+                "perf": team_bucket.get("perf", {}),
                 "sensors": sensors,
             }
         )
@@ -629,9 +837,11 @@ class HandballDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         bucket.update(
             {
                 "tournament_info": tournament_bucket.get("tournament_info", {}),
+                "has_table": tournament_bucket.get("has_table", False),
                 "table_rows": tournament_bucket.get("table_rows", []),
                 "team_positions": tournament_bucket.get("team_positions", {}),
                 "matches": tournament_bucket.get("matches", []),
+                "perf": self._perf_snapshot,
                 "sensors": bucket.get("sensors", []),
             }
         )

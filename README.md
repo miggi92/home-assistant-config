@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.7.3%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.7.3)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.7.4%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.7.4)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -34,7 +34,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🤖 Automatisierungen: 172
 - 🏘️ Bereiche: 25
 - 🖼️ Bilder: 45
-- 🛡️ Binäre Sensoren: 272
+- 🛡️ Binäre Sensoren: 277
 - 🛠️ Custom Integrationen: 61
 - 📅 Daten: 0
 - ⏰ Datum/Zeit: 0
@@ -44,12 +44,12 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 45
-- 🧩 Entitäten: 4070
+- 🧩 Entitäten: 4067
 - 🎮 Fernbedienungen: 18
-- 📱 Geräte: 582
+- 📱 Geräte: 829
 - 📍 Geräte-Tracker: 141
 - 🔌 Integrationen: 202
-- 🗓️ Kalender: 31
+- 🗓️ Kalender: 33
 - 📷 Kameras: 17
 - 🌡️ Klima: 2
 - 💡 Lichter: 37
@@ -60,7 +60,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 👤 Personen: 9
 - 🔌 Schalter: 370
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1836
+- 📟 Sensoren: 1826
 - 📢 Sirenen: 1
 - 📜 Skripte: 27
 - ☀️ Sonnen: 1
