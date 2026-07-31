@@ -5,7 +5,7 @@ from typing import Final
 DOMAIN: Final[str] = "voice_satellite"
 
 # Version - synced from package.json by scripts/sync-version.js
-INTEGRATION_VERSION: str = "2026.7.22"
+INTEGRATION_VERSION: str = "2026.7.23"
 
 # Bus events fired for user automations
 EVENT_TIMER: Final[str] = "voice_satellite_timer"

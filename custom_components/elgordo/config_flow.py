@@ -1,7 +1,38 @@
+import re
+
 from homeassistant import config_entries
 from homeassistant.core import callback
 import voluptuous as vol
-from .const import DOMAIN
+
+from .const import (
+    DEFAULT_TICKET_TYPE,
+    DOMAIN,
+    TICKET_TYPE_BILLETE,
+    TICKET_TYPE_DECIMO,
+)
+
+
+def validate_tickets(value):
+    """Validate and normalize a comma-separated list of ticket numbers."""
+    tickets = [ticket.strip() for ticket in value.split(",") if ticket.strip()]
+    if not tickets or any(not re.fullmatch(r"\d{5}", ticket) for ticket in tickets):
+        raise vol.Invalid("Ticket numbers must contain exactly five digits")
+    return ",".join(dict.fromkeys(tickets))
+
+
+def ticket_schema(tickets, ticket_type):
+    """Build the shared config and options schema."""
+    return vol.Schema(
+        {
+            vol.Required("tickets", default=tickets): vol.All(str, validate_tickets),
+            vol.Required("ticket_type", default=ticket_type): vol.In(
+                {
+                    TICKET_TYPE_DECIMO: "Décimo",
+                    TICKET_TYPE_BILLETE: "Billete",
+                }
+            ),
+        }
+    )
 
 class ElGordoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for El Gordo."""
@@ -17,21 +48,17 @@ class ElGordoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({
-                vol.Required("tickets", default="27133"): str,
-            })
+            data_schema=ticket_schema("27133", DEFAULT_TICKET_TYPE),
         )
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         """Verknüpft den Options-Dialog für nachträgliche Änderungen."""
-        return ElGordoOptionsFlowHandler(config_entry)
+        return ElGordoOptionsFlowHandler()
 
 class ElGordoOptionsFlowHandler(config_entries.OptionsFlow):
     """Handler für das Menü unter 'Konfigurieren'."""
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Dialog zum Ändern der Ticket-Liste."""
@@ -42,10 +69,12 @@ class ElGordoOptionsFlowHandler(config_entries.OptionsFlow):
         current_tickets = self.config_entry.options.get(
             "tickets", self.config_entry.data.get("tickets", "")
         )
+        current_ticket_type = self.config_entry.options.get(
+            "ticket_type",
+            self.config_entry.data.get("ticket_type", DEFAULT_TICKET_TYPE),
+        )
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Required("tickets", default=current_tickets): str,
-            })
+            data_schema=ticket_schema(current_tickets, current_ticket_type),
         )

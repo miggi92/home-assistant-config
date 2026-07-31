@@ -1,10 +1,47 @@
 {
+    "config": {
+        "step": {
+            "user": {
+                "title": "El Gordo konfigurieren",
+                "description": "Gib eine oder mehrere fünfstellige Losnummern durch Kommas getrennt ein. Die Losart gilt für alle eingegebenen Nummern.",
+                "data": {
+                    "tickets": "Losnummern",
+                    "ticket_type": "Losart (Décimo oder Billete)"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "El Gordo ist bereits konfiguriert."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Losnummern bearbeiten",
+                "description": "Gib eine oder mehrere fünfstellige Losnummern durch Kommas getrennt ein. Die Losart gilt für alle eingegebenen Nummern.",
+                "data": {
+                    "tickets": "Losnummern",
+                    "ticket_type": "Losart (Décimo oder Billete)"
+                }
+            }
+        }
+    },
     "entity": {
         "sensor": {
             "first_prize": { "name": "Hauptpreis (El Gordo)" },
             "second_prize": { "name": "Zweiter Preis" },
             "third_prize": { "name": "Dritter Preis" },
-            "ticket_prize": { "name": "Gewinn Ticket {ticket}" }
+            "fourth_prize_1": { "name": "Vierter Preis 1" },
+            "fourth_prize_2": { "name": "Vierter Preis 2" },
+            "fifth_prize_1": { "name": "Fünfter Preis 1" },
+            "fifth_prize_2": { "name": "Fünfter Preis 2" },
+            "fifth_prize_3": { "name": "Fünfter Preis 3" },
+            "fifth_prize_4": { "name": "Fünfter Preis 4" },
+            "fifth_prize_5": { "name": "Fünfter Preis 5" },
+            "fifth_prize_6": { "name": "Fünfter Preis 6" },
+            "fifth_prize_7": { "name": "Fünfter Preis 7" },
+            "fifth_prize_8": { "name": "Fünfter Preis 8" },
+            "ticket_prize": { "name": "Gewinn für Los {ticket}" }
         }
     }
 }

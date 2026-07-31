@@ -1,9 +1,46 @@
 {
+    "config": {
+        "step": {
+            "user": {
+                "title": "Configure El Gordo",
+                "description": "Enter one or more five-digit ticket numbers separated by commas. The ticket type applies to every entered number.",
+                "data": {
+                    "tickets": "Ticket numbers",
+                    "ticket_type": "Ticket type (decimo or billete)"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "El Gordo is already configured."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Edit ticket numbers",
+                "description": "Enter one or more five-digit ticket numbers separated by commas. The ticket type applies to every entered number.",
+                "data": {
+                    "tickets": "Ticket numbers",
+                    "ticket_type": "Ticket type (decimo or billete)"
+                }
+            }
+        }
+    },
     "entity": {
         "sensor": {
             "first_prize": { "name": "First prize (El Gordo)" },
             "second_prize": { "name": "Second prize" },
             "third_prize": { "name": "Third prize" },
+            "fourth_prize_1": { "name": "Fourth prize 1" },
+            "fourth_prize_2": { "name": "Fourth prize 2" },
+            "fifth_prize_1": { "name": "Fifth prize 1" },
+            "fifth_prize_2": { "name": "Fifth prize 2" },
+            "fifth_prize_3": { "name": "Fifth prize 3" },
+            "fifth_prize_4": { "name": "Fifth prize 4" },
+            "fifth_prize_5": { "name": "Fifth prize 5" },
+            "fifth_prize_6": { "name": "Fifth prize 6" },
+            "fifth_prize_7": { "name": "Fifth prize 7" },
+            "fifth_prize_8": { "name": "Fifth prize 8" },
             "ticket_prize": { "name": "Ticket prize {ticket}" }
         }
     }
