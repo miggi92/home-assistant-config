@@ -265,40 +265,110 @@
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Bewegungsempfindlichkeit"
+        "name": "Bewegungsempfindlichkeit",
+        "state": {
+          "high": "Hoch",
+          "middle": "Mittel",
+          "low": "Niedrig"
+        }
       },
       "vibration_sensitivity": {
-        "name": "Vibrationsempfindlichkeit"
+        "name": "Vibrationsempfindlichkeit",
+        "state": {
+          "very_high": "Sehr hoch",
+          "high": "Hoch",
+          "medium": "Mittel",
+          "low": "Niedrig",
+          "very_low": "Sehr niedrig"
+        }
       },
       "state_after_power_outage": {
-        "name": "Zustand nach Stromausfall"
+        "name": "Zustand nach Stromausfall",
+        "state": {
+          "off": "Aus",
+          "on": "Ein",
+          "last_state": "Letzter Zustand"
+        }
       },
       "smoke_sensitivity": {
-        "name": "Rauchempfindlichkeit"
+        "name": "Rauchempfindlichkeit",
+        "state": {
+          "high": "Hoch",
+          "middle": "Mittel",
+          "low": "Niedrig"
+        }
       },
       "display_direction": {
-        "name": "Anzeigeausrichtung"
+        "name": "Anzeigeausrichtung",
+        "state": {
+          "normal": "Normal",
+          "reversed": "Umgekehrt"
+        }
       },
       "displayed_temperature": {
-        "name": "Angezeigte Temperatur"
+        "name": "Angezeigte Temperatur",
+        "state": {
+          "setpoint": "Sollwert",
+          "measured": "Gemessen"
+        }
       },
       "terminal_type": {
-        "name": "Anschlusstyp"
+        "name": "Anschlusstyp",
+        "state": {
+          "not_connected": "Nicht angeschlossen",
+          "floor_sensor_connected": "Bodenfühler angeschlossen",
+          "floor_sensor_used_for_regulation": "Bodenfühler zur Regelung verwendet",
+          "floor_sensor_displayed": "Bodenfühler angezeigt",
+          "floor_sensor_displayed_and_used_for_regulation": "Bodenfühler angezeigt und zur Regelung verwendet",
+          "volt_free_sensor_connected": "Potentialfreier Fühler angeschlossen",
+          "volt_free_sensor_connected_and_used_for_operation": "Potentialfreier Fühler angeschlossen und für den Betrieb verwendet",
+          "outdoor_sensor_connected": "Außenfühler angeschlossen"
+        }
       },
       "valve_type": {
-        "name": "Ventiltyp"
+        "name": "Ventiltyp",
+        "state": {
+          "normally_close": "Stromlos geschlossen",
+          "normally_open": "Stromlos offen"
+        }
       },
       "heater_type": {
-        "name": "Heizungstyp"
+        "name": "Heizungstyp",
+        "state": {
+          "floor_heating": "Fußbodenheizung",
+          "floor_heating_low_energy": "Fußbodenheizung (Niedrigenergie)",
+          "radiator": "Heizkörper",
+          "convector_passive": "Konvektor (passiv)",
+          "convector_active": "Konvektor (aktiv)",
+          "volt_free_heating": "Potentialfreie Heizung"
+        }
       },
       "switch_type": {
-        "name": "Schaltertyp"
+        "name": "Schaltertyp",
+        "state": {
+          "none": "Keine",
+          "pushbutton": "Taster",
+          "switch": "Schalter",
+          "no_switch": "Kein Schalter"
+        }
       },
       "actuator_type": {
-        "name": "Aktor-Typ"
+        "name": "Aktor-Typ",
+        "state": {
+          "normally_closed": "Stromlos geschlossen",
+          "normally_open": "Stromlos offen",
+          "unsupported": "Nicht unterstützt"
+        }
       },
       "output_mode": {
-        "name": "Ausgabemodus"
+        "name": "Ausgabemodus",
+        "state": {
+          "attached": "Angeschlossen",
+          "detached": "Getrennt",
+          "detached_short_press": "Getrennt (kurzer Druck)",
+          "detached_long_press": "Getrennt (langer Druck)",
+          "unsupported": "Nicht unterstützt"
+        }
       },
       "siren_sound_level": {
         "name": "Lautstärke",
@@ -309,16 +379,34 @@
         }
       },
       "orientation_light_response_time": {
-        "name": "Reaktionszeit Orientierungslicht"
+        "name": "Reaktionszeit Orientierungslicht",
+        "state": {
+          "long": "Lang",
+          "short": "Kurz"
+        }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Sicherheitsstufe"
+        "name": "Smart Sensitivity Sicherheitsstufe",
+        "state": {
+          "high": "Hoch",
+          "middle": "Mittel",
+          "low": "Niedrig"
+        }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Komfortstufe"
+        "name": "Smart Sensitivity Komfortstufe",
+        "state": {
+          "high": "Hoch",
+          "middle": "Mittel",
+          "low": "Niedrig"
+        }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer-Phasensteuerung"
+        "name": "Dimmer-Phasensteuerung",
+        "state": {
+          "trailing": "Abschaltphase (Trailing Edge)",
+          "leading": "Anschnittphase (Leading Edge)"
+        }
       },
       "installation_profile": {
         "name": "Einsatzbereich",
@@ -513,6 +601,9 @@
       },
       "automation_rule": {
         "name": "Aktiviert"
+      },
+      "child_lock": {
+        "name": "Kindersicherung"
       }
     },
     "light": {
@@ -521,6 +612,11 @@
       },
       "room_light_group": {
         "name": "Licht"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
       }
     }
   },
@@ -640,6 +736,14 @@
     "cert_expiring": {
       "title": "Bosch SHC-Client-Zertifikat läuft bald ab",
       "description": "Das Bosch SHC-Client-Zertifikat für **{title}** läuft in {days} Tag(en) ab (am {expiry}). Um es zu erneuern: Versetzen Sie den Controller in den Kopplungsmodus (drücken Sie die Fronttaste, bis die LEDs blinken), und gehen Sie dann zu **Einstellungen → Geräte & Dienste → Bosch Smart Home Controller** und wählen Sie **Neu konfigurieren**."
+    },
+    "update_battery_low": {
+      "title": "Firmware-Update durch niedrigen Akkustand blockiert",
+      "description": "Für **{name}** ist ein Firmware-Update verfügbar, aber der Bosch Smart Home Controller startet es nicht, solange dieses Gerät einen niedrigen Akkustand meldet. Ersetzen oder laden Sie den Akku auf und versuchen Sie dann erneut, das Update zu installieren."
+    },
+    "update_calibration_required": {
+      "title": "Manuelle Kalibrierung erforderlich",
+      "description": "Das Firmware-Update für **{name}** wurde erfolgreich installiert, aber dieses Thermostat erfordert vor dem vollständigen Abschluss einen manuellen Kalibrierungsschritt: Drücken Sie die Taste am Gerät oder bestätigen Sie über die Bosch App. Home Assistant kann diesen Schritt nicht anzeigen — es zeigt das Update so lange als ausstehend an, bis Sie dies tun."
     }
   },
   "exceptions": {

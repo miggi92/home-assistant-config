@@ -44,7 +44,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 18
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 45
-- 🧩 Entitäten: 4232
+- 🧩 Entitäten: 4132
 - 🎮 Fernbedienungen: 18
 - 📱 Geräte: 592
 - 📍 Geräte-Tracker: 141
