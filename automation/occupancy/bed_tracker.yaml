@@ -29,6 +29,15 @@ action:
             alias: "Turn on bed light"
           - if:
               - condition: state
+                state:
+                  - above_horizon
+                entity_id: sun.sun
+            then:
+              - action: cover.close_cover
+                target:
+                  entity_id: cover.rollladen_schlafzimmer
+          - if:
+              - condition: state
                 entity_id: binary_sensor.schlafenszeit
                 state: "on"
             then:
