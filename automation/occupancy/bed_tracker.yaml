@@ -11,7 +11,7 @@ trigger:
       - "on"
       - "off"
     for:
-      minutes: 5
+      minutes: 2
 action:
   - choose:
       - conditions:
@@ -20,6 +20,9 @@ action:
             state: "on"
             alias: "Check if someone is in bed"
         sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.echo_schlafzimmer_bitte_nicht_storen
           - action: light.turn_on
             target:
               entity_id: light.bett
@@ -40,6 +43,9 @@ action:
             state: "off"
             alias: "Check if everyone is up"
         sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.echo_schlafzimmer_bitte_nicht_storen
           - action: light.turn_off
             target:
               entity_id: light.bett
