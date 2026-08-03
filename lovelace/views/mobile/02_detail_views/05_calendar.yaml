@@ -66,6 +66,11 @@ sections:
             icon: mdi:handball
             name: 2. HBL
             initiallyHidden: true
+          - entity: calendar.dhb_pokal_manner_spielplan
+            color: red
+            icon: mdi:handball
+            name: DHB Pokal
+            initiallyHidden: true
         days: 7
         startingDay: today
         startingDayOffset: 0
