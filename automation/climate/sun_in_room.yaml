@@ -16,8 +16,25 @@ condition:
     entity_id: sensor.temperatur
     above: "22"
 action:
-  - action: scene.turn_on
+  - action: cover.set_cover_position
     target:
-      entity_id: scene.rolladen_sonnenschutz
-    data: {}
+      entity_id: cover.rolladen_kinderzimmer
+    data:
+      position: 25
+  - if:
+      - alias: "Check if someone sleeps"
+        condition: state
+        entity_id: binary_sensor.bett_tracker
+        state: "off"
+    then:
+      - action: cover.set_cover_position
+        target:
+          entity_id: cover.rollladen_schlafzimmer
+        data:
+          position: 25
+  - action: cover.set_cover_position
+    target:
+      entity_id: cover.wohnzimmerrolladen
+    data:
+      position: 25
 mode: single

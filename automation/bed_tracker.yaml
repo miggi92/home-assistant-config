@@ -23,6 +23,19 @@ condition:
 action:
   - if:
       - condition: state
+        entity_id: binary_sensor.bett_tracker
+        state: "off"
+      - condition: state
+        entity_id: binary_sensor.sonne_im_wohnzimmer
+        state: "on"
+    then:
+      - action: cover.set_cover_position
+        target:
+          entity_id: cover.rollladen_schlafzimmer
+        data:
+          position: 25
+  - if:
+      - condition: state
         entity_id: binary_sensor.schlafenszeit
         state: "on"
         alias: "Prüfen ob gerade Schlafenszeit ist"
