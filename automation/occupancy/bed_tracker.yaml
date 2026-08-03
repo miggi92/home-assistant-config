@@ -55,6 +55,9 @@ action:
           - action: switch.turn_off
             target:
               entity_id: switch.echo_schlafzimmer_bitte_nicht_storen
+          - action: switch.turn_off
+            target:
+              entity_id: switch.babyphone
           - action: light.turn_off
             target:
               entity_id: light.bett
