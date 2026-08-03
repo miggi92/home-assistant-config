@@ -3,56 +3,64 @@
 alias: BedAutomation
 id: 6bb1782f-56aa-4ebc-b5ab-64e9f185f93f
 description: "Automatisierung, wenn jemand im Bett erkannt wurde oder alle aufgestanden sind"
+mode: single
 trigger:
   - platform: state
     entity_id: binary_sensor.bett_tracker
+    to:
+      - "on"
+      - "off"
     for:
-      hours: 0
       minutes: 5
-      seconds: 0
-
-condition:
-  - condition: or
-    conditions:
-      - condition: state
-        entity_id: binary_sensor.bett_tracker
-        state: "on"
-      - condition: state
-        entity_id: binary_sensor.bett_tracker
-        state: "off"
 action:
-  - if:
-      - condition: state
-        entity_id: binary_sensor.bett_tracker
-        state: "off"
-      - condition: state
-        entity_id: binary_sensor.sonne_im_wohnzimmer
-        state: "on"
-    then:
-      - action: cover.set_cover_position
-        target:
-          entity_id: cover.rollladen_schlafzimmer
-        data:
-          position: 25
-  - if:
-      - condition: state
-        entity_id: binary_sensor.schlafenszeit
-        state: "on"
-        alias: "Prüfen ob gerade Schlafenszeit ist"
-
-    then:
-      - if:
+  - choose:
+      - conditions:
           - condition: state
             entity_id: binary_sensor.bett_tracker
             state: "on"
-        then:
-          - service: input_boolean.turn_on
+            alias: "Check if someone is in bed"
+        sequence:
+          - action: light.turn_on
             target:
-              entity_id: input_boolean.night_mode
-            data: {}
-        else:
-          - service: input_boolean.turn_off
+              entity_id: light.bett
+            alias: "Turn on bed light"
+          - if:
+              - condition: state
+                entity_id: binary_sensor.schlafenszeit
+                state: "on"
+            then:
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.night_mode
+            alias: "Enable night mode if bedtime"
+
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.bett_tracker
+            state: "off"
+            alias: "Check if everyone is up"
+        sequence:
+          - action: light.turn_off
             target:
-              entity_id: input_boolean.night_mode
-            data: {}
-mode: single
+              entity_id: light.bett
+            alias: "Turn off bed light"
+          - if:
+              - condition: state
+                entity_id: binary_sensor.sonne_im_wohnzimmer
+                state: "on"
+            then:
+              - action: cover.set_cover_position
+                target:
+                  entity_id: cover.rollladen_schlafzimmer
+                data:
+                  position: 25
+            alias: "Lower bedroom cover if sunny"
+          - if:
+              - condition: state
+                entity_id: binary_sensor.schlafenszeit
+                state: "on"
+            then:
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.night_mode
+            alias: "Disable night mode if bedtime"
