@@ -180,8 +180,8 @@ class SourceShell:
     def day_offset(self):
         return self._day_offset
 
-    def fetch(self) -> None:
-        """Fetch data from source."""
+    def fetch(self) -> bool:
+        """Fetch data from source and report whether it succeeded."""
         try:
             # fetch returns a list of Collection's
             entries: Iterable[Collection] = self._source.fetch()
@@ -189,7 +189,7 @@ class SourceShell:
             _LOGGER.error(
                 f"fetch failed for source {self._title}:\n{traceback.format_exc()}"
             )
-            return
+            return False
         self._refreshtime = datetime.datetime.now()
 
         # strip whitespaces
@@ -220,6 +220,7 @@ class SourceShell:
             result = unique
 
         self._entries = result
+        return True
 
     def get_dedicated_calendar_types(self) -> set[str]:
         """Return set of waste types with a dedicated calendar.
@@ -279,7 +280,19 @@ class SourceShell:
             return None
 
         # create source
-        source: Fetchable = source_module.Source(**source_args)  # type: ignore
+        try:
+            source: Fetchable = source_module.Source(**source_args)  # type: ignore
+        except Exception as e:
+            _LOGGER.error(
+                f"error creating source {source_name} with arguments "
+                f"{source_args}: {e}\n"
+                "This is usually caused by a stale/invalid configuration, e.g. "
+                "after the source's arguments changed in an update, or a "
+                "'customize' entry that was nested under 'args' instead of "
+                "being a sibling of it. Please check the source's "
+                f"documentation and reconfigure it.\n{traceback.format_exc()}"
+            )
+            return None
 
         # create source shell
         g = SourceShell(

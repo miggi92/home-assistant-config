@@ -11,8 +11,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import logging
 
-from homeassistant.const import UnitOfTime
-
 from .dreobasedevice import DreoBaseDeviceHA
 from .pydreo import PyDreo
 from .pydreo.pydreobasedevice import PyDreoBaseDevice
@@ -28,6 +26,7 @@ from .const import (
 
 from .pydreo.pydreochefmaker import (
     MODE_OFF,
+    MODE_CONFIGURING,
     MODE_COOKING,
     MODE_STANDBY,
     MODE_PAUSED,
@@ -101,25 +100,23 @@ SENSORS: tuple[DreoSensorEntityDescription, ...] = (
         key="Status",
         translation_key="status",
         device_class=SensorDeviceClass.ENUM,
-        options=[MODE_STANDBY, MODE_COOKING, MODE_OFF, MODE_PAUSED, MODE_COMPLETE],
+        options=[MODE_STANDBY, MODE_CONFIGURING, MODE_COOKING, MODE_OFF, MODE_PAUSED, MODE_COMPLETE],
         value_fn=lambda device: device.mode,
         exists_fn=lambda device: (device.type in {DreoDeviceType.CHEF_MAKER}) and device.is_feature_supported(MODE_KEY),
     ),
     DreoSensorEntityDescription(
-        key="Cook time remaining",
-        translation_key="cook_time_remaining",
-        device_class=SensorDeviceClass.DURATION,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        value_fn=lambda device: device.cook_time_remaining,
-        exists_fn=lambda device: (device.type in {DreoDeviceType.CHEF_MAKER}) and device.is_feature_supported("cook_time_remaining"),
+        key="Cook end time",
+        translation_key="cook_end_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda device: device.cook_end_time,
+        exists_fn=lambda device: device.type in {DreoDeviceType.CHEF_MAKER},
     ),
     DreoSensorEntityDescription(
         key="pm25",
         translation_key="pm25",
         device_class=SensorDeviceClass.PM25,
         state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        native_unit_of_measurement=MICROGRAMS_PER_CUBIC_METER,
         value_fn=lambda device: device.pm25,
         exists_fn=lambda device: device.is_feature_supported(PM25_KEY),
     ),

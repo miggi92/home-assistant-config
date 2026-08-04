@@ -85,6 +85,7 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
         self._file_mtime_cache = {}
         self._hash_cache = {}
         self._in_transit_tracking: dict[str, dict[str, str]] = {}
+        self.email_cache = EmailCache(hass=hass)
 
         _LOGGER.debug("Data will be update every %s", self.interval)
 
@@ -141,10 +142,12 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
                             raise UpdateFailed("OAuth token refresh failed") from err
 
                     data = await self.process_emails(self.hass, config)
-                except (UpdateFailed, ConfigEntryAuthFailed):
+                except ConfigEntryAuthFailed:
                     raise
                 except Exception as error:
                     _LOGGER.error("Problem updating sensors: %s", error)
+                    if self._data:
+                        return self._data
                     raise UpdateFailed(error) from error
 
                 if data:
@@ -162,7 +165,9 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
                 self.timeout,
                 monotonic() - start,
             )
-            raise
+            if self._data:
+                return self._data
+            raise UpdateFailed("Scan timed out and no prior data available") from None
 
     async def process_emails(self, hass: HomeAssistant, config: dict) -> dict:
         """Process emails and update sensors."""
@@ -173,7 +178,12 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
         # Connect to IMAP
         account = await self._get_imap_connection(config)
         try:
-            cache = EmailCache(account)
+            days = config.get(CONF_CUSTOM_DAYS, DEFAULT_CUSTOM_DAYS)
+            cache = self.email_cache
+            cache.set_account(account)
+            await cache.async_load()
+            await cache.async_purge_expired(custom_days=days)
+
             now = datetime.datetime.now()
             today = now.strftime("%d-%b-%Y")
             today_iso = now.date().isoformat()
@@ -190,6 +200,7 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Aggregate global transit and delivered sensors
             self._aggregate_package_counts(data)
+            await cache.async_save()
         finally:
             await logout(account)
 
