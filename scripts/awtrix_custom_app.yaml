@@ -24,15 +24,6 @@ awtrix3customapp:
         number:
           min: 0
           max: 100000
-    duration:
-      name: Duration
-      description: Duration
-      default: 15
-      selector:
-        number:
-          min: 1
-          max: 180
-          step: 1
     repeat:
       name: Repeat
       description: Repeat count
@@ -60,7 +51,7 @@ awtrix3customapp:
       name: DevicePrefix
       description: MQTT Prefix der Awtrix
       required: false
-      default: "awtrix_50ccb4"
+      default: "90150650ccb4"
       selector:
         text: null
   sequence:
@@ -69,18 +60,15 @@ awtrix3customapp:
         icon: "{{ icon | default(2883) | int }}"
         repeat: "{{ repeat | default(2) | int }}"
         progress: "{{ progress | default(-1) | int }}"
-        duration: "{{ duration | default(15) | int }}"
-        device_prefix: "{{ device_prefix | default('awtrix_50ccb4') }}"
+        device_prefix: "{{ device_prefix | default('90150650ccb4') }}"
     - alias: PublishMqttPayload
       action: mqtt.publish
       data:
-        topic: "{{ device_prefix }}/custom/{{ app_id }}"
+        topic: "{{ device_prefix }}/cmd/apps/pushed/{{ app_id }}"
         payload: >-
           {% set payload_data = {
-            "text": text | default(''),
-            "duration": duration,
-            "rainbow": false,
-            "icon": icon,
+            "text": text | default('') | string,
+            "icon": icon | string,
             "repeat": repeat,
             "progress": progress
           } %}

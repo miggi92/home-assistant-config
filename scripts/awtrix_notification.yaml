@@ -15,13 +15,6 @@ awtrix3notif:
       default: 2883
       name: Icon Id
       description: Icon ID
-    duration:
-      selector:
-        number:
-          min: 1
-          max: 180
-          step: 1
-      default: 10
     repeat:
       selector:
         number:
@@ -38,21 +31,19 @@ awtrix3notif:
       name: DevicePrefix
       description: MQTT Prefix der Awtrix
       required: false
-      default: "awtrix_50ccb4"
+      default: "90150650ccb4"
       selector:
         text: null
   sequence:
     - variables:
-        device_prefix: "{{ device_prefix | default('awtrix_50ccb4') }}"
+        device_prefix: "{{ device_prefix | default('90150650ccb4') }}"
     - action: mqtt.publish
       metadata: {}
       data:
-        topic: "{{ device_prefix }}/notify"
+        topic: "{{ device_prefix }}/cmd/notify"
         payload: |-
           {
             "text": "{{ text }}",
-            "duration": "{{ duration }}",
-            "rainbow": "false",
             "icon": "{{ icon }}",
             "repeat": "{{ repeat }}",
             "overlay" : "{{ overlay }}"
