@@ -1,4 +1,18 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "在宅シミュレーション"
+    },
+    "intrusion_system": {
+      "name": "警報システム"
+    },
+    "water_alarm_system": {
+      "name": "水漏れ警報"
+    },
+    "energy_manager": {
+      "name": "エネルギーマネージャー"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "デバイスはすでに設定されています",
@@ -105,7 +119,8 @@
               "suppress_camera_switches": "Boschカメラのスイッチを非表示にする",
               "room_light_groups": "部屋ごとのライトグループを有効にする",
               "automation_rules_as_entities": "Bosch のオートメーションルールをエンティティとして公開",
-              "temperature_drop_entities": "温度低下エンティティを有効にする"
+              "temperature_drop_entities": "温度低下エンティティを有効にする",
+              "keypad_ha_bridge": "物理押しボタンをHAオートメーションに橋渡し"
             },
             "data_description": {
               "scenarios_as_buttons": "オンの場合：各Bosch SHCシナリオはHome Assistantでボタンエンティティとしても表示されます（trigger_scenarioサービスに加えて）。ダッシュボードのタイルやシナリオを直接トリガーするオートメーションに役立ちます。デフォルト：オフ。",
@@ -121,7 +136,8 @@
               "suppress_camera_switches": "ONにすると、Boschカメラ（Eyes/360/Outdoor Gen2）のプライバシー、ライト、通知スイッチエンティティが作成されません。Bosch Camera Toolと併用してください。デフォルト：オフ。",
               "room_light_groups": "ONにすると、調光/カラー対応ライト（LEDVANCE、Hue、Light/Shutter Control IIの調光器）が2台以上あるSHCの部屋ごとに、集約された`light`エンティティを1つ作成し、1つのエンティティから部屋の照明をまとめてオン/オフできるようになります。暖房がRoom Climate Controlを通じてすでに持っている部屋単位の制御と同様の仕組みです。オン/オフのみで、明るさや色の集約は行いません。デフォルト：オフ（新しいエンティティは作成されません）。",
               "automation_rules_as_entities": "オンにすると、Bosch アプリで設定された各オートメーションルールに対して、スイッチ（有効/無効）とボタン（手動実行）が作成されます — Home Assistant 自身のオートメーションとは完全に独立した、Bosch 独自のローカルルールエンジンです。デフォルト: オフ（新しいエンティティなし）。",
-              "temperature_drop_entities": "オンにすると、各部屋の温度低下サービス（凍結防止／窓開放）用にスイッチ（有効／無効）と数値（低下値）が作成されます。ほとんどの設置環境ではこの機能は使用されません。デフォルト：オフ（新しいエンティティなし）。"
+              "temperature_drop_entities": "オンにすると、各部屋の温度低下サービス（凍結防止／窓開放）用にスイッチ（有効／無効）と数値（低下値）が作成されます。ほとんどの設置環境ではこの機能は使用されません。デフォルト：オフ（新しいエンティティなし）。",
+              "keypad_ha_bridge": "オンの場合：物理的な独立押しボタンを備えた各Shutter/Light Control IIデバイスに対し、ボタンが押されたときに仮想オン/オフ状態をパルスするオートメーションをBosch Smart Home Controller上に直接作成します。この状態はすでに通常のswitchエンティティとして表示されます — そのオン/オフの遷移を、ご自身のHome Assistantオートメーションのトリガーとして使用してください。この設定をオフにすると、作成されたオートメーションと状態は削除されます。デフォルト：オフ(新しいエンティティは作成されず、コントローラー上にも何も作成されません)。"
             }
           },
           "presence": {
@@ -167,11 +183,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "室内環境制御",
+        "name": "室温制御",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "ブースト",
+              "boost": "急速暖房",
               "eco": "エコ"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "煙感知テスト"
+        "name": "アラームテスト"
       },
       "walk_test": {
-        "name": "ウォークテスト"
+        "name": "機能テストを開始"
       },
       "walk_test_stop": {
-        "name": "ウォークテスト停止"
+        "name": "機能テストを停止"
       },
       "detection_test": {
-        "name": "検知テスト"
+        "name": "機能テストを開始"
       },
       "detection_test_stop": {
-        "name": "検知テスト停止"
+        "name": "機能テストを停止"
       },
       "reset_tamper": {
         "name": "不正開封リセット"
@@ -207,10 +223,10 @@
         "name": "最小輝度プレビュー"
       },
       "reset_energy_summation": {
-        "name": "エネルギーカウンターリセット"
+        "name": "消費量をリセット"
       },
       "shutter_recalibrate": {
-        "name": "再キャリブレーション"
+        "name": "自動キャリブレーションを開始"
       },
       "enable_all_diagnostics": {
         "name": "すべての診断を有効化"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "インパルス長"
+        "name": "パルス長"
       },
       "temperature_drop_value": {
-        "name": "温度低下値"
+        "name": "温度偏差"
       },
       "energy_saving_power_threshold": {
         "name": "省エネ電力しきい値"
@@ -248,19 +264,37 @@
         "name": "ディスプレイ点灯時間"
       },
       "siren_alarm_duration": {
-        "name": "アラーム持続時間"
+        "name": "サイレン警報の持続時間"
       },
       "siren_flash_duration": {
-        "name": "フラッシュ持続時間"
+        "name": "フラッシュライト警報の持続時間"
       },
       "siren_alarm_delay": {
-        "name": "アラーム遅延"
+        "name": "サイレン警報の遅延"
       },
       "siren_flash_delay": {
-        "name": "フラッシュ遅延"
+        "name": "フラッシュライト警報の遅延"
       },
       "bypass_timeout": {
-        "name": "バイパスタイムアウト"
+        "name": "休止機能のタイムアウト"
+      },
+      "offset": {
+        "name": "オフセット"
+      },
+      "setpointeco": {
+        "name": "エコ温度"
+      },
+      "setpointcomfort": {
+        "name": "快適温度"
+      },
+      "dimmer_min": {
+        "name": "最小輝度"
+      },
+      "dimmer_max": {
+        "name": "最大輝度"
+      },
+      "dimmer_speed": {
+        "name": "調光速度"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "非常に高い",
           "high": "高い",
           "medium": "中",
-          "low": "低い",
-          "very_low": "非常に低い"
+          "low": "やや低い",
+          "very_low": "低い"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +333,30 @@
         }
       },
       "display_direction": {
-        "name": "ディスプレイ方向",
+        "name": "ディスプレイの向き",
         "state": {
           "normal": "通常",
-          "reversed": "反転"
+          "reversed": "180°回転"
         }
       },
       "displayed_temperature": {
         "name": "表示温度",
         "state": {
-          "setpoint": "設定値",
+          "setpoint": "設定温度",
           "measured": "測定値"
         }
       },
       "terminal_type": {
-        "name": "端子タイプ",
+        "name": "センサー接続",
         "state": {
-          "not_connected": "未接続",
+          "not_connected": "未使用",
           "floor_sensor_connected": "床センサー接続",
           "floor_sensor_used_for_regulation": "床センサーを調節に使用",
-          "floor_sensor_displayed": "床センサーを表示",
-          "floor_sensor_displayed_and_used_for_regulation": "床センサーを表示し調節に使用",
+          "floor_sensor_displayed": "ケーブル温度センサー（調節なし）",
+          "floor_sensor_displayed_and_used_for_regulation": "ケーブル温度センサー（調節あり）",
           "volt_free_sensor_connected": "無電圧センサー接続",
-          "volt_free_sensor_connected_and_used_for_operation": "無電圧センサーを接続し動作に使用",
-          "outdoor_sensor_connected": "屋外センサー接続"
+          "volt_free_sensor_connected_and_used_for_operation": "無電圧接点",
+          "outdoor_sensor_connected": "屋外温度センサー"
         }
       },
       "valve_type": {
@@ -338,9 +372,9 @@
           "floor_heating": "床暖房",
           "floor_heating_low_energy": "床暖房（低エネルギー）",
           "radiator": "ラジエーター",
-          "convector_passive": "コンベクター（パッシブ）",
-          "convector_active": "コンベクター（アクティブ）",
-          "volt_free_heating": "無電圧暖房"
+          "convector_passive": "コンベクター（ファンなし）",
+          "convector_active": "コンベクター（ファンあり）",
+          "volt_free_heating": "セントラルヒーティング"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "なし",
           "pushbutton": "押しボタン",
-          "switch": "スイッチ",
+          "switch": "ロッカースイッチ",
           "no_switch": "スイッチなし"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "出力モード",
         "state": {
-          "attached": "接続",
-          "detached": "切断",
-          "detached_short_press": "切断（短押し）",
-          "detached_long_press": "切断（長押し）",
+          "attached": "連動",
+          "detached": "キー操作で切断",
+          "detached_short_press": "短押しで切断",
+          "detached_long_press": "長押しで切断",
           "unsupported": "非対応"
         }
       },
       "siren_sound_level": {
-        "name": "音量レベル",
+        "name": "サイレン音量",
         "state": {
-          "low": "低",
+          "low": "小音量",
           "medium": "中",
-          "high": "高"
+          "high": "大音量"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "スマート感度セキュリティレベル",
+        "name": "警報システムの感度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "スマート感度快適レベル",
+        "name": "その他の場合の感度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -409,14 +443,14 @@
         }
       },
       "installation_profile": {
-        "name": "設置プロファイル",
+        "name": "使用目的",
         "state": {
-          "generic": "屋内（汎用）",
+          "generic": "標準",
           "outdoor": "屋外",
-          "light": "照明",
-          "heating_rcc": "暖房 (RCC)",
-          "boiler": "ボイラー",
-          "mini_pv": "ミニ太陽光"
+          "light": "ランプ",
+          "heating_rcc": "ヒーター",
+          "boiler": "セントラルヒーティング",
+          "mini_pv": "Mini PV システム"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "開いているドア/窓"
+        "name": "開いているドアと窓"
       },
       "walk_test_state": {
-        "name": "ウォークテスト状態"
+        "name": "機能テスト状態",
+        "state": {
+          "walk_test_started": "開始",
+          "walk_test_stopped": "停止",
+          "unknown": "不明"
+        }
       },
       "battery_level": {
-        "name": "バッテリーレベル"
+        "name": "バッテリーレベル",
+        "state": {
+          "ok": "正常",
+          "low_battery": "低",
+          "critical_low": "危険",
+          "critically_low_battery": "危険なほど低い",
+          "not_available": "利用不可"
+        }
       },
       "combined_rating": {
-        "name": "総合評価"
+        "name": "総合評価",
+        "state": {
+          "good": "良好",
+          "medium": "普通",
+          "bad": "不良",
+          "unknown": "不明"
+        }
       },
       "air_quality_description": {
         "name": "空気品質の説明"
       },
       "communication_quality": {
-        "name": "通信品質",
+        "name": "信号強度",
         "state": {
           "good": "良好",
           "normal": "普通",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "バッテリー"
+        "name": "バッテリー残量"
       },
       "siren_main_power": {
-        "name": "電源",
+        "name": "主電源",
         "state": {
           "battery": "バッテリー",
           "solar": "ソーラー",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "ボタン割り当て"
+        "name": "キー割り当て"
       },
       "floor_temperature": {
         "name": "床面温度"
       },
       "purity": {
-        "name": "純度"
+        "name": "空気清浄度"
       },
       "air_quality": {
         "name": "空気質"
@@ -495,7 +547,7 @@
         "name": "湿度評価"
       },
       "purity_rating": {
-        "name": "純度評価"
+        "name": "空気清浄度評価"
       },
       "energy_yield": {
         "name": "エネルギー収量"
@@ -504,10 +556,15 @@
         "name": "電力収量"
       },
       "valve_tappet": {
-        "name": "バルブタペット"
+        "name": "バルブ位置"
       },
       "detection_test_state": {
-        "name": "検知テスト状態"
+        "name": "機能テスト状態",
+        "state": {
+          "detection_test_started": "開始",
+          "detection_test_stopped": "停止",
+          "detection_test_unknown": "不明"
+        }
       },
       "next_setpoint_temperature": {
         "name": "次回設定温度"
@@ -519,10 +576,10 @@
         "name": "シミュレーション開始日時"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "基準移動時間（下から上）"
+        "name": "開く時間"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "基準移動時間（上から下）"
+        "name": "閉じる時間"
       },
       "zigbee_routing_quality": {
         "name": "Zigbeeルーティング品質",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "スケジュールオーバーライド中"
       },
+      "summer_mode": {
+        "name": "暖房休止"
+      },
+      "ventilation_mode": {
+        "name": "省エネ換気"
+      },
       "shutter_calibration_required": {
         "name": "要キャリブレーション"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "アラームバイパス"
+        "name": "休止機能"
       },
       "bypass_infinite": {
-        "name": "バイパス無期限"
+        "name": "休止機能は期限切れになりません"
       },
       "temperature_drop_enabled": {
         "name": "温度低下"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "有効"
       },
+      "pet_immunity_enabled": {
+        "name": "ペット / ロボット掃除機"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "自動感度"
+      },
+      "tamper_protection_enabled": {
+        "name": "いたずら検知"
+      },
+      "silent_mode": {
+        "name": "ウィスパーモード"
+      },
+      "smartplug_routing": {
+        "name": "電波範囲拡張"
+      },
+      "camera_light": {
+        "name": "カメラライト"
+      },
+      "camera_notification": {
+        "name": "通知"
+      },
+      "camera_frontlight": {
+        "name": "フロントライト"
+      },
+      "camera_ambientlight": {
+        "name": "アンビエントライト"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "省エネモード"
+      },
+      "warning_suppressed": {
+        "name": "警告抑制"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "湿度警告"
+      },
+      "swap_inputs": {
+        "name": "キー割り当ての変更"
+      },
+      "swap_outputs": {
+        "name": "出力の入れ替え"
+      },
+      "pre_alarm_enabled": {
+        "name": "予備警報"
+      },
+      "vibration_enabled": {
+        "name": "振動検知"
+      },
+      "intrusion_alarm": {
+        "name": "侵入警報"
+      },
       "child_lock": {
         "name": "チャイルドロック"
       }
     },
     "light": {
       "motion_light": {
-        "name": "モーションライト"
+        "name": "オリエンテーションライト"
       },
       "room_light_group": {
         "name": "ライト"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "バルブ"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "下ボタン"
+      },
+      "key_upper": {
+        "name": "上ボタン"
+      },
+      "key_lower_left": {
+        "name": "左下ボタン"
+      },
+      "key_lower_right": {
+        "name": "右下ボタン"
+      },
+      "key_upper_left": {
+        "name": "左上ボタン"
+      },
+      "key_upper_right": {
+        "name": "右上ボタン"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "そのタイトルで読み込まれた Bosch SHC エントリが見つかりません。"
+    },
+    "rawscan_command_failed": {
+      "message": "rawscan コマンドの実行に失敗しました。"
     },
     "scenario_not_found": {
       "message": "シナリオが見つかりません。"

@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Bosch-Kamera-Schalter unterdrücken",
               "room_light_groups": "Raum-Lichtgruppen aktivieren",
               "automation_rules_as_entities": "Bosch-Automatisierungsregeln als Entitäten anzeigen",
-              "temperature_drop_entities": "Temperaturabsenkungs-Entitäten aktivieren"
+              "temperature_drop_entities": "Temperaturabsenkungs-Entitäten aktivieren",
+              "keypad_ha_bridge": "Physische Tasten für HA-Automatisierungen bereitstellen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wenn EIN: Jedes Bosch SHC Szenario erscheint auch als Button-Entität in Home Assistant (zusätzlich zum `trigger_scenario` Dienst). Nützlich für Dashboard-Kacheln und Automationen, die Szenarien direkt auslösen. Standard: aus.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Wenn AN: Datenschutz-, Licht- und Benachrichtigungs-Schalter für Bosch-Kameras (Eyes / 360 / Outdoor Gen2) werden nicht angelegt. Nützlich, wenn das Bosch Camera Tool ebenfalls aktiv ist. Standard: aus.",
               "room_light_groups": "Wenn AN: erstellt für jeden SHC-Raum mit 2 oder mehr dimmbaren/farbigen Lampen (LEDVANCE, Hue, Light/Shutter Control II Dimmer) eine gebündelte `light`-Entität, mit der sich alle Lampen eines Raums über eine einzige Entität ein- und ausschalten lassen – analog zur Raumsteuerung, die die Heizung über die Raumklimasteuerung bereits hat. Nur Ein/Aus, keine Helligkeits-/Farbbündelung. Standard: aus (keine neuen Entitäten).",
               "automation_rules_as_entities": "Bei AN: erstellt für jede in der Bosch-App konfigurierte Automatisierungsregel einen Schalter (aktivieren/deaktivieren) und eine Schaltfläche (manuell auslösen) — Boschs eigene lokale Regel-Engine, komplett getrennt von den Automatisierungen von Home Assistant. Standard: aus (keine neuen Entitäten).",
-              "temperature_drop_entities": "Wenn AN: erstellt einen Schalter (aktivieren/deaktivieren) und eine Zahl (Absenkwert) für den Temperaturabsenkungsdienst (Frostschutz/Fenster offen) jedes Raums. Die meisten Installationen nutzen dieses Feature nicht. Standard: aus (keine neuen Entitäten)."
+              "temperature_drop_entities": "Wenn AN: erstellt einen Schalter (aktivieren/deaktivieren) und eine Zahl (Absenkwert) für den Temperaturabsenkungsdienst (Frostschutz/Fenster offen) jedes Raums. Die meisten Installationen nutzen dieses Feature nicht. Standard: aus (keine neuen Entitäten).",
+              "keypad_ha_bridge": "Wenn AN: erstellt für jedes Rollladen-/Lichtsteuerungs-II-Gerät mit physischer Auf-Putz-Taste eine kleine Automatisierung direkt auf dem Bosch Smart Home Controller, die bei einem Tastendruck einen virtuellen Ein/Aus-Zustand kurz aktiviert. Dieser Zustand erscheint bereits als normale Schalter-Entität — nutze dessen Ein/Aus-Wechsel als Trigger in eigenen Home-Assistant-Automatisierungen. Wird diese Option ausgeschaltet, werden die dafür angelegten Automatisierungen und Zustände wieder entfernt. Standard: aus (keine neuen Entitäten, nichts wird auf dem Controller angelegt)."
             }
           },
           "presence": {
@@ -167,11 +169,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Raumklima",
+        "name": "Raumtemperaturregelung",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Aufheizen",
+              "boost": "Schnelles Aufheizen",
               "eco": "Eco"
             }
           }
@@ -180,19 +182,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Rauchmelder-Test"
+        "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Begehungstest starten"
+        "name": "Funktionstest starten"
       },
       "walk_test_stop": {
-        "name": "Begehungstest stoppen"
+        "name": "Funktionstest stoppen"
       },
       "detection_test": {
-        "name": "Erkennungstest starten"
+        "name": "Funktionstest starten"
       },
       "detection_test_stop": {
-        "name": "Erkennungstest stoppen"
+        "name": "Funktionstest stoppen"
       },
       "reset_tamper": {
         "name": "Sabotage zurücksetzen"
@@ -207,10 +209,10 @@
         "name": "Vorschau minimale Helligkeit"
       },
       "reset_energy_summation": {
-        "name": "Energiezähler zurücksetzen"
+        "name": "Verbrauchswert zurücksetzen"
       },
       "shutter_recalibrate": {
-        "name": "Neu kalibrieren"
+        "name": "Automatische Kalibrierung starten"
       },
       "enable_all_diagnostics": {
         "name": "Alle Diagnosen aktivieren"
@@ -227,10 +229,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulsdauer"
+        "name": "Impulslänge"
       },
       "temperature_drop_value": {
-        "name": "Temperaturabsenkungswert"
+        "name": "Temperaturabweichung"
       },
       "energy_saving_power_threshold": {
         "name": "Energiesparmodus Leistungsschwelle"
@@ -248,19 +250,37 @@
         "name": "Display-Einschaltdauer"
       },
       "siren_alarm_duration": {
-        "name": "Alarmdauer"
+        "name": "Alarmdauer Sirenenton"
       },
       "siren_flash_duration": {
-        "name": "Blinkdauer"
+        "name": "Alarmdauer Blitzlicht"
       },
       "siren_alarm_delay": {
-        "name": "Alarmverzögerung"
+        "name": "Alarmverzögerung Sirenenton"
       },
       "siren_flash_delay": {
-        "name": "Blinkverzögerung"
+        "name": "Alarmverzögerung Blitzlicht"
       },
       "bypass_timeout": {
-        "name": "Bypass-Timeout"
+        "name": "Pause-Zeitbeschränkung"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco-Temperatur"
+      },
+      "setpointcomfort": {
+        "name": "Komfort-Temperatur"
+      },
+      "dimmer_min": {
+        "name": "Minimale Helligkeit"
+      },
+      "dimmer_max": {
+        "name": "Maximale Helligkeit"
+      },
+      "dimmer_speed": {
+        "name": "Dimmgeschwindigkeit"
       }
     },
     "select": {
@@ -278,8 +298,8 @@
           "very_high": "Sehr hoch",
           "high": "Hoch",
           "medium": "Mittel",
-          "low": "Niedrig",
-          "very_low": "Sehr niedrig"
+          "low": "Mäßig",
+          "very_low": "Gering"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +322,27 @@
         "name": "Anzeigeausrichtung",
         "state": {
           "normal": "Normal",
-          "reversed": "Umgekehrt"
+          "reversed": "Um 180° gedreht"
         }
       },
       "displayed_temperature": {
         "name": "Angezeigte Temperatur",
         "state": {
-          "setpoint": "Sollwert",
+          "setpoint": "Solltemperatur",
           "measured": "Gemessen"
         }
       },
       "terminal_type": {
-        "name": "Anschlusstyp",
+        "name": "Sensoranschluss",
         "state": {
-          "not_connected": "Nicht angeschlossen",
+          "not_connected": "Nicht verwendet",
           "floor_sensor_connected": "Bodenfühler angeschlossen",
           "floor_sensor_used_for_regulation": "Bodenfühler zur Regelung verwendet",
-          "floor_sensor_displayed": "Bodenfühler angezeigt",
-          "floor_sensor_displayed_and_used_for_regulation": "Bodenfühler angezeigt und zur Regelung verwendet",
+          "floor_sensor_displayed": "Kabeltemperaturfühler (ohne Regelung)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperaturfühler (mit Regelung)",
           "volt_free_sensor_connected": "Potentialfreier Fühler angeschlossen",
-          "volt_free_sensor_connected_and_used_for_operation": "Potentialfreier Fühler angeschlossen und für den Betrieb verwendet",
-          "outdoor_sensor_connected": "Außenfühler angeschlossen"
+          "volt_free_sensor_connected_and_used_for_operation": "Potentialfreier Kontakt",
+          "outdoor_sensor_connected": "Außentemperaturfühler"
         }
       },
       "valve_type": {
@@ -336,11 +356,11 @@
         "name": "Heizungstyp",
         "state": {
           "floor_heating": "Fußbodenheizung",
-          "floor_heating_low_energy": "Fußbodenheizung (Niedrigenergie)",
+          "floor_heating_low_energy": "Fußbodenheizung Niedrigenergie",
           "radiator": "Heizkörper",
-          "convector_passive": "Konvektor (passiv)",
-          "convector_active": "Konvektor (aktiv)",
-          "volt_free_heating": "Potentialfreie Heizung"
+          "convector_passive": "Passiver Konvektor (ohne Ventilator)",
+          "convector_active": "Aktiver Konvektor (mit Ventilator)",
+          "volt_free_heating": "Zentralheizung"
         }
       },
       "switch_type": {
@@ -348,14 +368,14 @@
         "state": {
           "none": "Keine",
           "pushbutton": "Taster",
-          "switch": "Schalter",
+          "switch": "Wippschalter",
           "no_switch": "Kein Schalter"
         }
       },
       "actuator_type": {
         "name": "Aktor-Typ",
         "state": {
-          "normally_closed": "Stromlos geschlossen",
+          "normally_closed": "Normalerweise geschlossen",
           "normally_open": "Stromlos offen",
           "unsupported": "Nicht unterstützt"
         }
@@ -363,19 +383,19 @@
       "output_mode": {
         "name": "Ausgabemodus",
         "state": {
-          "attached": "Angeschlossen",
-          "detached": "Getrennt",
-          "detached_short_press": "Getrennt (kurzer Druck)",
-          "detached_long_press": "Getrennt (langer Druck)",
+          "attached": "Gekoppelt",
+          "detached": "Getrennt (bei jedem Tastendruck)",
+          "detached_short_press": "Getrennt (bei kurzem Tastendruck)",
+          "detached_long_press": "Getrennt (bei langem Tastendruck)",
           "unsupported": "Nicht unterstützt"
         }
       },
       "siren_sound_level": {
-        "name": "Lautstärke",
+        "name": "Lautstärke Sirenenton",
         "state": {
-          "low": "Niedrig",
+          "low": "Gering",
           "medium": "Mittel",
-          "high": "Hoch"
+          "high": "Laut"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +406,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Sicherheitsstufe",
+        "name": "Sensitivität für Alarmsystem",
         "state": {
           "high": "Hoch",
           "middle": "Mittel",
@@ -394,7 +414,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Komfortstufe",
+        "name": "Sensitivität für sonstige Fälle",
         "state": {
           "high": "Hoch",
           "middle": "Mittel",
@@ -404,19 +424,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer-Phasensteuerung",
         "state": {
-          "trailing": "Abschaltphase (Trailing Edge)",
-          "leading": "Anschnittphase (Leading Edge)"
+          "trailing": "Phasenabschnitt",
+          "leading": "Phasenanschnitt"
         }
       },
       "installation_profile": {
-        "name": "Einsatzbereich",
+        "name": "Verwendungszweck",
         "state": {
-          "generic": "Innen (Standard)",
+          "generic": "Standard",
           "outdoor": "Außen",
-          "light": "Licht",
-          "heating_rcc": "Heizung (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini-PV"
+          "light": "Leuchte",
+          "heating_rcc": "Heizung",
+          "boiler": "Zentralheizung",
+          "mini_pv": "Mini-PV-Anlage"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +449,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Offene Türen/Fenster"
+        "name": "Offene Türen und Fenster"
       },
       "walk_test_state": {
-        "name": "Begehungstest-Status"
+        "name": "Funktionstest-Status",
+        "state": {
+          "walk_test_started": "Gestartet",
+          "walk_test_stopped": "Gestoppt",
+          "unknown": "Unbekannt"
+        }
       },
       "battery_level": {
-        "name": "Batteriestand"
+        "name": "Batteriestand",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Niedrig",
+          "critical_low": "Kritisch",
+          "critically_low_battery": "Kritisch niedrig",
+          "not_available": "Nicht verfügbar"
+        }
       },
       "combined_rating": {
-        "name": "Gesamtbewertung"
+        "name": "Gesamtbewertung",
+        "state": {
+          "good": "Gut",
+          "medium": "Mäßig",
+          "bad": "Schlecht",
+          "unknown": "Unbekannt"
+        }
       },
       "air_quality_description": {
         "name": "Luftqualitätsbeschreibung"
       },
       "communication_quality": {
-        "name": "Kommunikationsqualität",
+        "name": "Signalstärke",
         "state": {
           "good": "Gut",
           "normal": "Normal",
@@ -455,10 +493,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batterie"
+        "name": "Batterieladung"
       },
       "siren_main_power": {
-        "name": "Stromquelle",
+        "name": "Primäre Stromquelle",
         "state": {
           "battery": "Batterie",
           "solar": "Solar",
@@ -477,13 +515,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Tastenzuordnung"
+        "name": "Belegung der Tasten"
       },
       "floor_temperature": {
         "name": "Fußbodentemperatur"
       },
       "purity": {
-        "name": "Reinheit"
+        "name": "Luftreinheit"
       },
       "air_quality": {
         "name": "Luftqualität"
@@ -495,7 +533,7 @@
         "name": "Feuchtigkeitsbewertung"
       },
       "purity_rating": {
-        "name": "Reinheitsbewertung"
+        "name": "Luftreinheitsbewertung"
       },
       "energy_yield": {
         "name": "Energieertrag"
@@ -504,10 +542,15 @@
         "name": "Leistungsertrag"
       },
       "valve_tappet": {
-        "name": "Ventilstößel"
+        "name": "Ventilposition"
       },
       "detection_test_state": {
-        "name": "Erkennungstest-Status"
+        "name": "Funktionstest-Status",
+        "state": {
+          "detection_test_started": "Gestartet",
+          "detection_test_stopped": "Gestoppt",
+          "detection_test_unknown": "Unbekannt"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Nächste Solltemperatur"
@@ -519,10 +562,10 @@
         "name": "Simulation läuft seit"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referenzlaufzeit (von unten nach oben)"
+        "name": "Öffnungszeit"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referenzlaufzeit (von oben nach unten)"
+        "name": "Schließzeit"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-Routingqualität",
@@ -545,7 +588,7 @@
         "name": "Visueller Alarm"
       },
       "siren_tamper": {
-        "name": "Manipulation"
+        "name": "Sabotage"
       },
       "siren_ac_dc_error": {
         "name": "AC/DC-Fehler"
@@ -572,10 +615,16 @@
         "name": "Präsenz"
       },
       "tamper": {
-        "name": "Manipulation"
+        "name": "Sabotage"
       },
       "schedule_override_active": {
         "name": "Zeitplanüberschreibung aktiv"
+      },
+      "summer_mode": {
+        "name": "Heizpause"
+      },
+      "ventilation_mode": {
+        "name": "Nachhaltiges Lüften"
       },
       "shutter_calibration_required": {
         "name": "Kalibrierung erforderlich"
@@ -591,10 +640,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm-Bypass"
+        "name": "Pause-Funktion"
       },
       "bypass_infinite": {
-        "name": "Bypass läuft nie ab"
+        "name": "Pause-Funktion läuft nie ab"
       },
       "temperature_drop_enabled": {
         "name": "Temperaturabsenkung"
@@ -604,11 +653,65 @@
       },
       "child_lock": {
         "name": "Kindersicherung"
+      },
+      "pet_immunity_enabled": {
+        "name": "Haustier / Saugroboter"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatische Sensitivität"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotageerkennung"
+      },
+      "silent_mode": {
+        "name": "Flüstermodus"
+      },
+      "smartplug_routing": {
+        "name": "Reichweitenverlängerung"
+      },
+      "camera_light": {
+        "name": "Kameralicht"
+      },
+      "camera_notification": {
+        "name": "Benachrichtigungen"
+      },
+      "camera_frontlight": {
+        "name": "Frontlicht"
+      },
+      "camera_ambientlight": {
+        "name": "Umgebungslicht"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiesparmodus"
+      },
+      "warning_suppressed": {
+        "name": "Warnung unterdrückt"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Feuchtigkeitswarnung"
+      },
+      "swap_inputs": {
+        "name": "Tastenbelegung ändern"
+      },
+      "swap_outputs": {
+        "name": "Ausgänge tauschen"
+      },
+      "pre_alarm_enabled": {
+        "name": "Voralarm"
+      },
+      "vibration_enabled": {
+        "name": "Erschütterungserkennung"
+      },
+      "intrusion_alarm": {
+        "name": "Einbruchalarm"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Bewegungslicht"
+        "name": "Orientierungslicht"
       },
       "room_light_group": {
         "name": "Licht"
@@ -617,6 +720,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Untere Taste"
+      },
+      "key_upper": {
+        "name": "Obere Taste"
+      },
+      "key_lower_left": {
+        "name": "Untere linke Taste"
+      },
+      "key_lower_right": {
+        "name": "Untere rechte Taste"
+      },
+      "key_upper_left": {
+        "name": "Obere linke Taste"
+      },
+      "key_upper_right": {
+        "name": "Obere rechte Taste"
       }
     }
   },
@@ -762,6 +885,9 @@
     "rawscan_entry_not_found": {
       "message": "Kein geladener Bosch SHC-Eintrag mit diesem Titel gefunden."
     },
+    "rawscan_command_failed": {
+      "message": "Rawscan-Befehl konnte nicht ausgeführt werden."
+    },
     "scenario_not_found": {
       "message": "Szenario nicht gefunden."
     },
@@ -806,6 +932,20 @@
     },
     "zigbee_topology_write_failed": {
       "message": "Der Zigbee-Topologie-Export konnte nicht unter www/bosch_shc/ gespeichert werden."
+    }
+  },
+  "device": {
+    "presence_simulation": {
+      "name": "Anwesenheitssimulation"
+    },
+    "intrusion_system": {
+      "name": "Alarmsystem"
+    },
+    "water_alarm_system": {
+      "name": "Wasseralarm"
+    },
+    "energy_manager": {
+      "name": "Energiemanager"
     }
   }
 }

@@ -440,28 +440,28 @@ async def async_setup_entry(  # noqa: C901
                 entry_id=config_entry.entry_id,
             )
         )
-        # WalkTest state sensor: only created when WalkTest service is present.
-        if (
-            getattr(sensor, "supports_walk_test", False)
-            and sensor.walk_state is not None
-        ):
-            entities.append(
-                WalkStateSensor(
-                    device=sensor,
-                    entry_id=config_entry.entry_id,
-                )
-            )
-        # DetectionTest state sensor: the local-API counterpart of WalkTest.
-        if getattr(sensor, "supports_detection_test", False):
-            entities.append(
-                DetectionStateSensor(
-                    device=sensor,
-                    entry_id=config_entry.entry_id,
-                )
-            )
         # Installation profile is exposed as a writable `select` entity
         # (InstallationProfileSelect), not a sensor — see select.py (#353).
         if diagnostic_enabled:
+            # WalkTest state sensor: only created when WalkTest service is present.
+            if (
+                getattr(sensor, "supports_walk_test", False)
+                and sensor.walk_state is not None
+            ):
+                entities.append(
+                    WalkStateSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
+            # DetectionTest state sensor: the local-API counterpart of WalkTest.
+            if getattr(sensor, "supports_detection_test", False):
+                entities.append(
+                    DetectionStateSensor(
+                        device=sensor,
+                        entry_id=config_entry.entry_id,
+                    )
+                )
             await async_migrate_to_new_unique_id(
                 hass,
                 Platform.SENSOR,
@@ -529,19 +529,22 @@ async def async_setup_entry(  # noqa: C901
                     )
                 )
 
-    for siren in getattr(session.device_helper, "outdoor_sirens", []):
-        if device_excluded(siren, config_entry.options):
-            continue
-        if getattr(siren, "supports_power_supply", False):
-            entities.append(
-                SirenBatterySensor(device=siren, entry_id=config_entry.entry_id)
-            )
-            entities.append(
-                SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id)
-            )
-            entities.append(
-                SirenSolarChargingSensor(device=siren, entry_id=config_entry.entry_id)
-            )
+    if diagnostic_enabled:
+        for siren in getattr(session.device_helper, "outdoor_sirens", []):
+            if device_excluded(siren, config_entry.options):
+                continue
+            if getattr(siren, "supports_power_supply", False):
+                entities.append(
+                    SirenBatterySensor(device=siren, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    SirenMainPowerSensor(device=siren, entry_id=config_entry.entry_id)
+                )
+                entities.append(
+                    SirenSolarChargingSensor(
+                        device=siren, entry_id=config_entry.entry_id
+                    )
+                )
 
     # KeypadTrigger mapping (Universal Switch II button->scenario): diagnostic,
     # only created when the device actually exposes the service (spec-grounded).
@@ -661,6 +664,38 @@ PRESENCE_SIMULATION_RUNNING_START_SENSOR = "running_start"
 PRESENCE_SIMULATION_RUNNING_END_SENSOR = "running_end"
 REFERENCE_MOVING_TIME_TTB_SENSOR = "reference_moving_time_ttb"
 REFERENCE_MOVING_TIME_BTT_SENSOR = "reference_moving_time_btt"
+
+
+def _temperature_value(device: _TemperatureDevice) -> float | None:
+    """Return the device's temperature, or None on a partial-poll error.
+
+    SHCThermostat/SHCWallThermostat/SHCMotionDetector2's temperature mixin
+    already returns None when the underlying service is entirely absent, but
+    SHCTwinguard's temperature ultimately reads
+    AirQualityLevelService.temperature, which indexes the raw state dict
+    directly (self.state["temperature"]) rather than using .get() -- a
+    partial Bosch API poll that omits the field raises KeyError instead of
+    returning None like every other device covered by this value_fn.
+    """
+    try:
+        return device.temperature
+    except (KeyError, AttributeError) as err:
+        LOGGER.debug("Unable to read temperature for %s: %s", device.name, err)
+        return None
+
+
+def _purity_value(device: SHCTwinguard) -> int | None:
+    """Return the Twinguard purity (ppm), or None on a partial-poll error.
+
+    AirQualityLevelService.purity indexes self.state["purity"] directly
+    (unlike humidity, which uses .get() with a default) -- a partial poll
+    that omits the field raises KeyError instead of a graceful fallback.
+    """
+    try:
+        return device.purity
+    except (KeyError, AttributeError) as err:
+        LOGGER.debug("Unable to read purity for %s: %s", device.name, err)
+        return None
 
 
 def _air_quality_value(device: SHCTwinguard) -> str | None:
@@ -868,7 +903,7 @@ SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
-        value_fn=lambda device: device.temperature,
+        value_fn=_temperature_value,
     ),
     TERMINAL_TEMPERATURE_SENSOR: SHCSensorEntityDescription[SHCWallThermostat](
         key=TERMINAL_TEMPERATURE_SENSOR,
@@ -902,7 +937,7 @@ SENSOR_DESCRIPTIONS: dict[str, SHCSensorEntityDescription[Any]] = {
         native_unit_of_measurement=UnitOfRatio.PARTS_PER_MILLION,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
-        value_fn=lambda device: device.purity,
+        value_fn=_purity_value,
     ),
     AIR_QUALITY_SENSOR: SHCSensorEntityDescription[SHCTwinguard](
         key=AIR_QUALITY_SENSOR,

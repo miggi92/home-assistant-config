@@ -1,4 +1,18 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Aanwezigheidssimulatie"
+    },
+    "intrusion_system": {
+      "name": "Alarmsysteem"
+    },
+    "water_alarm_system": {
+      "name": "Wateralarm"
+    },
+    "energy_manager": {
+      "name": "Energiebeheerder"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Apparaat is al geconfigureerd",
@@ -105,7 +119,8 @@
               "suppress_camera_switches": "Bosch-cameraschakelaar onderdrukken",
               "room_light_groups": "Lichtgroepen per kamer inschakelen",
               "automation_rules_as_entities": "Bosch-automatiseringsregels als entiteiten weergeven",
-              "temperature_drop_entities": "Temperatuurdaling-entiteiten inschakelen"
+              "temperature_drop_entities": "Temperatuurdaling-entiteiten inschakelen",
+              "keypad_ha_bridge": "Fysieke drukknoppen koppelen aan HA-automatiseringen"
             },
             "data_description": {
               "scenarios_as_buttons": "Wanneer AAN: elk Bosch SHC-scenario verschijnt ook als knopentiteit in Home Assistant (naast de `trigger_scenario` service). Handig voor dashboardtegels en automatiseringen die scenario's direct activeren. Standaard: uit.",
@@ -121,7 +136,8 @@
               "suppress_camera_switches": "Wanneer AAN: privacy-, licht- en meldingsschakelaar voor Bosch-camera's (Eyes / 360 / Outdoor Gen2) worden niet aangemaakt. Gebruik dit met Bosch Camera Tool. Standaard: uit.",
               "room_light_groups": "Wanneer AAN: er wordt per SHC-kamer met 2 of meer dimbare/kleurenlampen (LEDVANCE, Hue, Light/Shutter Control II-dimmers) één gecombineerde `light`-entiteit aangemaakt, waarmee u alle lampen van een kamer met één entiteit aan/uit kunt zetten — vergelijkbaar met de kamergebonden regeling die verwarming al heeft via Kamerklimaat regeling. Alleen aan/uit, geen samenvoeging van helderheid/kleur. Standaard: uit (geen nieuwe entiteiten).",
               "automation_rules_as_entities": "Indien AAN: er wordt een schakelaar (in-/uitschakelen) en een knop (handmatig activeren) aangemaakt voor elke automatiseringsregel die in de Bosch-app is geconfigureerd — Bosch's eigen lokale regel-engine, volledig los van de automatiseringen van Home Assistant zelf. Standaard: uit (geen nieuwe entiteiten).",
-              "temperature_drop_entities": "Indien AAN: creëert een schakelaar (in-/uitschakelen) en een getal (dalingswaarde) voor de temperatuurdaling-service (vorstbescherming/open raam) van elke kamer. De meeste installaties gebruiken deze functie niet. Standaard: uit (geen nieuwe entiteiten)."
+              "temperature_drop_entities": "Indien AAN: creëert een schakelaar (in-/uitschakelen) en een getal (dalingswaarde) voor de temperatuurdaling-service (vorstbescherming/open raam) van elke kamer. De meeste installaties gebruiken deze functie niet. Standaard: uit (geen nieuwe entiteiten).",
+              "keypad_ha_bridge": "Indien AAN: voor elk Shutter/Light Control II-apparaat met een fysieke losse drukknop wordt een kleine automatisering rechtstreeks op de Bosch Smart Home Controller aangemaakt, die een virtuele aan/uit-status pulseert wanneer een knop wordt ingedrukt. Die status verschijnt al als een gewone schakelaarentiteit — gebruik de aan/uit-overgangen ervan als trigger in je eigen Home Assistant-automatiseringen. Als je dit uitschakelt, worden de automatiseringen en statussen die het heeft aangemaakt verwijderd. Standaard: uit (geen nieuwe entiteiten, niets aangemaakt op de Controller)."
             }
           },
           "presence": {
@@ -167,11 +183,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Kamerklimaat regeling",
+        "name": "Kamertemperatuurregeling",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Snel verwarmen",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Rooktest"
+        "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Functietest starten"
       },
       "walk_test_stop": {
-        "name": "Walk Test stoppen"
+        "name": "Functietest stoppen"
       },
       "detection_test": {
-        "name": "Detectietest"
+        "name": "Functietest starten"
       },
       "detection_test_stop": {
-        "name": "Detectietest stoppen"
+        "name": "Functietest stoppen"
       },
       "reset_tamper": {
         "name": "Sabotage resetten"
@@ -207,10 +223,10 @@
         "name": "Voorbeeld minimale helderheid"
       },
       "reset_energy_summation": {
-        "name": "Energieteller resetten"
+        "name": "Verbruikswaarde resetten"
       },
       "shutter_recalibrate": {
-        "name": "Opnieuw kalibreren"
+        "name": "Automatische kalibratie starten"
       },
       "enable_all_diagnostics": {
         "name": "Alle diagnostiek inschakelen"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulslengte"
+        "name": "Pulslengte"
       },
       "temperature_drop_value": {
-        "name": "Temperatuurverlagingswaarde"
+        "name": "Temperatuurafwijking"
       },
       "energy_saving_power_threshold": {
         "name": "Energiebesparingsdrempel vermogen"
@@ -245,22 +261,40 @@
         "name": "Schermhelderheid"
       },
       "display_on_time": {
-        "name": "Scherm aan-tijd"
+        "name": "Inschakelduur scherm"
       },
       "siren_alarm_duration": {
-        "name": "Alarmduur"
+        "name": "Alarmduur sirenetoon"
       },
       "siren_flash_duration": {
-        "name": "Flitsduur"
+        "name": "Alarmduur flitslicht"
       },
       "siren_alarm_delay": {
-        "name": "Alarmvertraging"
+        "name": "Alarmvertraging sirenetoon"
       },
       "siren_flash_delay": {
-        "name": "Flitsvertraging"
+        "name": "Alarmvertraging flitslicht"
       },
       "bypass_timeout": {
-        "name": "Overbruggingstime-out"
+        "name": "Time-out pauzefunctie"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco-temperatuur"
+      },
+      "setpointcomfort": {
+        "name": "Comforttemperatuur"
+      },
+      "dimmer_min": {
+        "name": "Minimale helderheid"
+      },
+      "dimmer_max": {
+        "name": "Maximale helderheid"
+      },
+      "dimmer_speed": {
+        "name": "Dimsnelheid"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Zeer hoog",
           "high": "Hoog",
           "medium": "Gemiddeld",
-          "low": "Laag",
-          "very_low": "Zeer laag"
+          "low": "Matig",
+          "very_low": "Laag"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +333,30 @@
         }
       },
       "display_direction": {
-        "name": "Schermrichting",
+        "name": "Schermoriëntatie",
         "state": {
           "normal": "Normaal",
-          "reversed": "Omgekeerd"
+          "reversed": "180° gedraaid"
         }
       },
       "displayed_temperature": {
         "name": "Weergegeven temperatuur",
         "state": {
-          "setpoint": "Instelpunt",
+          "setpoint": "Ingestelde temperatuur",
           "measured": "Gemeten"
         }
       },
       "terminal_type": {
-        "name": "Aansluitingstype",
+        "name": "Sensoraansluiting",
         "state": {
-          "not_connected": "Niet aangesloten",
+          "not_connected": "Niet gebruikt",
           "floor_sensor_connected": "Vloersensor aangesloten",
           "floor_sensor_used_for_regulation": "Vloersensor gebruikt voor regeling",
-          "floor_sensor_displayed": "Vloersensor weergegeven",
-          "floor_sensor_displayed_and_used_for_regulation": "Vloersensor weergegeven en gebruikt voor regeling",
+          "floor_sensor_displayed": "Kabeltemperatuursensor (zonder regeling)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperatuursensor (met regeling)",
           "volt_free_sensor_connected": "Potentiaalvrije sensor aangesloten",
-          "volt_free_sensor_connected_and_used_for_operation": "Potentiaalvrije sensor aangesloten en gebruikt voor bediening",
-          "outdoor_sensor_connected": "Buitensensor aangesloten"
+          "volt_free_sensor_connected_and_used_for_operation": "Potentiaalvrij contact",
+          "outdoor_sensor_connected": "Buitentemperatuursensor"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Verwarmingstype",
         "state": {
           "floor_heating": "Vloerverwarming",
-          "floor_heating_low_energy": "Vloerverwarming (laag energieverbruik)",
+          "floor_heating_low_energy": "Vloerverwarming lage energie",
           "radiator": "Radiator",
-          "convector_passive": "Convector (passief)",
-          "convector_active": "Convector (actief)",
-          "volt_free_heating": "Potentiaalvrije verwarming"
+          "convector_passive": "Passieve convector (zonder ventilator)",
+          "convector_active": "Actieve convector (met ventilator)",
+          "volt_free_heating": "Centrale verwarming"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Geen",
           "pushbutton": "Drukknop",
-          "switch": "Schakelaar",
+          "switch": "Wipschakelaar",
           "no_switch": "Geen schakelaar"
         }
       },
@@ -364,16 +398,16 @@
         "name": "Uitvoermodus",
         "state": {
           "attached": "Gekoppeld",
-          "detached": "Ontkoppeld",
-          "detached_short_press": "Ontkoppeld (korte druk)",
-          "detached_long_press": "Ontkoppeld (lange druk)",
+          "detached": "Ontkoppeld bij elke toetsdruk",
+          "detached_short_press": "Ontkoppeld bij korte toetsdruk",
+          "detached_long_press": "Ontkoppeld bij lange toetsdruk",
           "unsupported": "Niet ondersteund"
         }
       },
       "siren_sound_level": {
-        "name": "Geluidsniveau",
+        "name": "Volume sirenetoon",
         "state": {
-          "low": "Laag",
+          "low": "Verlaagd",
           "medium": "Gemiddeld",
           "high": "Hoog"
         }
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity beveiligingsniveau",
+        "name": "Gevoeligheid voor alarmsysteem",
         "state": {
           "high": "Hoog",
           "middle": "Gemiddeld",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity comfortniveau",
+        "name": "Gevoeligheid voor overige gevallen",
         "state": {
           "high": "Hoog",
           "middle": "Gemiddeld",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer faseregeling",
         "state": {
-          "trailing": "Aflopende fase",
-          "leading": "Oplopende fase"
+          "trailing": "Fase-afsnijding",
+          "leading": "Fase-aansnijding"
         }
       },
       "installation_profile": {
-        "name": "Installatieprofiel",
+        "name": "Gebruiksdoel",
         "state": {
-          "generic": "Binnen (Algemeen)",
+          "generic": "Standaard",
           "outdoor": "Buiten",
-          "light": "Licht",
-          "heating_rcc": "Verwarming (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini-zonnepaneel"
+          "light": "Lamp",
+          "heating_rcc": "Verwarming",
+          "boiler": "Centrale verwarming",
+          "mini_pv": "Mini PV-systeem"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Open deuren/ramen"
+        "name": "Open deuren en ramen"
       },
       "walk_test_state": {
-        "name": "Walk Test-status"
+        "name": "Functietest-status",
+        "state": {
+          "walk_test_started": "Gestart",
+          "walk_test_stopped": "Gestopt",
+          "unknown": "Onbekend"
+        }
       },
       "battery_level": {
-        "name": "Batterijniveau"
+        "name": "Batterijniveau",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Laag",
+          "critical_low": "Kritiek",
+          "critically_low_battery": "Kritiek laag",
+          "not_available": "Niet beschikbaar"
+        }
       },
       "combined_rating": {
-        "name": "Gecombineerde beoordeling"
+        "name": "Gecombineerde beoordeling",
+        "state": {
+          "good": "Goed",
+          "medium": "Matig",
+          "bad": "Slecht",
+          "unknown": "Onbekend"
+        }
       },
       "air_quality_description": {
         "name": "Luchtkwaliteitsbeschrijving"
       },
       "communication_quality": {
-        "name": "Communicatiekwaliteit",
+        "name": "Signaalsterkte",
         "state": {
           "good": "Goed",
           "normal": "Normaal",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batterij"
+        "name": "Batterijlading"
       },
       "siren_main_power": {
-        "name": "Stroombron",
+        "name": "Primaire stroombron",
         "state": {
           "battery": "Batterij",
           "solar": "Zonne-energie",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Knoptoewijzing"
+        "name": "Bezetting van de toetsen"
       },
       "floor_temperature": {
         "name": "Vloertemperatuur"
       },
       "purity": {
-        "name": "Zuiverheid"
+        "name": "Luchtzuiverheid"
       },
       "air_quality": {
         "name": "Luchtkwaliteit"
@@ -495,7 +547,7 @@
         "name": "Vochtigheidsbeoordeling"
       },
       "purity_rating": {
-        "name": "Zuiverheidsbeoordeling"
+        "name": "Luchtzuiverheidsbeoordeling"
       },
       "energy_yield": {
         "name": "Energieopbrengst"
@@ -504,10 +556,15 @@
         "name": "Vermogensopbrengst"
       },
       "valve_tappet": {
-        "name": "Ventielstoterstang"
+        "name": "Klepstand"
       },
       "detection_test_state": {
-        "name": "Detectietest status"
+        "name": "Functietest-status",
+        "state": {
+          "detection_test_started": "Gestart",
+          "detection_test_stopped": "Gestopt",
+          "detection_test_unknown": "Onbekend"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Volgende ingestelde temperatuur"
@@ -519,10 +576,10 @@
         "name": "Simulatie actief sinds"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referentie beweegtijd (onder naar boven)"
+        "name": "Openingstijd"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referentie beweegtijd (boven naar onder)"
+        "name": "Sluittijd"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-routeringskwaliteit",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Schema-overschrijving actief"
       },
+      "summer_mode": {
+        "name": "Verwarmingspauze"
+      },
+      "ventilation_mode": {
+        "name": "Duurzaam ventileren"
+      },
       "shutter_calibration_required": {
         "name": "Kalibratie vereist"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm overbruggen"
+        "name": "Pauzefunctie"
       },
       "bypass_infinite": {
-        "name": "Overbrugging verloopt nooit"
+        "name": "Pauzefunctie verloopt nooit"
       },
       "temperature_drop_enabled": {
         "name": "Temperatuurverlaging"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Ingeschakeld"
       },
+      "pet_immunity_enabled": {
+        "name": "Huisdier / robotstofzuiger"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatische gevoeligheid"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotagedetectie"
+      },
+      "silent_mode": {
+        "name": "Fluistermodus"
+      },
+      "smartplug_routing": {
+        "name": "Bereikuitbreiding"
+      },
+      "camera_light": {
+        "name": "Cameralicht"
+      },
+      "camera_notification": {
+        "name": "Meldingen"
+      },
+      "camera_frontlight": {
+        "name": "Voorlicht"
+      },
+      "camera_ambientlight": {
+        "name": "Sfeerlicht"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiebesparingsmodus"
+      },
+      "warning_suppressed": {
+        "name": "Waarschuwing onderdrukt"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Vochtigheidswaarschuwing"
+      },
+      "swap_inputs": {
+        "name": "Toetsbezetting wijzigen"
+      },
+      "swap_outputs": {
+        "name": "Uitgangen wisselen"
+      },
+      "pre_alarm_enabled": {
+        "name": "Vooralarm"
+      },
+      "vibration_enabled": {
+        "name": "Trillingsdetectie"
+      },
+      "intrusion_alarm": {
+        "name": "Inbraakalarm"
+      },
       "child_lock": {
         "name": "Kinderslot"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Bewegingslamp"
+        "name": "Oriëntatielicht"
       },
       "room_light_group": {
         "name": "Lamp"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Klep"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Onderste toets"
+      },
+      "key_upper": {
+        "name": "Bovenste toets"
+      },
+      "key_lower_left": {
+        "name": "Onderste linker toets"
+      },
+      "key_lower_right": {
+        "name": "Onderste rechter toets"
+      },
+      "key_upper_left": {
+        "name": "Bovenste linker toets"
+      },
+      "key_upper_right": {
+        "name": "Bovenste rechter toets"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Geen geladen Bosch SHC-vermelding met die titel gevonden."
+    },
+    "rawscan_command_failed": {
+      "message": "Uitvoeren van rawscan-opdracht mislukt."
     },
     "scenario_not_found": {
       "message": "Scenario niet gevonden."

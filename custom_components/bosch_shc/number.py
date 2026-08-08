@@ -290,7 +290,14 @@ def _offset_step_fn(device: _TemperatureOffsetDevice) -> float:
 
 
 def _impulse_length_value_fn(device: SHCMicromoduleRelay) -> float | None:
-    raw = getattr(device, "impulse_length", None)
+    # ImpulseSwitchService.impulse_length indexes the raw state dict
+    # directly (self.state["impulseLength"]) rather than using .get(), so a
+    # partial poll that omits the field raises KeyError, not just
+    # AttributeError -- a bare getattr(..., None) does not catch that.
+    try:
+        raw = device.impulse_length
+    except (AttributeError, KeyError):
+        return None
     if raw is None:
         return None
     # lib stores in tenths of seconds → divide by 10
@@ -369,7 +376,7 @@ async def _bypass_timeout_set_value_fn(
 NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     OFFSET: SHCNumberEntityDescription[_TemperatureOffsetDevice](
         key=OFFSET,
-        name="Offset",
+        translation_key=OFFSET,
         device_class=NumberDeviceClass.TEMPERATURE,
         entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -393,7 +400,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     HEATING_CIRCUIT_SETPOINT_ECO: SHCNumberEntityDescription[SHCHeatingCircuit](
         key=HEATING_CIRCUIT_SETPOINT_ECO,
-        name="Setpoint Eco Temperature",
+        translation_key=HEATING_CIRCUIT_SETPOINT_ECO,
         entity_category=EntityCategory.CONFIG,
         device_class=NumberDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -406,7 +413,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     HEATING_CIRCUIT_SETPOINT_COMFORT: SHCNumberEntityDescription[SHCHeatingCircuit](
         key=HEATING_CIRCUIT_SETPOINT_COMFORT,
-        name="Setpoint Comfort Temperature",
+        translation_key=HEATING_CIRCUIT_SETPOINT_COMFORT,
         entity_category=EntityCategory.CONFIG,
         device_class=NumberDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -496,7 +503,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_MIN: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_MIN,
-        name="Dimmer Min Brightness",
+        translation_key=DIMMER_MIN,
         entity_category=EntityCategory.CONFIG,
         native_min_value=0.0,
         native_max_value=100.0,
@@ -507,7 +514,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_MAX: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_MAX,
-        name="Dimmer Max Brightness",
+        translation_key=DIMMER_MAX,
         entity_category=EntityCategory.CONFIG,
         native_min_value=0.0,
         native_max_value=100.0,
@@ -518,7 +525,7 @@ NUMBER_DESCRIPTIONS: dict[str, SHCNumberEntityDescription[Any]] = {
     ),
     DIMMER_SPEED: SHCNumberEntityDescription[SHCMicromoduleDimmer](
         key=DIMMER_SPEED,
-        name="Dimming Speed",
+        translation_key=DIMMER_SPEED,
         entity_category=EntityCategory.CONFIG,
         native_min_value=1.0,
         native_max_value=10.0,
@@ -650,9 +657,17 @@ async def async_setup_entry(  # noqa: C901
     for device in session.device_helper.micromodule_impulse_relays:
         if device_excluded(device, config_entry.options):
             continue
-        if not hasattr(device, "impulse_length"):
+        # hasattr() only swallows AttributeError; ImpulseSwitchService.
+        # impulse_length can raise KeyError on a partial poll (see
+        # _impulse_length_value_fn), which would otherwise propagate out of
+        # this loop and abort setup for every remaining entity.
+        try:
+            impulse_length = device.impulse_length
+        except AttributeError:
             continue
-        if device.impulse_length is None:
+        except KeyError:
+            impulse_length = None
+        if impulse_length is None:
             continue
         entities.append(
             SHCNumber(

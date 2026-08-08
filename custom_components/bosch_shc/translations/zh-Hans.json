@@ -105,7 +105,8 @@
               "suppress_camera_switches": "隐藏 Bosch 摄像头开关",
               "room_light_groups": "启用按房间分组的灯光",
               "automation_rules_as_entities": "将 Bosch 自动化规则公开为实体",
-              "temperature_drop_entities": "启用温降实体"
+              "temperature_drop_entities": "启用温降实体",
+              "keypad_ha_bridge": "将物理按键桥接到 HA 自动化"
             },
             "data_description": {
               "scenarios_as_buttons": "开启时：每个 Bosch SHC 场景也会在 Home Assistant 中显示为按钮实体（除 `trigger_scenario` 服务外）。适用于直接触发场景的仪表板磁贴和自动化。默认：关闭。",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "开启后：Bosch 摄像头（Eyes / 360 / Outdoor Gen2）的隐私模式、灯光和通知开关实体不会被创建。与 Bosch Camera Tool一起使用。默认：关闭。",
               "room_light_groups": "开启后：为每个拥有 2 个及以上可调光/彩色灯具（LEDVANCE、Hue、Light/Shutter Control II 调光器）的 SHC 房间创建一个聚合 `light` 实体，可通过单一实体一次性开关整个房间的所有灯具——效果类似于 Room Climate Control 已提供的房间级供暖控制。仅支持开关，不聚合亮度或颜色。默认：关闭（不会创建新实体）。",
               "automation_rules_as_entities": "开启后：会为 Bosch 应用中配置的每条自动化规则创建一个开关（启用/禁用）和一个按钮（手动触发）——这是 Bosch 自有的本地规则引擎，与 Home Assistant 自身的自动化完全独立。默认：关闭（不新增实体）。",
-              "temperature_drop_entities": "开启后：为每个房间的温降（防冻/开窗）服务创建一个开关（启用/禁用）和一个数值（降温值）。大多数安装不使用此功能。默认：关闭（不创建新实体）。"
+              "temperature_drop_entities": "开启后：为每个房间的温降（防冻/开窗）服务创建一个开关（启用/禁用）和一个数值（降温值）。大多数安装不使用此功能。默认：关闭（不创建新实体）。",
+              "keypad_ha_bridge": "开启后：为每个带有物理独立按键的 Shutter/Light Control II 设备，直接在 Bosch Smart Home Controller 上创建一个小型自动化，在按下按键时切换一个虚拟开/关状态。该状态已作为普通开关实体出现——可在您自己的 Home Assistant 自动化中将其开/关变化用作触发条件。关闭此选项会移除已创建的自动化和状态。默认：关闭（不创建新实体，控制器上不创建任何内容）。"
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "在家模拟"
+    },
+    "intrusion_system": {
+      "name": "报警系统"
+    },
+    "water_alarm_system": {
+      "name": "水浸报警"
+    },
+    "energy_manager": {
+      "name": "能源管理器"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "房间气候控制",
+        "name": "房间温度控制",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "加速",
+              "boost": "快速加热",
               "eco": "节能"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "烟雾测试"
+        "name": "测试警报"
       },
       "walk_test": {
-        "name": "步行测试"
+        "name": "启动功能测试"
       },
       "walk_test_stop": {
-        "name": "停止步行测试"
+        "name": "停止功能测试"
       },
       "detection_test": {
-        "name": "探测测试"
+        "name": "启动功能测试"
       },
       "detection_test_stop": {
-        "name": "停止探测测试"
+        "name": "停止功能测试"
       },
       "reset_tamper": {
         "name": "重置防拆报警"
@@ -207,10 +223,10 @@
         "name": "预览最小亮度"
       },
       "reset_energy_summation": {
-        "name": "重置能量计数器"
+        "name": "重置能耗值"
       },
       "shutter_recalibrate": {
-        "name": "重新校准"
+        "name": "启动自动校准"
       },
       "enable_all_diagnostics": {
         "name": "启用所有诊断"
@@ -230,7 +246,7 @@
         "name": "脉冲时长"
       },
       "temperature_drop_value": {
-        "name": "温度下降值"
+        "name": "温度偏差"
       },
       "energy_saving_power_threshold": {
         "name": "节能功率阈值"
@@ -248,19 +264,37 @@
         "name": "显示屏点亮时长"
       },
       "siren_alarm_duration": {
-        "name": "报警持续时间"
+        "name": "警笛报警持续时间"
       },
       "siren_flash_duration": {
-        "name": "闪光持续时间"
+        "name": "闪光报警持续时间"
       },
       "siren_alarm_delay": {
-        "name": "报警延迟"
+        "name": "警笛报警延迟"
       },
       "siren_flash_delay": {
-        "name": "闪光延迟"
+        "name": "闪光报警延迟"
       },
       "bypass_timeout": {
-        "name": "旁路超时"
+        "name": "暂停功能超时"
+      },
+      "offset": {
+        "name": "偏移量"
+      },
+      "setpointeco": {
+        "name": "节能温度"
+      },
+      "setpointcomfort": {
+        "name": "舒适温度"
+      },
+      "dimmer_min": {
+        "name": "最小亮度"
+      },
+      "dimmer_max": {
+        "name": "最大亮度"
+      },
+      "dimmer_speed": {
+        "name": "调光速度"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "非常高",
           "high": "高",
           "medium": "中",
-          "low": "低",
-          "very_low": "非常低"
+          "low": "较低",
+          "very_low": "低"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "显示方向",
         "state": {
           "normal": "正常",
-          "reversed": "翻转"
+          "reversed": "旋转 180°"
         }
       },
       "displayed_temperature": {
         "name": "显示温度",
         "state": {
-          "setpoint": "设定值",
+          "setpoint": "设定温度",
           "measured": "测量值"
         }
       },
       "terminal_type": {
-        "name": "接线端子类型",
+        "name": "传感器连接",
         "state": {
-          "not_connected": "未连接",
+          "not_connected": "未使用",
           "floor_sensor_connected": "已连接地板传感器",
           "floor_sensor_used_for_regulation": "地板传感器用于调节",
-          "floor_sensor_displayed": "显示地板传感器",
-          "floor_sensor_displayed_and_used_for_regulation": "显示地板传感器并用于调节",
+          "floor_sensor_displayed": "线缆温度传感器（不用于调节）",
+          "floor_sensor_displayed_and_used_for_regulation": "线缆温度传感器（用于调节）",
           "volt_free_sensor_connected": "已连接无源传感器",
-          "volt_free_sensor_connected_and_used_for_operation": "已连接无源传感器并用于操作",
-          "outdoor_sensor_connected": "已连接室外传感器"
+          "volt_free_sensor_connected_and_used_for_operation": "无源触点",
+          "outdoor_sensor_connected": "室外温度传感器"
         }
       },
       "valve_type": {
@@ -338,9 +372,9 @@
           "floor_heating": "地暖",
           "floor_heating_low_energy": "地暖（低能耗）",
           "radiator": "散热器",
-          "convector_passive": "对流器（被动）",
-          "convector_active": "对流器（主动）",
-          "volt_free_heating": "无源加热"
+          "convector_passive": "对流器（无风扇）",
+          "convector_active": "对流器（带风扇）",
+          "volt_free_heating": "集中供暖"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "无",
           "pushbutton": "按钮",
-          "switch": "开关",
+          "switch": "翘板开关",
           "no_switch": "无开关"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "输出模式",
         "state": {
-          "attached": "已连接",
-          "detached": "已分离",
-          "detached_short_press": "已分离（短按）",
-          "detached_long_press": "已分离（长按）",
+          "attached": "联动",
+          "detached": "按任意按键时断开",
+          "detached_short_press": "短按时断开",
+          "detached_long_press": "长按时断开",
           "unsupported": "不支持"
         }
       },
       "siren_sound_level": {
-        "name": "音量级别",
+        "name": "警笛音量",
         "state": {
-          "low": "低",
+          "low": "小声",
           "medium": "中",
-          "high": "高"
+          "high": "大声"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "智能灵敏度安全等级",
+        "name": "警报系统灵敏度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "智能灵敏度舒适等级",
+        "name": "其他情况灵敏度",
         "state": {
           "high": "高",
           "middle": "中",
@@ -409,14 +443,14 @@
         }
       },
       "installation_profile": {
-        "name": "安装配置文件",
+        "name": "使用用途",
         "state": {
-          "generic": "室内（通用）",
+          "generic": "标准",
           "outdoor": "室外",
-          "light": "灯光",
-          "heating_rcc": "供暖 (RCC)",
-          "boiler": "锅炉",
-          "mini_pv": "迷你光伏"
+          "light": "灯具",
+          "heating_rcc": "加热器",
+          "boiler": "集中供暖",
+          "mini_pv": "Mini PV 系统"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "打开的门/窗"
+        "name": "打开的门窗"
       },
       "walk_test_state": {
-        "name": "步行测试状态"
+        "name": "功能测试状态",
+        "state": {
+          "walk_test_started": "已开始",
+          "walk_test_stopped": "已停止",
+          "unknown": "未知"
+        }
       },
       "battery_level": {
-        "name": "电池电量"
+        "name": "电池电量",
+        "state": {
+          "ok": "正常",
+          "low_battery": "低",
+          "critical_low": "严重不足",
+          "critically_low_battery": "极度不足",
+          "not_available": "不可用"
+        }
       },
       "combined_rating": {
-        "name": "综合评级"
+        "name": "综合评级",
+        "state": {
+          "good": "良好",
+          "medium": "中等",
+          "bad": "较差",
+          "unknown": "未知"
+        }
       },
       "air_quality_description": {
         "name": "空气质量描述"
       },
       "communication_quality": {
-        "name": "通信质量",
+        "name": "信号强度",
         "state": {
           "good": "良好",
           "normal": "正常",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "电池"
+        "name": "电池电量"
       },
       "siren_main_power": {
-        "name": "电源",
+        "name": "主电源",
         "state": {
           "battery": "电池",
           "solar": "太阳能",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "按钮映射"
+        "name": "按键分配"
       },
       "floor_temperature": {
         "name": "地板温度"
       },
       "purity": {
-        "name": "纯净度"
+        "name": "空气纯净度"
       },
       "air_quality": {
         "name": "空气质量"
@@ -495,7 +547,7 @@
         "name": "湿度评级"
       },
       "purity_rating": {
-        "name": "纯净度评级"
+        "name": "空气纯净度评级"
       },
       "energy_yield": {
         "name": "能量产出"
@@ -504,10 +556,15 @@
         "name": "功率产出"
       },
       "valve_tappet": {
-        "name": "阀门挺杆"
+        "name": "阀门位置"
       },
       "detection_test_state": {
-        "name": "检测测试状态"
+        "name": "功能测试状态",
+        "state": {
+          "detection_test_started": "已开始",
+          "detection_test_stopped": "已停止",
+          "detection_test_unknown": "未知"
+        }
       },
       "next_setpoint_temperature": {
         "name": "下一个设定温度"
@@ -519,10 +576,10 @@
         "name": "模拟运行始于"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "参考运行时间（从下到上）"
+        "name": "打开时间"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "参考运行时间（从上到下）"
+        "name": "关闭时间"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee 路由质量",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "日程覆盖生效中"
       },
+      "summer_mode": {
+        "name": "供暖暂停"
+      },
+      "ventilation_mode": {
+        "name": "节能通风"
+      },
       "shutter_calibration_required": {
         "name": "需要校准"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "警报旁路"
+        "name": "暂停功能"
       },
       "bypass_infinite": {
-        "name": "旁路永不过期"
+        "name": "暂停功能永不过期"
       },
       "temperature_drop_enabled": {
         "name": "温度下降"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "已启用"
       },
+      "pet_immunity_enabled": {
+        "name": "宠物 / 扫地机器人"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "自动灵敏度"
+      },
+      "tamper_protection_enabled": {
+        "name": "防拆检测"
+      },
+      "silent_mode": {
+        "name": "轻声模式"
+      },
+      "smartplug_routing": {
+        "name": "范围扩展"
+      },
+      "camera_light": {
+        "name": "摄像头灯光"
+      },
+      "camera_notification": {
+        "name": "通知"
+      },
+      "camera_frontlight": {
+        "name": "前置灯光"
+      },
+      "camera_ambientlight": {
+        "name": "环境灯光"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "节能模式"
+      },
+      "warning_suppressed": {
+        "name": "已抑制警告"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "湿度警告"
+      },
+      "swap_inputs": {
+        "name": "更改按键分配"
+      },
+      "swap_outputs": {
+        "name": "交换输出"
+      },
+      "pre_alarm_enabled": {
+        "name": "预警"
+      },
+      "vibration_enabled": {
+        "name": "振动检测"
+      },
+      "intrusion_alarm": {
+        "name": "入侵警报"
+      },
       "child_lock": {
         "name": "童锁"
       }
     },
     "light": {
       "motion_light": {
-        "name": "动作灯"
+        "name": "方向指示灯"
       },
       "room_light_group": {
         "name": "灯光"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "阀门"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "下按键"
+      },
+      "key_upper": {
+        "name": "上按键"
+      },
+      "key_lower_left": {
+        "name": "左下按键"
+      },
+      "key_lower_right": {
+        "name": "右下按键"
+      },
+      "key_upper_left": {
+        "name": "左上按键"
+      },
+      "key_upper_right": {
+        "name": "右上按键"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "未找到具有该标题的已加载 Bosch SHC 条目。"
+    },
+    "rawscan_command_failed": {
+      "message": "执行 rawscan 命令失败。"
     },
     "scenario_not_found": {
       "message": "未找到场景。"

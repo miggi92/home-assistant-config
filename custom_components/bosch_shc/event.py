@@ -23,6 +23,7 @@ from homeassistant.const import (
     ATTR_DEVICE_ID,
     ATTR_ID,
     ATTR_NAME,
+    Platform,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceInfo
@@ -34,7 +35,7 @@ from .const import (
     ATTR_LAST_TIME_TRIGGERED,
     LOGGER,
 )
-from .entity import SHCEntity, device_excluded
+from .entity import SHCEntity, async_remove_stale_entity, device_excluded
 
 PARALLEL_UPDATES = 1
 
@@ -78,9 +79,13 @@ async def async_setup_entry(
     for light_control in getattr(
         session.device_helper, "micromodule_light_controls", []
     ):
-        if device_excluded(light_control, entry.options):
-            continue
-        if not getattr(light_control, "has_keypad", False):
+        unique_id = f"{light_control.root_device_id}_{light_control.id}_button"
+        if device_excluded(light_control, entry.options) or not getattr(
+            light_control, "has_keypad", False
+        ):
+            # Excluded, or a runtime SwitchConfiguration change dropped the
+            # Keypad service (#282) — clean up any previously created entity.
+            await async_remove_stale_entity(hass, Platform.EVENT, unique_id)
             continue
         entities.append(
             LightControlButtonEvent(
@@ -128,6 +133,17 @@ async def async_setup_entry(
 class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
     """Representation of a SHC UniversalSwitch Entity."""
 
+    # Maps KeypadService.KeyState to a translated name (#393: a bare f-string
+    # of the raw enum was leaking untranslated into the UI).
+    _KEY_TRANSLATION_KEYS = {
+        "LOWER_BUTTON": "key_lower",
+        "UPPER_BUTTON": "key_upper",
+        "LOWER_LEFT_BUTTON": "key_lower_left",
+        "LOWER_RIGHT_BUTTON": "key_lower_right",
+        "UPPER_LEFT_BUTTON": "key_upper_left",
+        "UPPER_RIGHT_BUTTON": "key_upper_right",
+    }
+
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["PRESS_SHORT", "PRESS_LONG", "PRESS_LONG_RELEASED"]
 
@@ -142,7 +158,10 @@ class UniversalSwitchEvent(SHCEntity, EventEntity):  # type: ignore[misc]
         # (same keyName, same eventTimestamp) does not trigger a duplicate event.
         self._last_fired_timestamp: int = -1
 
-        self._attr_name: str | None = f"Button {key_id}"  # type: ignore[assignment]
+        self._attr_translation_key = self._KEY_TRANSLATION_KEYS.get(key_id)
+        # SHCEntity only clears _attr_name for a CLASS-level translation_key;
+        # ours is per-instance, so it's never caught there (del it ourselves).
+        del self._attr_name
         self._attr_unique_id = f"{device.root_device_id}_{device.id}_{key_id}"
 
     async def async_added_to_hass(self) -> None:

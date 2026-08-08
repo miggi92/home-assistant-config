@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Bosch kamera kapcsolók elrejtése",
               "room_light_groups": "Szobánkénti lámpacsoportok engedélyezése",
               "automation_rules_as_entities": "Bosch automatizálási szabályok megjelenítése entitásként",
-              "temperature_drop_entities": "Hőmérséklet-csökkentési entitások engedélyezése"
+              "temperature_drop_entities": "Hőmérséklet-csökkentési entitások engedélyezése",
+              "keypad_ha_bridge": "Fizikai nyomógombok áthidalása HA automatizálásokhoz"
             },
             "data_description": {
               "scenarios_as_buttons": "Ha BE van kapcsolva: minden Bosch SHC forgatókönyv gombentitásként is megjelenik a Home Assistantban (a trigger_scenario szolgáltatáson felül). Hasznos irányítópult csempékhez és automatizációkhoz. Alapértelmezett: ki.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Ha BE van kapcsolva: az adatvédelmi, fény- és értesítési kapcsolók a Bosch kamerákhoz (Eyes / 360 / Outdoor Gen2) nem jönnek létre. Használd a Bosch Camera Tool mellé. Alapértelmezett: ki.",
               "room_light_groups": "Ha BE van kapcsolva: minden olyan SHC szobához, amelyben 2 vagy több fényerő-/színszabályozható lámpa van (LEDVANCE, Hue, Light/Shutter Control II dimmerek), létrejön egy összesített `light` entitás, amellyel a szoba összes lámpáját egyetlen entitásból lehet be- vagy kikapcsolni — ehhez hasonlóan a fűtés már rendelkezik szobaszintű vezérléssel a Room Climate Control révén. Csak be/ki kapcsolás, fényerő- vagy színösszesítés nélkül. Alapértelmezett: ki (nem jönnek létre új entitások).",
               "automation_rules_as_entities": "Ha BE van kapcsolva: minden, a Bosch alkalmazásban beállított automatizálási szabályhoz létrejön egy kapcsoló (engedélyezés/letiltás) és egy gomb (kézi indítás) — ez a Bosch saját helyi szabálymotorja, teljesen független a Home Assistant saját automatizálásaitól. Alapértelmezett: ki (nincs új entitás).",
-              "temperature_drop_entities": "Ha BE van kapcsolva: létrehoz egy kapcsolót (engedélyezés/letiltás) és egy számot (csökkentési érték) minden szoba hőmérséklet-csökkentési (fagyvédelem/nyitott ablak) szolgáltatásához. A legtöbb rendszer nem használja ezt a funkciót. Alapértelmezett: ki (nincs új entitás)."
+              "temperature_drop_entities": "Ha BE van kapcsolva: létrehoz egy kapcsolót (engedélyezés/letiltás) és egy számot (csökkentési érték) minden szoba hőmérséklet-csökkentési (fagyvédelem/nyitott ablak) szolgáltatásához. A legtöbb rendszer nem használja ezt a funkciót. Alapértelmezett: ki (nincs új entitás).",
+              "keypad_ha_bridge": "Ha BE van kapcsolva: minden fizikai leválasztott nyomógombbal rendelkező Shutter/Light Control II eszközhöz létrejön egy kis automatizálás közvetlenül a Bosch Smart Home Controlleren, amely gombnyomáskor egy virtuális be/ki állapotot impulzusszerűen vált. Ez az állapot már megjelenik egy szokásos switch entitásként — használja annak be/ki átmeneteit triggerként a saját Home Assistant automatizálásaiban. Ha kikapcsolja ezt, eltávolítja az általa létrehozott automatizálásokat és állapotokat. Alapértelmezett: ki (nincs új entitás, semmi nem jön létre a Controlleren)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Jelenlét-szimuláció"
+    },
+    "intrusion_system": {
+      "name": "Riasztórendszer"
+    },
+    "water_alarm_system": {
+      "name": "Vízriasztó"
+    },
+    "energy_manager": {
+      "name": "Energiakezelő"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Szobaklimatizálás",
+        "name": "Szoba hőmérséklet-szabályozás",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Gyors fűtés",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Füstérzékelő teszt"
+        "name": "Teszt riasztás"
       },
       "walk_test": {
-        "name": "Mozgásteszt"
+        "name": "Funkcióteszt indítása"
       },
       "walk_test_stop": {
-        "name": "Mozgásteszt leállítása"
+        "name": "Funkcióteszt leállítása"
       },
       "detection_test": {
-        "name": "Érzékelési teszt"
+        "name": "Funkcióteszt indítása"
       },
       "detection_test_stop": {
-        "name": "Érzékelési teszt leállítása"
+        "name": "Funkcióteszt leállítása"
       },
       "reset_tamper": {
         "name": "Illetéktelen hozzáférés jelzés visszaállítása"
@@ -207,10 +223,10 @@
         "name": "Minimális fényerő előnézet"
       },
       "reset_energy_summation": {
-        "name": "Energiaszámláló visszaállítása"
+        "name": "Fogyasztási érték nullázása"
       },
       "shutter_recalibrate": {
-        "name": "Újrakalibrálás"
+        "name": "Automatikus kalibrálás indítása"
       },
       "enable_all_diagnostics": {
         "name": "Összes diagnosztika engedélyezése"
@@ -230,7 +246,7 @@
         "name": "Impulzushossz"
       },
       "temperature_drop_value": {
-        "name": "Hőmérséklet-csökkentés értéke"
+        "name": "Hőmérséklet-eltérés"
       },
       "energy_saving_power_threshold": {
         "name": "Energiatakarékos teljesítményküszöb"
@@ -245,22 +261,40 @@
         "name": "Kijelző fényereje"
       },
       "display_on_time": {
-        "name": "Kijelző bekapcsolási ideje"
+        "name": "Kijelző bekapcsolási időtartama"
       },
       "siren_alarm_duration": {
-        "name": "Riasztás időtartama"
+        "name": "Sziréna riasztás időtartama"
       },
       "siren_flash_duration": {
-        "name": "Villogás időtartama"
+        "name": "Villogó fény riasztás időtartama"
       },
       "siren_alarm_delay": {
-        "name": "Riasztás késleltetése"
+        "name": "Sziréna riasztás késleltetése"
       },
       "siren_flash_delay": {
-        "name": "Villogás késleltetése"
+        "name": "Villogó fény riasztás késleltetése"
       },
       "bypass_timeout": {
-        "name": "Kihagyás időtúllépése"
+        "name": "Szünet funkció időtúllépése"
+      },
+      "offset": {
+        "name": "Eltolás"
+      },
+      "setpointeco": {
+        "name": "Eco hőmérséklet"
+      },
+      "setpointcomfort": {
+        "name": "Komfort hőmérséklet"
+      },
+      "dimmer_min": {
+        "name": "Minimális fényerő"
+      },
+      "dimmer_max": {
+        "name": "Maximális fényerő"
+      },
+      "dimmer_speed": {
+        "name": "Fényerőszabályozás sebessége"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Nagyon magas",
           "high": "Magas",
           "medium": "Közepes",
-          "low": "Alacsony",
-          "very_low": "Nagyon alacsony"
+          "low": "Mérsékelt",
+          "very_low": "Alacsony"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +333,30 @@
         }
       },
       "display_direction": {
-        "name": "Kijelző iránya",
+        "name": "Kijelző tájolása",
         "state": {
           "normal": "Normál",
-          "reversed": "Fordított"
+          "reversed": "180°-kal elforgatva"
         }
       },
       "displayed_temperature": {
         "name": "Megjelenített hőmérséklet",
         "state": {
-          "setpoint": "Célérték",
+          "setpoint": "Beállított hőmérséklet",
           "measured": "Mért érték"
         }
       },
       "terminal_type": {
-        "name": "Csatlakozó típusa",
+        "name": "Érzékelő csatlakozás",
         "state": {
-          "not_connected": "Nincs csatlakoztatva",
+          "not_connected": "Nincs használatban",
           "floor_sensor_connected": "Padlóérzékelő csatlakoztatva",
           "floor_sensor_used_for_regulation": "Padlóérzékelő szabályozáshoz használva",
-          "floor_sensor_displayed": "Padlóérzékelő megjelenítve",
-          "floor_sensor_displayed_and_used_for_regulation": "Padlóérzékelő megjelenítve és szabályozáshoz használva",
+          "floor_sensor_displayed": "Kábeles hőmérséklet-érzékelő (szabályozás nélkül)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kábeles hőmérséklet-érzékelő (szabályozással)",
           "volt_free_sensor_connected": "Feszültségmentes érzékelő csatlakoztatva",
-          "volt_free_sensor_connected_and_used_for_operation": "Feszültségmentes érzékelő csatlakoztatva és működtetéshez használva",
-          "outdoor_sensor_connected": "Kültéri érzékelő csatlakoztatva"
+          "volt_free_sensor_connected_and_used_for_operation": "Potenciálmentes érintkező",
+          "outdoor_sensor_connected": "Kültéri hőmérséklet-érzékelő"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Fűtőberendezés típusa",
         "state": {
           "floor_heating": "Padlófűtés",
-          "floor_heating_low_energy": "Padlófűtés (alacsony energiafogyasztású)",
+          "floor_heating_low_energy": "Alacsony energiájú padlófűtés",
           "radiator": "Radiátor",
-          "convector_passive": "Konvektor (passzív)",
-          "convector_active": "Konvektor (aktív)",
-          "volt_free_heating": "Feszültségmentes fűtés"
+          "convector_passive": "Passzív konvektor (ventilátor nélkül)",
+          "convector_active": "Aktív konvektor (ventilátorral)",
+          "volt_free_heating": "Központi fűtés"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Nincs",
           "pushbutton": "Nyomógomb",
-          "switch": "Kapcsoló",
+          "switch": "Billenőkapcsoló",
           "no_switch": "Nincs kapcsoló"
         }
       },
@@ -364,18 +398,18 @@
         "name": "Kimeneti mód",
         "state": {
           "attached": "Csatolt",
-          "detached": "Leválasztott",
-          "detached_short_press": "Leválasztott (rövid nyomás)",
-          "detached_long_press": "Leválasztott (hosszú nyomás)",
+          "detached": "Leválasztva bármely gombnyomásra",
+          "detached_short_press": "Leválasztva rövid gombnyomásra",
+          "detached_long_press": "Leválasztva hosszú gombnyomásra",
           "unsupported": "Nem támogatott"
         }
       },
       "siren_sound_level": {
-        "name": "Hangerő",
+        "name": "Sziréna hangereje",
         "state": {
-          "low": "Alacsony",
+          "low": "Csökkentett",
           "medium": "Közepes",
-          "high": "Magas"
+          "high": "Hangos"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Okos érzékenység biztonsági szintje",
+        "name": "Riasztórendszer érzékenysége",
         "state": {
           "high": "Magas",
           "middle": "Közepes",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Okos érzékenység kényelmi szintje",
+        "name": "Érzékenység egyéb esetekhez",
         "state": {
           "high": "Magas",
           "middle": "Közepes",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "Dimmer fázisszabályozás",
         "state": {
-          "trailing": "Lefutó élű vezérlés",
-          "leading": "Felfutó élű vezérlés"
+          "trailing": "Lefutó élű fázishasítás",
+          "leading": "Felfutó élű fázishasítás"
         }
       },
       "installation_profile": {
-        "name": "Telepítési profil",
+        "name": "Felhasználás célja",
         "state": {
-          "generic": "Beltéri (általános)",
+          "generic": "Normál",
           "outdoor": "Kültéri",
-          "light": "Világítás",
-          "heating_rcc": "Fűtés (RCC)",
-          "boiler": "Bojler",
-          "mini_pv": "Mini napelem"
+          "light": "Lámpa",
+          "heating_rcc": "Fűtőtest",
+          "boiler": "Központi fűtés",
+          "mini_pv": "Mini PV rendszer"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Nyitott ajtók/ablakok"
+        "name": "Nyitott ajtók és ablakok"
       },
       "walk_test_state": {
-        "name": "Mozgásteszt állapota"
+        "name": "Funkcióteszt állapota",
+        "state": {
+          "walk_test_started": "Elindítva",
+          "walk_test_stopped": "Leállítva",
+          "unknown": "Ismeretlen"
+        }
       },
       "battery_level": {
-        "name": "Akkumulátorszint"
+        "name": "Akkumulátorszint",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Alacsony",
+          "critical_low": "Kritikus",
+          "critically_low_battery": "Kritikusan alacsony",
+          "not_available": "Nem érhető el"
+        }
       },
       "combined_rating": {
-        "name": "Összesített értékelés"
+        "name": "Összesített értékelés",
+        "state": {
+          "good": "Jó",
+          "medium": "Közepes",
+          "bad": "Rossz",
+          "unknown": "Ismeretlen"
+        }
       },
       "air_quality_description": {
         "name": "Levegőminőség leírása"
       },
       "communication_quality": {
-        "name": "Kommunikáció minősége",
+        "name": "Jelerősség",
         "state": {
           "good": "Jó",
           "normal": "Normál",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Akkumulátor"
+        "name": "Akkumulátor töltöttsége"
       },
       "siren_main_power": {
-        "name": "Tápforrás",
+        "name": "Elsődleges forrás",
         "state": {
           "battery": "Akkumulátor",
           "solar": "Napelem",
@@ -483,7 +535,7 @@
         "name": "Padlóhőmérséklet"
       },
       "purity": {
-        "name": "Tisztaság"
+        "name": "Levegőtisztaság"
       },
       "air_quality": {
         "name": "Levegőminőség"
@@ -495,7 +547,7 @@
         "name": "Páratartalom értékelés"
       },
       "purity_rating": {
-        "name": "Tisztasági értékelés"
+        "name": "Levegőtisztaság értékelése"
       },
       "energy_yield": {
         "name": "Energiahozam"
@@ -504,10 +556,15 @@
         "name": "Teljesítményhozam"
       },
       "valve_tappet": {
-        "name": "Szeleptányér"
+        "name": "Szelepállás"
       },
       "detection_test_state": {
-        "name": "Érzékelési teszt állapota"
+        "name": "Funkcióteszt állapota",
+        "state": {
+          "detection_test_started": "Elindítva",
+          "detection_test_stopped": "Leállítva",
+          "detection_test_unknown": "Ismeretlen"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Következő célhőmérséklet"
@@ -519,10 +576,10 @@
         "name": "Szimuláció futásának kezdete"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Kalibrált mozgásidő (alulról felfelé)"
+        "name": "Nyitási idő"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Kalibrált mozgásidő (felülről lefelé)"
+        "name": "Zárási idő"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee útválasztás minősége",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Ütemezés felülbírálása aktív"
       },
+      "summer_mode": {
+        "name": "Fűtési szünet"
+      },
+      "ventilation_mode": {
+        "name": "Fenntartható szellőztetés"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrálás szükséges"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Riasztás kihagyása"
+        "name": "Szünet funkció"
       },
       "bypass_infinite": {
-        "name": "Kihagyás lejárat nélkül"
+        "name": "A szünet funkció soha nem jár le"
       },
       "temperature_drop_enabled": {
         "name": "Hőmérséklet-csökkentés"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Engedélyezve"
       },
+      "pet_immunity_enabled": {
+        "name": "Háziállat / robotporszívó"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatikus érzékenység"
+      },
+      "tamper_protection_enabled": {
+        "name": "Szabotázsérzékelés"
+      },
+      "silent_mode": {
+        "name": "Suttogó üzemmód"
+      },
+      "smartplug_routing": {
+        "name": "Hatótávolság-bővítés"
+      },
+      "camera_light": {
+        "name": "Kamerafény"
+      },
+      "camera_notification": {
+        "name": "Értesítések"
+      },
+      "camera_frontlight": {
+        "name": "Elülső fény"
+      },
+      "camera_ambientlight": {
+        "name": "Környezeti fény"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiatakarékos mód"
+      },
+      "warning_suppressed": {
+        "name": "Figyelmeztetés elnémítva"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Páratartalom figyelmeztetés"
+      },
+      "swap_inputs": {
+        "name": "Gombhozzárendelés módosítása"
+      },
+      "swap_outputs": {
+        "name": "Kimenetek felcserélése"
+      },
+      "pre_alarm_enabled": {
+        "name": "Előriasztás"
+      },
+      "vibration_enabled": {
+        "name": "Rezgésérzékelés"
+      },
+      "intrusion_alarm": {
+        "name": "Behatolásjelző riasztás"
+      },
       "child_lock": {
         "name": "Gyermekzár"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Mozgásvezérelt lámpa"
+        "name": "Tájékozódási fény"
       },
       "room_light_group": {
         "name": "Lámpa"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Szelep"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Alsó gomb"
+      },
+      "key_upper": {
+        "name": "Felső gomb"
+      },
+      "key_lower_left": {
+        "name": "Bal alsó gomb"
+      },
+      "key_lower_right": {
+        "name": "Jobb alsó gomb"
+      },
+      "key_upper_left": {
+        "name": "Bal felső gomb"
+      },
+      "key_upper_right": {
+        "name": "Jobb felső gomb"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Nem található ilyen nevű betöltött Bosch SHC bejegyzés."
+    },
+    "rawscan_command_failed": {
+      "message": "A rawscan parancs végrehajtása sikertelen volt."
     },
     "scenario_not_found": {
       "message": "A forgatókönyv nem található."

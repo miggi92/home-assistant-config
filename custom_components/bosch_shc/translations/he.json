@@ -105,7 +105,8 @@
               "suppress_camera_switches": "הסתר את לחצני המצלמה של Bosch",
               "room_light_groups": "הפעל קבוצות תאורה לפי חדר",
               "automation_rules_as_entities": "חשיפת כללי האוטומציה של Bosch כישויות",
-              "temperature_drop_entities": "הפעל ישויות ירידת טמפרטורה"
+              "temperature_drop_entities": "הפעל ישויות ירידת טמפרטורה",
+              "keypad_ha_bridge": "גישור לחצנים פיזיים לאוטומציות HA"
             },
             "data_description": {
               "scenarios_as_buttons": "כאשר מופעל: כל תרחיש Bosch SHC מופיע גם כישות כפתור ב-Home Assistant (בנוסף לשירות trigger_scenario). שימושי לאריחי לוח מחוונים ואוטומציות המפעילות תרחישים ישירות. ברירת מחדל: כבוי.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "כאשר מופעל: מתגי פרטיות, תאורה והתראות עבור מצלמות Bosch (Eyes / 360 / Outdoor Gen2) לא ייווצרו. השתמש עם Bosch Camera Tool. ברירת מחדל: מכובה.",
               "room_light_groups": "כאשר מופעל: נוצרת ישות `light` מצטברת אחת עבור כל חדר ב-SHC שבו יש 2 מנורות הניתנות לעמעום/צבע או יותר (LEDVANCE, Hue, עמעמי Light/Shutter Control II), המאפשרת להדליק או לכבות את כל מנורות החדר מישות אחת בלבד — בדומה לשליטה ברמת החדר שכבר קיימת לחימום דרך Room Climate Control. הפעלה/כיבוי בלבד, ללא צבירת בהירות או צבע. ברירת מחדל: מכובה (לא נוצרות ישויות חדשות).",
               "automation_rules_as_entities": "כאשר מופעל: נוצרים מתג (הפעלה/כיבוי) וכפתור (הפעלה ידנית) עבור כל כלל אוטומציה שהוגדר באפליקציית Bosch — מנוע הכללים המקומי הייעודי של Bosch, נפרד לחלוטין מהאוטומציות של Home Assistant. ברירת מחדל: כבוי (ללא ישויות חדשות).",
-              "temperature_drop_entities": "כאשר מופעל: יוצר מתג (הפעלה/כיבוי) ומספר (ערך ירידה) עבור שירות ירידת הטמפרטורה (הגנה מפני קיפאון/חלון פתוח) של כל חדר. רוב ההתקנות אינן משתמשות בתכונה זו. ברירת מחדל: כבוי (ללא ישויות חדשות)."
+              "temperature_drop_entities": "כאשר מופעל: יוצר מתג (הפעלה/כיבוי) ומספר (ערך ירידה) עבור שירות ירידת הטמפרטורה (הגנה מפני קיפאון/חלון פתוח) של כל חדר. רוב ההתקנות אינן משתמשות בתכונה זו. ברירת מחדל: כבוי (ללא ישויות חדשות).",
+              "keypad_ha_bridge": "כאשר מופעל: עבור כל מכשיר Shutter/Light Control II עם לחצן פיזי נפרד, נוצרת אוטומציה קטנה ישירות ב-Bosch Smart Home Controller שמפעילה דופק במצב וירטואלי מופעל/כבוי בכל לחיצה על הלחצן. מצב זה כבר מופיע כישות switch רגילה — השתמש במעברי ההפעלה/כיבוי שלו כטריגר באוטומציות ה-Home Assistant שלך. כיבוי אפשרות זו מסיר את האוטומציות והמצבים שנוצרו. ברירת מחדל: כבוי (אין ישויות חדשות, שום דבר לא נוצר בבקר)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "סימולציית נוכחות"
+    },
+    "intrusion_system": {
+      "name": "מערכת אזעקה"
+    },
+    "water_alarm_system": {
+      "name": "אזעקת מים"
+    },
+    "energy_manager": {
+      "name": "מנהל האנרגיה"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "בקרת אקלים חדר",
+        "name": "בקרת טמפרטורת החדר",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "בוסט",
+              "boost": "חימום מהיר",
               "eco": "אקו"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "בדיקת עשן"
+        "name": "אזעקת בדיקה"
       },
       "walk_test": {
-        "name": "בדיקת הליכה"
+        "name": "התחל בדיקת תפקוד"
       },
       "walk_test_stop": {
-        "name": "עצירת בדיקת הליכה"
+        "name": "עצור בדיקת תפקוד"
       },
       "detection_test": {
-        "name": "בדיקת זיהוי"
+        "name": "התחל בדיקת תפקוד"
       },
       "detection_test_stop": {
-        "name": "עצירת בדיקת זיהוי"
+        "name": "עצור בדיקת תפקוד"
       },
       "reset_tamper": {
         "name": "איפוס חבלה"
@@ -207,10 +223,10 @@
         "name": "תצוגה מקדימה של בהירות מינימלית"
       },
       "reset_energy_summation": {
-        "name": "איפוס מונה האנרגיה"
+        "name": "אפס את ערך הצריכה"
       },
       "shutter_recalibrate": {
-        "name": "כיול מחדש"
+        "name": "התחל כיול אוטומטי"
       },
       "enable_all_diagnostics": {
         "name": "הפעלת כל האבחונים"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "אורך דופק"
+        "name": "אורך הדופק"
       },
       "temperature_drop_value": {
-        "name": "ערך הפחתת טמפרטורה"
+        "name": "סטיית טמפרטורה"
       },
       "energy_saving_power_threshold": {
         "name": "סף צריכת חשמל לחיסכון באנרגיה"
@@ -245,22 +261,40 @@
         "name": "בהירות תצוגה"
       },
       "display_on_time": {
-        "name": "זמן הדלקת תצוגה"
+        "name": "משך הדלקת התצוגה"
       },
       "siren_alarm_duration": {
-        "name": "משך האזעקה"
+        "name": "משך אזעקת הסירנה"
       },
       "siren_flash_duration": {
-        "name": "משך ההבזק"
+        "name": "משך אזעקת נורית ההבזק"
       },
       "siren_alarm_delay": {
-        "name": "עיכוב האזעקה"
+        "name": "השהיית אזעקת הסירנה"
       },
       "siren_flash_delay": {
-        "name": "עיכוב ההבזק"
+        "name": "השהיית אזעקת נורית ההבזק"
       },
       "bypass_timeout": {
-        "name": "פסק זמן לעקיפה"
+        "name": "פסק זמן לפונקציית ההפסקה"
+      },
+      "offset": {
+        "name": "היסט"
+      },
+      "setpointeco": {
+        "name": "טמפרטורת חיסכון"
+      },
+      "setpointcomfort": {
+        "name": "טמפרטורת נוחות"
+      },
+      "dimmer_min": {
+        "name": "בהירות מינימלית"
+      },
+      "dimmer_max": {
+        "name": "בהירות מקסימלית"
+      },
+      "dimmer_speed": {
+        "name": "מהירות עמעום"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "גבוהה מאוד",
           "high": "גבוהה",
           "medium": "בינונית",
-          "low": "נמוכה",
-          "very_low": "נמוכה מאוד"
+          "low": "מתונה",
+          "very_low": "נמוכה"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "כיוון תצוגה",
         "state": {
           "normal": "רגיל",
-          "reversed": "הפוך"
+          "reversed": "מסובב ב-180°"
         }
       },
       "displayed_temperature": {
         "name": "טמפרטורה מוצגת",
         "state": {
-          "setpoint": "טמפרטורת יעד",
+          "setpoint": "טמפרטורה מוגדרת",
           "measured": "נמדדת"
         }
       },
       "terminal_type": {
-        "name": "סוג מסוף",
+        "name": "חיבור חיישן",
         "state": {
-          "not_connected": "לא מחובר",
+          "not_connected": "לא בשימוש",
           "floor_sensor_connected": "חיישן רצפה מחובר",
           "floor_sensor_used_for_regulation": "חיישן רצפה משמש לוויסות",
-          "floor_sensor_displayed": "חיישן רצפה מוצג",
-          "floor_sensor_displayed_and_used_for_regulation": "חיישן רצפה מוצג ומשמש לוויסות",
+          "floor_sensor_displayed": "חיישן טמפרטורה בכבל (ללא ויסות)",
+          "floor_sensor_displayed_and_used_for_regulation": "חיישן טמפרטורה בכבל (עם ויסות)",
           "volt_free_sensor_connected": "חיישן ללא מתח מחובר",
-          "volt_free_sensor_connected_and_used_for_operation": "חיישן ללא מתח מחובר ומשמש להפעלה",
-          "outdoor_sensor_connected": "חיישן חוץ מחובר"
+          "volt_free_sensor_connected_and_used_for_operation": "מגע נטול פוטנציאל",
+          "outdoor_sensor_connected": "חיישן טמפרטורה חיצוני"
         }
       },
       "valve_type": {
@@ -336,19 +370,19 @@
         "name": "סוג מחמם",
         "state": {
           "floor_heating": "חימום תת-רצפתי",
-          "floor_heating_low_energy": "חימום תת-רצפתי (חסכוני באנרגיה)",
+          "floor_heating_low_energy": "חימום תת-רצפתי חסכוני באנרגיה",
           "radiator": "רדיאטור",
-          "convector_passive": "קונבקטור (פסיבי)",
-          "convector_active": "קונבקטור (אקטיבי)",
-          "volt_free_heating": "חימום ללא מתח"
+          "convector_passive": "קונבקטור פסיבי (ללא מאוורר)",
+          "convector_active": "קונבקטור אקטיבי (עם מאוורר)",
+          "volt_free_heating": "חימום מרכזי"
         }
       },
       "switch_type": {
         "name": "סוג מתג",
         "state": {
           "none": "ללא",
-          "pushbutton": "מתג לחיצה",
-          "switch": "מתג",
+          "pushbutton": "לחצן",
+          "switch": "מתג נדנדה",
           "no_switch": "ללא מתג"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "מצב פלט",
         "state": {
-          "attached": "מחובר",
-          "detached": "מנותק",
-          "detached_short_press": "מנותק (לחיצה קצרה)",
-          "detached_long_press": "מנותק (לחיצה ארוכה)",
+          "attached": "מצומד",
+          "detached": "מנותק בכל לחיצה",
+          "detached_short_press": "מנותק בלחיצה קצרה",
+          "detached_long_press": "מנותק בלחיצה ארוכה",
           "unsupported": "לא נתמך"
         }
       },
       "siren_sound_level": {
-        "name": "עוצמת הצליל",
+        "name": "עוצמת הסירנה",
         "state": {
-          "low": "נמוכה",
+          "low": "מופחתת",
           "medium": "בינונית",
-          "high": "גבוהה"
+          "high": "חזקה"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "רמת אבטחה של רגישות חכמה",
+        "name": "רגישות למערכת האזעקה",
         "state": {
           "high": "גבוהה",
           "middle": "בינונית",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "רמת נוחות של רגישות חכמה",
+        "name": "רגישות למקרים אחרים",
         "state": {
           "high": "גבוהה",
           "middle": "בינונית",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "בקרת פאזה של דימר",
         "state": {
-          "trailing": "פאזה יורדת",
-          "leading": "פאזה עולה"
+          "trailing": "חיתוך פאזה יורד",
+          "leading": "חיתוך פאזה עולה"
         }
       },
       "installation_profile": {
-        "name": "פרופיל התקנה",
+        "name": "מטרת השימוש",
         "state": {
-          "generic": "פנים (כללי)",
+          "generic": "סטנדרטי",
           "outdoor": "חוץ",
-          "light": "תאורה",
-          "heating_rcc": "חימום (RCC)",
-          "boiler": "דוד",
-          "mini_pv": "מיני פוטו-וולטאי"
+          "light": "מנורה",
+          "heating_rcc": "תנור חימום",
+          "boiler": "חימום מרכזי",
+          "mini_pv": "מערכת Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "דלתות/חלונות פתוחים"
+        "name": "דלתות וחלונות פתוחים"
       },
       "walk_test_state": {
-        "name": "מצב בדיקת הליכה"
+        "name": "מצב בדיקת תפקוד",
+        "state": {
+          "walk_test_started": "התחיל",
+          "walk_test_stopped": "נעצר",
+          "unknown": "לא ידוע"
+        }
       },
       "battery_level": {
-        "name": "רמת סוללה"
+        "name": "רמת סוללה",
+        "state": {
+          "ok": "תקין",
+          "low_battery": "נמוכה",
+          "critical_low": "קריטית",
+          "critically_low_battery": "נמוכה בצורה קריטית",
+          "not_available": "לא זמין"
+        }
       },
       "combined_rating": {
-        "name": "דירוג משולב"
+        "name": "דירוג משולב",
+        "state": {
+          "good": "טוב",
+          "medium": "בינוני",
+          "bad": "גרוע",
+          "unknown": "לא ידוע"
+        }
       },
       "air_quality_description": {
         "name": "תיאור איכות אוויר"
       },
       "communication_quality": {
-        "name": "איכות תקשורת",
+        "name": "עוצמת האות",
         "state": {
           "good": "טובה",
           "normal": "רגילה",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "סוללה"
+        "name": "טעינת הסוללה"
       },
       "siren_main_power": {
-        "name": "מקור חשמל",
+        "name": "מקור ראשי",
         "state": {
           "battery": "סוללה",
           "solar": "סולארי",
@@ -483,7 +535,7 @@
         "name": "טמפרטורת רצפה"
       },
       "purity": {
-        "name": "טוהר"
+        "name": "טוהר האוויר"
       },
       "air_quality": {
         "name": "איכות אוויר"
@@ -495,7 +547,7 @@
         "name": "דירוג לחות"
       },
       "purity_rating": {
-        "name": "דירוג טוהר"
+        "name": "דירוג טוהר האוויר"
       },
       "energy_yield": {
         "name": "תפוקת אנרגיה"
@@ -504,10 +556,15 @@
         "name": "תפוקת כוח"
       },
       "valve_tappet": {
-        "name": "מרים שסתום"
+        "name": "מיקום השסתום"
       },
       "detection_test_state": {
-        "name": "מצב בדיקת גילוי"
+        "name": "מצב בדיקת תפקוד",
+        "state": {
+          "detection_test_started": "התחיל",
+          "detection_test_stopped": "נעצר",
+          "detection_test_unknown": "לא ידוע"
+        }
       },
       "next_setpoint_temperature": {
         "name": "טמפרטורת היעד הבאה"
@@ -519,10 +576,10 @@
         "name": "הדמיה פועלת מאז"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "זמן תנועה מכויל (מלמטה למעלה)"
+        "name": "זמן פתיחה"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "זמן תנועה מכויל (מלמעלה למטה)"
+        "name": "זמן סגירה"
       },
       "zigbee_routing_quality": {
         "name": "איכות ניתוב Zigbee",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "עקיפת לוח זמנים פעילה"
       },
+      "summer_mode": {
+        "name": "הפסקת חימום"
+      },
+      "ventilation_mode": {
+        "name": "אוורור בר-קיימא"
+      },
       "shutter_calibration_required": {
         "name": "נדרש כיול"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "עקיפת אזעקה"
+        "name": "פונקציית הפסקה"
       },
       "bypass_infinite": {
-        "name": "עקיפה ללא תפוגה"
+        "name": "פונקציית ההפסקה אינה פגה לעולם"
       },
       "temperature_drop_enabled": {
         "name": "הפחתת טמפרטורה"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "מופעל"
       },
+      "pet_immunity_enabled": {
+        "name": "חיית מחמד / שואב אבק רובוטי"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "רגישות אוטומטית"
+      },
+      "tamper_protection_enabled": {
+        "name": "זיהוי חבלה"
+      },
+      "silent_mode": {
+        "name": "מצב לחישה"
+      },
+      "smartplug_routing": {
+        "name": "הרחבת טווח"
+      },
+      "camera_light": {
+        "name": "תאורת מצלמה"
+      },
+      "camera_notification": {
+        "name": "התראות"
+      },
+      "camera_frontlight": {
+        "name": "תאורה קדמית"
+      },
+      "camera_ambientlight": {
+        "name": "תאורת סביבה"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "מצב חיסכון באנרגיה"
+      },
+      "warning_suppressed": {
+        "name": "אזהרה מושתקת"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "אזהרת לחות"
+      },
+      "swap_inputs": {
+        "name": "שינוי מיפוי לחצנים"
+      },
+      "swap_outputs": {
+        "name": "החלפת יציאות"
+      },
+      "pre_alarm_enabled": {
+        "name": "התראה מוקדמת"
+      },
+      "vibration_enabled": {
+        "name": "זיהוי רטט"
+      },
+      "intrusion_alarm": {
+        "name": "אזעקת פריצה"
+      },
       "child_lock": {
         "name": "נעילת ילדים"
       }
     },
     "light": {
       "motion_light": {
-        "name": "אור תנועה"
+        "name": "תאורת התמצאות"
       },
       "room_light_group": {
         "name": "אור"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "שסתום"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "מקש תחתון"
+      },
+      "key_upper": {
+        "name": "מקש עליון"
+      },
+      "key_lower_left": {
+        "name": "מקש תחתון שמאלי"
+      },
+      "key_lower_right": {
+        "name": "מקש תחתון ימני"
+      },
+      "key_upper_left": {
+        "name": "מקש עליון שמאלי"
+      },
+      "key_upper_right": {
+        "name": "מקש עליון ימני"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "לא נמצאה רשומת Bosch SHC טעונה עם כותרת זו."
+    },
+    "rawscan_command_failed": {
+      "message": "ביצוע פקודת ה-rawscan נכשל."
     },
     "scenario_not_found": {
       "message": "התרחיש לא נמצא."

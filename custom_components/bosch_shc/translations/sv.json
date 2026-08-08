@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Dölj Bosch-kameraomkopplare",
               "room_light_groups": "Aktivera ljusgrupper per rum",
               "automation_rules_as_entities": "Visa Bosch-automatiseringsregler som entiteter",
-              "temperature_drop_entities": "Aktivera enheter för temperatursänkning"
+              "temperature_drop_entities": "Aktivera enheter för temperatursänkning",
+              "keypad_ha_bridge": "Koppla fysiska tryckknappar till HA-automatiseringar"
             },
             "data_description": {
               "scenarios_as_buttons": "När PÅ: varje Bosch SHC-scenario visas också som en knappenhet i Home Assistant (utöver trigger_scenario-tjänsten). Användbart för instrumentpanelplattor och automatiseringar som utlöser scenarier direkt. Standard: av.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "När PÅ: sekretess-, ljus- och aviseringsomkopplare för Bosch-kameror (Eyes / 360 / Outdoor Gen2) skapas inte. Använd med Bosch Camera Tool. Standard: av.",
               "room_light_groups": "När PÅ: skapar en aggregerad `light`-entitet per SHC-rum med 2 eller fler dimbara/färgbara lampor (LEDVANCE-, Hue-, Light/Shutter Control II-dimrar), så att du kan slå på/av alla lampor i ett rum från en enda entitet — på samma sätt som värmen redan har rumsstyrning via Room Climate Control. Endast på/av, ingen aggregering av ljusstyrka eller färg. Standard: av (inga nya entiteter).",
               "automation_rules_as_entities": "Vid PÅ: skapar en brytare (aktivera/inaktivera) och en knapp (utlös manuellt) för varje automatiseringsregel som konfigurerats i Bosch-appen — Boschs egen lokala regelmotor, helt separat från Home Assistants egna automatiseringar. Standard: av (inga nya entiteter).",
-              "temperature_drop_entities": "När PÅ: skapar en brytare (aktivera/inaktivera) och ett tal (sänkningsvärde) för varje rums tjänst för temperatursänkning (frostskydd/öppet fönster). De flesta installationer använder inte denna funktion. Standard: av (inga nya enheter)."
+              "temperature_drop_entities": "När PÅ: skapar en brytare (aktivera/inaktivera) och ett tal (sänkningsvärde) för varje rums tjänst för temperatursänkning (frostskydd/öppet fönster). De flesta installationer använder inte denna funktion. Standard: av (inga nya enheter).",
+              "keypad_ha_bridge": "När PÅ: för varje Shutter/Light Control II-enhet med en fysisk fristående tryckknapp skapas en liten automatisering direkt på Bosch Smart Home Controller som växlar ett virtuellt på/av-tillstånd när en knapp trycks in. Det tillståndet visas redan som en vanlig brytarenhet — använd dess på/av-övergångar som utlösare i dina egna Home Assistant-automatiseringar. Om du stänger av detta tas de skapade automatiseringarna och tillstånden bort. Standard: av (inga nya enheter, inget skapas på styrenheten)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Närvarosimulering"
+    },
+    "intrusion_system": {
+      "name": "Larmsystem"
+    },
+    "water_alarm_system": {
+      "name": "Vattenlarm"
+    },
+    "energy_manager": {
+      "name": "Energihanterare"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Rumsklimatstyrning",
+        "name": "Rumstemperaturstyrning",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Snabb uppvärmning",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Brandvarnarprov"
+        "name": "Testlarm"
       },
       "walk_test": {
-        "name": "Gångtest"
+        "name": "Starta funktionstest"
       },
       "walk_test_stop": {
-        "name": "Stoppa gångtest"
+        "name": "Stoppa funktionstest"
       },
       "detection_test": {
-        "name": "Detektionstest"
+        "name": "Starta funktionstest"
       },
       "detection_test_stop": {
-        "name": "Stoppa detektionstest"
+        "name": "Stoppa funktionstest"
       },
       "reset_tamper": {
         "name": "Återställ sabotageindikering"
@@ -207,10 +223,10 @@
         "name": "Förhandsgranska minljusstyrka"
       },
       "reset_energy_summation": {
-        "name": "Återställ energiräknare"
+        "name": "Återställ förbrukningsvärde"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrera om"
+        "name": "Starta automatisk kalibrering"
       },
       "enable_all_diagnostics": {
         "name": "Aktivera all diagnostik"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulslängd"
+        "name": "Pulslängd"
       },
       "temperature_drop_value": {
-        "name": "Temperatursänkningsvärde"
+        "name": "Temperaturavvikelse"
       },
       "energy_saving_power_threshold": {
         "name": "Effekttröskel för energisparläge"
@@ -245,22 +261,40 @@
         "name": "Skärmljusstyrka"
       },
       "display_on_time": {
-        "name": "Skärmens på-tid"
+        "name": "Skärmens påslagningstid"
       },
       "siren_alarm_duration": {
-        "name": "Larmduration"
+        "name": "Larmtid sirenljud"
       },
       "siren_flash_duration": {
-        "name": "Blixttid"
+        "name": "Larmtid blixtljus"
       },
       "siren_alarm_delay": {
-        "name": "Larmfördröjning"
+        "name": "Larmfördröjning sirenljud"
       },
       "siren_flash_delay": {
-        "name": "Blixtfördröjning"
+        "name": "Larmfördröjning blixtljus"
       },
       "bypass_timeout": {
-        "name": "Tidsgräns för förbikoppling"
+        "name": "Tidsgräns för pausfunktion"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Ekotemperatur"
+      },
+      "setpointcomfort": {
+        "name": "Komforttemperatur"
+      },
+      "dimmer_min": {
+        "name": "Lägsta ljusstyrka"
+      },
+      "dimmer_max": {
+        "name": "Högsta ljusstyrka"
+      },
+      "dimmer_speed": {
+        "name": "Dimringshastighet"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Mycket hög",
           "high": "Hög",
           "medium": "Medel",
-          "low": "Låg",
-          "very_low": "Mycket låg"
+          "low": "Måttlig",
+          "very_low": "Låg"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "Skärmorientering",
         "state": {
           "normal": "Normal",
-          "reversed": "Omvänd"
+          "reversed": "Roterad 180°"
         }
       },
       "displayed_temperature": {
         "name": "Visad temperatur",
         "state": {
-          "setpoint": "Börvärde",
+          "setpoint": "Inställd temperatur",
           "measured": "Uppmätt"
         }
       },
       "terminal_type": {
-        "name": "Terminaltyp",
+        "name": "Givaranslutning",
         "state": {
-          "not_connected": "Ej ansluten",
+          "not_connected": "Används ej",
           "floor_sensor_connected": "Golvgivare ansluten",
           "floor_sensor_used_for_regulation": "Golvgivare används för reglering",
-          "floor_sensor_displayed": "Golvgivare visas",
-          "floor_sensor_displayed_and_used_for_regulation": "Golvgivare visas och används för reglering",
+          "floor_sensor_displayed": "Kabeltemperaturgivare (utan reglering)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeltemperaturgivare (med reglering)",
           "volt_free_sensor_connected": "Potentialfri givare ansluten",
-          "volt_free_sensor_connected_and_used_for_operation": "Potentialfri givare ansluten och används för drift",
-          "outdoor_sensor_connected": "Utomhusgivare ansluten"
+          "volt_free_sensor_connected_and_used_for_operation": "Potentialfri kontakt",
+          "outdoor_sensor_connected": "Utomhustemperaturgivare"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Värmartyp",
         "state": {
           "floor_heating": "Golvvärme",
-          "floor_heating_low_energy": "Golvvärme (lågenergi)",
+          "floor_heating_low_energy": "Golvvärme lågenergi",
           "radiator": "Radiator",
-          "convector_passive": "Konvektor (passiv)",
-          "convector_active": "Konvektor (aktiv)",
-          "volt_free_heating": "Potentialfri värme"
+          "convector_passive": "Passiv konvektor (utan fläkt)",
+          "convector_active": "Aktiv konvektor (med fläkt)",
+          "volt_free_heating": "Centralvärme"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Ingen",
           "pushbutton": "Tryckknapp",
-          "switch": "Brytare",
+          "switch": "Vippbrytare",
           "no_switch": "Ingen brytare"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "Utmatningsläge",
         "state": {
-          "attached": "Ansluten",
-          "detached": "Frikopplad",
-          "detached_short_press": "Frikopplad (kort tryckning)",
-          "detached_long_press": "Frikopplad (lång tryckning)",
+          "attached": "Kopplad",
+          "detached": "Frikopplad vid alla knapptryckningar",
+          "detached_short_press": "Frikopplad vid kort tryckning",
+          "detached_long_press": "Frikopplad vid lång tryckning",
           "unsupported": "Stöds ej"
         }
       },
       "siren_sound_level": {
-        "name": "Ljudnivå",
+        "name": "Ljudvolym sirenljud",
         "state": {
-          "low": "Låg",
+          "low": "Reducerat",
           "medium": "Medel",
-          "high": "Hög"
+          "high": "Högt"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart känslighet – säkerhetsnivå",
+        "name": "Känslighet för larmsystem",
         "state": {
           "high": "Hög",
           "middle": "Medel",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart känslighet – komfortnivå",
+        "name": "Känslighet för övriga fall",
         "state": {
           "high": "Hög",
           "middle": "Medel",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "Dimrarfaskontroll",
         "state": {
-          "trailing": "Släckande fas",
-          "leading": "Ledande fas"
+          "trailing": "Bakkantsdimring",
+          "leading": "Framkantsdimring"
         }
       },
       "installation_profile": {
-        "name": "Installationsprofil",
+        "name": "Användningssyfte",
         "state": {
-          "generic": "Inomhus (generisk)",
+          "generic": "Standard",
           "outdoor": "Utomhus",
-          "light": "Belysning",
-          "heating_rcc": "Uppvärmning (RCC)",
-          "boiler": "Panna",
-          "mini_pv": "Mini solcell"
+          "light": "Ljuskällor",
+          "heating_rcc": "Värmeenhet",
+          "boiler": "Centralvärme",
+          "mini_pv": "Mini PV-system"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Öppna dörrar/fönster"
+        "name": "Öppna dörrar och fönster"
       },
       "walk_test_state": {
-        "name": "Gångtestsstatus"
+        "name": "Funktionstestets status",
+        "state": {
+          "walk_test_started": "Startad",
+          "walk_test_stopped": "Stoppad",
+          "unknown": "Okänd"
+        }
       },
       "battery_level": {
-        "name": "Batterinivå"
+        "name": "Batterinivå",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Låg",
+          "critical_low": "Kritisk",
+          "critically_low_battery": "Kritiskt låg",
+          "not_available": "Ej tillgänglig"
+        }
       },
       "combined_rating": {
-        "name": "Samlat omdöme"
+        "name": "Samlat omdöme",
+        "state": {
+          "good": "Bra",
+          "medium": "Medelmåttlig",
+          "bad": "Dålig",
+          "unknown": "Okänd"
+        }
       },
       "air_quality_description": {
         "name": "Luftkvalitetsbeskrivning"
       },
       "communication_quality": {
-        "name": "Kommunikationskvalitet",
+        "name": "Signalstyrka",
         "state": {
           "good": "Bra",
           "normal": "Normal",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batteri"
+        "name": "Batteriladdning"
       },
       "siren_main_power": {
-        "name": "Strömkälla",
+        "name": "Primär strömkälla",
         "state": {
           "battery": "Batteri",
           "solar": "Sol",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Knapptilldelning"
+        "name": "Knapparnas konfiguration"
       },
       "floor_temperature": {
         "name": "Golvtemperatur"
       },
       "purity": {
-        "name": "Renhet"
+        "name": "Luftrenhet"
       },
       "air_quality": {
         "name": "Luftkvalitet"
@@ -495,7 +547,7 @@
         "name": "Fuktighetsvärdering"
       },
       "purity_rating": {
-        "name": "Renhetsvärdering"
+        "name": "Luftrenhetsvärdering"
       },
       "energy_yield": {
         "name": "Energiutbyte"
@@ -504,10 +556,15 @@
         "name": "Effektutbyte"
       },
       "valve_tappet": {
-        "name": "Ventilstössel"
+        "name": "Ventilläge"
       },
       "detection_test_state": {
-        "name": "Detekteringstestläge"
+        "name": "Funktionstestets status",
+        "state": {
+          "detection_test_started": "Startad",
+          "detection_test_stopped": "Stoppad",
+          "detection_test_unknown": "Okänd"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Nästa börvärdestemperatur"
@@ -519,10 +576,10 @@
         "name": "Simulering pågår sedan"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referensrörelsetid (nedifrån och upp)"
+        "name": "Öppningstid"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referensrörelsetid (uppifrån och ned)"
+        "name": "Stängningstid"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee-routningskvalitet",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Schemaåsidosättning aktiv"
       },
+      "summer_mode": {
+        "name": "Värmepaus"
+      },
+      "ventilation_mode": {
+        "name": "Lufta hållbart"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrering krävs"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Förbikoppling av larm"
+        "name": "Pausfunktion"
       },
       "bypass_infinite": {
-        "name": "Förbikoppling upphör aldrig"
+        "name": "Pausfunktionen upphör aldrig"
       },
       "temperature_drop_enabled": {
         "name": "Temperatursänkning"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Aktiverad"
       },
+      "pet_immunity_enabled": {
+        "name": "Husdjur / robotdammsugare"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatisk känslighet"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotagedetektering"
+      },
+      "silent_mode": {
+        "name": "Lågmält läge"
+      },
+      "smartplug_routing": {
+        "name": "Räckviddsförlängning"
+      },
+      "camera_light": {
+        "name": "Kameralampa"
+      },
+      "camera_notification": {
+        "name": "Aviseringar"
+      },
+      "camera_frontlight": {
+        "name": "Frontlampa"
+      },
+      "camera_ambientlight": {
+        "name": "Omgivningsljus"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energisparläge"
+      },
+      "warning_suppressed": {
+        "name": "Varning undertryckt"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Fuktvarning"
+      },
+      "swap_inputs": {
+        "name": "Ändra knapptilldelning"
+      },
+      "swap_outputs": {
+        "name": "Byt utgångar"
+      },
+      "pre_alarm_enabled": {
+        "name": "Förlarm"
+      },
+      "vibration_enabled": {
+        "name": "Vibrationsdetektering"
+      },
+      "intrusion_alarm": {
+        "name": "Inbrottslarm"
+      },
       "child_lock": {
         "name": "Barnlås"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Rörelselampa"
+        "name": "Orienteringsljus"
       },
       "room_light_group": {
         "name": "Belysning"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Nedre knapp"
+      },
+      "key_upper": {
+        "name": "Övre knapp"
+      },
+      "key_lower_left": {
+        "name": "Nedre vänstra knappen"
+      },
+      "key_lower_right": {
+        "name": "Nedre högra knappen"
+      },
+      "key_upper_left": {
+        "name": "Övre vänstra knappen"
+      },
+      "key_upper_right": {
+        "name": "Övre högra knappen"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Ingen inläst Bosch SHC-post med den titeln hittades."
+    },
+    "rawscan_command_failed": {
+      "message": "Det gick inte att köra rawscan-kommandot."
     },
     "scenario_not_found": {
       "message": "Scenariot hittades inte."

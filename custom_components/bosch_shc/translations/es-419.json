@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Suprimir los interruptores de cámara Bosch",
               "room_light_groups": "Habilitar grupos de luces por habitación",
               "automation_rules_as_entities": "Exponer las reglas de automatización de Bosch como entidades",
-              "temperature_drop_entities": "Habilitar entidades de caída de temperatura"
+              "temperature_drop_entities": "Habilitar entidades de caída de temperatura",
+              "keypad_ha_bridge": "Conectar pulsadores físicos con automatizaciones de HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Cuando está ACTIVADO: cada escenario de Bosch SHC también aparece como una entidad de botón en Home Assistant (además del servicio trigger_scenario). Útil para paneles y automatizaciones que activan escenarios directamente. Predeterminado: desactivado.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Cuando está ACTIVADO: los interruptores de privacidad, luz y notificación para las cámaras Bosch (Eyes / 360 / Outdoor Gen2) no se crean. Úsalo con Bosch Camera Tool. Predeterminado: desactivado.",
               "room_light_groups": "Cuando está ACTIVADO: crea una entidad `light` agregada por cada habitación del SHC que tenga 2 o más luces regulables/de color (LEDVANCE, Hue, reguladores Light/Shutter Control II), lo que te permite encender o apagar todas las luces de una habitación desde una sola entidad, igual que el control por habitación que la calefacción ya tiene mediante Room Climate Control. Solo encendido/apagado, sin agregación de brillo ni color. Predeterminado: desactivado (no se crean entidades nuevas).",
               "automation_rules_as_entities": "Cuando está ACTIVADO: crea un interruptor (activar/desactivar) y un botón (activar manualmente) para cada regla de automatización configurada en la app de Bosch — el motor de reglas local propio de Bosch, totalmente independiente de las automatizaciones de Home Assistant. Predeterminado: desactivado (sin entidades nuevas).",
-              "temperature_drop_entities": "Cuando esté ACTIVADO: crea un interruptor (activar/desactivar) y un número (valor de caída) para el servicio de caída de temperatura (anticongelante/ventana abierta) de cada habitación. La mayoría de las instalaciones no usan esta función. Predeterminado: desactivado (sin entidades nuevas)."
+              "temperature_drop_entities": "Cuando esté ACTIVADO: crea un interruptor (activar/desactivar) y un número (valor de caída) para el servicio de caída de temperatura (anticongelante/ventana abierta) de cada habitación. La mayoría de las instalaciones no usan esta función. Predeterminado: desactivado (sin entidades nuevas).",
+              "keypad_ha_bridge": "Cuando esté ACTIVADO: para cada dispositivo Shutter/Light Control II con un pulsador físico separado, crea una pequeña automatización directamente en el Bosch Smart Home Controller que genera un pulso de un estado virtual de encendido/apagado al presionar el botón. Ese estado ya aparece como una entidad de interruptor normal — usa sus transiciones de encendido/apagado como disparador en tus propias automatizaciones de Home Assistant. Al desactivar esto se eliminan las automatizaciones y estados que creó. Predeterminado: desactivado (sin entidades nuevas, no se crea nada en el controlador)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Simulación de presencia"
+    },
+    "intrusion_system": {
+      "name": "Sistema de alarma"
+    },
+    "water_alarm_system": {
+      "name": "Alarma de agua"
+    },
+    "energy_manager": {
+      "name": "Administrador de energía"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Control de clima de habitación",
+        "name": "Control de temperatura de la habitación",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Calentamiento rápido",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Prueba de humo"
+        "name": "Alarma de prueba"
       },
       "walk_test": {
-        "name": "Prueba de recorrido"
+        "name": "Iniciar prueba de funcionamiento"
       },
       "walk_test_stop": {
-        "name": "Detener prueba de recorrido"
+        "name": "Detener prueba de funcionamiento"
       },
       "detection_test": {
-        "name": "Prueba de detección"
+        "name": "Iniciar prueba de funcionamiento"
       },
       "detection_test_stop": {
-        "name": "Detener prueba de detección"
+        "name": "Detener prueba de funcionamiento"
       },
       "reset_tamper": {
         "name": "Restablecer manipulación"
@@ -207,10 +223,10 @@
         "name": "Vista previa de brillo mínimo"
       },
       "reset_energy_summation": {
-        "name": "Restablecer contador de energía"
+        "name": "Restablecer valor de consumo"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrar"
+        "name": "Iniciar calibración automática"
       },
       "enable_all_diagnostics": {
         "name": "Activar todos los diagnósticos"
@@ -230,7 +246,7 @@
         "name": "Duración del impulso"
       },
       "temperature_drop_value": {
-        "name": "Valor de bajada de temperatura"
+        "name": "Desviación de temperatura"
       },
       "energy_saving_power_threshold": {
         "name": "Umbral de potencia para ahorro de energía"
@@ -245,22 +261,40 @@
         "name": "Brillo de pantalla"
       },
       "display_on_time": {
-        "name": "Tiempo de encendido de pantalla"
+        "name": "Duración de encendido de pantalla"
       },
       "siren_alarm_duration": {
-        "name": "Duración de la alarma"
+        "name": "Duración de alarma de sirena"
       },
       "siren_flash_duration": {
-        "name": "Duración del destello"
+        "name": "Duración de alarma de destello"
       },
       "siren_alarm_delay": {
-        "name": "Retardo de la alarma"
+        "name": "Retardo de alarma de sirena"
       },
       "siren_flash_delay": {
-        "name": "Retardo del destello"
+        "name": "Retardo de alarma de destello"
       },
       "bypass_timeout": {
-        "name": "Tiempo de espera del bypass"
+        "name": "Tiempo de espera de la función de pausa"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Temperatura eco"
+      },
+      "setpointcomfort": {
+        "name": "Temperatura de confort"
+      },
+      "dimmer_min": {
+        "name": "Brillo mínimo"
+      },
+      "dimmer_max": {
+        "name": "Brillo máximo"
+      },
+      "dimmer_speed": {
+        "name": "Velocidad de atenuación"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Muy alta",
           "high": "Alta",
           "medium": "Media",
-          "low": "Baja",
-          "very_low": "Muy baja"
+          "low": "Moderada",
+          "very_low": "Baja"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +333,30 @@
         }
       },
       "display_direction": {
-        "name": "Dirección de pantalla",
+        "name": "Orientación de pantalla",
         "state": {
           "normal": "Normal",
-          "reversed": "Invertida"
+          "reversed": "Girada 180°"
         }
       },
       "displayed_temperature": {
         "name": "Temperatura mostrada",
         "state": {
-          "setpoint": "Consigna",
+          "setpoint": "Temperatura de consigna",
           "measured": "Medida"
         }
       },
       "terminal_type": {
-        "name": "Tipo de terminal",
+        "name": "Conexión del sensor",
         "state": {
-          "not_connected": "No conectado",
+          "not_connected": "No utilizado",
           "floor_sensor_connected": "Sensor de piso conectado",
           "floor_sensor_used_for_regulation": "Sensor de piso utilizado para la regulación",
-          "floor_sensor_displayed": "Sensor de piso mostrado",
-          "floor_sensor_displayed_and_used_for_regulation": "Sensor de piso mostrado y utilizado para la regulación",
+          "floor_sensor_displayed": "Sensor de temperatura por cable (sin regulación)",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor de temperatura por cable (con regulación)",
           "volt_free_sensor_connected": "Sensor libre de tensión conectado",
-          "volt_free_sensor_connected_and_used_for_operation": "Sensor libre de tensión conectado y utilizado para el funcionamiento",
-          "outdoor_sensor_connected": "Sensor exterior conectado"
+          "volt_free_sensor_connected_and_used_for_operation": "Contacto libre de potencial",
+          "outdoor_sensor_connected": "Sensor de temperatura exterior"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Tipo de calefactor",
         "state": {
           "floor_heating": "Calefacción por piso radiante",
-          "floor_heating_low_energy": "Calefacción por piso radiante (bajo consumo)",
+          "floor_heating_low_energy": "Calefacción por piso radiante, bajo consumo de energía",
           "radiator": "Radiador",
-          "convector_passive": "Convector (pasivo)",
-          "convector_active": "Convector (activo)",
-          "volt_free_heating": "Calefacción libre de tensión"
+          "convector_passive": "Convector pasivo (sin ventilador)",
+          "convector_active": "Convector activo (con ventilador)",
+          "volt_free_heating": "Calefacción central"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Ninguno",
           "pushbutton": "Pulsador",
-          "switch": "Interruptor",
+          "switch": "Interruptor basculante",
           "no_switch": "Sin interruptor"
         }
       },
@@ -364,16 +398,16 @@
         "name": "Modo de salida",
         "state": {
           "attached": "Acoplado",
-          "detached": "Desacoplado",
-          "detached_short_press": "Desacoplado (pulsación corta)",
-          "detached_long_press": "Desacoplado (pulsación larga)",
+          "detached": "Desacoplado con cualquier pulsación",
+          "detached_short_press": "Desacoplado con pulsación corta",
+          "detached_long_press": "Desacoplado con pulsación larga",
           "unsupported": "No compatible"
         }
       },
       "siren_sound_level": {
-        "name": "Nivel de sonido",
+        "name": "Volumen del sonido de la sirena",
         "state": {
-          "low": "Bajo",
+          "low": "Reducido",
           "medium": "Medio",
           "high": "Alto"
         }
@@ -386,37 +420,37 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Nivel de seguridad de sensibilidad inteligente",
+        "name": "Sensibilidad para el sistema de alarma",
         "state": {
-          "high": "Alto",
-          "middle": "Medio",
-          "low": "Bajo"
+          "high": "Alta",
+          "middle": "Media",
+          "low": "Baja"
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Nivel de confort de sensibilidad inteligente",
+        "name": "Sensibilidad para otros casos",
         "state": {
-          "high": "Alto",
-          "middle": "Medio",
-          "low": "Bajo"
+          "high": "Alta",
+          "middle": "Media",
+          "low": "Baja"
         }
       },
       "dimmer_phase_control": {
         "name": "Control de fase del regulador",
         "state": {
-          "trailing": "Corte de fase de cola",
-          "leading": "Corte de fase de cabeza"
+          "trailing": "Corte de fase descendente",
+          "leading": "Corte de fase ascendente"
         }
       },
       "installation_profile": {
-        "name": "Perfil de instalación",
+        "name": "Uso previsto",
         "state": {
-          "generic": "Interior (genérico)",
+          "generic": "Estándar",
           "outdoor": "Exterior",
-          "light": "Luz",
-          "heating_rcc": "Calefacción (RCC)",
-          "boiler": "Caldera",
-          "mini_pv": "Mini fotovoltaica"
+          "light": "Luminarias",
+          "heating_rcc": "Calefacción",
+          "boiler": "Calefacción central",
+          "mini_pv": "Sistema Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Puertas/ventanas abiertas"
+        "name": "Puertas y ventanas abiertas"
       },
       "walk_test_state": {
-        "name": "Estado de prueba de recorrido"
+        "name": "Estado de la prueba de funcionamiento",
+        "state": {
+          "walk_test_started": "Iniciada",
+          "walk_test_stopped": "Detenida",
+          "unknown": "Desconocida"
+        }
       },
       "battery_level": {
-        "name": "Nivel de batería"
+        "name": "Nivel de batería",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Bajo",
+          "critical_low": "Crítico",
+          "critically_low_battery": "Críticamente bajo",
+          "not_available": "No disponible"
+        }
       },
       "combined_rating": {
-        "name": "Calificación combinada"
+        "name": "Calificación combinada",
+        "state": {
+          "good": "Buena",
+          "medium": "Intermedia",
+          "bad": "Mala",
+          "unknown": "Desconocida"
+        }
       },
       "air_quality_description": {
         "name": "Descripción de la calidad del aire"
       },
       "communication_quality": {
-        "name": "Calidad de comunicación",
+        "name": "Intensidad de la señal",
         "state": {
           "good": "Buena",
           "normal": "Normal",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Batería"
+        "name": "Carga de batería"
       },
       "siren_main_power": {
-        "name": "Fuente de alimentación",
+        "name": "Fuente principal",
         "state": {
           "battery": "Batería",
           "solar": "Solar",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Asignación de botones"
+        "name": "Disposición de teclas"
       },
       "floor_temperature": {
         "name": "Temperatura del piso"
       },
       "purity": {
-        "name": "Pureza"
+        "name": "Pureza del aire"
       },
       "air_quality": {
         "name": "Calidad del aire"
@@ -495,7 +547,7 @@
         "name": "Valoración de humedad"
       },
       "purity_rating": {
-        "name": "Valoración de pureza"
+        "name": "Valoración de la pureza del aire"
       },
       "energy_yield": {
         "name": "Rendimiento energético"
@@ -504,10 +556,15 @@
         "name": "Rendimiento de potencia"
       },
       "valve_tappet": {
-        "name": "Vástago de válvula"
+        "name": "Posición de la válvula"
       },
       "detection_test_state": {
-        "name": "Estado de prueba de detección"
+        "name": "Estado de la prueba de funcionamiento",
+        "state": {
+          "detection_test_started": "Iniciada",
+          "detection_test_stopped": "Detenida",
+          "detection_test_unknown": "Desconocida"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Próxima temperatura objetivo"
@@ -519,10 +576,10 @@
         "name": "Simulación en curso desde"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Tiempo de referencia de movimiento (de abajo hacia arriba)"
+        "name": "Tiempo de apertura"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Tiempo de referencia de movimiento (de arriba hacia abajo)"
+        "name": "Tiempo de cierre"
       },
       "zigbee_routing_quality": {
         "name": "Calidad de enrutamiento Zigbee",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Anulación de la programación activa"
       },
+      "summer_mode": {
+        "name": "Pausa de calefacción"
+      },
+      "ventilation_mode": {
+        "name": "Ventilación sostenible"
+      },
       "shutter_calibration_required": {
         "name": "Calibración requerida"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Bypass de alarma"
+        "name": "Función de pausa"
       },
       "bypass_infinite": {
-        "name": "Bypass sin vencimiento"
+        "name": "La función de pausa nunca vence"
       },
       "temperature_drop_enabled": {
         "name": "Bajada de temperatura"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Habilitado"
       },
+      "pet_immunity_enabled": {
+        "name": "Mascota / robot aspiradora"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensibilidad automática"
+      },
+      "tamper_protection_enabled": {
+        "name": "Detección de sabotaje"
+      },
+      "silent_mode": {
+        "name": "Modo silencioso"
+      },
+      "smartplug_routing": {
+        "name": "Extensión de alcance"
+      },
+      "camera_light": {
+        "name": "Luz de la cámara"
+      },
+      "camera_notification": {
+        "name": "Notificaciones"
+      },
+      "camera_frontlight": {
+        "name": "Luz frontal"
+      },
+      "camera_ambientlight": {
+        "name": "Luz ambiental"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Modo de ahorro de energía"
+      },
+      "warning_suppressed": {
+        "name": "Advertencia suprimida"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Advertencia de humedad"
+      },
+      "swap_inputs": {
+        "name": "Cambiar disposición de teclas"
+      },
+      "swap_outputs": {
+        "name": "Intercambiar salidas"
+      },
+      "pre_alarm_enabled": {
+        "name": "Prealarma"
+      },
+      "vibration_enabled": {
+        "name": "Detección de vibración"
+      },
+      "intrusion_alarm": {
+        "name": "Alarma de intrusión"
+      },
       "child_lock": {
         "name": "Bloqueo infantil"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Luz de movimiento"
+        "name": "Luz de orientación"
       },
       "room_light_group": {
         "name": "Luz"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Válvula"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tecla inferior"
+      },
+      "key_upper": {
+        "name": "Tecla superior"
+      },
+      "key_lower_left": {
+        "name": "Tecla inferior izquierda"
+      },
+      "key_lower_right": {
+        "name": "Tecla inferior derecha"
+      },
+      "key_upper_left": {
+        "name": "Tecla superior izquierda"
+      },
+      "key_upper_right": {
+        "name": "Tecla superior derecha"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "No se encontró ninguna entrada de Bosch SHC cargada con ese título."
+    },
+    "rawscan_command_failed": {
+      "message": "No se pudo ejecutar el comando rawscan."
     },
     "zigbee_topology_no_data": {
       "message": "Todavía no hay datos de enrutamiento Zigbee disponibles para este controlador SHC (no hay dispositivos Zigbee emparejados, o el primer sondeo de 5 minutos aún no se ha completado desde que se inició Home Assistant)."

@@ -106,7 +106,8 @@
               "suppress_motion_indicator_light": "Suppress motion detector indicator light",
               "room_light_groups": "Enable per-room light groups",
               "automation_rules_as_entities": "Expose Bosch automation rules as entities",
-              "temperature_drop_entities": "Enable temperature-drop entities"
+              "temperature_drop_entities": "Enable temperature-drop entities",
+              "keypad_ha_bridge": "Bridge physical pushbuttons for HA automations"
             },
             "data_description": {
               "scenarios_as_buttons": "When ON: each Bosch SHC scenario also appears as a button entity in Home Assistant (in addition to the `trigger_scenario` service). Useful for dashboard tiles and automations that trigger scenarios directly. Default: off.",
@@ -122,7 +123,8 @@
               "suppress_motion_indicator_light": "When ON: the indicator-LED brightness entity for Motion Detector II devices is not created. Default: off (entity is shown).",
               "room_light_groups": "When ON: creates one aggregate `light` entity per SHC room with 2+ dimmable/color lights (LEDVANCE, Hue, Light/Shutter Control II dimmers), letting you turn all of a room's lights on/off from a single entity — mirroring the room-level control heating already has via Room Climate Control. On/off only, no brightness/colour aggregation. Default: off (no new entities).",
               "automation_rules_as_entities": "When ON: creates a switch (enable/disable) and a button (manually trigger) for every automation rule configured in the Bosch app — Bosch's own local rule engine, entirely separate from Home Assistant's own automations. Default: off (no new entities).",
-              "temperature_drop_entities": "When ON: creates a switch (enable/disable) and a number (drop value) for each room's temperature-drop (anti-frost/window-open) service. Most setups don't use this feature. Default: off (no new entities)."
+              "temperature_drop_entities": "When ON: creates a switch (enable/disable) and a number (drop value) for each room's temperature-drop (anti-frost/window-open) service. Most setups don't use this feature. Default: off (no new entities).",
+              "keypad_ha_bridge": "When ON: for every Shutter/Light Control II device with a physical detached pushbutton, creates a small automation directly on the Bosch Smart Home Controller that pulses a virtual on/off state when a button is pressed. That state already appears as a regular switch entity — use its on/off transitions as a trigger in your own Home Assistant automations. Turning this off removes the automations and states it created. Default: off (no new entities, nothing created on the Controller)."
             }
           },
           "presence": {
@@ -168,11 +170,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Room climate control",
+        "name": "Room temperature control",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Fast heating",
               "eco": "Eco"
             }
           }
@@ -181,46 +183,46 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Smoke Test"
+        "name": "Test alarm"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Start function test"
       },
       "walk_test_stop": {
-        "name": "Walk Test Stop"
+        "name": "Stop function test"
       },
       "detection_test": {
-        "name": "Detection Test"
+        "name": "Start function test"
       },
       "detection_test_stop": {
-        "name": "Detection Test Stop"
+        "name": "Stop function test"
       },
       "reset_tamper": {
-        "name": "Reset Tamper"
+        "name": "Reset tamper"
       },
       "siren_test_alarm": {
-        "name": "Test Alarm"
+        "name": "Test alarm"
       },
       "preview_max_brightness": {
-        "name": "Preview Max Brightness"
+        "name": "Preview max brightness"
       },
       "preview_min_brightness": {
-        "name": "Preview Min Brightness"
+        "name": "Preview min brightness"
       },
       "reset_energy_summation": {
-        "name": "Reset Energy Counter"
+        "name": "Reset consumption value"
       },
       "shutter_recalibrate": {
-        "name": "Recalibrate"
+        "name": "Start automatic calibration"
       },
       "enable_all_diagnostics": {
-        "name": "Enable All Diagnostics"
+        "name": "Enable all diagnostics"
       },
       "intrusion_alarm_mute": {
-        "name": "Mute Alarm"
+        "name": "Mute alarm"
       },
       "water_alarm_mute": {
-        "name": "Mute Water Alarm"
+        "name": "Mute water alarm"
       },
       "automation_rule_trigger": {
         "name": "Trigger"
@@ -228,70 +230,88 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Impulse Length"
+        "name": "Pulse length"
       },
       "temperature_drop_value": {
-        "name": "Temperature Drop Value"
+        "name": "Temperature deviation"
       },
       "energy_saving_power_threshold": {
-        "name": "Energy Saving Power Threshold"
+        "name": "Energy saving power threshold"
       },
       "energy_saving_enter_duration": {
-        "name": "Energy Saving Enter Duration"
+        "name": "Energy saving enter duration"
       },
       "led_brightness": {
-        "name": "LED Brightness"
+        "name": "LED brightness"
       },
       "display_brightness": {
-        "name": "Display Brightness"
+        "name": "Display brightness"
       },
       "display_on_time": {
-        "name": "Display On Time"
+        "name": "Display switch-on duration"
       },
       "siren_alarm_duration": {
-        "name": "Alarm Duration"
+        "name": "Siren alarm duration"
       },
       "siren_flash_duration": {
-        "name": "Flash Duration"
+        "name": "Flashing light alarm duration"
       },
       "siren_alarm_delay": {
-        "name": "Alarm Delay"
+        "name": "Siren alarm delay"
       },
       "siren_flash_delay": {
-        "name": "Flash Delay"
+        "name": "Flashing light alarm delay"
       },
       "bypass_timeout": {
-        "name": "Bypass Timeout"
+        "name": "Break function timeout"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco temperature"
+      },
+      "setpointcomfort": {
+        "name": "Comfort temperature"
+      },
+      "dimmer_min": {
+        "name": "Minimum brightness"
+      },
+      "dimmer_max": {
+        "name": "Maximum brightness"
+      },
+      "dimmer_speed": {
+        "name": "Dimming speed"
       }
     },
     "select": {
       "motion_sensitivity": {
-        "name": "Motion Sensitivity",
+        "name": "Motion sensitivity",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "orientation_light_response_time": {
-        "name": "Orientation Light Response Time",
+        "name": "Orientation light response time",
         "state": {
           "long": "Long",
           "short": "Short"
         }
       },
       "vibration_sensitivity": {
-        "name": "Vibration Sensitivity",
+        "name": "Vibration sensitivity",
         "state": {
           "very_high": "Very High",
           "high": "High",
           "medium": "Medium",
-          "low": "Low",
-          "very_low": "Very Low"
+          "low": "Moderate",
+          "very_low": "Low"
         }
       },
       "state_after_power_outage": {
-        "name": "State After Power Outage",
+        "name": "State after power outage",
         "state": {
           "off": "Off",
           "on": "On",
@@ -299,129 +319,129 @@
         }
       },
       "smoke_sensitivity": {
-        "name": "Smoke Sensitivity",
+        "name": "Smoke sensitivity",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "display_direction": {
-        "name": "Display Direction",
+        "name": "Display orientation",
         "state": {
           "normal": "Normal",
-          "reversed": "Reversed"
+          "reversed": "Rotated by 180°"
         }
       },
       "displayed_temperature": {
-        "name": "Displayed Temperature",
+        "name": "Displayed temperature",
         "state": {
-          "setpoint": "Setpoint",
+          "setpoint": "Set temperature",
           "measured": "Measured"
         }
       },
       "terminal_type": {
-        "name": "Terminal Type",
+        "name": "Sensor connection",
         "state": {
-          "not_connected": "Not Connected",
+          "not_connected": "Not used",
           "floor_sensor_connected": "Floor Sensor Connected",
           "floor_sensor_used_for_regulation": "Floor Sensor Used for Regulation",
-          "floor_sensor_displayed": "Floor Sensor Displayed",
-          "floor_sensor_displayed_and_used_for_regulation": "Floor Sensor Displayed and Used for Regulation",
+          "floor_sensor_displayed": "Cable temperature sensor (without regulation)",
+          "floor_sensor_displayed_and_used_for_regulation": "Cable temperature sensor (with regulation)",
           "volt_free_sensor_connected": "Volt-Free Sensor Connected",
-          "volt_free_sensor_connected_and_used_for_operation": "Volt-Free Sensor Connected and Used for Operation",
-          "outdoor_sensor_connected": "Outdoor Sensor Connected"
+          "volt_free_sensor_connected_and_used_for_operation": "Potential-free contact",
+          "outdoor_sensor_connected": "Outdoor temperature sensor"
         }
       },
       "valve_type": {
-        "name": "Valve Type",
+        "name": "Valve type",
         "state": {
-          "normally_close": "Normally Closed",
-          "normally_open": "Normally Open"
+          "normally_close": "Normally closed",
+          "normally_open": "Normally open"
         }
       },
       "heater_type": {
-        "name": "Heater Type",
+        "name": "Heater type",
         "state": {
-          "floor_heating": "Floor Heating",
-          "floor_heating_low_energy": "Floor Heating (Low Energy)",
+          "floor_heating": "Underfloor heating",
+          "floor_heating_low_energy": "Underfloor heating low energy",
           "radiator": "Radiator",
-          "convector_passive": "Convector (Passive)",
-          "convector_active": "Convector (Active)",
-          "volt_free_heating": "Volt-Free Heating"
+          "convector_passive": "Passive convector (without fan)",
+          "convector_active": "Active convector (with fan)",
+          "volt_free_heating": "Central heating"
         }
       },
       "switch_type": {
-        "name": "Switch Type",
+        "name": "Switch type",
         "state": {
           "none": "None",
-          "pushbutton": "Pushbutton",
-          "switch": "Switch",
+          "pushbutton": "Push button",
+          "switch": "Rocker switch",
           "no_switch": "No Switch"
         }
       },
       "actuator_type": {
-        "name": "Actuator Type",
+        "name": "Actuator type",
         "state": {
-          "normally_closed": "Normally Closed",
-          "normally_open": "Normally Open",
+          "normally_closed": "Normally closed",
+          "normally_open": "Normally open",
           "unsupported": "Unsupported"
         }
       },
       "output_mode": {
-        "name": "Output Mode",
+        "name": "Output mode",
         "state": {
-          "attached": "Attached",
-          "detached": "Detached",
-          "detached_short_press": "Detached (Short Press)",
-          "detached_long_press": "Detached (Long Press)",
+          "attached": "Coupled",
+          "detached": "Disconnected on any key press",
+          "detached_short_press": "Disconnected on short press",
+          "detached_long_press": "Disconnected on long press",
           "unsupported": "Unsupported"
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Smart Sensitivity Security Level",
+        "name": "Sensitivity for alarm system",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Smart Sensitivity Comfort Level",
+        "name": "Sensitivity for other cases",
         "state": {
           "high": "High",
-          "middle": "Middle",
+          "middle": "Medium",
           "low": "Low"
         }
       },
       "dimmer_phase_control": {
-        "name": "Dimmer Phase Control",
+        "name": "Dimmer phase control",
         "state": {
-          "trailing": "Trailing",
-          "leading": "Leading"
+          "trailing": "Trailing edge phase cut",
+          "leading": "Leading edge phase cut"
         }
       },
       "siren_sound_level": {
-        "name": "Sound Level",
+        "name": "Siren volume",
         "state": {
-          "low": "Low",
+          "low": "Reduced",
           "medium": "Medium",
-          "high": "High"
+          "high": "Loud"
         }
       },
       "installation_profile": {
-        "name": "Installation Profile",
+        "name": "Purpose of use",
         "state": {
-          "generic": "Indoor (Generic)",
-          "outdoor": "Outdoor",
-          "light": "Light",
-          "heating_rcc": "Heating (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini PV"
+          "generic": "Standard",
+          "outdoor": "Outdoors",
+          "light": "Lamp",
+          "heating_rcc": "Heater",
+          "boiler": "Central heating",
+          "mini_pv": "Mini PV system"
         }
       },
       "thermostat_regulation_algorithm": {
-        "name": "Regulation Algorithm",
+        "name": "Regulation algorithm",
         "state": {
           "internal": "Internal",
           "custom": "Custom"
@@ -430,66 +450,89 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Open Doors/Windows"
+        "name": "Open doors and windows"
       },
       "floor_temperature": {
-        "name": "Floor Temperature"
+        "name": "Floor temperature"
       },
       "purity": {
-        "name": "Purity"
+        "name": "Air purity"
       },
       "air_quality": {
-        "name": "Air Quality"
+        "name": "Air quality"
       },
       "temperature_rating": {
-        "name": "Temperature Rating"
+        "name": "Temperature rating"
       },
       "humidity_rating": {
-        "name": "Humidity Rating"
+        "name": "Humidity rating"
       },
       "purity_rating": {
-        "name": "Purity Rating"
+        "name": "Air purity rating"
       },
       "energy_yield": {
-        "name": "Energy Yield"
+        "name": "Energy yield"
       },
       "power_yield": {
-        "name": "Power Yield"
+        "name": "Power yield"
       },
       "valve_tappet": {
-        "name": "Valve Tappet"
+        "name": "Valve position"
       },
       "walk_test_state": {
-        "name": "Walk Test State"
+        "name": "Function test state",
+        "state": {
+          "walk_test_started": "Started",
+          "walk_test_stopped": "Stopped",
+          "unknown": "Unknown"
+        }
       },
       "battery_level": {
-        "name": "Battery Level"
+        "name": "Battery level",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Low",
+          "critical_low": "Critical",
+          "critically_low_battery": "Critically low",
+          "not_available": "Not available"
+        }
       },
       "combined_rating": {
-        "name": "Combined Rating"
+        "name": "Combined rating",
+        "state": {
+          "good": "Good",
+          "medium": "Moderate",
+          "bad": "Poor",
+          "unknown": "Unknown"
+        }
       },
       "air_quality_description": {
-        "name": "Air Quality Description"
+        "name": "Air quality description"
       },
       "detection_test_state": {
-        "name": "Detection Test State"
+        "name": "Function test state",
+        "state": {
+          "detection_test_started": "Started",
+          "detection_test_stopped": "Stopped",
+          "detection_test_unknown": "Unknown"
+        }
       },
       "communication_quality": {
-        "name": "Communication Quality",
+        "name": "Signal strength",
         "state": {
           "good": "Good",
           "normal": "Normal",
-          "not_supported": "Not Supported",
+          "not_supported": "Not supported",
           "bad": "Bad",
           "unknown": "Unknown",
           "fetching": "Fetching"
         }
       },
       "siren_battery": {
-        "name": "Battery"
+        "name": "Battery charge"
       },
       "siren_main_power": {
-        "name": "Power Source",
+        "name": "Primary source",
         "state": {
           "battery": "Battery",
           "solar": "Solar",
@@ -499,7 +542,7 @@
         }
       },
       "siren_solar_charging": {
-        "name": "Solar Charging",
+        "name": "Solar charging",
         "state": {
           "bad": "Bad",
           "medium": "Medium",
@@ -508,39 +551,39 @@
         }
       },
       "keypad_trigger": {
-        "name": "Button mapping"
+        "name": "Key assignment"
       },
       "next_setpoint_temperature": {
-        "name": "Next Setpoint Temperature"
+        "name": "Next setpoint temperature"
       },
       "presence_simulation_running_start": {
-        "name": "Simulation Running Since"
+        "name": "Simulation running since"
       },
       "presence_simulation_running_end": {
-        "name": "Simulation Running Until"
+        "name": "Simulation running until"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Reference Moving Time (Top to Bottom)"
+        "name": "Closing time"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Reference Moving Time (Bottom to Top)"
+        "name": "Opening time"
       },
       "zigbee_routing_quality": {
-        "name": "Zigbee Routing Quality",
+        "name": "Zigbee routing quality",
         "state": {
           "good": "Good",
           "medium": "Medium",
           "bad": "Bad",
-          "no_connection": "No Connection",
-          "device_not_initialized": "Device Not Initialized",
-          "not_supported": "Not Supported",
+          "no_connection": "No connection",
+          "device_not_initialized": "Device not initialized",
+          "not_supported": "Not supported",
           "unknown": "Unknown"
         }
       }
     },
     "binary_sensor": {
       "call_for_heat": {
-        "name": "Call for Heat"
+        "name": "Call for heat"
       },
       "vibration": {
         "name": "Vibration"
@@ -555,36 +598,42 @@
         "name": "Tamper"
       },
       "siren_acoustic_alarm": {
-        "name": "Acoustic Alarm"
+        "name": "Acoustic alarm"
       },
       "siren_visual_alarm": {
-        "name": "Visual Alarm"
+        "name": "Visual alarm"
       },
       "siren_tamper": {
         "name": "Tamper"
       },
       "siren_ac_dc_error": {
-        "name": "AC/DC Error"
+        "name": "AC/DC error"
       },
       "siren_battery_defect": {
-        "name": "Battery Defect"
+        "name": "Battery defect"
       },
       "siren_battery_temperature_abnormal": {
-        "name": "Battery Temperature Abnormal"
+        "name": "Battery temperature abnormal"
       },
       "siren_primary_power_supply_outage": {
-        "name": "Power Supply Outage"
+        "name": "Power supply outage"
       },
       "schedule_override_active": {
-        "name": "Schedule Override Active"
+        "name": "Schedule override active"
+      },
+      "summer_mode": {
+        "name": "Heating break"
+      },
+      "ventilation_mode": {
+        "name": "Sustainable ventilation"
       },
       "shutter_calibration_required": {
-        "name": "Calibration Required"
+        "name": "Calibration required"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Motion Light"
+        "name": "Orientation light"
       },
       "room_light_group": {
         "name": "Light"
@@ -592,7 +641,7 @@
     },
     "update": {
       "controller_update": {
-        "name": "Software Update"
+        "name": "Software update"
       },
       "device_firmware": {
         "name": "Firmware"
@@ -600,25 +649,113 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarm bypass"
+        "name": "Break function"
       },
       "bypass_infinite": {
-        "name": "Bypass Never Expires"
+        "name": "Break function never expires"
       },
       "child_lock": {
-        "name": "Child Lock"
+        "name": "Child lock"
       },
       "temperature_drop_enabled": {
-        "name": "Temperature Drop"
+        "name": "Temperature drop"
       },
       "automation_rule": {
         "name": "Enabled"
+      },
+      "pet_immunity_enabled": {
+        "name": "Pet / robot vacuum cleaner"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatic sensitivity"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotage detection"
+      },
+      "silent_mode": {
+        "name": "Whisper mode"
+      },
+      "smartplug_routing": {
+        "name": "Range extension"
+      },
+      "camera_light": {
+        "name": "Camera light"
+      },
+      "camera_notification": {
+        "name": "Notifications"
+      },
+      "camera_frontlight": {
+        "name": "Front light"
+      },
+      "camera_ambientlight": {
+        "name": "Ambient light"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energy saving mode"
+      },
+      "warning_suppressed": {
+        "name": "Warning suppressed"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Humidity warning"
+      },
+      "swap_inputs": {
+        "name": "Change key assignment"
+      },
+      "swap_outputs": {
+        "name": "Swap outputs"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pre-alarm"
+      },
+      "vibration_enabled": {
+        "name": "Vibration detection"
+      },
+      "intrusion_alarm": {
+        "name": "Intrusion alarm"
       }
     },
     "valve": {
       "valve": {
         "name": "Valve"
       }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Lower key"
+      },
+      "key_upper": {
+        "name": "Upper key"
+      },
+      "key_lower_left": {
+        "name": "Lower left key"
+      },
+      "key_lower_right": {
+        "name": "Lower right key"
+      },
+      "key_upper_left": {
+        "name": "Upper left key"
+      },
+      "key_upper_right": {
+        "name": "Upper right key"
+      }
+    }
+  },
+  "device": {
+    "presence_simulation": {
+      "name": "Presence Simulation"
+    },
+    "intrusion_system": {
+      "name": "Alarm system"
+    },
+    "water_alarm_system": {
+      "name": "Water alarm"
+    },
+    "energy_manager": {
+      "name": "Energy Manager"
     }
   },
   "exceptions": {
@@ -636,6 +773,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "No loaded Bosch SHC entry with that title found."
+    },
+    "rawscan_command_failed": {
+      "message": "Failed to execute rawscan command."
     },
     "scenario_not_found": {
       "message": "Scenario not found."

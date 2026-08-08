@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Skrýt přepínače fotoaparátu Bosch",
               "room_light_groups": "Povolit skupiny světel podle místnosti",
               "automation_rules_as_entities": "Zobrazit automatizační pravidla Bosch jako entity",
-              "temperature_drop_entities": "Povolit entity poklesu teploty"
+              "temperature_drop_entities": "Povolit entity poklesu teploty",
+              "keypad_ha_bridge": "Propojit fyzická tlačítka s automatizacemi HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Pokud ZAPNUTO: každý scénář Bosch SHC se zobrazí také jako entita tlačítka v Home Assistant (navíc ke službě trigger_scenario). Užitečné pro panely a automatizace. Výchozí: vypnuto.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Pokud ZAPNUTO: přepínače soukromí, světla a oznámení pro kamery Bosch (Eyes / 360 / Outdoor Gen2) nejsou vytvořeny. Použijte s Bosch Camera Tool. Výchozí: vypnuto.",
               "room_light_groups": "Pokud ZAPNUTO: vytvoří jednu souhrnnou entitu `light` pro každou místnost SHC se 2 nebo více stmívatelnými/barevnými světly (LEDVANCE, Hue, stmívače Light/Shutter Control II), což umožňuje zapnout/vypnout všechna světla v místnosti z jedné entity — obdoba ovládání vytápění po místnostech, které již existuje díky Room Climate Control. Pouze zapnuto/vypnuto, bez agregace jasu/barvy. Výchozí: vypnuto (žádné nové entity).",
               "automation_rules_as_entities": "Když je ZAPNUTO: pro každé automatizační pravidlo nakonfigurované v aplikaci Bosch se vytvoří přepínač (povolit/zakázat) a tlačítko (ruční spuštění) — jde o vlastní lokální nástroj pro pravidla Bosch, zcela oddělený od automatizací Home Assistant. Výchozí: vypnuto (žádné nové entity).",
-              "temperature_drop_entities": "Když je ZAPNUTO: vytvoří přepínač (povolit/zakázat) a číslo (hodnota poklesu) pro službu poklesu teploty (ochrana proti mrazu/otevřené okno) v každé místnosti. Většina instalací tuto funkci nepoužívá. Výchozí: vypnuto (žádné nové entity)."
+              "temperature_drop_entities": "Když je ZAPNUTO: vytvoří přepínač (povolit/zakázat) a číslo (hodnota poklesu) pro službu poklesu teploty (ochrana proti mrazu/otevřené okno) v každé místnosti. Většina instalací tuto funkci nepoužívá. Výchozí: vypnuto (žádné nové entity).",
+              "keypad_ha_bridge": "Když je ZAPNUTO: pro každé zařízení Shutter/Light Control II s fyzickým odděleným tlačítkem vytvoří přímo na Bosch Smart Home Controller malou automatizaci, která při stisknutí tlačítka vyšle impuls virtuálního stavu zapnuto/vypnuto. Tento stav se již zobrazuje jako běžná entita přepínače — jeho přechody zapnuto/vypnuto použijte jako spouštěč ve vlastních automatizacích Home Assistant. Vypnutím této volby se odstraní automatizace a stavy, které vytvořila. Výchozí: vypnuto (žádné nové entity, na řadiči se nic nevytváří)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Simulace přítomnosti"
+    },
+    "intrusion_system": {
+      "name": "Poplachový systém"
+    },
+    "water_alarm_system": {
+      "name": "Vodní poplach"
+    },
+    "energy_manager": {
+      "name": "Správce energie"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Regulace klimatu místnosti",
+        "name": "Regulace teploty místnosti",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Rychlé vytápění",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Test kouřového čidla"
+        "name": "Testovací alarm"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Spustit funkční test"
       },
       "walk_test_stop": {
-        "name": "Zastavit Walk Test"
+        "name": "Zastavit funkční test"
       },
       "detection_test": {
-        "name": "Test detekce"
+        "name": "Spustit funkční test"
       },
       "detection_test_stop": {
-        "name": "Zastavit test detekce"
+        "name": "Zastavit funkční test"
       },
       "reset_tamper": {
         "name": "Resetovat sabotáž"
@@ -207,10 +223,10 @@
         "name": "Náhled minimálního jasu"
       },
       "reset_energy_summation": {
-        "name": "Resetovat počítadlo energie"
+        "name": "Resetovat hodnotu spotřeby"
       },
       "shutter_recalibrate": {
-        "name": "Rekalibrovat"
+        "name": "Spustit automatickou kalibraci"
       },
       "enable_all_diagnostics": {
         "name": "Povolit všechny diagnostiky"
@@ -230,7 +246,7 @@
         "name": "Délka impulzu"
       },
       "temperature_drop_value": {
-        "name": "Hodnota poklesu teploty"
+        "name": "Odchylka teploty"
       },
       "energy_saving_power_threshold": {
         "name": "Práh výkonu pro úsporu energie"
@@ -245,22 +261,40 @@
         "name": "Jas displeje"
       },
       "display_on_time": {
-        "name": "Doba svícení displeje"
+        "name": "Doba zapnutí displeje"
       },
       "siren_alarm_duration": {
-        "name": "Doba trvání alarmu"
+        "name": "Doba trvání alarmu sirény"
       },
       "siren_flash_duration": {
-        "name": "Doba trvání blikání"
+        "name": "Doba trvání alarmu blikajícího světla"
       },
       "siren_alarm_delay": {
-        "name": "Zpoždění alarmu"
+        "name": "Zpoždění alarmu sirény"
       },
       "siren_flash_delay": {
-        "name": "Zpoždění blikání"
+        "name": "Zpoždění alarmu blikajícího světla"
       },
       "bypass_timeout": {
-        "name": "Časový limit přemostění"
+        "name": "Časový limit funkce pauzy"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Eco teplota"
+      },
+      "setpointcomfort": {
+        "name": "Komfortní teplota"
+      },
+      "dimmer_min": {
+        "name": "Minimální jas"
+      },
+      "dimmer_max": {
+        "name": "Maximální jas"
+      },
+      "dimmer_speed": {
+        "name": "Rychlost stmívání"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Velmi vysoká",
           "high": "Vysoká",
           "medium": "Střední",
-          "low": "Nízká",
-          "very_low": "Velmi nízká"
+          "low": "Mírná",
+          "very_low": "Nízká"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "Orientace displeje",
         "state": {
           "normal": "Normální",
-          "reversed": "Obrácená"
+          "reversed": "Otočeno o 180°"
         }
       },
       "displayed_temperature": {
         "name": "Zobrazovaná teplota",
         "state": {
-          "setpoint": "Požadovaná hodnota",
+          "setpoint": "Nastavená teplota",
           "measured": "Naměřená"
         }
       },
       "terminal_type": {
-        "name": "Typ svorky",
+        "name": "Připojení čidla",
         "state": {
-          "not_connected": "Nepřipojeno",
+          "not_connected": "Nepoužito",
           "floor_sensor_connected": "Podlahové čidlo připojeno",
           "floor_sensor_used_for_regulation": "Podlahové čidlo použito pro regulaci",
-          "floor_sensor_displayed": "Podlahové čidlo zobrazeno",
-          "floor_sensor_displayed_and_used_for_regulation": "Podlahové čidlo zobrazeno a použito pro regulaci",
+          "floor_sensor_displayed": "Kabelové teplotní čidlo (bez regulace)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabelové teplotní čidlo (s regulací)",
           "volt_free_sensor_connected": "Beznapěťové čidlo připojeno",
-          "volt_free_sensor_connected_and_used_for_operation": "Beznapěťové čidlo připojeno a použito pro provoz",
-          "outdoor_sensor_connected": "Venkovní čidlo připojeno"
+          "volt_free_sensor_connected_and_used_for_operation": "Beznapěťový kontakt",
+          "outdoor_sensor_connected": "Venkovní teplotní čidlo"
         }
       },
       "valve_type": {
@@ -338,9 +372,9 @@
           "floor_heating": "Podlahové topení",
           "floor_heating_low_energy": "Podlahové topení (nízkoenergetické)",
           "radiator": "Radiátor",
-          "convector_passive": "Konvektor (pasivní)",
-          "convector_active": "Konvektor (aktivní)",
-          "volt_free_heating": "Beznapěťové topení"
+          "convector_passive": "Pasivní konvektor (bez ventilátoru)",
+          "convector_active": "Aktivní konvektor (s ventilátorem)",
+          "volt_free_heating": "Ústřední topení"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Žádný",
           "pushbutton": "Tlačítko",
-          "switch": "Spínač",
+          "switch": "Kolébkový vypínač",
           "no_switch": "Bez spínače"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "Režim výstupu",
         "state": {
-          "attached": "Připojeno",
-          "detached": "Odpojeno",
-          "detached_short_press": "Odpojeno (krátké stisknutí)",
-          "detached_long_press": "Odpojeno (dlouhé stisknutí)",
+          "attached": "Spojeno",
+          "detached": "Odpojeno při libovolném stisknutí",
+          "detached_short_press": "Odpojeno při krátkém stisknutí",
+          "detached_long_press": "Odpojeno při dlouhém stisknutí",
           "unsupported": "Nepodporováno"
         }
       },
       "siren_sound_level": {
-        "name": "Hlasitost",
+        "name": "Hlasitost sirény",
         "state": {
-          "low": "Nízká",
+          "low": "Snížená",
           "medium": "Střední",
-          "high": "Vysoká"
+          "high": "Hlasitá"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Úroveň zabezpečení inteligentní citlivosti",
+        "name": "Citlivost pro alarmový systém",
         "state": {
           "high": "Vysoká",
           "middle": "Střední",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Úroveň komfortu inteligentní citlivosti",
+        "name": "Citlivost pro ostatní případy",
         "state": {
           "high": "Vysoká",
           "middle": "Střední",
@@ -409,14 +443,14 @@
         }
       },
       "installation_profile": {
-        "name": "Instalační profil",
+        "name": "Účel použití",
         "state": {
-          "generic": "Vnitřní (obecný)",
+          "generic": "Standardní",
           "outdoor": "Venkovní",
-          "light": "Světlo",
-          "heating_rcc": "Topení (RCC)",
-          "boiler": "Bojler",
-          "mini_pv": "Mini FV"
+          "light": "Lampa",
+          "heating_rcc": "Topení",
+          "boiler": "Ústřední topení",
+          "mini_pv": "Systém Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Otevřené dveře/okna"
+        "name": "Otevřené dveře a okna"
       },
       "walk_test_state": {
-        "name": "Stav Walk Testu"
+        "name": "Stav funkčního testu",
+        "state": {
+          "walk_test_started": "Spuštěno",
+          "walk_test_stopped": "Zastaveno",
+          "unknown": "Neznámé"
+        }
       },
       "battery_level": {
-        "name": "Úroveň baterie"
+        "name": "Úroveň baterie",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Nízká",
+          "critical_low": "Kritická",
+          "critically_low_battery": "Kriticky nízká",
+          "not_available": "Není k dispozici"
+        }
       },
       "combined_rating": {
-        "name": "Celkové hodnocení"
+        "name": "Celkové hodnocení",
+        "state": {
+          "good": "Dobré",
+          "medium": "Střední",
+          "bad": "Špatné",
+          "unknown": "Neznámé"
+        }
       },
       "air_quality_description": {
         "name": "Popis kvality vzduchu"
       },
       "communication_quality": {
-        "name": "Kvalita komunikace",
+        "name": "Síla signálu",
         "state": {
           "good": "Dobrá",
           "normal": "Normální",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Baterie"
+        "name": "Nabití baterie"
       },
       "siren_main_power": {
-        "name": "Zdroj napájení",
+        "name": "Primární zdroj",
         "state": {
           "battery": "Baterie",
           "solar": "Solární",
@@ -483,7 +535,7 @@
         "name": "Teplota podlahy"
       },
       "purity": {
-        "name": "Čistota"
+        "name": "Čistota vzduchu"
       },
       "air_quality": {
         "name": "Kvalita vzduchu"
@@ -495,7 +547,7 @@
         "name": "Hodnocení vlhkosti"
       },
       "purity_rating": {
-        "name": "Hodnocení čistoty"
+        "name": "Hodnocení čistoty vzduchu"
       },
       "energy_yield": {
         "name": "Výnos energie"
@@ -504,10 +556,15 @@
         "name": "Výkon"
       },
       "valve_tappet": {
-        "name": "Zdvih ventilu"
+        "name": "Poloha ventilu"
       },
       "detection_test_state": {
-        "name": "Stav testu detekce"
+        "name": "Stav funkčního testu",
+        "state": {
+          "detection_test_started": "Spuštěno",
+          "detection_test_stopped": "Zastaveno",
+          "detection_test_unknown": "Neznámé"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Další požadovaná teplota"
@@ -519,10 +576,10 @@
         "name": "Simulace běží od"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Referenční doba pohybu (zdola nahoru)"
+        "name": "Doba otevírání"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Referenční doba pohybu (shora dolů)"
+        "name": "Doba zavírání"
       },
       "zigbee_routing_quality": {
         "name": "Kvalita směrování Zigbee",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Přepsání plánu aktivní"
       },
+      "summer_mode": {
+        "name": "Pauza vytápění"
+      },
+      "ventilation_mode": {
+        "name": "Udržitelné větrání"
+      },
       "shutter_calibration_required": {
         "name": "Vyžadována kalibrace"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Přemostění alarmu"
+        "name": "Funkce pauzy"
       },
       "bypass_infinite": {
-        "name": "Přemostění nikdy nevyprší"
+        "name": "Funkce pauzy nikdy nevyprší"
       },
       "temperature_drop_enabled": {
         "name": "Pokles teploty"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Povoleno"
       },
+      "pet_immunity_enabled": {
+        "name": "Domácí mazlíček / robotický vysavač"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automatická citlivost"
+      },
+      "tamper_protection_enabled": {
+        "name": "Detekce sabotáže"
+      },
+      "silent_mode": {
+        "name": "Šeptací režim"
+      },
+      "smartplug_routing": {
+        "name": "Rozšíření dosahu"
+      },
+      "camera_light": {
+        "name": "Světlo kamery"
+      },
+      "camera_notification": {
+        "name": "Oznámení"
+      },
+      "camera_frontlight": {
+        "name": "Přední světlo"
+      },
+      "camera_ambientlight": {
+        "name": "Okolní osvětlení"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Úsporný režim"
+      },
+      "warning_suppressed": {
+        "name": "Varování potlačeno"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Varování před vlhkostí"
+      },
+      "swap_inputs": {
+        "name": "Změnit přiřazení tlačítek"
+      },
+      "swap_outputs": {
+        "name": "Prohodit výstupy"
+      },
+      "pre_alarm_enabled": {
+        "name": "Předalarm"
+      },
+      "vibration_enabled": {
+        "name": "Detekce vibrací"
+      },
+      "intrusion_alarm": {
+        "name": "Poplach při vloupání"
+      },
       "child_lock": {
         "name": "Dětská pojistka"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Pohybové světlo"
+        "name": "Orientační světlo"
       },
       "room_light_group": {
         "name": "Světlo"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Ventil"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Dolní tlačítko"
+      },
+      "key_upper": {
+        "name": "Horní tlačítko"
+      },
+      "key_lower_left": {
+        "name": "Dolní levé tlačítko"
+      },
+      "key_lower_right": {
+        "name": "Dolní pravé tlačítko"
+      },
+      "key_upper_left": {
+        "name": "Horní levé tlačítko"
+      },
+      "key_upper_right": {
+        "name": "Horní pravé tlačítko"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Nenalezen žádný načtený záznam Bosch SHC s tímto názvem."
+    },
+    "rawscan_command_failed": {
+      "message": "Nepodařilo se provést příkaz rawscan."
     },
     "zigbee_topology_no_data": {
       "message": "Pro tento SHC controller zatím nejsou k dispozici žádná data o směrování Zigbee (nejsou spárována žádná zařízení Zigbee, nebo první 5minutové dotazování ještě nebylo dokončeno od spuštění Home Assistant)."

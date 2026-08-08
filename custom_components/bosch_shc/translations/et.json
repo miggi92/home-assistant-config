@@ -105,7 +105,8 @@
               "suppress_camera_switches": "Peida Boschi kaamerakapslid",
               "room_light_groups": "Luba toapõhised valgusgrupid",
               "automation_rules_as_entities": "Kuva Boschi automatiseerimisreeglid olemitena",
-              "temperature_drop_entities": "Luba temperatuuri languse üksused"
+              "temperature_drop_entities": "Luba temperatuuri languse üksused",
+              "keypad_ha_bridge": "Ühenda füüsilised nupud HA automatiseeringutega"
             },
             "data_description": {
               "scenarios_as_buttons": "Kui SEES: iga Bosch SHC stsenaarium kuvatakse Home Assistantis ka nupuolemina (lisaks teenusele trigger_scenario). Kasulik armatuurlaudade ja automaatika jaoks. Vaikimisi: väljas.",
@@ -121,7 +122,8 @@
               "suppress_camera_switches": "Kui SEES: privaatsus-, valgus- ja teavituskapslid Boschi kaamerate jaoks (Eyes / 360 / Outdoor Gen2) ei looda. Kasuta koos Bosch Camera Tool-iga. Vaikimisi: väljas.",
               "room_light_groups": "Kui SEES: loob iga SHC toa kohta, kus on 2 või enam reguleeritavat/värvilist tuld (LEDVANCE, Hue, Light/Shutter Control II dimmerid), ühe koondava `light` olemi, millega saad korraga sisse või välja lülitada kõik toa tuled ühest olemist – sarnaselt sellele, kuidas küttel on juba toapõhine juhtimine Room Climate Control kaudu. Ainult sees/väljas, heledust ega värvi ei koondata. Vaikimisi: väljas (uusi olemeid ei looda).",
               "automation_rules_as_entities": "Kui SEES: luuakse igale Boschi rakenduses seadistatud automatiseerimisreeglile lüliti (luba/keela) ja nupp (käivita käsitsi) — Boschi enda kohalik reeglimootor, mis on täiesti eraldiseisev Home Assistanti enda automatiseerimistest. Vaikimisi: väljas (uusi olemeid ei lisata).",
-              "temperature_drop_entities": "Kui SEES: loob igale toale lüliti (luba/keela) ja numbri (languse väärtus) temperatuuri languse teenuse (jäätumiskaitse/aken lahti) jaoks. Enamik seadistusi seda funktsiooni ei kasuta. Vaikimisi: väljas (uusi üksusi ei looda)."
+              "temperature_drop_entities": "Kui SEES: loob igale toale lüliti (luba/keela) ja numbri (languse väärtus) temperatuuri languse teenuse (jäätumiskaitse/aken lahti) jaoks. Enamik seadistusi seda funktsiooni ei kasuta. Vaikimisi: väljas (uusi üksusi ei looda).",
+              "keypad_ha_bridge": "Kui SEES: loob iga füüsilise eraldi nupuga Shutter/Light Control II seadme jaoks otse Bosch Smart Home Controllerisse väikese automatiseeringu, mis nupuvajutusel saadab impulsina virtuaalse sees/väljas oleku. See olek kuvatakse juba tavalise lülitiüksusena — kasuta selle sees/väljas üleminekuid päästikuna oma Home Assistanti automatiseeringutes. Selle väljalülitamine eemaldab loodud automatiseeringud ja olekud. Vaikimisi: väljas (uusi üksusi ei looda, kontrolleril ei looda midagi)."
             }
           },
           "presence": {
@@ -164,14 +166,28 @@
       }
     }
   },
+  "device": {
+    "presence_simulation": {
+      "name": "Kohaloleku simulatsioon"
+    },
+    "intrusion_system": {
+      "name": "Alarmsüsteem"
+    },
+    "water_alarm_system": {
+      "name": "Veehäire"
+    },
+    "energy_manager": {
+      "name": "Energiahaldur"
+    }
+  },
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Ruumi kliimajuhtimine",
+        "name": "Ruumi temperatuuri reguleerimine",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Kiire kütmine",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Suitsutest"
+        "name": "Testalarm"
       },
       "walk_test": {
-        "name": "Kõnnistest"
+        "name": "Alusta funktsioonitesti"
       },
       "walk_test_stop": {
-        "name": "Kõnnistesti lõpetamine"
+        "name": "Peata funktsioonitest"
       },
       "detection_test": {
-        "name": "Tuvastamistest"
+        "name": "Alusta funktsioonitesti"
       },
       "detection_test_stop": {
-        "name": "Tuvastamistesti lõpetamine"
+        "name": "Peata funktsioonitest"
       },
       "reset_tamper": {
         "name": "Lähtesta rikkumine"
@@ -207,10 +223,10 @@
         "name": "Minimaalse heleduse eelvaade"
       },
       "reset_energy_summation": {
-        "name": "Lähtesta energiaarvesti"
+        "name": "Lähtesta tarbimisväärtus"
       },
       "shutter_recalibrate": {
-        "name": "Kalibreeri uuesti"
+        "name": "Alusta automaatset kalibreerimist"
       },
       "enable_all_diagnostics": {
         "name": "Luba kõik diagnostikad"
@@ -230,7 +246,7 @@
         "name": "Impulsi pikkus"
       },
       "temperature_drop_value": {
-        "name": "Temperatuuri langetuse väärtus"
+        "name": "Temperatuuri kõrvalekalle"
       },
       "energy_saving_power_threshold": {
         "name": "Energiasäästu võimsuse lävi"
@@ -245,22 +261,40 @@
         "name": "Ekraani heledus"
       },
       "display_on_time": {
-        "name": "Ekraani olek-aeg"
+        "name": "Ekraani sisselülitusaeg"
       },
       "siren_alarm_duration": {
-        "name": "Alarmi kestus"
+        "name": "Sireeni alarmi kestus"
       },
       "siren_flash_duration": {
-        "name": "Välgu kestus"
+        "name": "Vilkuri alarmi kestus"
       },
       "siren_alarm_delay": {
-        "name": "Alarmi viivitus"
+        "name": "Sireeni alarmi viivitus"
       },
       "siren_flash_delay": {
-        "name": "Välgu viivitus"
+        "name": "Vilkuri alarmi viivitus"
       },
       "bypass_timeout": {
-        "name": "Möödaviigu ajalimit"
+        "name": "Pausifunktsiooni ajalimiit"
+      },
+      "offset": {
+        "name": "Nihe"
+      },
+      "setpointeco": {
+        "name": "Eco-temperatuur"
+      },
+      "setpointcomfort": {
+        "name": "Mugavustemperatuur"
+      },
+      "dimmer_min": {
+        "name": "Minimaalne heledus"
+      },
+      "dimmer_max": {
+        "name": "Maksimaalne heledus"
+      },
+      "dimmer_speed": {
+        "name": "Hämardamise kiirus"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Väga kõrge",
           "high": "Kõrge",
           "medium": "Keskmine",
-          "low": "Madal",
-          "very_low": "Väga madal"
+          "low": "Mõõdukas",
+          "very_low": "Madal"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "Ekraani suund",
         "state": {
           "normal": "Tavaline",
-          "reversed": "Pööratud"
+          "reversed": "Pööratud 180°"
         }
       },
       "displayed_temperature": {
         "name": "Kuvatav temperatuur",
         "state": {
-          "setpoint": "Seadesuurus",
+          "setpoint": "Seatud temperatuur",
           "measured": "Mõõdetud"
         }
       },
       "terminal_type": {
-        "name": "Klemmi tüüp",
+        "name": "Anduri ühendus",
         "state": {
-          "not_connected": "Ühendamata",
+          "not_connected": "Ei kasutata",
           "floor_sensor_connected": "Põrandaandur ühendatud",
           "floor_sensor_used_for_regulation": "Põrandaandurit kasutatakse reguleerimiseks",
-          "floor_sensor_displayed": "Põrandaandur kuvatud",
-          "floor_sensor_displayed_and_used_for_regulation": "Põrandaandur kuvatud ja kasutatakse reguleerimiseks",
+          "floor_sensor_displayed": "Kaabeltemperatuuriandur (ilma reguleerimiseta)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kaabeltemperatuuriandur (reguleerimisega)",
           "volt_free_sensor_connected": "Pingevaba andur ühendatud",
-          "volt_free_sensor_connected_and_used_for_operation": "Pingevaba andur ühendatud ja kasutatakse töös",
-          "outdoor_sensor_connected": "Välisandur ühendatud"
+          "volt_free_sensor_connected_and_used_for_operation": "Pingevaba kontakt",
+          "outdoor_sensor_connected": "Välistemperatuuri andur"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Kütteseadme tüüp",
         "state": {
           "floor_heating": "Põrandaküte",
-          "floor_heating_low_energy": "Põrandaküte (madal energiakulu)",
+          "floor_heating_low_energy": "Põrandaküte, madal energiakulu",
           "radiator": "Radiaator",
-          "convector_passive": "Konvektor (passiivne)",
-          "convector_active": "Konvektor (aktiivne)",
-          "volt_free_heating": "Pingevaba küte"
+          "convector_passive": "Passiivne konvektor (ilma ventilaatorita)",
+          "convector_active": "Aktiivne konvektor (ventilaatoriga)",
+          "volt_free_heating": "Keskküte"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Puudub",
           "pushbutton": "Nupplüliti",
-          "switch": "Lüliti",
+          "switch": "Klahvlüliti",
           "no_switch": "Lülitita"
         }
       },
@@ -364,18 +398,18 @@
         "name": "Väljundrežiim",
         "state": {
           "attached": "Ühendatud",
-          "detached": "Eraldatud",
-          "detached_short_press": "Eraldatud (lühike vajutus)",
-          "detached_long_press": "Eraldatud (pikk vajutus)",
+          "detached": "Eraldatud igal nupuvajutusel",
+          "detached_short_press": "Eraldatud lühikesel vajutusel",
+          "detached_long_press": "Eraldatud pikal vajutusel",
           "unsupported": "Ei toetata"
         }
       },
       "siren_sound_level": {
-        "name": "Helitase",
+        "name": "Sireeni helitugevus",
         "state": {
-          "low": "Madal",
+          "low": "Vähendatud",
           "medium": "Keskmine",
-          "high": "Kõrge"
+          "high": "Vali"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Nutika tundlikkuse turvalisuse tase",
+        "name": "Tundlikkus valvesüsteemi jaoks",
         "state": {
           "high": "Kõrge",
           "middle": "Keskmine",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Nutika tundlikkuse mugavustase",
+        "name": "Tundlikkus muudel juhtudel",
         "state": {
           "high": "Kõrge",
           "middle": "Keskmine",
@@ -409,14 +443,14 @@
         }
       },
       "installation_profile": {
-        "name": "Paigaldusprofiil",
+        "name": "Kasutusotstarve",
         "state": {
-          "generic": "Siseruumis (üldine)",
+          "generic": "Standard",
           "outdoor": "Välitingimustes",
-          "light": "Valgustus",
-          "heating_rcc": "Küte (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini päikesepaneel"
+          "light": "Valgusti",
+          "heating_rcc": "Kütteseade",
+          "boiler": "Keskküte",
+          "mini_pv": "Mini PV süsteem"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Avatud uksed/aknad"
+        "name": "Avatud uksed ja aknad"
       },
       "walk_test_state": {
-        "name": "Kõnnistesti olek"
+        "name": "Funktsioonitesti olek",
+        "state": {
+          "walk_test_started": "Käivitatud",
+          "walk_test_stopped": "Peatatud",
+          "unknown": "Teadmata"
+        }
       },
       "battery_level": {
-        "name": "Aku tase"
+        "name": "Aku tase",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Madal",
+          "critical_low": "Kriitiline",
+          "critically_low_battery": "Kriitiliselt madal",
+          "not_available": "Pole saadaval"
+        }
       },
       "combined_rating": {
-        "name": "Kombineeritud hinnang"
+        "name": "Kombineeritud hinnang",
+        "state": {
+          "good": "Hea",
+          "medium": "Keskmine",
+          "bad": "Halb",
+          "unknown": "Teadmata"
+        }
       },
       "air_quality_description": {
         "name": "Õhukvaliteedi kirjeldus"
       },
       "communication_quality": {
-        "name": "Sideühenduse kvaliteet",
+        "name": "Signaali tugevus",
         "state": {
           "good": "Hea",
           "normal": "Normaalne",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Aku"
+        "name": "Aku laetus"
       },
       "siren_main_power": {
-        "name": "Toiteallikas",
+        "name": "Peamine toiteallikas",
         "state": {
           "battery": "Aku",
           "solar": "Päikeseenergia",
@@ -483,7 +535,7 @@
         "name": "Põrandatemperatuur"
       },
       "purity": {
-        "name": "Puhtus"
+        "name": "Õhu puhtus"
       },
       "air_quality": {
         "name": "Õhukvaliteet"
@@ -495,7 +547,7 @@
         "name": "Niiskuse hinnang"
       },
       "purity_rating": {
-        "name": "Puhtuse hinnang"
+        "name": "Õhu puhtuse hinnang"
       },
       "energy_yield": {
         "name": "Energiatootlus"
@@ -504,10 +556,15 @@
         "name": "Võimsustootlus"
       },
       "valve_tappet": {
-        "name": "Klapi kergiti"
+        "name": "Klapi asend"
       },
       "detection_test_state": {
-        "name": "Tuvastustesti olek"
+        "name": "Funktsioonitesti olek",
+        "state": {
+          "detection_test_started": "Käivitatud",
+          "detection_test_stopped": "Peatatud",
+          "detection_test_unknown": "Teadmata"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Järgmine seadepunkti temperatuur"
@@ -519,10 +576,10 @@
         "name": "Simulatsioon käib alates"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Kalibreeritud liikumisaeg (alt üles)"
+        "name": "Avamisaeg"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Kalibreeritud liikumisaeg (ülevalt alla)"
+        "name": "Sulgemisaeg"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee marsruutimise kvaliteet",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Ajakava ülekirjutus aktiivne"
       },
+      "summer_mode": {
+        "name": "Küttepaus"
+      },
+      "ventilation_mode": {
+        "name": "Säästlik tuulutamine"
+      },
       "shutter_calibration_required": {
         "name": "Kalibreerimine vajalik"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Alarmi möödaviik"
+        "name": "Pausifunktsioon"
       },
       "bypass_infinite": {
-        "name": "Möödaviik ilma aegumiseta"
+        "name": "Pausifunktsioon ei aegu kunagi"
       },
       "temperature_drop_enabled": {
         "name": "Temperatuuri langetus"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Lubatud"
       },
+      "pet_immunity_enabled": {
+        "name": "Lemmikloom / robottolmuimeja"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automaatne tundlikkus"
+      },
+      "tamper_protection_enabled": {
+        "name": "Rikkumise tuvastamine"
+      },
+      "silent_mode": {
+        "name": "Sosinarežiim"
+      },
+      "smartplug_routing": {
+        "name": "Leviala laiendamine"
+      },
+      "camera_light": {
+        "name": "Kaamera valgusti"
+      },
+      "camera_notification": {
+        "name": "Teavitused"
+      },
+      "camera_frontlight": {
+        "name": "Esivalgus"
+      },
+      "camera_ambientlight": {
+        "name": "Ümbritsev valgustus"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Energiasäästurežiim"
+      },
+      "warning_suppressed": {
+        "name": "Hoiatus summutatud"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Niiskuse hoiatus"
+      },
+      "swap_inputs": {
+        "name": "Muuda nuppude vastendust"
+      },
+      "swap_outputs": {
+        "name": "Vaheta väljundid"
+      },
+      "pre_alarm_enabled": {
+        "name": "Eelhäire"
+      },
+      "vibration_enabled": {
+        "name": "Vibratsiooni tuvastamine"
+      },
+      "intrusion_alarm": {
+        "name": "Sissetungihäire"
+      },
       "child_lock": {
         "name": "Lapselukk"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Liikumisvalgus"
+        "name": "Orientatsioonivalgus"
       },
       "room_light_group": {
         "name": "Valgus"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Klapp"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Alumine nupp"
+      },
+      "key_upper": {
+        "name": "Ülemine nupp"
+      },
+      "key_lower_left": {
+        "name": "Alumine vasak nupp"
+      },
+      "key_lower_right": {
+        "name": "Alumine parem nupp"
+      },
+      "key_upper_left": {
+        "name": "Ülemine vasak nupp"
+      },
+      "key_upper_right": {
+        "name": "Ülemine parem nupp"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Selle pealkirjaga laaditud Bosch SHC kirjet ei leitud."
+    },
+    "rawscan_command_failed": {
+      "message": "Rawscan käsu täitmine ebaõnnestus."
     },
     "scenario_not_found": {
       "message": "Stsenaariumi ei leitud."

@@ -89,7 +89,9 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
         """Return the device info."""
         info = DeviceInfo(
             identifiers={(DOMAIN, self._device.id)},
-            name=self._device.name,
+            # #393: this device's raw name ("Intrusion Detection System") is
+            # a hardcoded literal in boschshcpy, not user-customizable.
+            translation_key="intrusion_system",
             manufacturer=self._device.manufacturer,
             model=self._device.device_model,
         )
@@ -136,10 +138,12 @@ class IntrusionSystemAlarmControlPanel(AlarmControlPanelEntity):  # type: ignore
             ):
                 return AlarmControlPanelState.ARMED_HOME
 
-            if (
-                self._device.active_configuration_profile
-                == SHCIntrusionSystem.Profile.CUSTOM_PROTECTION
+            if self._device.active_configuration_profile in (
+                SHCIntrusionSystem.Profile.CUSTOM_PROTECTION,
+                SHCIntrusionSystem.Profile.UNKNOWN,
             ):
+                # UNKNOWN = a real custom IDS profile beyond the 3 built-ins;
+                # must not fall through to None while genuinely armed.
                 return AlarmControlPanelState.ARMED_CUSTOM_BYPASS
         return None
 

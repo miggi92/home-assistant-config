@@ -1,4 +1,18 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Simulasi Kehadiran"
+    },
+    "intrusion_system": {
+      "name": "Sistem Alarm"
+    },
+    "water_alarm_system": {
+      "name": "Alarm Air"
+    },
+    "energy_manager": {
+      "name": "Manajer Energi"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Perangkat sudah dikonfigurasi",
@@ -105,7 +119,8 @@
               "suppress_camera_switches": "Sembunyikan sakelar kamera Bosch",
               "room_light_groups": "Aktifkan grup lampu per ruangan",
               "automation_rules_as_entities": "Tampilkan aturan otomatisasi Bosch sebagai entitas",
-              "temperature_drop_entities": "Aktifkan entitas penurunan suhu"
+              "temperature_drop_entities": "Aktifkan entitas penurunan suhu",
+              "keypad_ha_bridge": "Jembatani tombol fisik untuk otomasi HA"
             },
             "data_description": {
               "scenarios_as_buttons": "Jika AKTIF: setiap skenario Bosch SHC juga muncul sebagai entitas tombol di Home Assistant (selain layanan trigger_scenario). Berguna untuk ubin dasbor dan otomasi yang memicu skenario secara langsung. Default: nonaktif.",
@@ -121,7 +136,8 @@
               "suppress_camera_switches": "Saat AKTIF: sakelar privasi, lampu, dan notifikasi untuk kamera Bosch (Eyes / 360 / Outdoor Gen2) tidak dibuat. Gunakan dengan Bosch Camera Tool. Default: nonaktif.",
               "room_light_groups": "Saat AKTIF: membuat satu entitas agregat `light` per ruangan SHC yang memiliki 2 atau lebih lampu dim/warna (dimmer LEDVANCE, Hue, Light/Shutter Control II), sehingga Anda dapat menyalakan/mematikan semua lampu di suatu ruangan dari satu entitas — mencerminkan kontrol tingkat ruangan yang sudah dimiliki pemanas melalui Room Climate Control. Hanya nyala/mati, tanpa agregasi kecerahan/warna. Default: nonaktif (tidak ada entitas baru).",
               "automation_rules_as_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan tombol (picu manual) untuk setiap aturan otomatisasi yang dikonfigurasi di aplikasi Bosch — mesin aturan lokal milik Bosch sendiri, sepenuhnya terpisah dari otomatisasi Home Assistant sendiri. Default: nonaktif (tidak ada entitas baru).",
-              "temperature_drop_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan angka (nilai penurunan) untuk layanan penurunan suhu (anti-beku/jendela terbuka) setiap ruangan. Sebagian besar pemasangan tidak menggunakan fitur ini. Default: nonaktif (tidak ada entitas baru)."
+              "temperature_drop_entities": "Jika AKTIF: membuat sakelar (aktifkan/nonaktifkan) dan angka (nilai penurunan) untuk layanan penurunan suhu (anti-beku/jendela terbuka) setiap ruangan. Sebagian besar pemasangan tidak menggunakan fitur ini. Default: nonaktif (tidak ada entitas baru).",
+              "keypad_ha_bridge": "Jika AKTIF: untuk setiap perangkat Shutter/Light Control II dengan tombol tekan fisik terpisah, membuat otomasi kecil langsung di Bosch Smart Home Controller yang memicu denyut status hidup/mati virtual saat tombol ditekan. Status tersebut sudah muncul sebagai entitas switch biasa — gunakan transisi hidup/mati-nya sebagai pemicu dalam otomasi Home Assistant Anda sendiri. Menonaktifkan ini akan menghapus otomasi dan status yang dibuatnya. Default: nonaktif (tidak ada entitas baru, tidak ada yang dibuat di Controller)."
             }
           },
           "presence": {
@@ -167,11 +183,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Kontrol iklim ruangan",
+        "name": "Kontrol suhu ruangan",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Pemanasan cepat",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Uji Asap"
+        "name": "Uji Alarm"
       },
       "walk_test": {
-        "name": "Uji Jalan"
+        "name": "Mulai Uji Fungsi"
       },
       "walk_test_stop": {
-        "name": "Hentikan Uji Jalan"
+        "name": "Hentikan Uji Fungsi"
       },
       "detection_test": {
-        "name": "Uji Deteksi"
+        "name": "Mulai Uji Fungsi"
       },
       "detection_test_stop": {
-        "name": "Hentikan Uji Deteksi"
+        "name": "Hentikan Uji Fungsi"
       },
       "reset_tamper": {
         "name": "Reset Gangguan"
@@ -207,10 +223,10 @@
         "name": "Pratinjau Kecerahan Minimum"
       },
       "reset_energy_summation": {
-        "name": "Reset Penghitung Energi"
+        "name": "Reset Nilai Konsumsi"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrasi Ulang"
+        "name": "Mulai Kalibrasi Otomatis"
       },
       "enable_all_diagnostics": {
         "name": "Aktifkan Semua Diagnostik"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "Panjang Impuls"
+        "name": "Panjang Pulsa"
       },
       "temperature_drop_value": {
-        "name": "Nilai Penurunan Suhu"
+        "name": "Deviasi Suhu"
       },
       "energy_saving_power_threshold": {
         "name": "Ambang Daya Hemat Energi"
@@ -245,22 +261,40 @@
         "name": "Kecerahan Layar"
       },
       "display_on_time": {
-        "name": "Waktu Layar Menyala"
+        "name": "Durasi Layar Menyala"
       },
       "siren_alarm_duration": {
-        "name": "Durasi Alarm"
+        "name": "Durasi Alarm Sirene"
       },
       "siren_flash_duration": {
-        "name": "Durasi Lampu Kilat"
+        "name": "Durasi Alarm Lampu Kilat"
       },
       "siren_alarm_delay": {
-        "name": "Penundaan Alarm"
+        "name": "Penundaan Alarm Sirene"
       },
       "siren_flash_delay": {
-        "name": "Penundaan Lampu Kilat"
+        "name": "Penundaan Alarm Lampu Kilat"
       },
       "bypass_timeout": {
-        "name": "Batas Waktu Bypass"
+        "name": "Batas Waktu Fungsi Jeda"
+      },
+      "offset": {
+        "name": "Offset"
+      },
+      "setpointeco": {
+        "name": "Suhu eco"
+      },
+      "setpointcomfort": {
+        "name": "Suhu comfort"
+      },
+      "dimmer_min": {
+        "name": "Kecerahan minimum"
+      },
+      "dimmer_max": {
+        "name": "Kecerahan maksimum"
+      },
+      "dimmer_speed": {
+        "name": "Kecepatan peredupan"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Sangat Tinggi",
           "high": "Tinggi",
           "medium": "Sedang",
-          "low": "Rendah",
-          "very_low": "Sangat Rendah"
+          "low": "Agak Rendah",
+          "very_low": "Rendah"
         }
       },
       "state_after_power_outage": {
@@ -299,30 +333,30 @@
         }
       },
       "display_direction": {
-        "name": "Arah Tampilan",
+        "name": "Orientasi Tampilan",
         "state": {
           "normal": "Normal",
-          "reversed": "Terbalik"
+          "reversed": "Diputar 180°"
         }
       },
       "displayed_temperature": {
         "name": "Suhu yang Ditampilkan",
         "state": {
-          "setpoint": "Suhu Target",
+          "setpoint": "Suhu yang Disetel",
           "measured": "Terukur"
         }
       },
       "terminal_type": {
-        "name": "Jenis Terminal",
+        "name": "Koneksi Sensor",
         "state": {
-          "not_connected": "Tidak Terhubung",
+          "not_connected": "Tidak Digunakan",
           "floor_sensor_connected": "Sensor Lantai Terhubung",
           "floor_sensor_used_for_regulation": "Sensor Lantai Digunakan untuk Regulasi",
-          "floor_sensor_displayed": "Sensor Lantai Ditampilkan",
-          "floor_sensor_displayed_and_used_for_regulation": "Sensor Lantai Ditampilkan dan Digunakan untuk Regulasi",
+          "floor_sensor_displayed": "Sensor Suhu Kabel (tanpa regulasi)",
+          "floor_sensor_displayed_and_used_for_regulation": "Sensor Suhu Kabel (dengan regulasi)",
           "volt_free_sensor_connected": "Sensor Bebas Tegangan Terhubung",
-          "volt_free_sensor_connected_and_used_for_operation": "Sensor Bebas Tegangan Terhubung dan Digunakan untuk Operasi",
-          "outdoor_sensor_connected": "Sensor Luar Ruangan Terhubung"
+          "volt_free_sensor_connected_and_used_for_operation": "Kontak Bebas Potensial",
+          "outdoor_sensor_connected": "Sensor Suhu Luar Ruangan"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Jenis Pemanas",
         "state": {
           "floor_heating": "Pemanas Lantai",
-          "floor_heating_low_energy": "Pemanas Lantai (Hemat Energi)",
+          "floor_heating_low_energy": "Pemanas Lantai (Energi Rendah)",
           "radiator": "Radiator",
-          "convector_passive": "Konvektor (Pasif)",
-          "convector_active": "Konvektor (Aktif)",
-          "volt_free_heating": "Pemanas Bebas Tegangan"
+          "convector_passive": "Konvektor Pasif (tanpa kipas)",
+          "convector_active": "Konvektor Aktif (dengan kipas)",
+          "volt_free_heating": "Pemanas Sentral"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Tidak Ada",
           "pushbutton": "Tombol Tekan",
-          "switch": "Sakelar",
+          "switch": "Sakelar Rocker",
           "no_switch": "Tanpa Sakelar"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "Mode Keluaran",
         "state": {
-          "attached": "Terpasang",
-          "detached": "Terlepas",
-          "detached_short_press": "Terlepas (Tekan Singkat)",
-          "detached_long_press": "Terlepas (Tekan Lama)",
+          "attached": "Terkopel",
+          "detached": "Terputus saat Tombol Ditekan",
+          "detached_short_press": "Terputus saat Tekan Singkat",
+          "detached_long_press": "Terputus saat Tekan Lama",
           "unsupported": "Tidak Didukung"
         }
       },
       "siren_sound_level": {
-        "name": "Tingkat Suara",
+        "name": "Volume Sirene",
         "state": {
-          "low": "Rendah",
+          "low": "Pelan",
           "medium": "Sedang",
-          "high": "Tinggi"
+          "high": "Keras"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Level Keamanan Sensitivitas Cerdas",
+        "name": "Sensitivitas untuk Sistem Alarm",
         "state": {
           "high": "Tinggi",
           "middle": "Sedang",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Level Kenyamanan Sensitivitas Cerdas",
+        "name": "Sensitivitas untuk Kasus Lain",
         "state": {
           "high": "Tinggi",
           "middle": "Sedang",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "Kontrol Fase Dimmer",
         "state": {
-          "trailing": "Tepi Turun",
-          "leading": "Tepi Naik"
+          "trailing": "Pemotongan Fase Tepi Turun",
+          "leading": "Pemotongan Fase Tepi Naik"
         }
       },
       "installation_profile": {
-        "name": "Profil Instalasi",
+        "name": "Tujuan Penggunaan",
         "state": {
-          "generic": "Dalam Ruangan (Umum)",
+          "generic": "Standar",
           "outdoor": "Luar Ruangan",
           "light": "Lampu",
-          "heating_rcc": "Pemanas (RCC)",
-          "boiler": "Boiler",
-          "mini_pv": "Mini PV"
+          "heating_rcc": "Pemanas",
+          "boiler": "Pemanas Sentral",
+          "mini_pv": "Sistem Mini PV"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Pintu/Jendela Terbuka"
+        "name": "Pintu dan Jendela Terbuka"
       },
       "walk_test_state": {
-        "name": "Status Uji Jalan"
+        "name": "Status Uji Fungsi",
+        "state": {
+          "walk_test_started": "Dimulai",
+          "walk_test_stopped": "Dihentikan",
+          "unknown": "Tidak Diketahui"
+        }
       },
       "battery_level": {
-        "name": "Level Baterai"
+        "name": "Level Baterai",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Rendah",
+          "critical_low": "Kritis",
+          "critically_low_battery": "Sangat Rendah",
+          "not_available": "Tidak Tersedia"
+        }
       },
       "combined_rating": {
-        "name": "Penilaian Gabungan"
+        "name": "Penilaian Gabungan",
+        "state": {
+          "good": "Baik",
+          "medium": "Sedang",
+          "bad": "Buruk",
+          "unknown": "Tidak Diketahui"
+        }
       },
       "air_quality_description": {
         "name": "Deskripsi Kualitas Udara"
       },
       "communication_quality": {
-        "name": "Kualitas Komunikasi",
+        "name": "Kekuatan Sinyal",
         "state": {
           "good": "Baik",
           "normal": "Normal",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Baterai"
+        "name": "Daya Baterai"
       },
       "siren_main_power": {
-        "name": "Sumber Daya",
+        "name": "Sumber Utama",
         "state": {
           "battery": "Baterai",
           "solar": "Surya",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "Pemetaan tombol"
+        "name": "Penetapan Tombol"
       },
       "floor_temperature": {
         "name": "Suhu Lantai"
       },
       "purity": {
-        "name": "Kemurnian"
+        "name": "Kemurnian Udara"
       },
       "air_quality": {
         "name": "Kualitas Udara"
@@ -495,7 +547,7 @@
         "name": "Penilaian Kelembapan"
       },
       "purity_rating": {
-        "name": "Penilaian Kemurnian"
+        "name": "Penilaian Kemurnian Udara"
       },
       "energy_yield": {
         "name": "Hasil Energi"
@@ -504,10 +556,15 @@
         "name": "Hasil Daya"
       },
       "valve_tappet": {
-        "name": "Tapet Katup"
+        "name": "Posisi Katup"
       },
       "detection_test_state": {
-        "name": "Status Uji Deteksi"
+        "name": "Status Uji Fungsi",
+        "state": {
+          "detection_test_started": "Dimulai",
+          "detection_test_stopped": "Dihentikan",
+          "detection_test_unknown": "Tidak Diketahui"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Suhu Setpoint Berikutnya"
@@ -519,10 +576,10 @@
         "name": "Simulasi Berjalan Sejak"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Waktu Pergerakan Referensi (Bawah ke Atas)"
+        "name": "Waktu Membuka"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Waktu Pergerakan Referensi (Atas ke Bawah)"
+        "name": "Waktu Menutup"
       },
       "zigbee_routing_quality": {
         "name": "Kualitas Routing Zigbee",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Penggantian Jadwal Aktif"
       },
+      "summer_mode": {
+        "name": "Jeda pemanasan"
+      },
+      "ventilation_mode": {
+        "name": "Ventilasi berkelanjutan"
+      },
       "shutter_calibration_required": {
         "name": "Kalibrasi Diperlukan"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Lewati alarm"
+        "name": "Fungsi Jeda"
       },
       "bypass_infinite": {
-        "name": "Lewati alarm tanpa batas waktu"
+        "name": "Fungsi Jeda tidak pernah kedaluwarsa"
       },
       "temperature_drop_enabled": {
         "name": "Penurunan Suhu"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Diaktifkan"
       },
+      "pet_immunity_enabled": {
+        "name": "Hewan Peliharaan / Robot Penyedot Debu"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Sensitivitas Otomatis"
+      },
+      "tamper_protection_enabled": {
+        "name": "Deteksi Sabotase"
+      },
+      "silent_mode": {
+        "name": "Mode Bisik"
+      },
+      "smartplug_routing": {
+        "name": "Perluasan Jangkauan"
+      },
+      "camera_light": {
+        "name": "Lampu Kamera"
+      },
+      "camera_notification": {
+        "name": "Notifikasi"
+      },
+      "camera_frontlight": {
+        "name": "Lampu Depan"
+      },
+      "camera_ambientlight": {
+        "name": "Lampu Ambient"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Mode Hemat Energi"
+      },
+      "warning_suppressed": {
+        "name": "Peringatan Ditekan"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Peringatan Kelembapan"
+      },
+      "swap_inputs": {
+        "name": "Ubah Penetapan Tombol"
+      },
+      "swap_outputs": {
+        "name": "Tukar Output"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pra-Alarm"
+      },
+      "vibration_enabled": {
+        "name": "Deteksi Getaran"
+      },
+      "intrusion_alarm": {
+        "name": "Alarm Penyusupan"
+      },
       "child_lock": {
         "name": "Kunci Anak"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Lampu Gerak"
+        "name": "Lampu Orientasi"
       },
       "room_light_group": {
         "name": "Lampu"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Katup"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Tombol bawah"
+      },
+      "key_upper": {
+        "name": "Tombol atas"
+      },
+      "key_lower_left": {
+        "name": "Tombol kiri bawah"
+      },
+      "key_lower_right": {
+        "name": "Tombol kanan bawah"
+      },
+      "key_upper_left": {
+        "name": "Tombol kiri atas"
+      },
+      "key_upper_right": {
+        "name": "Tombol kanan atas"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Tidak ada entri Bosch SHC yang dimuat dengan judul tersebut."
+    },
+    "rawscan_command_failed": {
+      "message": "Gagal menjalankan perintah rawscan."
     },
     "scenario_not_found": {
       "message": "Skenario tidak ditemukan."

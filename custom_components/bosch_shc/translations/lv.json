@@ -1,4 +1,18 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "Klātbūtnes simulācija"
+    },
+    "intrusion_system": {
+      "name": "Trauksmes sistēma"
+    },
+    "water_alarm_system": {
+      "name": "Ūdens trauksme"
+    },
+    "energy_manager": {
+      "name": "Enerģijas pārvaldnieks"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "Ierīce jau pievienota Home Assistant.",
@@ -105,7 +119,8 @@
               "suppress_camera_switches": "Slēpt Bosch kameras slēdžus",
               "room_light_groups": "Iespējot telpu gaismas grupas",
               "automation_rules_as_entities": "Rādīt Bosch automatizācijas noteikumus kā entītijas",
-              "temperature_drop_entities": "Iespējot temperatūras pazemināšanās entītijas"
+              "temperature_drop_entities": "Iespējot temperatūras pazemināšanās entītijas",
+              "keypad_ha_bridge": "Savienot fiziskās pogas ar HA automatizācijām"
             },
             "data_description": {
               "scenarios_as_buttons": "Ieslēgts: katrs Bosch SHC scenārijs Home Assistant parādās arī kā pogas entītija (papildus trigger_scenario pakalpojumam). Noderīgi informācijas paneļa elementiem un automatizācijām, kas tieši aktivizē scenārijus. Noklusējums: izslēgts.",
@@ -121,7 +136,8 @@
               "suppress_camera_switches": "Kad IESLĒGTS: Bosch kameru (Eyes / 360 / Outdoor Gen2) privātuma, gaismas un paziņojumu slēdži netiek izveidoti. Izmantojiet ar Bosch Camera Tool. Nokluājums: izslēgts.",
               "room_light_groups": "Kad IESLĒGTS: katrai SHC telpai ar 2 vai vairāk regulējamas spilgtuma/krāsu gaismas ķermeņiem (LEDVANCE, Hue, Light/Shutter Control II dimmeri) tiek izveidota viena apkopota `light` entītija, ļaujot ieslēgt/izslēgt visas telpas gaismas no vienas entītijas — tas atspoguļo telpas līmeņa vadību, kāda apkurei jau ir, izmantojot Room Climate Control. Tikai ieslēgšana/izslēgšana, bez spilgtuma/krāsas apkopošanas. Noklusējums: izslēgts (jaunu entītiju nav).",
               "automation_rules_as_entities": "Ja IESLĒGTS: katram Bosch lietotnē konfigurētajam automatizācijas noteikumam tiek izveidots slēdzis (iespējot/atspējot) un poga (manuāla palaišana) — Bosch pašas lokālais noteikumu dzinējs, pilnībā atdalīts no Home Assistant automatizācijām. Noklusējums: izslēgts (jaunu entīciju nav).",
-              "temperature_drop_entities": "Ja IESLĒGTS: izveido slēdzi (iespējot/atspējot) un skaitli (pazemināšanās vērtība) katras istabas temperatūras pazemināšanās (aizsardzība pret salu/atvērts logs) pakalpojumam. Lielākā daļa uzstādījumu neizmanto šo funkciju. Noklusējums: izslēgts (nav jaunu entītiju)."
+              "temperature_drop_entities": "Ja IESLĒGTS: izveido slēdzi (iespējot/atspējot) un skaitli (pazemināšanās vērtība) katras istabas temperatūras pazemināšanās (aizsardzība pret salu/atvērts logs) pakalpojumam. Lielākā daļa uzstādījumu neizmanto šo funkciju. Noklusējums: izslēgts (nav jaunu entītiju).",
+              "keypad_ha_bridge": "Ja IESLĒGTS: katrai Shutter/Light Control II ierīcei ar pievienotu fizisko pogu tiek izveidota neliela automatizācija tieši uz Bosch Smart Home Controller, kas pogas nospiešanas brīdī pārslēdz virtuālu ieslēgšanas/izslēgšanas stāvokli. Šis stāvoklis jau parādās kā parasta slēdža entītija — izmantojiet tās ieslēgšanas/izslēgšanas pārejas kā aktivizētāju savās Home Assistant automatizācijās. Izslēdzot šo opciju, tiek noņemtas tās izveidotās automatizācijas un stāvokļi. Noklusējums: izslēgts (nav jaunu entītiju, uz kontroliera nekas netiek izveidots)."
             }
           },
           "presence": {
@@ -167,11 +183,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "Telpas klimata vadība",
+        "name": "Telpas temperatūras regulēšana",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "Boost",
+              "boost": "Ātra apsilde",
               "eco": "Eco"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "Dūmu tests"
+        "name": "Testa trauksme"
       },
       "walk_test": {
-        "name": "Walk Test"
+        "name": "Sākt funkciju testu"
       },
       "walk_test_stop": {
-        "name": "Walk Test apturēšana"
+        "name": "Apturēt funkciju testu"
       },
       "detection_test": {
-        "name": "Noteikšanas tests"
+        "name": "Sākt funkciju testu"
       },
       "detection_test_stop": {
-        "name": "Noteikšanas testa apturēšana"
+        "name": "Apturēt funkciju testu"
       },
       "reset_tamper": {
         "name": "Atiestatīt manipulācijas brīdinājumu"
@@ -207,10 +223,10 @@
         "name": "Minimālā spilgtuma priekšskatījums"
       },
       "reset_energy_summation": {
-        "name": "Atiestatīt enerģijas skaitītāju"
+        "name": "Atiestatīt patēriņa vērtību"
       },
       "shutter_recalibrate": {
-        "name": "Kalibrēt no jauna"
+        "name": "Sākt automātisko kalibrēšanu"
       },
       "enable_all_diagnostics": {
         "name": "Iespējot visu diagnostiku"
@@ -230,7 +246,7 @@
         "name": "Impulsa garums"
       },
       "temperature_drop_value": {
-        "name": "Temperatūras pazemināšanas vērtība"
+        "name": "Temperatūras novirze"
       },
       "energy_saving_power_threshold": {
         "name": "Enerģijas taupīšanas jaudas slieksnis"
@@ -245,22 +261,40 @@
         "name": "Displeja spilgtums"
       },
       "display_on_time": {
-        "name": "Displeja ieslēgšanas laiks"
+        "name": "Displeja ieslēgšanas ilgums"
       },
       "siren_alarm_duration": {
-        "name": "Signāla ilgums"
+        "name": "Sirēnas trauksmes ilgums"
       },
       "siren_flash_duration": {
-        "name": "Mirgošanas ilgums"
+        "name": "Mirgojošās gaismas trauksmes ilgums"
       },
       "siren_alarm_delay": {
-        "name": "Signāla aizkave"
+        "name": "Sirēnas trauksmes aizkave"
       },
       "siren_flash_delay": {
-        "name": "Mirgošanas aizkave"
+        "name": "Mirgojošās gaismas trauksmes aizkave"
       },
       "bypass_timeout": {
-        "name": "Apiešanas noildze"
+        "name": "Pauzes funkcijas noildze"
+      },
+      "offset": {
+        "name": "Nobīde"
+      },
+      "setpointeco": {
+        "name": "Eko temperatūra"
+      },
+      "setpointcomfort": {
+        "name": "Komforta temperatūra"
+      },
+      "dimmer_min": {
+        "name": "Minimālais spilgtums"
+      },
+      "dimmer_max": {
+        "name": "Maksimālais spilgtums"
+      },
+      "dimmer_speed": {
+        "name": "Aptumšošanas ātrums"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "Ļoti augsts",
           "high": "Augsts",
           "medium": "Vidējs",
-          "low": "Zems",
-          "very_low": "Ļoti zems"
+          "low": "Mērens",
+          "very_low": "Zems"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "Displeja orientācija",
         "state": {
           "normal": "Normāls",
-          "reversed": "Apgriezts"
+          "reversed": "Pagriezts par 180°"
         }
       },
       "displayed_temperature": {
         "name": "Rādāmā temperatūra",
         "state": {
-          "setpoint": "Iestatītā vērtība",
+          "setpoint": "Iestatītā temperatūra",
           "measured": "Mērītā"
         }
       },
       "terminal_type": {
-        "name": "Termināļa veids",
+        "name": "Sensora pieslēgums",
         "state": {
-          "not_connected": "Nav pievienots",
+          "not_connected": "Netiek izmantots",
           "floor_sensor_connected": "Grīdas sensors pievienots",
           "floor_sensor_used_for_regulation": "Grīdas sensors izmantots regulēšanai",
-          "floor_sensor_displayed": "Grīdas sensors rādīts",
-          "floor_sensor_displayed_and_used_for_regulation": "Grīdas sensors rādīts un izmantots regulēšanai",
+          "floor_sensor_displayed": "Kabeļa temperatūras sensors (bez regulēšanas)",
+          "floor_sensor_displayed_and_used_for_regulation": "Kabeļa temperatūras sensors (ar regulēšanu)",
           "volt_free_sensor_connected": "Bezsprieguma sensors pievienots",
-          "volt_free_sensor_connected_and_used_for_operation": "Bezsprieguma sensors pievienots un izmantots darbībai",
-          "outdoor_sensor_connected": "Āra sensors pievienots"
+          "volt_free_sensor_connected_and_used_for_operation": "Bezpotenciāla kontakts",
+          "outdoor_sensor_connected": "Āra temperatūras sensors"
         }
       },
       "valve_type": {
@@ -336,11 +370,11 @@
         "name": "Sildītāja veids",
         "state": {
           "floor_heating": "Grīdas apkure",
-          "floor_heating_low_energy": "Grīdas apkure (zemas enerģijas)",
+          "floor_heating_low_energy": "Grīdas apkure ar zemu enerģijas patēriņu",
           "radiator": "Radiators",
-          "convector_passive": "Konvektors (pasīvs)",
-          "convector_active": "Konvektors (aktīvs)",
-          "volt_free_heating": "Bezsprieguma apkure"
+          "convector_passive": "Pasīvs konvektors (bez ventilatora)",
+          "convector_active": "Aktīvs konvektors (ar ventilatoru)",
+          "volt_free_heating": "Centrālapkure"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "Nav",
           "pushbutton": "Pogslēdzis",
-          "switch": "Slēdzis",
+          "switch": "Šūpojošais slēdzis",
           "no_switch": "Bez slēdža"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "Izvades režīms",
         "state": {
-          "attached": "Pievienots",
-          "detached": "Atvienots",
-          "detached_short_press": "Atvienots (īss piespiediens)",
-          "detached_long_press": "Atvienots (garš piespiediens)",
+          "attached": "Sasaistīts",
+          "detached": "Atvienots ar jebkuru pogas nospiedienu",
+          "detached_short_press": "Atvienots ar īsu nospiedienu",
+          "detached_long_press": "Atvienots ar garu nospiedienu",
           "unsupported": "Netiek atbalstīts"
         }
       },
       "siren_sound_level": {
-        "name": "Skaņas līmenis",
+        "name": "Sirēnas skaļums",
         "state": {
-          "low": "Zems",
+          "low": "Samazināts",
           "medium": "Vidējs",
-          "high": "Augsts"
+          "high": "Skaļš"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "Viedās jutības drošības līmenis",
+        "name": "Trauksmes sistēmas jutība",
         "state": {
           "high": "Augsts",
           "middle": "Vidējs",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "Viedās jutības komforta līmenis",
+        "name": "Jutība citiem gadījumiem",
         "state": {
           "high": "Augsts",
           "middle": "Vidējs",
@@ -404,19 +438,19 @@
       "dimmer_phase_control": {
         "name": "Dimmera fāzes vadība",
         "state": {
-          "trailing": "Nobeiguma fāzes vadība",
-          "leading": "Sākuma fāzes vadība"
+          "trailing": "Beigu fāzes nogriešana",
+          "leading": "Sākuma fāzes nogriešana"
         }
       },
       "installation_profile": {
-        "name": "Uzstādīšanas profils",
+        "name": "Lietošanas mērķis",
         "state": {
-          "generic": "Iekštelpas (vispārīgs)",
+          "generic": "Standarta",
           "outdoor": "Ārtelpas",
-          "light": "Apgaismojums",
-          "heating_rcc": "Apkure (RCC)",
-          "boiler": "Boilers",
-          "mini_pv": "Mini saules panelis"
+          "light": "Lampa",
+          "heating_rcc": "Sildītājs",
+          "boiler": "Centrālapkure",
+          "mini_pv": "Mini PV sistēma"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "Atvērtas durvis/logi"
+        "name": "Atvērtas durvis un logi"
       },
       "walk_test_state": {
-        "name": "Walk Test stāvoklis"
+        "name": "Funkciju testa stāvoklis",
+        "state": {
+          "walk_test_started": "Sākts",
+          "walk_test_stopped": "Apturēts",
+          "unknown": "Nezināms"
+        }
       },
       "battery_level": {
-        "name": "Akumulatora līmenis"
+        "name": "Akumulatora līmenis",
+        "state": {
+          "ok": "OK",
+          "low_battery": "Zems",
+          "critical_low": "Kritisks",
+          "critically_low_battery": "Kritiski zems",
+          "not_available": "Nav pieejams"
+        }
       },
       "combined_rating": {
-        "name": "Apvienotais vērtējums"
+        "name": "Apvienotais vērtējums",
+        "state": {
+          "good": "Labs",
+          "medium": "Vidējs",
+          "bad": "Slikts",
+          "unknown": "Nezināms"
+        }
       },
       "air_quality_description": {
         "name": "Gaisa kvalitātes apraksts"
       },
       "communication_quality": {
-        "name": "Komunikācijas kvalitāte",
+        "name": "Signāla stiprums",
         "state": {
           "good": "Laba",
           "normal": "Normāla",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "Akumulators"
+        "name": "Akumulatora uzlāde"
       },
       "siren_main_power": {
-        "name": "Barošanas avots",
+        "name": "Primārais avots",
         "state": {
           "battery": "Akumulators",
           "solar": "Saules enerģija",
@@ -483,7 +535,7 @@
         "name": "Grīdas temperatūra"
       },
       "purity": {
-        "name": "Tīrība"
+        "name": "Gaisa tīrība"
       },
       "air_quality": {
         "name": "Gaisa kvalitāte"
@@ -495,7 +547,7 @@
         "name": "Mitruma novērtējums"
       },
       "purity_rating": {
-        "name": "Tīrības novērtējums"
+        "name": "Gaisa tīrības novērtējums"
       },
       "energy_yield": {
         "name": "Enerģijas ražība"
@@ -504,10 +556,15 @@
         "name": "Jaudas ražība"
       },
       "valve_tappet": {
-        "name": "Vārsta stūmējs"
+        "name": "Vārsta pozīcija"
       },
       "detection_test_state": {
-        "name": "Detektēšanas testa stāvoklis"
+        "name": "Funkciju testa stāvoklis",
+        "state": {
+          "detection_test_started": "Sākts",
+          "detection_test_stopped": "Apturēts",
+          "detection_test_unknown": "Nezināms"
+        }
       },
       "next_setpoint_temperature": {
         "name": "Nākamā iestatītā temperatūra"
@@ -519,10 +576,10 @@
         "name": "Simulācijas darbības sākums"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "Atskaites kustības laiks (no apakšas uz augšu)"
+        "name": "Atvēršanas laiks"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "Atskaites kustības laiks (no augšas uz apakšu)"
+        "name": "Aizvēršanas laiks"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee maršrutēšanas kvalitāte",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "Grafika pārrakstīšana aktīva"
       },
+      "summer_mode": {
+        "name": "Apkures pārtraukums"
+      },
+      "ventilation_mode": {
+        "name": "Ilgtspējīga vēdināšana"
+      },
       "shutter_calibration_required": {
         "name": "Nepieciešama kalibrēšana"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "Signalizācijas apiešana"
+        "name": "Pauzes funkcija"
       },
       "bypass_infinite": {
-        "name": "Apiešana nekad nebeidzas"
+        "name": "Pauzes funkcija nekad nebeidzas"
       },
       "temperature_drop_enabled": {
         "name": "Temperatūras pazemināšana"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "Iespējots"
       },
+      "pet_immunity_enabled": {
+        "name": "Mājdzīvnieks / robotputekļsūcējs"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "Automātiskā jutība"
+      },
+      "tamper_protection_enabled": {
+        "name": "Sabotāžas noteikšana"
+      },
+      "silent_mode": {
+        "name": "Čuksta režīms"
+      },
+      "smartplug_routing": {
+        "name": "Diapazona paplašināšana"
+      },
+      "camera_light": {
+        "name": "Kameras gaisma"
+      },
+      "camera_notification": {
+        "name": "Paziņojumi"
+      },
+      "camera_frontlight": {
+        "name": "Priekšējā gaisma"
+      },
+      "camera_ambientlight": {
+        "name": "Apkārtējā gaisma"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "Enerģijas taupīšanas režīms"
+      },
+      "warning_suppressed": {
+        "name": "Brīdinājums apspiests"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "Mitruma brīdinājums"
+      },
+      "swap_inputs": {
+        "name": "Mainīt pogu piešķiri"
+      },
+      "swap_outputs": {
+        "name": "Mainīt izejas"
+      },
+      "pre_alarm_enabled": {
+        "name": "Pirmstrauksme"
+      },
+      "vibration_enabled": {
+        "name": "Vibrācijas noteikšana"
+      },
+      "intrusion_alarm": {
+        "name": "Ielaušanās trauksme"
+      },
       "child_lock": {
         "name": "Bērnu bloķēšana"
       }
     },
     "light": {
       "motion_light": {
-        "name": "Kustības gaisma"
+        "name": "Orientācijas gaisma"
       },
       "room_light_group": {
         "name": "Gaisma"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "Vārsts"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "Apakšējā poga"
+      },
+      "key_upper": {
+        "name": "Augšējā poga"
+      },
+      "key_lower_left": {
+        "name": "Apakšējā kreisā poga"
+      },
+      "key_lower_right": {
+        "name": "Apakšējā labā poga"
+      },
+      "key_upper_left": {
+        "name": "Augšējā kreisā poga"
+      },
+      "key_upper_right": {
+        "name": "Augšējā labā poga"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "Nav atrasts ielādēts Bosch SHC ieraksts ar šādu nosaukumu."
+    },
+    "rawscan_command_failed": {
+      "message": "Neizdevās izpildīt rawscan komandu."
     },
     "scenario_not_found": {
       "message": "Scenārijs nav atrasts."

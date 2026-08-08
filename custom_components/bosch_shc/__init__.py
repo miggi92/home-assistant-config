@@ -7,6 +7,7 @@ import contextlib
 import inspect
 import json
 import ssl
+from collections.abc import Callable
 from datetime import time as dt_time
 from datetime import timedelta
 from pathlib import Path
@@ -76,6 +77,7 @@ from .const import (
     LOGGER,
     OPT_CHILD_LOCK_ENABLED,
     OPT_ENABLE_RAWSCAN,
+    OPT_KEYPAD_HA_BRIDGE,
     OPT_LONG_POLL_TIMEOUT,
     OPT_PRESENCE_ENTITY,
     OPT_SILENT_MODE_ENABLED,
@@ -91,6 +93,7 @@ from .const import (
 )
 from .coordinator import SHCZigbeeRoutingCoordinator
 from .data import SHCData
+from .keypad_bridge import async_sync_keypad_bridge
 from .zigbee_topology import (
     build_topology_graph,
     topology_to_html,
@@ -196,6 +199,8 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
         for config_entry in hass.config_entries.async_entries(DOMAIN):
             if not hasattr(config_entry, "runtime_data"):
                 continue
+            if config_entry.state is not ConfigEntryState.LOADED:
+                continue
             runtime: SHCData = config_entry.runtime_data
             if title in ("", runtime.title):
                 api = runtime.session.api
@@ -228,7 +233,20 @@ def _register_rawscan_service(hass: HomeAssistant) -> None:
                         translation_domain=DOMAIN,
                         translation_key="rawscan_type_unknown",
                     )
-                rawscan = await commands[command]()
+                try:
+                    rawscan = await commands[command]()
+                except (
+                    JSONRPCError,
+                    SHCException,
+                    SHCConnectionError,
+                    aiohttp.ClientError,
+                    asyncio.TimeoutError,
+                ) as err:
+                    raise ServiceValidationError(
+                        f"Failed to execute rawscan command '{command}': {err}",
+                        translation_domain=DOMAIN,
+                        translation_key="rawscan_command_failed",
+                    ) from err
                 return {command: rawscan}
         raise ServiceValidationError(
             f"No loaded Bosch SHC entry with title '{title}' found.",
@@ -386,6 +404,32 @@ def _register_refresh_zigbee_routing_service(hass: HomeAssistant) -> None:
     )
 
 
+def _idempotent_unsub(unsub: Callable[[], None]) -> Callable[[], None]:
+    """Wrap an unsub callable so it is safe to invoke more than once.
+
+    Several of async_setup_entry's listeners (cert-check timer, presence and
+    silent-mode trackers) are unsubbed both explicitly in async_unload_entry
+    AND automatically via entry.async_on_unload — the latter is needed so a
+    LATER failure within the SAME async_setup_entry call (e.g. a transient
+    start_polling() error) still tears them down, since async_unload_entry is
+    never called on that path (the entry never finished loading). Some of the
+    underlying HA unsub callables (e.g. async_track_state_change_event's) are
+    not safe to call twice (a second call raises ValueError removing an
+    already-removed listener), so this guards against the double-call that
+    results from being wired into both places.
+    """
+    called = False
+
+    def _wrapped() -> None:
+        nonlocal called
+        if called:
+            return
+        called = True
+        unsub()
+
+    return _wrapped
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  # noqa: C901
     """Set up Bosch SHC from a config entry."""
     data = entry.data
@@ -498,6 +542,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         )
         await session.api.close()
         raise ConfigEntryNotReady from err
+    except Exception as err:
+        # Catches unwrapped errors (e.g. json.JSONDecodeError) that aren't a
+        # typed SHCException — otherwise this would crash setup AND leak the
+        # session, since only the except clauses above close it.
+        LOGGER.warning(
+            "Bosch SHC at %s failed to initialize unexpectedly, will retry: %s",
+            data.get(CONF_HOST),
+            err,
+        )
+        await session.api.close()
+        raise ConfigEntryNotReady from err
 
     shc_info = session.information
     # The async information object (_AsyncSHCInformation) does not expose
@@ -528,6 +583,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         title=entry.title,
         zigbee_routing_coordinator=zigbee_routing_coordinator,
     )
+
+    # #395: before platforms are set up, so a freshly-created UserDefinedState
+    # is already in session.userdefinedstates by the time switch.py enumerates.
+    try:
+        await async_sync_keypad_bridge(
+            hass, entry, entry.options.get(OPT_KEYPAD_HA_BRIDGE, False)
+        )
+    except SHCException as err:
+        LOGGER.warning("Keypad bridge sync failed: %s", err)
 
     # Backgrounded (sequential live per-device queries can take minutes) so
     # setup isn't delayed; task kept so unload can cancel it before stop_polling().
@@ -578,9 +642,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 hass, DOMAIN, f"{ISSUE_CERT_EXPIRING}_{entry.entry_id}"
             )
 
-    entry.runtime_data.cert_check_unsub = async_track_time_interval(
-        hass, _scheduled_cert_check, timedelta(days=1)
+    entry.runtime_data.cert_check_unsub = _idempotent_unsub(
+        async_track_time_interval(hass, _scheduled_cert_check, timedelta(days=1))
     )
+    # Also via async_on_unload: async_unload_entry is never called if a later
+    # setup step (e.g. start_polling() below) fails, leaking this otherwise.
+    entry.async_on_unload(entry.runtime_data.cert_check_unsub)
 
     # Presence-based child lock: optional; zero overhead when unconfigured.
     # Backward compat: stored value may be a str (old single-select) or a list.
@@ -689,9 +756,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             _last_lock_state[0] = lock_on
             hass.async_create_task(_apply_child_lock(lock_on))
 
-        entry.runtime_data.presence_unsub = async_track_state_change_event(
-            hass, presence_entities, _evaluate_child_lock
+        entry.runtime_data.presence_unsub = _idempotent_unsub(
+            async_track_state_change_event(
+                hass, presence_entities, _evaluate_child_lock
+            )
         )
+        # See cert_check_unsub above: guard against leaking this listener on
+        # a later same-setup failure (e.g. start_polling()).
+        entry.async_on_unload(entry.runtime_data.presence_unsub)
         # Apply the correct state once at startup/reload — otherwise a
         # presence entity already "home" across the restart would leave
         # devices unlocked until its next state-change event. Trade-off:
@@ -799,10 +871,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
             hass.async_create_task(_apply_silent(silent_on))
 
         # Re-evaluate on presence change and at the two window boundaries.
-        entry.runtime_data.silent_mode_unsubs.append(
+        # Each is also registered via async_on_unload (see cert_check_unsub above).
+        _silent_unsub_presence = _idempotent_unsub(
             async_track_state_change_event(hass, presence_entities, _evaluate_silent)
         )
-        entry.runtime_data.silent_mode_unsubs.append(
+        entry.runtime_data.silent_mode_unsubs.append(_silent_unsub_presence)
+        entry.async_on_unload(_silent_unsub_presence)
+        _silent_unsub_start = _idempotent_unsub(
             async_track_time_change(
                 hass,
                 _evaluate_silent,
@@ -811,7 +886,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 second=silent_start.second,
             )
         )
-        entry.runtime_data.silent_mode_unsubs.append(
+        entry.runtime_data.silent_mode_unsubs.append(_silent_unsub_start)
+        entry.async_on_unload(_silent_unsub_start)
+        _silent_unsub_end = _idempotent_unsub(
             async_track_time_change(
                 hass,
                 _evaluate_silent,
@@ -820,6 +897,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
                 second=silent_end.second,
             )
         )
+        entry.runtime_data.silent_mode_unsubs.append(_silent_unsub_end)
+        entry.async_on_unload(_silent_unsub_end)
         # Apply the correct state once at startup.
         _evaluate_silent()
 
@@ -842,6 +921,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:  #
         # crash setup uncaught and leak the session's aiohttp ClientSession.
         LOGGER.warning(
             "Bosch SHC at %s failed to start polling, will retry: %s",
+            data.get(CONF_HOST),
+            err,
+        )
+        await session.api.close()
+        raise ConfigEntryNotReady from err
+    except Exception as err:  # same rationale as async_init's
+        # fallback above: an unexpected/unwrapped error here must not skip
+        # closing the session.
+        LOGGER.warning(
+            "Bosch SHC at %s failed to start polling unexpectedly, will retry: %s",
             data.get(CONF_HOST),
             err,
         )
@@ -921,6 +1010,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if runtime.polling_handler is not None:
         runtime.polling_handler()
+    # Also registered via entry.async_on_unload (see async_setup_entry);
+    # each is wrapped in _idempotent_unsub so calling both here and there is safe.
     if runtime.cert_check_unsub is not None:
         runtime.cert_check_unsub()
     if runtime.presence_unsub is not None:

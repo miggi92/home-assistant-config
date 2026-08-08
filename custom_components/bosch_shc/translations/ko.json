@@ -1,4 +1,18 @@
 {
+  "device": {
+    "presence_simulation": {
+      "name": "재실 시뮬레이션"
+    },
+    "intrusion_system": {
+      "name": "경보 시스템"
+    },
+    "water_alarm_system": {
+      "name": "누수 경보"
+    },
+    "energy_manager": {
+      "name": "에너지 매니저"
+    }
+  },
   "config": {
     "abort": {
       "already_configured": "기기가 이미 구성되었습니다",
@@ -105,7 +119,8 @@
               "suppress_camera_switches": "Bosch 카메라 스위치 숨기기",
               "room_light_groups": "방별 조명 그룹 활성화",
               "automation_rules_as_entities": "Bosch 자동화 규칙을 엔티티로 노출",
-              "temperature_drop_entities": "온도 하강 엔터티 활성화"
+              "temperature_drop_entities": "온도 하강 엔터티 활성화",
+              "keypad_ha_bridge": "물리적 푸시버튼을 HA 자동화에 연결"
             },
             "data_description": {
               "scenarios_as_buttons": "켜짐: 각 Bosch SHC 시나리오가 Home Assistant에서 버튼 엔티티로도 표시됩니다(trigger_scenario 서비스 외에 추가로). 시나리오를 직접 실행하는 대시보드 타일 및 자동화에 유용합니다. 기본값: 꺼짐.",
@@ -121,7 +136,8 @@
               "suppress_camera_switches": "켜짐: Bosch 카메라(Eyes / 360 / Outdoor Gen2)의 개인 정보 보호, 조명 및 알림 스위치 엔티티가 생성되지 않습니다. Bosch Camera Tool과 함께 사용하세요. 기본값: 꺼짐.",
               "room_light_groups": "켜짐: 조광/컬러 조명(LEDVANCE, Hue, Light/Shutter Control II 디머)이 2개 이상 있는 SHC 방마다 집계된 `light` 엔티티를 하나씩 생성하여, 하나의 엔티티로 방 전체 조명을 켜고 끌 수 있습니다 — 난방이 Room Climate Control을 통해 이미 제공하는 방 단위 제어와 동일한 방식입니다. 켜기/끄기만 지원하며 밝기·색상은 집계되지 않습니다. 기본값: 꺼짐(새 엔티티 없음).",
               "automation_rules_as_entities": "켜짐으로 설정하면 Bosch 앱에 구성된 각 자동화 규칙에 대해 스위치(활성화/비활성화)와 버튼(수동 실행)이 생성됩니다 — Home Assistant 자체 자동화와는 완전히 별개인 Bosch 자체 로컬 규칙 엔진입니다. 기본값: 꺼짐(새 엔티티 없음).",
-              "temperature_drop_entities": "켜면 각 방의 온도 하강(서리 방지/창문 열림) 서비스에 대한 스위치(활성화/비활성화)와 숫자(하강 값)가 생성됩니다. 대부분의 설치에서는 이 기능을 사용하지 않습니다. 기본값: 꺼짐(새 엔터티 없음)."
+              "temperature_drop_entities": "켜면 각 방의 온도 하강(서리 방지/창문 열림) 서비스에 대한 스위치(활성화/비활성화)와 숫자(하강 값)가 생성됩니다. 대부분의 설치에서는 이 기능을 사용하지 않습니다. 기본값: 꺼짐(새 엔터티 없음).",
+              "keypad_ha_bridge": "켜짐: 물리적인 분리형 푸시버튼이 있는 각 Shutter/Light Control II 장치에 대해, 버튼을 누르면 가상 켜기/끄기 상태를 펄스로 전달하는 작은 자동화를 Bosch Smart Home Controller에 직접 생성합니다. 이 상태는 이미 일반 switch 엔티티로 표시됩니다 — 이 켜기/끄기 전환을 사용자의 Home Assistant 자동화에서 트리거로 사용하세요. 이 옵션을 끄면 생성된 자동화와 상태가 제거됩니다. 기본값: 꺼짐(새 엔티티 없음, 컨트롤러에 아무것도 생성되지 않음)."
             }
           },
           "presence": {
@@ -167,11 +183,11 @@
   "entity": {
     "climate": {
       "room_climate_control": {
-        "name": "실내 기후 제어",
+        "name": "실내 온도 제어",
         "state_attributes": {
           "preset_mode": {
             "state": {
-              "boost": "부스트",
+              "boost": "급속 난방",
               "eco": "에코"
             }
           }
@@ -180,19 +196,19 @@
     },
     "button": {
       "smoke_test": {
-        "name": "연기 테스트"
+        "name": "알람 테스트"
       },
       "walk_test": {
-        "name": "보행 테스트"
+        "name": "기능 테스트 시작"
       },
       "walk_test_stop": {
-        "name": "보행 테스트 중지"
+        "name": "기능 테스트 중지"
       },
       "detection_test": {
-        "name": "감지 테스트"
+        "name": "기능 테스트 시작"
       },
       "detection_test_stop": {
-        "name": "감지 테스트 중지"
+        "name": "기능 테스트 중지"
       },
       "reset_tamper": {
         "name": "변조 초기화"
@@ -207,10 +223,10 @@
         "name": "최소 밝기 미리보기"
       },
       "reset_energy_summation": {
-        "name": "에너지 카운터 초기화"
+        "name": "소비량 초기화"
       },
       "shutter_recalibrate": {
-        "name": "재보정"
+        "name": "자동 보정 시작"
       },
       "enable_all_diagnostics": {
         "name": "모든 진단 활성화"
@@ -227,10 +243,10 @@
     },
     "number": {
       "impulse_length": {
-        "name": "임펄스 길이"
+        "name": "펄스 길이"
       },
       "temperature_drop_value": {
-        "name": "온도 강하 값"
+        "name": "온도 편차"
       },
       "energy_saving_power_threshold": {
         "name": "절전 전력 임계값"
@@ -248,19 +264,37 @@
         "name": "디스플레이 켜짐 시간"
       },
       "siren_alarm_duration": {
-        "name": "알람 지속 시간"
+        "name": "사이렌 알람 지속 시간"
       },
       "siren_flash_duration": {
-        "name": "플래시 지속 시간"
+        "name": "점멸등 알람 지속 시간"
       },
       "siren_alarm_delay": {
-        "name": "알람 지연"
+        "name": "사이렌 알람 지연"
       },
       "siren_flash_delay": {
-        "name": "플래시 지연"
+        "name": "점멸등 알람 지연"
       },
       "bypass_timeout": {
-        "name": "바이패스 제한 시간"
+        "name": "일시 정지 기능 제한 시간"
+      },
+      "offset": {
+        "name": "오프셋"
+      },
+      "setpointeco": {
+        "name": "에코 온도"
+      },
+      "setpointcomfort": {
+        "name": "쾌적 온도"
+      },
+      "dimmer_min": {
+        "name": "최소 밝기"
+      },
+      "dimmer_max": {
+        "name": "최대 밝기"
+      },
+      "dimmer_speed": {
+        "name": "조광 속도"
       }
     },
     "select": {
@@ -278,8 +312,8 @@
           "very_high": "매우 높음",
           "high": "높음",
           "medium": "보통",
-          "low": "낮음",
-          "very_low": "매우 낮음"
+          "low": "약간 낮음",
+          "very_low": "낮음"
         }
       },
       "state_after_power_outage": {
@@ -302,27 +336,27 @@
         "name": "디스플레이 방향",
         "state": {
           "normal": "일반",
-          "reversed": "반전"
+          "reversed": "180° 회전"
         }
       },
       "displayed_temperature": {
         "name": "표시 온도",
         "state": {
-          "setpoint": "설정값",
+          "setpoint": "설정 온도",
           "measured": "측정값"
         }
       },
       "terminal_type": {
-        "name": "단자 유형",
+        "name": "센서 연결",
         "state": {
-          "not_connected": "연결 안 됨",
+          "not_connected": "사용 안 함",
           "floor_sensor_connected": "바닥 센서 연결됨",
           "floor_sensor_used_for_regulation": "바닥 센서가 조절에 사용됨",
-          "floor_sensor_displayed": "바닥 센서 표시됨",
-          "floor_sensor_displayed_and_used_for_regulation": "바닥 센서 표시 및 조절에 사용됨",
+          "floor_sensor_displayed": "케이블 온도 센서(조절 없음)",
+          "floor_sensor_displayed_and_used_for_regulation": "케이블 온도 센서(조절 사용)",
           "volt_free_sensor_connected": "무전압 센서 연결됨",
-          "volt_free_sensor_connected_and_used_for_operation": "무전압 센서 연결 및 작동에 사용됨",
-          "outdoor_sensor_connected": "실외 센서 연결됨"
+          "volt_free_sensor_connected_and_used_for_operation": "무전압 접점",
+          "outdoor_sensor_connected": "실외 온도 센서"
         }
       },
       "valve_type": {
@@ -338,9 +372,9 @@
           "floor_heating": "바닥 난방",
           "floor_heating_low_energy": "바닥 난방(저에너지)",
           "radiator": "라디에이터",
-          "convector_passive": "컨벡터(수동형)",
-          "convector_active": "컨벡터(능동형)",
-          "volt_free_heating": "무전압 난방"
+          "convector_passive": "컨벡터(팬 없음)",
+          "convector_active": "컨벡터(팬 있음)",
+          "volt_free_heating": "중앙난방"
         }
       },
       "switch_type": {
@@ -348,7 +382,7 @@
         "state": {
           "none": "없음",
           "pushbutton": "푸시버튼",
-          "switch": "스위치",
+          "switch": "로커 스위치",
           "no_switch": "스위치 없음"
         }
       },
@@ -363,19 +397,19 @@
       "output_mode": {
         "name": "출력 모드",
         "state": {
-          "attached": "연결됨",
-          "detached": "분리됨",
-          "detached_short_press": "분리됨(짧게 누름)",
-          "detached_long_press": "분리됨(길게 누름)",
+          "attached": "연동됨",
+          "detached": "아무 버튼이나 누르면 분리",
+          "detached_short_press": "짧게 누르면 분리",
+          "detached_long_press": "길게 누르면 분리",
           "unsupported": "지원되지 않음"
         }
       },
       "siren_sound_level": {
-        "name": "음량 레벨",
+        "name": "사이렌 음량",
         "state": {
-          "low": "낮음",
+          "low": "작음",
           "medium": "보통",
-          "high": "높음"
+          "high": "큼"
         }
       },
       "orientation_light_response_time": {
@@ -386,7 +420,7 @@
         }
       },
       "smart_sensitivity_security_level": {
-        "name": "스마트 감도 보안 수준",
+        "name": "알람 시스템 감도",
         "state": {
           "high": "높음",
           "middle": "보통",
@@ -394,7 +428,7 @@
         }
       },
       "smart_sensitivity_comfort_level": {
-        "name": "스마트 감도 편의 수준",
+        "name": "기타 상황 감도",
         "state": {
           "high": "높음",
           "middle": "보통",
@@ -409,14 +443,14 @@
         }
       },
       "installation_profile": {
-        "name": "설치 프로필",
+        "name": "사용 목적",
         "state": {
-          "generic": "실내 (일반)",
+          "generic": "표준",
           "outdoor": "실외",
-          "light": "조명",
-          "heating_rcc": "난방 (RCC)",
-          "boiler": "보일러",
-          "mini_pv": "미니 태양광"
+          "light": "램프",
+          "heating_rcc": "히터",
+          "boiler": "중앙난방",
+          "mini_pv": "Mini PV 시스템"
         }
       },
       "thermostat_regulation_algorithm": {
@@ -429,22 +463,40 @@
     },
     "sensor": {
       "open_windows_doors": {
-        "name": "열린 문/창문"
+        "name": "열린 문과 창문"
       },
       "walk_test_state": {
-        "name": "보행 테스트 상태"
+        "name": "기능 테스트 상태",
+        "state": {
+          "walk_test_started": "시작됨",
+          "walk_test_stopped": "중지됨",
+          "unknown": "알 수 없음"
+        }
       },
       "battery_level": {
-        "name": "배터리 수준"
+        "name": "배터리 수준",
+        "state": {
+          "ok": "정상",
+          "low_battery": "낮음",
+          "critical_low": "위험",
+          "critically_low_battery": "위험할 정도로 낮음",
+          "not_available": "사용할 수 없음"
+        }
       },
       "combined_rating": {
-        "name": "종합 등급"
+        "name": "종합 등급",
+        "state": {
+          "good": "좋음",
+          "medium": "보통",
+          "bad": "나쁨",
+          "unknown": "알 수 없음"
+        }
       },
       "air_quality_description": {
         "name": "공기질 설명"
       },
       "communication_quality": {
-        "name": "통신 품질",
+        "name": "신호 강도",
         "state": {
           "good": "좋음",
           "normal": "보통",
@@ -455,10 +507,10 @@
         }
       },
       "siren_battery": {
-        "name": "배터리"
+        "name": "배터리 잔량"
       },
       "siren_main_power": {
-        "name": "전원",
+        "name": "주 전원",
         "state": {
           "battery": "배터리",
           "solar": "태양광",
@@ -477,13 +529,13 @@
         }
       },
       "keypad_trigger": {
-        "name": "버튼 매핑"
+        "name": "버튼 할당"
       },
       "floor_temperature": {
         "name": "바닥 온도"
       },
       "purity": {
-        "name": "순도"
+        "name": "공기 청정도"
       },
       "air_quality": {
         "name": "공기 품질"
@@ -495,7 +547,7 @@
         "name": "습도 등급"
       },
       "purity_rating": {
-        "name": "순도 등급"
+        "name": "공기 청정도 등급"
       },
       "energy_yield": {
         "name": "에너지 발전량"
@@ -504,10 +556,15 @@
         "name": "전력 발전량"
       },
       "valve_tappet": {
-        "name": "밸브 태핏"
+        "name": "밸브 위치"
       },
       "detection_test_state": {
-        "name": "감지 테스트 상태"
+        "name": "기능 테스트 상태",
+        "state": {
+          "detection_test_started": "시작됨",
+          "detection_test_stopped": "중지됨",
+          "detection_test_unknown": "알 수 없음"
+        }
       },
       "next_setpoint_temperature": {
         "name": "다음 설정 온도"
@@ -519,10 +576,10 @@
         "name": "시뮬레이션 시작 시간"
       },
       "reference_moving_time_bottom_to_top": {
-        "name": "기준 이동 시간 (아래에서 위로)"
+        "name": "열림 시간"
       },
       "reference_moving_time_top_to_bottom": {
-        "name": "기준 이동 시간 (위에서 아래로)"
+        "name": "닫힘 시간"
       },
       "zigbee_routing_quality": {
         "name": "Zigbee 라우팅 품질",
@@ -577,6 +634,12 @@
       "schedule_override_active": {
         "name": "일정 재정의 활성"
       },
+      "summer_mode": {
+        "name": "난방 휴지"
+      },
+      "ventilation_mode": {
+        "name": "지속 가능한 환기"
+      },
       "shutter_calibration_required": {
         "name": "보정 필요"
       }
@@ -591,10 +654,10 @@
     },
     "switch": {
       "bypass": {
-        "name": "알람 바이패스"
+        "name": "일시 정지 기능"
       },
       "bypass_infinite": {
-        "name": "바이패스 만료 없음"
+        "name": "일시 정지 기능이 만료되지 않음"
       },
       "temperature_drop_enabled": {
         "name": "온도 강하"
@@ -602,13 +665,67 @@
       "automation_rule": {
         "name": "사용"
       },
+      "pet_immunity_enabled": {
+        "name": "반려동물 / 로봇 청소기"
+      },
+      "smart_sensitivity_enabled": {
+        "name": "자동 감도"
+      },
+      "tamper_protection_enabled": {
+        "name": "탬퍼 감지"
+      },
+      "silent_mode": {
+        "name": "속삭임 모드"
+      },
+      "smartplug_routing": {
+        "name": "범위 확장"
+      },
+      "camera_light": {
+        "name": "카메라 조명"
+      },
+      "camera_notification": {
+        "name": "알림"
+      },
+      "camera_frontlight": {
+        "name": "전면 조명"
+      },
+      "camera_ambientlight": {
+        "name": "앰비언트 조명"
+      },
+      "energy_saving_mode_enabled": {
+        "name": "절전 모드"
+      },
+      "warning_suppressed": {
+        "name": "경고 억제됨"
+      },
+      "nightly_promise_enabled": {
+        "name": "Heartbeat"
+      },
+      "humidity_warning_enabled": {
+        "name": "습도 경고"
+      },
+      "swap_inputs": {
+        "name": "버튼 할당 변경"
+      },
+      "swap_outputs": {
+        "name": "출력 교체"
+      },
+      "pre_alarm_enabled": {
+        "name": "사전 경보"
+      },
+      "vibration_enabled": {
+        "name": "진동 감지"
+      },
+      "intrusion_alarm": {
+        "name": "침입 경보"
+      },
       "child_lock": {
         "name": "어린이 보호 잠금"
       }
     },
     "light": {
       "motion_light": {
-        "name": "모션 조명"
+        "name": "방향 표시등"
       },
       "room_light_group": {
         "name": "조명"
@@ -617,6 +734,26 @@
     "valve": {
       "valve": {
         "name": "밸브"
+      }
+    },
+    "event": {
+      "key_lower": {
+        "name": "아래 버튼"
+      },
+      "key_upper": {
+        "name": "위 버튼"
+      },
+      "key_lower_left": {
+        "name": "왼쪽 아래 버튼"
+      },
+      "key_lower_right": {
+        "name": "오른쪽 아래 버튼"
+      },
+      "key_upper_left": {
+        "name": "왼쪽 위 버튼"
+      },
+      "key_upper_right": {
+        "name": "오른쪽 위 버튼"
       }
     }
   },
@@ -761,6 +898,9 @@
     },
     "rawscan_entry_not_found": {
       "message": "해당 제목으로 로드된 Bosch SHC 항목을 찾을 수 없습니다."
+    },
+    "rawscan_command_failed": {
+      "message": "rawscan 명령을 실행하지 못했습니다."
     },
     "scenario_not_found": {
       "message": "시나리오를 찾을 수 없습니다."
