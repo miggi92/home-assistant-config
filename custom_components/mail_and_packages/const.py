@@ -12,7 +12,7 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.20"
+VERSION = "0.5.21"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -172,13 +172,17 @@ AMAZON_SHIPMENT_TRACKING = [
     "verzending-volgen",
     "update-bestelling",
 ]
+AMAZON_DELIVERING_SUBJECT = [
+    "Out for delivery:",
+    "In Zustellung:",
+]
 AMAZON_SHIPMENT_SUBJECT = [
     "Shipped:",
     "Enviado:",
-    "Out for delivery:",
     "Spedito:",
     "Versandt:",
-    "In Zustellung:",
+    "Versendet:",
+    *AMAZON_DELIVERING_SUBJECT,
 ]
 AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:"]
 AMAZON_EMAIL = [
@@ -191,6 +195,7 @@ AMAZON_EMAIL = [
 AMAZON_PACKAGES = "amazon_packages"
 AMAZON_ORDER = "amazon_order"
 AMAZON_DELIVERED = "amazon_delivered"
+AMAZON_DELIVERING = "amazon_delivering"
 AMAZON_IMG_LIST = [
     "us-prod-temp.s3.amazonaws.com",
     "gb-prod-temp.s3.eu-west-1.amazonaws.com",
@@ -226,6 +231,7 @@ AMAZON_TIME_PATTERN = [
     "Votre date de livraison prévue est :",
     "In arrivo",
     "Zustellung:",
+    "Ankunft",
 ]
 AMAZON_TIME_PATTERN_END = [
     "Previously expected:",
@@ -247,10 +253,15 @@ AMAZON_TIME_PATTERN_REGEX = [
     "Arriving (\\w+ \\d+)",
     "Arriving (\\w+ ?\\d*)",
     "Arriving (\\w+)",
+    "Zustellung:? (heute)",
     "Zustellung:? (\\w+ \\d+) - (\\w+ \\d+)",
     "Zustellung:? (\\w+ \\d+)",
     "Zustellung:? (\\w+ ?\\d*)",
     "Zustellung:? (\\w+)",
+    "Ankunft:? (\\w+ \\d+) - (\\w+ \\d+)",
+    "Ankunft:? (\\w+ \\d+)",
+    "Ankunft:? (\\w+ ?\\d*)",
+    "Ankunft:? (\\w+)",
     "Arriverà (\\w+ \\d+) - (\\w+ \\d+)",
     "Arriverà (\\w+ \\d+)",
     "Arriverà (\\w+ \\d*)",
@@ -698,12 +709,14 @@ SENSOR_DATA = {
             "no-reply@gls-pakete.de",
             "noreply@gls-group.nl",
             "noreply@gls.nl",
+            "pakke-shop@pakkeshop.dk",
         ],
         "subject": [
             "informacja o dostawie",
             "wurde durch GLS",
             "bezorgd",
             "afgeleverd",
+            "Du kan nu hente pakke",
         ],
         "body": [
             "została dzisiaj dostarczona",
@@ -720,6 +733,7 @@ SENSOR_DATA = {
             "no-reply@gls-pakete.de",
             "noreply@gls-group.nl",
             "noreply@gls.nl",
+            "noreply@gls-denmark.com",
         ],
         "subject": [
             "paczka w drodze",
@@ -727,6 +741,7 @@ SENSOR_DATA = {
             "kommt heute",
             "pakket onderweg",
             "bezorging vandaag",
+            "GLS pakke",
         ],
         "body": [
             "Zespół GLS",
@@ -792,20 +807,29 @@ SENSOR_DATA = {
     # Purolator
     "purolator_delivered": {
         "email": ["NotificationService@purolator.com"],
-        "subject": ["Purolator - Your shipment is delivered"],
+        "subject": [
+            "Purolator - Your shipment is delivered",
+            # 2026 format: "Purolator shipment <PIN>: Your package has been
+            # delivered /Envoi de Purolator <PIN> : Votre colis a été livré"
+            "Your package has been delivered",
+        ],
     },
     "purolator_delivering": {
         "email": ["NotificationService@purolator.com"],
         "subject": [
             "Purolator - Your shipment is out for delivery",
             "Purolator - Your shipment is on its way",
+            # 2026 format: "Purolator shipment <PIN>: Your package is now out
+            # for delivery/ Envoi de Purolator <PIN> : Votre colis est en
+            # cours de livraison"
+            "Your package is now out for delivery",
         ],
     },
     "purolator_packages": {
         "email": ["NotificationService@purolator.com"],
         "subject": ["Purolator - Your shipment has been picked up"],
     },
-    "purolator_tracking": {"pattern": ["\\d{12,15}"]},
+    "purolator_tracking": {"pattern": ["(?:[A-Z]{3}\\d{9}|\\d{12,15})"]},
     # Intelcom
     "intelcom_delivered": {
         "email": [
@@ -861,6 +885,37 @@ SENSOR_DATA = {
     "intelcom_tracking": {
         "pattern": ["(NSPRSO[0-9]{10}|AMZNL[0-9]{12}|INTLCMI[0-9]+)"]
     },
+    # Etsy
+    "etsy_delivered": {
+        "email": [
+            "no-reply@account.etsy.com",
+            "noreply@account.etsy.com",
+            "noreply@etsy.com",
+        ],
+        "subject": [
+            # "It's here! Your order from <Shop> has been delivered."
+            "has been delivered",
+        ],
+    },
+    "etsy_delivering": {
+        "email": [
+            "no-reply@account.etsy.com",
+            "noreply@account.etsy.com",
+            "noreply@etsy.com",
+            "email@email.etsy.com",
+        ],
+        "subject": [
+            # "[Another package for] Your Etsy order is on the way (Receipt #N)"
+            "your Etsy order is on the way",
+            "Etsy Order dispatched",
+            # "And it's off! <Carrier> has your order"
+            "has your order",
+            # App-nag template used for dispatch notices
+            "Order updates are waiting in the app",
+        ],
+    },
+    "etsy_packages": {},
+    "etsy_tracking": {"pattern": ["(?:Receipt|Order)\\s*#(\\d{9,11})"]},
     # Walmart
     "walmart_delivering": {
         "email": ["help@walmart.com"],
@@ -888,6 +943,33 @@ SENSOR_DATA = {
         "subject": ["delivery is delayed"],
     },
     "walmart_tracking": {"pattern": [r"\b#?[0-9]{7}-[0-9]{7,8}\b"]},
+    # Shopify (standard order-notification templates). Sender varies per
+    # store; these cover Shopify's shared sending infrastructure. Stores
+    # sending from their own domain need their sender added here.
+    "shopify_delivered": {
+        "email": [
+            "t.shopifyemail.com",
+            "no-reply@parcelpanel.net",
+        ],
+        "subject": ["has been delivered"],
+    },
+    "shopify_delivering": {
+        "email": [
+            "t.shopifyemail.com",
+            "no-reply@parcelpanel.net",
+        ],
+        "subject": ["is out for delivery"],
+    },
+    "shopify_packages": {
+        "email": [
+            "t.shopifyemail.com",
+            "no-reply@parcelpanel.net",
+        ],
+        "subject": ["is on the way"],
+    },
+    "shopify_tracking": {
+        "pattern": ["shipment from order #?([A-Za-z0-9()\\-]+)"],
+    },
     # BuildingLink
     "buildinglink_delivered": {
         "email": ["notify@buildinglink.com"],
@@ -999,6 +1081,8 @@ SENSOR_DATA = {
         "subject": [
             "Package delivered",
             "Your package has been delivered",
+            # 2026 format: "Package <ID> has been delivered"
+            "has been delivered",
             "Sendung zugestellt",
         ],
         "body": [
@@ -1018,16 +1102,34 @@ SENSOR_DATA = {
             "Your package is on the way",
             "Ihre Sendung ist unterwegs",
             "Sendung wird versandt",
+            # 2026 formats: "Order <N>: <status>" and "Package <ID>: <status>"
+            "order shipped",
+            "collected by the carrier",
+            "left the departure region",
+            "at customs",
+            "has cleared customs",
+            "in your country/region",
+            "in local transit",
+            "with local carrier",
+            "out for delivery",
         ],
         "body": [
             "on the way",
             "unterwegs",
             "wird versandt",
+            "shipped",
+            "carrier",
+            "customs",
+            "transit",
+            "departure",
+            "out for delivery",
         ],
     },
     "aliexpress_packages": {},
     "aliexpress_tracking": {
-        "pattern": ["(?:[A-Z]{2}[0-9]{9}[A-Z]{2}|[0-9]{13}|[0-9]{20})"],
+        "pattern": [
+            "(?:[A-Z]{2}[0-9][0-9A-Z]{13,15}|[A-Z]{2}[0-9]{9}[A-Z]{2}|[0-9]{13}|[0-9]{20})"
+        ],
     },
     # DPD Netherlands
     "dpd_nl_delivered": {
@@ -1090,7 +1192,7 @@ SENSOR_DATA = {
     },
     "bolcom_packages": {},
     "bolcom_tracking": {"pattern": ["3S[A-Z0-9]{10,18}", "JJD\\d{14,25}", "\\d{14}"]},
-    # PostNord (Sweden)
+    # PostNord (Sweden/Denmark)
     "postnord_delivered": {
         "email": [
             "no-reply@postnord.com",
@@ -1101,6 +1203,7 @@ SENSOR_DATA = {
             "finns att hamta",
             "har levererats",
             "Levererad",
+            "klar til afhentning",
         ],
     },
     "postnord_delivering": {
@@ -1115,26 +1218,32 @@ SENSOR_DATA = {
             "ar pa vag",
             "på väg till dig",
             "pa vag till dig",
+            "Der er nyt om din PostNord-pakke",
         ],
     },
     "postnord_packages": {},
-    "postnord_tracking": {"pattern": ["[0-9]{13,18}SE", "SE[0-9]{9}SE"]},
-    # Bring (Sweden/Norway)
+    "postnord_tracking": {
+        "pattern": ["[0-9]{13,18}SE", "SE[0-9]{9}SE", "[0-9]{13,18}DK"]
+    },
+    # Bring (Sweden/Norway/Denmark)
     "bring_delivered": {
         "email": [
             "no-reply@bring.com",
             "notification@bring.com",
+            "noreply@bring.com",
         ],
         "subject": [
             "paket att hämta",
             "paket att hamta",
             "har levererats",
+            "Nu kan du hente din pakke fra",
         ],
     },
     "bring_delivering": {
         "email": [
             "no-reply@bring.com",
             "notification@bring.com",
+            "noreply@bring.com",
         ],
         "subject": [
             "sändning är på väg",
@@ -1143,10 +1252,51 @@ SENSOR_DATA = {
             "sandning har skickats",
             "Paket på väg",
             "Paket pa vag",
+            "er på vej",
         ],
     },
     "bring_packages": {},
     "bring_tracking": {"pattern": ["PARCEL[0-9A-Z]{10,20}", "CT[0-9]{9}NO"]},
+    # DAO (Denmark)
+    "dao_delivered": {
+        "email": ["no-reply@dao.as"],
+        "subject": ["Nu kan du hente din pakke fra"],
+    },
+    "dao_delivering": {
+        "body": ["Forsendelsen sendes med: DAO-DK-DIREKTE"],
+    },
+    "dao_packages": {},
+    "dao_tracking": {},
+    # Budbee
+    "budbee_delivering": {
+        "email": ["no-reply@budbee.com"],
+        "subject": ["er nu registreret hos Budbee"],
+    },
+    "budbee_delivered": {},
+    "budbee_packages": {},
+    "budbee_tracking": {},
+    # Airmee
+    "airmee_delivered": {
+        "email": ["no-reply@airmee.com"],
+        "subject": ["Airmee har leveret din pakke"],
+    },
+    "airmee_delivering": {
+        "email": ["no-reply@airmee.com"],
+        "subject": ["Levering booket av Amazon med Airmee"],
+    },
+    "airmee_packages": {},
+    "airmee_tracking": {},
+    # Burd Delivery
+    "burd_delivered": {
+        "email": ["support@burd.dk"],
+        "subject": ["Din pakke er leveret"],
+    },
+    "burd_delivering": {
+        "email": ["support@burd.dk"],
+        "subject": ["Din pakke fra"],
+    },
+    "burd_packages": {},
+    "burd_tracking": {},
     # DB Schenker (Sweden)
     "db_schenker_delivered": {
         "email": [
@@ -1271,6 +1421,12 @@ SENSOR_TYPES: Final[dict[str, SensorEntityDescription]] = {
         native_unit_of_measurement="package(s)",
         icon="mdi:package",
         key="amazon_packages",
+    ),
+    "amazon_delivering": SensorEntityDescription(
+        name="Mail Amazon Packages Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="amazon_delivering",
     ),
     "amazon_delivered": SensorEntityDescription(
         name="Mail Amazon Packages Delivered",
@@ -1630,6 +1786,25 @@ SENSOR_TYPES: Final[dict[str, SensorEntityDescription]] = {
         icon="mdi:archive-alert",
         key="walmart_exception",
     ),
+    # Shopify
+    "shopify_delivered": SensorEntityDescription(
+        name="Mail Shopify Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="shopify_delivered",
+    ),
+    "shopify_delivering": SensorEntityDescription(
+        name="Mail Shopify Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="shopify_delivering",
+    ),
+    "shopify_packages": SensorEntityDescription(
+        name="Mail Shopify Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="shopify_packages",
+    ),
     # BuildingLink
     "buildinglink_delivered": SensorEntityDescription(
         name="Mail BuildingLink Delivered",
@@ -1763,14 +1938,115 @@ SENSOR_TYPES: Final[dict[str, SensorEntityDescription]] = {
         icon="mdi:package-variant-closed",
         key="bolcom_packages",
     ),
+    # Etsy
+    "etsy_delivered": SensorEntityDescription(
+        name="Mail Etsy Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="etsy_delivered",
+    ),
+    "etsy_delivering": SensorEntityDescription(
+        name="Mail Etsy Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="etsy_delivering",
+    ),
+    "etsy_packages": SensorEntityDescription(
+        name="Mail Etsy Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="etsy_packages",
+    ),
+    # DAO
+    "dao_delivering": SensorEntityDescription(
+        name="Mail DAO Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="dao_delivering",
+    ),
+    "dao_delivered": SensorEntityDescription(
+        name="Mail DAO Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="dao_delivered",
+    ),
+    "dao_packages": SensorEntityDescription(
+        name="Mail DAO Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="dao_packages",
+    ),
+    # Budbee
+    "budbee_delivering": SensorEntityDescription(
+        name="Mail Budbee Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="budbee_delivering",
+    ),
+    "budbee_delivered": SensorEntityDescription(
+        name="Mail Budbee Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="budbee_delivered",
+    ),
+    "budbee_packages": SensorEntityDescription(
+        name="Mail Budbee Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="budbee_packages",
+    ),
+    # Airmee
+    "airmee_delivering": SensorEntityDescription(
+        name="Mail Airmee Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="airmee_delivering",
+    ),
+    "airmee_delivered": SensorEntityDescription(
+        name="Mail Airmee Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="airmee_delivered",
+    ),
+    "airmee_packages": SensorEntityDescription(
+        name="Mail Airmee Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="airmee_packages",
+    ),
+    # Burd Delivery
+    "burd_delivering": SensorEntityDescription(
+        name="Mail Burd Delivery Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="burd_delivering",
+    ),
+    "burd_delivered": SensorEntityDescription(
+        name="Mail Burd Delivery Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="burd_delivered",
+    ),
+    "burd_packages": SensorEntityDescription(
+        name="Mail Burd Delivery Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="burd_packages",
+    ),
     ###
-    # !!! Insert new sensors above these two !!!
+    # !!! Insert new sensors above these summary sensors !!!
     ###
     "zpackages_delivered": SensorEntityDescription(
         name="Mail Packages Delivered",
         native_unit_of_measurement="package(s)",
         icon="mdi:package-variant",
         key="zpackages_delivered",
+    ),
+    "zpackages_delivering": SensorEntityDescription(
+        name="Mail Packages Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="zpackages_delivering",
     ),
     "zpackages_transit": SensorEntityDescription(
         name="Mail Packages In Transit",
@@ -1923,8 +2199,20 @@ SENSOR_NAME = 0
 SENSOR_UNIT = 1
 SENSOR_ICON = 2
 
+# Marketplace shippers whose emails embed the physical carrier's tracking
+# number in the body. Used to de-duplicate against carrier shippers: when the
+# extracted number already appears in a carrier shipper's results, the
+# marketplace entry is dropped so the package is only counted once.
+# Regexes are applied case-insensitively to the email text parts; group 1 is
+# the carrier tracking number.
+MARKETPLACE_CARRIER_TRACKING = {
+    "etsy": r"tracking number:?\s*#?([A-Za-z0-9]{8,34})",
+    "shopify": r"tracking number:?\s*#?([A-Za-z0-9]{8,34})",
+}
+
 # For sensors with delivering and delivered statuses
 SHIPPERS = [
+    "aliexpress",
     "amazon",
     "capost",
     "dhl",
@@ -1943,6 +2231,7 @@ SHIPPERS = [
     "bonshaw_distribution_network",
     "purolator",
     "intelcom",
+    "etsy",
     "post_nl",
     "post_at",
     "rewe_lieferservice",
@@ -1954,6 +2243,7 @@ SHIPPERS = [
     "postnord",
     "bring",
     "db_schenker",
+    "shopify",
 ]
 
 # Authentication types

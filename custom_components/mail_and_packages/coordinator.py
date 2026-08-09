@@ -6,10 +6,12 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import timedelta
+from http import HTTPStatus
 from pathlib import Path
 from time import monotonic
 
 import anyio
+from aiohttp import ClientResponseError
 from aioimaplib import IMAP4_SSL
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -60,6 +62,8 @@ class MailAndPackagesData:
 
     coordinator: "MailDataUpdateCoordinator"
     cameras: list
+    last_options: dict | None = None
+    last_data: dict | None = None
 
 
 type MailAndPackagesConfigEntry = ConfigEntry[MailAndPackagesData]
@@ -85,6 +89,8 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
         self._file_mtime_cache = {}
         self._hash_cache = {}
         self._in_transit_tracking: dict[str, dict[str, str]] = {}
+        self._mail_delivered_latch_date: str | None = None
+        self._mail_delivered_latched = False
         self.email_cache = EmailCache(hass=hass)
 
         _LOGGER.debug("Data will be update every %s", self.interval)
@@ -110,6 +116,51 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
         else:
             return file_hash
 
+    async def _async_oauth_access_token(self, auth_type: str) -> str:
+        """Return a valid OAuth2 access token, refreshing it when required.
+
+        Raises ConfigEntryAuthFailed when the grant itself is gone, so Home
+        Assistant starts a reauth flow instead of retrying forever.
+        """
+        try:
+            self.hass.data.setdefault(DOMAIN, {})
+            self.hass.data[DOMAIN]["oauth_provider"] = auth_type
+
+            implementation = (
+                await config_entry_oauth2_flow.async_get_config_entry_implementation(
+                    self.hass,
+                    self.config_entry,
+                )
+            )
+            session = config_entry_oauth2_flow.OAuth2Session(
+                self.hass,
+                self.config_entry,
+                implementation,
+            )
+            await session.async_ensure_token_valid()
+        except ClientResponseError as err:
+            # The token endpoint rejecting the grant (typically "invalid_grant")
+            # means the refresh token has been revoked or has expired. Retrying
+            # can never recover from that, so surface it as an auth failure and
+            # let Home Assistant start a reauth flow.
+            if err.status in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNAUTHORIZED):
+                _LOGGER.error(
+                    "OAuth token refresh was rejected (HTTP %s): %s. "
+                    "Reauthentication is required",
+                    err.status,
+                    err.message,
+                )
+                raise ConfigEntryAuthFailed(
+                    "OAuth token refresh failed, reauthentication required"
+                ) from err
+            _LOGGER.error("Error refreshing OAuth token: %s", err)
+            raise UpdateFailed("OAuth token refresh failed") from err
+        except Exception as err:
+            _LOGGER.error("Error refreshing OAuth token: %s", err)
+            raise UpdateFailed("OAuth token refresh failed") from err
+
+        return session.token["access_token"]
+
     async def _async_update_data(self):
         """Fetch data."""
         start = monotonic()
@@ -121,25 +172,9 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
                     # Refresh OAuth2 token if using OAuth authentication
                     auth_type = config.get(CONF_AUTH_TYPE, AUTH_TYPE_PASSWORD)
                     if auth_type != AUTH_TYPE_PASSWORD and self.config_entry:
-                        try:
-                            self.hass.data.setdefault(DOMAIN, {})
-                            self.hass.data[DOMAIN]["oauth_provider"] = auth_type
-
-                            implementation = await config_entry_oauth2_flow.async_get_config_entry_implementation(
-                                self.hass,
-                                self.config_entry,
-                            )
-                            session = config_entry_oauth2_flow.OAuth2Session(
-                                self.hass,
-                                self.config_entry,
-                                implementation,
-                            )
-                            await session.async_ensure_token_valid()
-                            config["oauth_token"] = session.token["access_token"]
-                        except Exception as err:
-                            _LOGGER.error("Error refreshing OAuth token")
-                            _LOGGER.debug("OAuth token refresh error details: %s", err)
-                            raise UpdateFailed("OAuth token refresh failed") from err
+                        config["oauth_token"] = await self._async_oauth_access_token(
+                            auth_type
+                        )
 
                     data = await self.process_emails(self.hass, config)
                 except ConfigEntryAuthFailed:
@@ -196,7 +231,9 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
             )
             tracking_details = shipper_data.pop("_tracking_details", {})
             data.update(shipper_data)
+            self._dedupe_marketplace_duplicates(data, tracking_details)
             self._apply_tracking_state(data, tracking_details, today_iso)
+            self._latch_mail_delivered(data, today_iso)
 
             # Aggregate global transit and delivered sensors
             self._aggregate_package_counts(data)
@@ -357,6 +394,72 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
 
         return data
 
+    @staticmethod
+    def _dedupe_marketplace_duplicates(
+        data: dict,
+        tracking_details: dict[str, list],
+    ) -> None:
+        """Drop marketplace packages already counted by a carrier shipper.
+
+        Marketplace shippers (see MARKETPLACE_CARRIER_TRACKING) extract the
+        physical carrier's tracking number from their emails. If that number
+        also appears in a carrier shipper's results, the same package would
+        be counted twice; the carrier entry is treated as authoritative and
+        the marketplace entry is removed from counts and tracking lists.
+        Users without carrier notifications enabled are unaffected.
+        """
+        marketplace_prefixes = tuple(const.MARKETPLACE_CARRIER_TRACKING)
+        if not marketplace_prefixes:
+            return
+
+        carrier_numbers = {
+            str(num).upper()
+            for sensor, ids in tracking_details.items()
+            if not sensor.startswith(marketplace_prefixes)
+            for num in ids or []
+        }
+
+        for prefix in marketplace_prefixes:
+            mapping = data.pop(f"{prefix}_carrier_tracking", None) or {}
+            for marketplace_id, carrier_num in mapping.items():
+                if str(carrier_num).upper() in carrier_numbers:
+                    MailDataUpdateCoordinator._remove_marketplace_package(
+                        data, tracking_details, prefix, marketplace_id, carrier_num
+                    )
+
+    @staticmethod
+    def _remove_marketplace_package(
+        data: dict,
+        tracking_details: dict[str, list],
+        prefix: str,
+        marketplace_id: str,
+        carrier_num: str,
+    ) -> None:
+        """Remove one de-duplicated package from a marketplace's sensors."""
+        removed = False
+        for suffix in ("_delivering", "_delivered"):
+            sensor = f"{prefix}{suffix}"
+            ids = tracking_details.get(sensor)
+            if ids and marketplace_id in ids:
+                ids.remove(marketplace_id)
+                if isinstance(data.get(sensor), int):
+                    data[sensor] = max(0, data[sensor] - 1)
+                removed = True
+                _LOGGER.debug(
+                    "De-duplicated %s package %s (carrier tracking %s already "
+                    "counted by a carrier shipper)",
+                    prefix,
+                    marketplace_id,
+                    carrier_num,
+                )
+        packages_sensor = f"{prefix}_packages"
+        if (
+            removed
+            and not const.SENSOR_DATA.get(packages_sensor)
+            and isinstance(data.get(packages_sensor), int)
+        ):
+            data[packages_sensor] = max(0, data[packages_sensor] - 1)
+
     def _apply_tracking_state(
         self,
         data: dict,
@@ -424,6 +527,31 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
                     delivered_count if isinstance(delivered_count, int) else 0
                 )
 
+    def _latch_mail_delivered(self, data: dict, today_iso: str) -> None:
+        """Latch usps_mail_delivered on for the rest of the day once seen.
+
+        The generic shipper recomputes this sensor from a live "delivered
+        today" IMAP search on every poll, so a transient search/verification
+        miss (or simply the message no longer matching by the time the next
+        poll runs) can flip it back to falsy even though the mail was
+        genuinely delivered earlier today. That makes off->on state-trigger
+        automations re-fire on every scan cycle instead of once per delivery.
+        Latch it: once truthy for today, keep it truthy until the date
+        changes, which is the same day boundary the underlying search
+        already resets on at midnight.
+        """
+        if "usps_mail_delivered" not in data:
+            return
+
+        if self._mail_delivered_latch_date != today_iso:
+            self._mail_delivered_latch_date = today_iso
+            self._mail_delivered_latched = False
+
+        self._mail_delivered_latched = self._mail_delivered_latched or bool(
+            data["usps_mail_delivered"]
+        )
+        data["usps_mail_delivered"] = int(self._mail_delivered_latched)
+
     def _update_tracking_for_prefix(
         self,
         prefix: str,
@@ -460,6 +588,8 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
         # Only update if sensors were requested in initialize_data
         if "zpackages_transit" in data:
             data["zpackages_transit"] = self._sum_transit_counts(data)
+        if "zpackages_delivering" in data:
+            data["zpackages_delivering"] = self._sum_delivering_counts(data)
         if "zpackages_delivered" in data:
             data["zpackages_delivered"] = self._sum_delivered_counts(data)
 
@@ -481,6 +611,19 @@ class MailDataUpdateCoordinator(DataUpdateCoordinator):
             ):
                 delivered += value
         return delivered
+
+    def _sum_delivering_counts(self, data: dict) -> int:
+        """Sum out-for-delivery packages from all shippers."""
+        delivering = 0
+        for key, value in data.items():
+            if (
+                isinstance(value, int)
+                and value > 0
+                and key.endswith("_delivering")
+                and key != "zpackages_delivering"
+            ):
+                delivering += value
+        return delivering
 
     def _sum_transit_counts(self, data: dict) -> int:
         """Sum transit and exception packages from all shippers."""
