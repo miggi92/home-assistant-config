@@ -33,10 +33,19 @@ class LeaderboardMixin:
 
     def get_leaderboard(self) -> list[dict[str, Any]]:
         """
-        Get leaderboard sorted by score (Story 5.5).
+        Get the in-round leaderboard sorted by score (Story 5.5).
+
+        #1765: entries carry ONLY ``{rank, name, rank_change}``. Every other
+        per-player field (score, streak, is_admin, connected, eliminated,
+        eliminated_round) is already present in the ``players`` array of the
+        same broadcast frame, so duplicating it here shipped ~30-40% redundant
+        bytes on every PLAYING/REVEAL frame (and serialized it twice). Clients
+        re-attach those fields from ``players`` by name on receipt
+        (``BeatifyUtils.hydrateLeaderboard``). ``get_final_leaderboard`` (END
+        phase, sent once) keeps the full stat block.
 
         Returns:
-            List of player data with rank and movement info.
+            List of ``{rank, name, rank_change}`` sorted by score, then name.
             Note: is_current is set client-side based on playerName.
 
         """
@@ -62,16 +71,13 @@ class LeaderboardMixin:
             if player.previous_rank is not None:
                 rank_change = player.previous_rank - current_rank
 
-            entry = {
-                "rank": current_rank,
-                "name": player.name,
-                "score": player.score,
-                "streak": player.streak,
-                "is_admin": player.is_admin,
-                "rank_change": rank_change,
-                "connected": player.connected,
-            }
-            leaderboard.append(entry)
+            leaderboard.append(
+                {
+                    "rank": current_rank,
+                    "name": player.name,
+                    "rank_change": rank_change,
+                }
+            )
 
         return leaderboard
 
@@ -100,18 +106,39 @@ class LeaderboardMixin:
             Note: is_current is set client-side based on playerName.
 
         """
-        # Sort by score descending, then by name for tie-breaking display order
-        sorted_players = sorted(
-            self.players.values(),
-            key=lambda p: (-p.score, p.name),
+        # Issue #827: in a Sudden Death game the finish order IS the survival
+        # order — the last one standing is 1st, then players in reverse
+        # elimination order (eliminated latest = higher), score breaking ties.
+        # Ranks are sequential (no score-tie grouping) because survival is a
+        # total order. Falls back to the score sort for normal games.
+        sudden_death = self.sudden_death_mode and any(
+            p.eliminated for p in self.players.values()
         )
+        if sudden_death:
+            sorted_players = sorted(
+                self.players.values(),
+                key=lambda p: (
+                    p.eliminated,
+                    -(p.eliminated_round or 0),
+                    -p.score,
+                    p.name,
+                ),
+            )
+        else:
+            # Sort by score descending, then by name for tie-breaking display order
+            sorted_players = sorted(
+                self.players.values(),
+                key=lambda p: (-p.score, p.name),
+            )
 
         leaderboard = []
         current_rank = 0
         previous_score = None
 
         for i, player in enumerate(sorted_players):
-            if player.score != previous_score:
+            if sudden_death:
+                current_rank = i + 1
+            elif player.score != previous_score:
                 current_rank = i + 1
             previous_score = player.score
 
@@ -125,6 +152,9 @@ class LeaderboardMixin:
                 "best_streak": player.best_streak,
                 "rounds_played": player.rounds_played,
                 "bets_won": player.bets_won,
+                # Issue #827: Sudden Death
+                "eliminated": player.eliminated,
+                "eliminated_round": player.eliminated_round,
             }
             leaderboard.append(entry)
 

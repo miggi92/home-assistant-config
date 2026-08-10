@@ -74,6 +74,15 @@ class PlayerSession:
     # Leaderboard tracking (Story 5.5)
     previous_rank: int | None = None  # Rank before last update
 
+    # Sudden Death tracking (Issue #827) - CUMULATIVE, NOT reset in reset_round()
+    eliminated: bool = False  # True once eliminated; stays out for the rest of the game
+    eliminated_round: int | None = None  # Round number the player was eliminated in
+    # #1752: round number a late joiner entered the game in. None for LOBBY joins
+    # (and after reset_for_new_game). Used to grant a mid-round joiner one grace
+    # round — they are excluded from the Sudden Death elimination candidate pool
+    # for the round they join, since they never played it.
+    joined_round: int | None = None
+
     # Final stats tracking (Story 5.6) - CUMULATIVE, NOT reset in reset_round()
     best_streak: int = 0  # Highest streak achieved during game
     rounds_played: int = 0  # Rounds the player participated in
@@ -97,13 +106,52 @@ class PlayerSession:
     perfect_pairs: int = 0  # Rounds with both title and artist correct (Perfect Pair)
     near_misses: int = 0  # Count of debated near-miss fields, title + artist (So Close)
 
+    # Streak-Shield tracking (#1666). Granted on a streak milestone, spent by
+    # the next wrong answer INSTEAD of resetting the streak. Cumulative across
+    # rounds — deliberately NOT cleared by reset_round, or it would evaporate
+    # before the round it exists to protect.
+    streak_shield: bool = False  # True while an unspent shield is held
+    streak_shield_used_this_round: bool = False  # Per-round: shield absorbed a miss
+
     # Steal power-up tracking (Story 15.3)
     steal_available: bool = False  # True if steal unlocked and not yet used
     steal_used: bool = False  # True if steal was used this game (max 1 per game)
+    # Comeback Token tracking (Issue #1724) - CUMULATIVE, NOT reset per round.
+    # True once this player has been handed a catch-up steal after the halfway
+    # round, so the grant fires at most once per player per game even if they
+    # stay in the bottom third.
+    comeback_token_granted: bool = False
     stole_from: str | None = None  # Per-round: who was stolen from
     was_stolen_by: list[str] = field(
         default_factory=list
     )  # Per-round: who stole this player's answer
+
+    # Sabotage power-up tracking (Issue #1665) — mirrors the steal token.
+    # The saboteur picks a target; the EFFECT is rolled server-side.
+    sabotage_available: bool = False  # Token in hand, not yet spent
+    sabotage_used: bool = False  # Token spent this game (max 1 per game)
+    sabotaged: str | None = None  # Per-round: whom this player hit
+    # Per-round victim state — set on the TARGET when a sabotage lands.
+    sabotaged_by: str | None = None  # Who hit this player this round
+    sabotage_effect: str | None = None  # Which effect was rolled (SABOTAGE_EFFECTS)
+    # Timer-cut: milliseconds shaved off THIS player's effective round deadline.
+    sabotage_deadline_cut_ms: int = 0
+    # Freeze: this player may not submit until this timestamp (``_now`` units).
+    sabotage_freeze_until: float | None = None
+    # Forced bet: the server forces bet=True on this player's submission.
+    sabotage_forced_bet: bool = False
+
+    @property
+    def player_id(self) -> str:
+        """Stable identifier for this player (alias of ``session_id``).
+
+        Read-only alias introduced for the name-identity refactor (#1664,
+        PR-1). ``session_id`` is already a server-issued, stable UUID; this
+        property simply exposes it under the ``player_id`` name that will
+        become the primary key in later refactor steps. Purely additive — no
+        behaviour change, no new state.
+        """
+        return self.session_id
 
     @property
     def is_active(self) -> bool:
@@ -135,6 +183,10 @@ class PlayerSession:
         self.base_score = 0
         # Reset streak bonus (Story 5.2)
         self.streak_bonus = 0
+        # #1666: only the per-round "did it fire" flag resets. `streak_shield`
+        # itself is cumulative — clearing it here would drop the shield before
+        # the round it exists to protect.
+        self.streak_shield_used_this_round = False
         # Reset artist bonus (Story 20.4)
         self.artist_bonus = 0
         # Reset artist guess tracking (Story 20.9)
@@ -154,6 +206,15 @@ class PlayerSession:
         # Reset per-round steal fields (Story 15.3)
         self.stole_from = None
         self.was_stolen_by = []
+        # Reset per-round sabotage fields (Issue #1665). The token itself
+        # (``sabotage_available`` / ``sabotage_used``) is game-level and
+        # deliberately NOT reset here — one token per player per game.
+        self.sabotaged = None
+        self.sabotaged_by = None
+        self.sabotage_effect = None
+        self.sabotage_deadline_cut_ms = 0
+        self.sabotage_freeze_until = None
+        self.sabotage_forced_bet = False
 
     def unlock_steal(self) -> bool:
         """Unlock steal power-up if not already used. Returns True if newly unlocked."""
@@ -167,6 +228,19 @@ class PlayerSession:
         self.steal_available = False
         self.steal_used = True
         self.stole_from = target_name
+
+    def unlock_sabotage(self) -> bool:
+        """Hand this player a sabotage token (#1665). True if newly unlocked."""
+        if self.sabotage_used or self.sabotage_available:
+            return False
+        self.sabotage_available = True
+        return True
+
+    def consume_sabotage(self, target_name: str) -> None:
+        """Spend the sabotage token against ``target_name`` (#1665)."""
+        self.sabotage_available = False
+        self.sabotage_used = True
+        self.sabotaged = target_name
 
     def reset_for_new_game(self) -> None:
         """Reset all game-level stats for a new game (Story 15.2)."""
@@ -195,12 +269,29 @@ class PlayerSession:
         self.perfect_pairs = 0
         self.near_misses = 0
 
+        # #1666: a shield must not survive into the next game — it is earned
+        # per game, like the steal token below.
+        self.streak_shield = False
+        self.streak_shield_used_this_round = False
+
         # Reset steal tracking
         self.steal_available = False
         self.steal_used = False
+        # Reset comeback token tracking (Issue #1724)
+        self.comeback_token_granted = False
+        # Reset sabotage tracking (Issue #1665) — the token is per game.
+        self.sabotage_available = False
+        self.sabotage_used = False
 
         # Reset intro mode cumulative tracking (Issue #23)
         self.intro_speed_bonuses = 0
+
+        # Reset Sudden Death state (Issue #827)
+        self.eliminated = False
+        self.eliminated_round = None
+        # #1752: clear late-join grace tracking so a rematch/new game never
+        # grants a carried-over player Sudden Death grace on a stale round number.
+        self.joined_round = None
 
         # Reset movie bonus cumulative tracking (Issue #28)
         self.movie_bonus_total = 0

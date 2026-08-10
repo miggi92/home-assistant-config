@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 from pathlib import Path
@@ -12,6 +13,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.beatify.const import (
+    DEFAULT_ROUND_DURATION,
     DIFFICULTY_DEFAULT,
     DIFFICULTY_EASY,
     DIFFICULTY_HARD,
@@ -27,6 +29,9 @@ from custom_components.beatify.const import (
     ROUND_DURATION_MAX,
     ROUND_DURATION_MIN,
 )
+from custom_components.beatify.game.playlist import (
+    async_discover_playlists_detailed,
+)
 from custom_components.beatify.game.state import GamePhase, GameState
 from custom_components.beatify.server.base import (
     BeatifyAdminView,
@@ -38,7 +43,12 @@ from custom_components.beatify.server.companion_auth import is_authorized_http
 from custom_components.beatify.server.serializers import (
     build_state_message,
 )
-from custom_components.beatify.services.media_player import get_platform_capabilities
+from custom_components.beatify.server.setup_state import clear_setup
+from custom_components.beatify.server.ws_handlers.admin import _finalize_and_end
+from custom_components.beatify.services.media_player import (
+    async_get_native_twin_remap,
+    get_platform_capabilities,
+)
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -134,7 +144,24 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         movie_quiz_enabled = body.get("movie_quiz_enabled", True)  # Issue #28
         intro_mode_enabled = body.get("intro_mode_enabled", False)  # Issue #23
         closest_wins_mode = body.get("closest_wins_mode", False)  # Issue #442
+        sudden_death_mode = bool(body.get("sudden_death_mode", False))  # Issue #827
         title_artist_mode = body.get("title_artist_mode", False)  # #1180
+        rampup_order_enabled = bool(
+            body.get("rampup_order_enabled", False)
+        )  # Issue #1726
+        finale_double_enabled = bool(
+            body.get("finale_double_enabled", False)
+        )  # Issue #1725
+        finale_tiebreaker_enabled = bool(
+            body.get("finale_tiebreaker_enabled", False)
+        )  # Issue #1725
+        comeback_token_enabled = bool(
+            body.get("comeback_token_enabled", False)
+        )  # Issue #1724
+        difficulty_bet_scaling_enabled = bool(
+            body.get("difficulty_bet_scaling_enabled", False)
+        )  # Issue #1727
+        sabotage_enabled = bool(body.get("sabotage_enabled", False))  # Issue #1665
         reveal_auto_advance = body.get("reveal_auto_advance", 0)  # #1012
         party_lights_config = body.get("party_lights")  # Issue #331
         tts_config = body.get("tts")  # Issue #447
@@ -178,6 +205,24 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         if not media_player:
             return _json_error("No media player selected", 400, code="INVALID_REQUEST")
 
+        # #1627 follow-up: heal a stale selection that points at the native twin
+        # of a Music Assistant speaker. #1628 hides such twins from the picker,
+        # but a saved selection (wizard localStorage, admin auto-restore, or a
+        # direct API call) can still carry the native entity_id (e.g.
+        # media_player.unnamed_room) — playing on it routes provider URIs to a
+        # player that can't resolve them (UPnP Error 800), pausing the game with
+        # media_player_error. Remap to the MA twin (same physical speaker) BEFORE
+        # any validation/platform detection so every start path heals uniformly.
+        twin_remap = await async_get_native_twin_remap(self.hass)
+        if media_player in twin_remap:
+            ma_twin = twin_remap[media_player]
+            _LOGGER.info(
+                "Remapped native-twin media player %s → MA twin %s (#1627)",
+                media_player,
+                ma_twin,
+            )
+            media_player = ma_twin
+
         # Validate media player entity exists
         media_player_state = self.hass.states.get(media_player)
         if not media_player_state:
@@ -192,30 +237,41 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         warnings: list[str] = []
         playlist_dir = Path(self.hass.config.path("beatify/playlists"))
 
+        # #1766: discovery already read+parsed every playlist file (memoised,
+        # off-loop, and refreshed by the /api/status poll seconds before the
+        # Start tap). Reuse that parse instead of re-reading + re-parsing each
+        # ~600-song document on the event loop at this latency-sensitive moment.
+        # ``songs_by_path`` is keyed by the same unresolved glob path the picker
+        # sends, so a hit is a plain dict lookup; only a playlist added since the
+        # last discovery walk (a cache miss) falls back to an executor read.
+        _metas, songs_by_path = await async_discover_playlists_detailed(self.hass)
+
         for playlist_path in playlist_paths:
             try:
                 full_path = playlist_dir / playlist_path
                 # Security: Prevent path traversal attacks
                 try:
-                    full_path = full_path.resolve()
-                    if not full_path.is_relative_to(playlist_dir.resolve()):
+                    if not full_path.resolve().is_relative_to(playlist_dir.resolve()):
                         warnings.append(f"Invalid playlist path: {playlist_path}")
                         continue
                 except ValueError:
                     warnings.append(f"Invalid playlist path: {playlist_path}")
                     continue
 
-                if not full_path.exists():
-                    warnings.append(f"Playlist not found: {playlist_path}")
-                    continue
+                playlist_songs = songs_by_path.get(str(full_path))
+                if playlist_songs is None:
+                    # Cache miss (added since the last discovery walk) — fall back
+                    # to the executor read + parse so the loop stays unblocked.
+                    resolved = full_path.resolve()
+                    if not resolved.exists():
+                        warnings.append(f"Playlist not found: {playlist_path}")
+                        continue
+                    file_content = await self.hass.async_add_executor_job(
+                        _read_file, resolved
+                    )
+                    playlist_songs = json.loads(file_content).get("songs", [])
 
-                # Read file in executor to avoid blocking event loop
-                file_content = await self.hass.async_add_executor_job(
-                    _read_file, full_path
-                )
-                playlist_data = json.loads(file_content)
-
-                for song in playlist_data.get("songs", []):
+                for song in playlist_songs:
                     has_uri = any(
                         song.get(k)
                         for k in (
@@ -264,6 +320,13 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         entity_entry = ent_reg.async_get(media_player)
         platform = entity_entry.platform if entity_entry else "unknown"
 
+        # #1663: the admin UI renders setup errors concretely ("Speaker X can't
+        # play Apple Music") by interpolating {speaker}/{provider} from these
+        # details. Fall back to the entity_id if the state carries no friendly
+        # name. PROVIDER_LABELS gives each provider a human, translatable-free
+        # display name.
+        speaker_name = media_player_state.name if media_player_state else media_player
+
         # Validate platform is supported
         capabilities = get_platform_capabilities(platform)
         if not capabilities.get("supported"):
@@ -271,6 +334,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 capabilities.get("reason", "This player type is not supported"),
                 400,
                 code="UNSUPPORTED_PLAYER",
+                details={"speaker": speaker_name},
             )
 
         # Validate provider is supported by platform
@@ -279,6 +343,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "Apple Music is not supported on this speaker. Use Music Assistant.",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
+                details={"speaker": speaker_name, "provider": "Apple Music"},
             )
 
         if provider == PROVIDER_YOUTUBE_MUSIC and not capabilities.get("youtube_music"):
@@ -286,6 +351,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "YouTube Music is not supported on this speaker. Use Music Assistant.",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
+                details={"speaker": speaker_name, "provider": "YouTube Music"},
             )
 
         if provider == PROVIDER_TIDAL and not capabilities.get("tidal"):
@@ -293,6 +359,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "Tidal is not supported on this speaker. Use Music Assistant.",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
+                details={"speaker": speaker_name, "provider": "Tidal"},
             )
 
         if provider == PROVIDER_DEEZER and not capabilities.get("deezer"):
@@ -300,6 +367,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "Deezer is not supported on this speaker. Use Music Assistant.",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
+                details={"speaker": speaker_name, "provider": "Deezer"},
             )
 
         if provider == PROVIDER_AMAZON_MUSIC and not capabilities.get("amazon_music"):
@@ -307,6 +375,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "Amazon Music is not supported on this speaker. Use an Amazon Echo (alexa_media).",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
+                details={"speaker": speaker_name, "provider": "Amazon Music"},
             )
 
         # Build create_game kwargs with optional round_duration (Story 13.1),
@@ -324,11 +393,30 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
             "movie_quiz_enabled": movie_quiz_enabled,  # Issue #28
             "intro_mode_enabled": intro_mode_enabled,  # Issue #23
             "closest_wins_mode": closest_wins_mode,  # Issue #442
+            "sudden_death_mode": sudden_death_mode,  # Issue #827
             "title_artist_mode": title_artist_mode,  # #1180
+            "rampup_order_enabled": rampup_order_enabled,  # Issue #1726
+            "finale_double_enabled": finale_double_enabled,  # Issue #1725
+            "finale_tiebreaker_enabled": finale_tiebreaker_enabled,  # Issue #1725
+            "comeback_token_enabled": comeback_token_enabled,  # Issue #1724
+            "difficulty_bet_scaling_enabled": difficulty_bet_scaling_enabled,  # Issue #1727
+            "sabotage_enabled": sabotage_enabled,  # Issue #1665
             "reveal_auto_advance": reveal_auto_advance,  # #1012
         }
         if round_duration is not None:
             create_kwargs["round_duration"] = round_duration
+
+        # #1867: state the round timer's provenance at the one moment it is
+        # decided. The only prior trace was "Round N started (%.1fs timer)",
+        # which shows the effective value but not whether the client asked for
+        # it or the server fell back — the difference between "the host chose
+        # this" and "nobody chose this". Settling #1867 needed the raw payload,
+        # which no log had; one line here makes the next report a lookup.
+        _LOGGER.info(
+            "Game created with round_duration=%ss (client sent %r)",
+            create_kwargs.get("round_duration", DEFAULT_ROUND_DURATION),
+            body.get("round_duration"),
+        )
 
         result = game_state.create_game(**create_kwargs)
         result["warnings"] = warnings
@@ -468,6 +556,16 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
     per-game admin token — any household HA user can unwedge stuck state —
     so the old "you might not have a valid token" rationale no longer
     applies. Still rate-limited per IP to prevent DoS abuse.
+
+    #2036: the reset also drops the persisted setup blob. The client half of
+    the reset clears ``localStorage`` and reloads, but the server kept
+    reporting ``setup_complete: true`` — and ``reconcileSavedSetup()`` wrote
+    the saved speaker straight back into the emptied storage on that same
+    load, so the wizard stayed shut and the host landed on the ready-to-host
+    screen again. The reset therefore spans the whole installation, not just
+    the device that pressed it; that follows from it already ending the
+    running game for everyone, and the confirm dialog plus the 3/hour rate
+    limit sit in front of it.
     """
 
     url = "/beatify/api/force-reset"
@@ -512,7 +610,24 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
                 except Exception:  # noqa: BLE001
                     _LOGGER.exception("force-reset: WS broadcast raised; continuing")
 
-        return web.json_response({"success": True, "ended_game_id": ended_game_id})
+        # #2036: drop the persisted setup blob so the reloading client really
+        # comes up unconfigured. Failures here must not swallow the rest of the
+        # recovery — the caller is stuck and the game is already ended.
+        cleared_setup = False
+        try:
+            cleared_setup = await self.hass.async_add_executor_job(
+                clear_setup, self.hass
+            )
+        except OSError:
+            _LOGGER.exception("force-reset: clearing the setup blob failed; continuing")
+
+        return web.json_response(
+            {
+                "success": True,
+                "ended_game_id": ended_game_id,
+                "cleared_setup": cleared_setup,
+            }
+        )
 
 
 class RematchGameView(HomeAssistantView):
@@ -589,10 +704,31 @@ class StartGameplayView(BeatifyAdminView):
         if game_state.phase != GamePhase.LOBBY:
             return _json_error("Game already started", 409, code="INVALID_PHASE")
 
+        # Issue #827: Sudden Death requires >=3 players. Players join the LOBBY
+        # *after* create_game (which clears sessions), so the floor can only be
+        # enforced here, at the LOBBY->PLAYING transition. The wizard also
+        # disables the toggle client-side; this is the server-side backstop for
+        # direct API callers. Auto-disable rather than block the start so the
+        # host isn't stuck — surface a warning instead.
+        sudden_death_warning = None
+        if game_state.sudden_death_mode:
+            connected_count = sum(1 for p in game_state.players.values() if p.connected)
+            if connected_count < 3:
+                game_state.set_sudden_death(False)
+                sudden_death_warning = (
+                    "Sudden Death needs at least 3 players — starting without it."
+                )
+
         # Set round end callback for broadcasting
         ws_handler = data.get("ws_handler")
         if ws_handler:
             game_state.set_round_end_callback(ws_handler.broadcast_state)
+            # #1753: wire the terminal game-end one-shot so the unattended REVEAL
+            # auto-advance final round records stats + runs the podium ceremony
+            # through the same claim as the admin sockets.
+            game_state.set_game_end_callback(
+                functools.partial(_finalize_and_end, ws_handler, game_state)
+            )
             # Set metadata update callback for fast transitions (Issue #42)
             game_state.set_metadata_update_callback(
                 ws_handler.broadcast_metadata_update
@@ -607,7 +743,51 @@ class StartGameplayView(BeatifyAdminView):
         if ws_handler:
             await ws_handler.broadcast_state()
 
-        return web.json_response({"success": True, "phase": game_state.phase.value})
+        response: dict[str, Any] = {"success": True, "phase": game_state.phase.value}
+        if sudden_death_warning:  # Issue #827
+            response["warnings"] = [sudden_death_warning]
+            response["sudden_death_disabled"] = True
+        return web.json_response(response)
+
+
+class SetSuddenDeathView(BeatifyAdminView):
+    """Toggle Sudden Death mode live during a game (Issue #827).
+
+    The host flips Sudden Death on/off from the reveal-screen control bar.
+    Turning it ON arms eliminations from the next round; turning it OFF stops
+    further cuts (already-eliminated players stay out).
+    """
+
+    url = "/beatify/api/sudden-death"
+    name = "beatify:api:sudden-death"
+    # Match the other control-bar actions: auth handled in-handler so the
+    # Companion-bypass path works (#1131).
+    requires_auth = False
+
+    async def post(self, request: web.Request) -> web.Response:
+        """Set the live Sudden Death flag and rebroadcast state."""
+        if not is_authorized_http(request, self.hass):
+            return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
+
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            return _json_error("Invalid JSON", 400, code="INVALID_REQUEST")
+
+        enabled = bool(body.get("enabled", False))
+
+        data = self.hass.data.get(DOMAIN, {})
+        game_state = data.get("game")
+        if not game_state or not game_state.game_id:
+            return _json_error("No active game", 404, code="GAME_NOT_FOUND")
+
+        new_state = game_state.set_sudden_death(enabled)
+
+        ws_handler = data.get("ws_handler")
+        if ws_handler:
+            await ws_handler.broadcast_state()
+
+        return web.json_response({"success": True, "sudden_death_mode": new_state})
 
 
 class GameStatusView(HomeAssistantView):

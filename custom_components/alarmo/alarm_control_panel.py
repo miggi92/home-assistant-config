@@ -323,8 +323,11 @@ class AlarmoBaseEntity(AlarmControlPanelEntity, RestoreEntity):
     async def _validate_code(self, code, to_state):  # noqa PLR0911
         """Validate code and user permissions for a requested state change.
 
-        Returns a (success, error_event) tuple. When success is True,
-        error_event is None.
+        Returns a (success, info) tuple.
+        When validation is successful, success is True, otherwise False.
+        When success is True, info is the user data
+            (or None if no user/code was needed).
+        When success is False, info is the error event.
         """
         # check bypass rules
         if (
@@ -404,7 +407,7 @@ class AlarmoBaseEntity(AlarmControlPanelEntity, RestoreEntity):
 
         # success
         self._changed_by = user[ATTR_NAME]
-        return True, None
+        return True, user
 
     async def async_service_disarm_handler(self, code, context_id=None):
         """Handle external disarm request from alarmo.disarm service."""

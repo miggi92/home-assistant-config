@@ -5,10 +5,15 @@
 
 import {
     state, escapeHtml, virtualPlayerList,
-    initVirtualPlayerList, setVirtualPlayerListItems
+    initVirtualPlayerList, setVirtualPlayerListItems,
+    createModalFocusTrap
 } from './player-utils.js';
 
 var utils = window.BeatifyUtils || {};
+
+// #1760: focus traps for the QR + invite dialogs (lazily created once each).
+var _qrTrap = null;
+var _inviteTrap = null;
 
 // ============================================
 // Player List Rendering (Story 3.3)
@@ -107,8 +112,15 @@ export function renderPlayerList(players) {
                 escapeHtml(utils.t('leaderboard.you')) + '">YOU</span>';
         }
 
+        // #1663 item 3 (A11y — Icon+Text Status): the "away" state now pairs a
+        // pause glyph with the word (⏸ + "away") and carries an aria-label, so a
+        // disconnected player isn't signalled by the greyed-out border colour
+        // alone.
         var awayBadge = isDisconnected
-            ? '<span class="player-tile-away" aria-hidden="true">' + utils.t('lobby.away') + '</span>'
+            ? '<span class="player-tile-away" role="img" aria-label="' + escapeHtml(utils.t('lobby.away')) + '">' +
+                  '<span class="player-tile-away-glyph" aria-hidden="true">⏸</span>' +
+                  escapeHtml(utils.t('lobby.away')) +
+              '</span>'
             : '';
 
         return '<div class="' + classes.join(' ') + '" data-player="' + escapeHtml(raw) + '">' +
@@ -186,10 +198,19 @@ var currentJoinUrl = null;
  */
 export function renderQRCode(joinUrl) {
     if (!joinUrl) return;
-    currentJoinUrl = joinUrl;
 
     var container = document.getElementById('player-qr-code');
     if (!container) return;
+
+    // #1764: renderQRCode fires on EVERY state broadcast (player-core:660),
+    // outside the #1706/#1707 coalescers. Without a guard a 20-player
+    // submission burst = 20 full Reed-Solomon encodes + DOM rebuilds per phone
+    // per round for a URL that never changes. Skip when the URL is unchanged
+    // and a QR is already in the DOM. A new game_id yields a different join_url
+    // (so the guard falls through and re-renders); container.firstChild being
+    // null (DOM rebuilt/cleared) also forces a re-render.
+    if (joinUrl === currentJoinUrl && container.firstChild) return;
+    currentJoinUrl = joinUrl;
 
     container.innerHTML = '';
 
@@ -240,8 +261,12 @@ function openQRModal() {
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
+    // #1760: trap focus in the dialog, Escape closes, focus restores on close.
     var closeBtn = document.getElementById('qr-modal-close');
-    if (closeBtn) closeBtn.focus();
+    _qrTrap = _qrTrap || createModalFocusTrap(modal, {
+        contentSelector: '.qr-modal-content'
+    });
+    _qrTrap.activate({ initialFocus: closeBtn, onEscape: closeQRModal });
 }
 
 function closeQRModal() {
@@ -250,6 +275,7 @@ function closeQRModal() {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
     }
+    if (_qrTrap) _qrTrap.deactivate(); // #1760
 }
 
 /**
@@ -308,8 +334,12 @@ export function openInviteModal() {
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
+    // #1760: trap focus in the dialog, Escape closes, focus restores on close.
     var closeBtn = document.getElementById('invite-modal-close');
-    if (closeBtn) closeBtn.focus();
+    _inviteTrap = _inviteTrap || createModalFocusTrap(modal, {
+        contentSelector: '.invite-modal-content'
+    });
+    _inviteTrap.activate({ initialFocus: closeBtn, onEscape: closeInviteModal });
 }
 
 export function closeInviteModal() {
@@ -320,6 +350,7 @@ export function closeInviteModal() {
     }
     var feedback = document.getElementById('invite-copy-feedback');
     if (feedback) feedback.classList.add('hidden');
+    if (_inviteTrap) _inviteTrap.deactivate(); // #1760
 }
 
 function copyJoinUrl() {

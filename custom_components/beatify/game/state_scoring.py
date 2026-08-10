@@ -72,6 +72,7 @@ from custom_components.beatify.const import (
     STREAK_MILESTONES,
 )
 
+from .playlist import get_playback_uri
 from .scoring import ScoringService
 
 _LOGGER = logging.getLogger(__name__)
@@ -109,7 +110,10 @@ class RoundScoringMixin:
         # resolve) so the leaderboard reflects accepted near-misses without the
         # main loop and the rescore double-counting. With no near-misses the
         # challenge resolves immediately, so scoring here is already final.
-        defer_title_artist = self.title_artist_mode and self.has_near_misses()
+        # #1747: shared predicate with the Sudden Death elimination gate in
+        # _end_round_unlocked so the two paths never disagree on whether scores
+        # are final yet.
+        defer_title_artist = self._title_artist_scoring_deferred()
         if not defer_title_artist:
             self._score_all_players(correct_year, all_players)
 
@@ -211,9 +215,7 @@ class RoundScoringMixin:
         # Extended for song statistics (Story 19.7)
         # Wrapped in try/catch to ensure round transition completes even if stats fail
         if self._stats_service and self.current_song:
-            song_uri = self.current_song.get("_resolved_uri") or self.current_song.get(
-                "uri"
-            )
+            song_uri = get_playback_uri(self.current_song)
             if song_uri:
                 try:
                     # Build player results list for song difficulty calculation

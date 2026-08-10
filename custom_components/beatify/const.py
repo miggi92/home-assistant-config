@@ -16,6 +16,22 @@ MIN_PLAYERS = 2
 DEFAULT_ROUND_DURATION = 45  # seconds
 ROUND_DURATION_MIN = 15  # seconds (Story 13.1)
 ROUND_DURATION_MAX = 60  # seconds (Story 13.1)
+
+# #1936: how many playback timeouts IN A ROW count as a systemic failure that
+# pauses the game. Below this, a timeout skips the song and play continues —
+# a rate-limiting provider (Music Assistant's Apple Music backs off ~15.7s,
+# longer than our own deadline) is not a broken one, and pausing on the first
+# timeout ended whole games over it. A genuinely offline speaker still reaches
+# the recovery banner, just a few songs later.
+MAX_CONSECUTIVE_PLAYBACK_FAILURES = 3
+
+# Server-side round backstop (#1865). A periodic tick ends a round whose
+# deadline passed while the phase is still PLAYING, so the game does not depend
+# on the per-round timer task surviving or on a client's countdown nudging it.
+# The grace keeps it a backstop: the timer task running slightly late is normal
+# and should still be the thing that ends the round.
+ROUND_SUPERVISOR_INTERVAL_SECONDS = 2
+ROUND_OVERDUE_GRACE_SECONDS = 2.0
 MAX_NAME_LENGTH = 20
 MIN_NAME_LENGTH = 1
 LOBBY_DISCONNECT_GRACE_PERIOD = 5  # seconds before removing disconnected player
@@ -31,12 +47,12 @@ VOLUME_STEP = 0.1
 # Key = streak count, Value = bonus points
 STREAK_MILESTONES: dict[int, int] = {3: 20, 5: 50, 10: 100, 15: 150, 20: 250, 25: 400}
 
-# Artist challenge bonus (Story 20.1)
-ARTIST_BONUS_POINTS = 5
-
-# Movie quiz bonus tiers by speed rank (Issue #28)
-# Index 0 = fastest correct, index 1 = 2nd fastest, etc.
-MOVIE_BONUS_TIERS: list[int] = [5, 3, 1]
+# Side-challenge bonus (Story 20.1 artist quiz, Issue #28 movie quiz).
+# Both side challenges are winner-takes-all (Issue #1723): the single fastest
+# correct guesser earns this bonus, everyone else earns 0. The movie quiz used
+# to pay tiered [5, 3, 1] by speed rank, but that let one fast phone sweep every
+# round in larger groups, so it was unified DOWN to match the artist challenge.
+CHALLENGE_BONUS_POINTS = 5
 
 # Title & Artist guessing mode (Issue #1180)
 # Full-credit points for an exact or fuzzy match per field.
@@ -137,10 +153,33 @@ ERR_TARGET_NOT_SUBMITTED = (
     "TARGET_NOT_SUBMITTED"  # Story 15.3 - target hasn't submitted
 )
 ERR_CANNOT_STEAL_SELF = "CANNOT_STEAL_SELF"  # Story 15.3 - cannot target self
+ERR_NO_SABOTAGE_AVAILABLE = "NO_SABOTAGE_AVAILABLE"  # #1665 - no sabotage token
+ERR_CANNOT_SABOTAGE_SELF = "CANNOT_SABOTAGE_SELF"  # #1665 - cannot target self
+ERR_TARGET_ALREADY_SUBMITTED = (
+    "TARGET_ALREADY_SUBMITTED"  # #1665 - target is already locked in
+)
+ERR_TARGET_ALREADY_SABOTAGED = (
+    "TARGET_ALREADY_SABOTAGED"  # #1665 - one hit per target per round
+)
+ERR_FROZEN = "FROZEN"  # #1665 - freeze effect: guess is still locked
 ERR_NO_ARTIST_CHALLENGE = "NO_ARTIST_CHALLENGE"  # Story 20.3 - no artist challenge
 ERR_NO_MOVIE_CHALLENGE = "NO_MOVIE_CHALLENGE"  # Issue #28 - no movie quiz this round
 ERR_NO_TITLE_ARTIST_CHALLENGE = "NO_TITLE_ARTIST_CHALLENGE"  # #1180 - no T&A this round
 ERR_UNAUTHORIZED = "UNAUTHORIZED"  # Issue #477 - invalid admin token
+ERR_ELIMINATED = "ELIMINATED"  # #1748 - Sudden Death: eliminated player may not act
+
+# Sabotage power-up constants (Issue #1665)
+# The effect is rolled server-side on use — the saboteur picks only the target.
+SABOTAGE_TIMER_CUT = "timer_cut"
+SABOTAGE_FORCED_BET = "forced_bet"
+SABOTAGE_FREEZE = "freeze"
+SABOTAGE_EFFECTS: tuple[str, ...] = (
+    SABOTAGE_TIMER_CUT,
+    SABOTAGE_FORCED_BET,
+    SABOTAGE_FREEZE,
+)
+SABOTAGE_TIMER_CUT_SECONDS = 5  # Target loses this much guess time
+SABOTAGE_FREEZE_SECONDS = 3  # Target cannot submit for this long
 
 # Song difficulty rating constants (Story 15.1)
 MIN_PLAYS_FOR_DIFFICULTY = 3  # Minimum plays before showing difficulty rating

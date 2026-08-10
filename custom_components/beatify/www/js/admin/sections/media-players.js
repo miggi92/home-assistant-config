@@ -22,6 +22,7 @@
 import { adminState } from '../state.js';
 import { STORAGE_LAST_PLAYER, PLATFORM_LABELS } from '../constants.js';
 import { updateStartButtonState } from './playlists.js';
+import { tr } from '../util.js';
 
 // BeatifyUtils is a classic global script loaded before admin.min.js (module,
 // deferred), so this is safe at module init. Mirrors the admin.js pattern.
@@ -39,6 +40,25 @@ export function updateMediaPlayerSummary(playerName) {
 }
 
 /**
+ * #1619-followup: decide whether a re-render should keep the current selection.
+ *
+ * `renderMediaPlayers()` used to blindly null `adminState.selectedMediaPlayer`
+ * on every call, then re-derive it from localStorage. That silently dropped a
+ * still-valid choice whenever it wasn't re-derivable — e.g. a speaker that is
+ * transiently `unavailable` (filtered out of the rendered list) during a routine
+ * status-poll re-render. We keep the selection as long as the chosen player is
+ * still present in the incoming payload (available OR unavailable); only a player
+ * that has actually disappeared clears it.
+ *
+ * @param {string|null} prevSelectedId - entityId of the current selection (or null)
+ * @param {Array} players - raw players payload (before the unavailable filter)
+ * @returns {boolean}
+ */
+export function _shouldKeepSelection(prevSelectedId, players) {
+    return !!prevSelectedId && (players || []).some((p) => p.entity_id === prevSelectedId);
+}
+
+/**
  * Render media players list grouped by platform with capability info
  * Filters out unavailable players
  * @param {Array} players
@@ -51,8 +71,15 @@ export function renderMediaPlayers(players) {
     container?.classList.remove('skeleton-list');
     const totalPlayers = players ? players.length : 0;
 
-    // Reset selection state
-    adminState.selectedMediaPlayer = null;
+    // #1619-followup: only drop the selection when the chosen player is actually
+    // gone from the new payload. A blind reset here silently lost a still-valid
+    // choice (e.g. a transiently-unavailable speaker) across status-poll
+    // re-renders. The localStorage auto-select below still re-derives it when the
+    // player is back in the available list.
+    const prevSelectedId = adminState.selectedMediaPlayer?.entityId || null;
+    if (!_shouldKeepSelection(prevSelectedId, players)) {
+        adminState.selectedMediaPlayer = null;
+    }
 
     // Filter out unavailable players
     const availablePlayers = (players || []).filter(p => p.state !== 'unavailable');
@@ -64,16 +91,16 @@ export function renderMediaPlayers(players) {
         // No compatible players found - show setup message with MA link
         container.innerHTML = `
             <div class="no-players-message">
-                <h3>🎵 No Compatible Players Found</h3>
-                <p>Beatify works with Music Assistant, Sonos, and Alexa players.</p>
-                <p><strong>Recommended:</strong> Install Music Assistant for the best experience with any speaker.</p>
+                <h3>${tr('admin.noCompatiblePlayersTitle', '🎵 No Compatible Players Found')}</h3>
+                <p>${tr('admin.noCompatiblePlayersDesc', 'Beatify works with Music Assistant, Sonos, and Alexa players.')}</p>
+                <p><strong>${tr('admin.recommendedLabel', 'Recommended:')}</strong> ${tr('admin.installMusicAssistant', 'Install Music Assistant for the best experience with any speaker.')}</p>
                 <div class="button-group">
                     <a href="https://music-assistant.io/getting-started/"
                        target="_blank" class="btn btn-secondary">
-                        📖 Music Assistant Setup Guide
+                        ${tr('admin.musicAssistantSetupGuide', '📖 Music Assistant Setup Guide')}
                     </a>
                     <button onclick="loadStatus()" class="btn btn-primary">
-                        🔄 Refresh
+                        ${tr('admin.refresh', '🔄 Refresh')}
                     </button>
                 </div>
             </div>
@@ -265,6 +292,17 @@ export function handleMediaPlayerSelect(radio, skipSave = false) {
             localStorage.setItem(STORAGE_LAST_PLAYER, entityId);
         } catch (e) {
             console.warn('Failed to save last player:', e);
+        }
+        // #1927 write-through: mirror the pick to the server blob immediately.
+        // Until now only the wizard did that, so a speaker chosen here stayed
+        // local — and reconcileSavedSetup() (which lets the server win) would
+        // hand this device back the older wizard pick on the next load. With
+        // the write-through there is one source of truth and this selection IS
+        // the newest one. Best-effort: a failed POST never blocks the game.
+        try {
+            globalThis.BeatifyPersistSetup?.();
+        } catch (e) {
+            console.warn('Failed to persist speaker to server:', e);
         }
     }
 

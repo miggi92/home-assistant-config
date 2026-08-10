@@ -1,6 +1,6 @@
 {
   "name": "80s Hits",
-  "version": "2.8",
+  "version": "2.13",
   "tags": [
     "1980s",
     "pop",
@@ -91,7 +91,7 @@
       "awards_nl": [],
       "isrc": "USCA20903078",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/693113326",
+        "us": null,
         "de": "applemusic://track/693113326",
         "gb": "applemusic://track/693113326",
         "fr": "applemusic://track/693113326",
@@ -132,12 +132,12 @@
       "isrc": "GBUM71029612",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1824266111",
-        "de": "applemusic://track/1824266111",
-        "gb": "applemusic://track/1824266111",
-        "fr": "applemusic://track/1824266111",
-        "es": "applemusic://track/1824266111",
-        "nl": "applemusic://track/1824266111",
-        "it": "applemusic://track/1824266111"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -214,7 +214,8 @@
         "es": "applemusic://track/1581879147",
         "nl": "applemusic://track/1581879147",
         "it": "applemusic://track/1581879147"
-      }
+      },
+      "uri_tidal": "tidal://track/77637963"
     },
     {
       "year": 1980,
@@ -248,12 +249,12 @@
       "isrc": "GBUM71029605",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440650719",
-        "de": "applemusic://track/1441571446",
-        "gb": "applemusic://track/1441571446",
-        "fr": "applemusic://track/1441571446",
-        "es": "applemusic://track/1441571446",
-        "nl": "applemusic://track/1441571446",
-        "it": "applemusic://track/1441571446"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -376,7 +377,8 @@
         "es": "applemusic://track/310527535",
         "nl": "applemusic://track/310527535",
         "it": "applemusic://track/310527535"
-      }
+      },
+      "uri_tidal": "tidal://track/2772257"
     },
     {
       "year": 1981,
@@ -605,7 +607,8 @@
         "es": "applemusic://track/1794229794",
         "nl": "applemusic://track/1794229794",
         "it": "applemusic://track/1794229794"
-      }
+      },
+      "uri_tidal": "tidal://track/107691286"
     },
     {
       "year": 1982,
@@ -1109,7 +1112,8 @@
         "es": "applemusic://track/1084058324",
         "nl": "applemusic://track/1084058324",
         "it": "applemusic://track/1084058324"
-      }
+      },
+      "uri_tidal": "tidal://track/68665882"
     },
     {
       "year": 1982,
@@ -2272,7 +2276,8 @@
         "es": "applemusic://track/1641781005",
         "nl": "applemusic://track/1641781005",
         "it": "applemusic://track/1641781005"
-      }
+      },
+      "uri_tidal": "tidal://track/1781812"
     },
     {
       "year": 1983,
@@ -2476,7 +2481,8 @@
       "awards": [],
       "uri_deezer": "deezer://track/1090634",
       "fun_fact_nl": "Oorspronkelijk uitgebracht in 1982 en opnieuw opgenomen voor het album 'The Hurting', gaat het nummer over emotionele verwaarlozing in de kindertijd, geïnspireerd door Arthur Janovs primaire therapie.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_tidal": "tidal://track/22936962"
     },
     {
       "year": 1983,
@@ -2651,7 +2657,8 @@
         "es": "applemusic://track/1023759237",
         "nl": "applemusic://track/1023759237",
         "it": "applemusic://track/1023759237"
-      }
+      },
+      "uri_tidal": "tidal://track/38762"
     },
     {
       "year": 1983,
@@ -2677,7 +2684,7 @@
       "awards_nl": [],
       "isrc": "GBAJH9900153",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1717063911",
+        "us": null,
         "de": null,
         "gb": null,
         "fr": null,
@@ -2874,7 +2881,8 @@
         "es": "applemusic://track/1692216411",
         "nl": "applemusic://track/1692216411",
         "it": "applemusic://track/1692216411"
-      }
+      },
+      "uri_tidal": "tidal://track/24385357"
     },
     {
       "year": 1984,
@@ -3392,7 +3400,8 @@
         "es": "applemusic://track/1647073443",
         "nl": "applemusic://track/1647073443",
         "it": "applemusic://track/1647073443"
-      }
+      },
+      "uri_tidal": "tidal://track/3288206"
     },
     {
       "year": 1984,
@@ -3643,12 +3652,12 @@
       "isrc": "GBUM71106175",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440810742",
-        "de": "applemusic://track/1440816142",
-        "gb": "applemusic://track/1440816142",
-        "fr": "applemusic://track/1440816142",
-        "es": "applemusic://track/1440816142",
-        "nl": "applemusic://track/1440816142",
-        "it": "applemusic://track/1440816142"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -3800,7 +3809,7 @@
       "awards_nl": [],
       "isrc": "GBAYE8400109",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1862433447",
+        "us": null,
         "de": "applemusic://track/1724929798",
         "gb": "applemusic://track/1724929798",
         "fr": "applemusic://track/1724929798",
@@ -3833,7 +3842,7 @@
       "awards_nl": [],
       "isrc": "GBAYE9700489",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1704530128",
+        "us": null,
         "de": "applemusic://track/1510554531",
         "gb": "applemusic://track/1510554531",
         "fr": "applemusic://track/1510554531",
@@ -4300,7 +4309,8 @@
         "es": "applemusic://track/1802857118",
         "nl": "applemusic://track/1802857118",
         "it": "applemusic://track/1622293311"
-      }
+      },
+      "uri_tidal": "tidal://track/21651813"
     },
     {
       "year": 1985,
@@ -4494,7 +4504,7 @@
       "awards_nl": [],
       "isrc": "GBAYE1601694",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1755174963",
+        "us": null,
         "de": "applemusic://track/1755174963",
         "gb": "applemusic://track/1755174963",
         "fr": "applemusic://track/1755174963",
@@ -4644,7 +4654,8 @@
         "es": "applemusic://track/1088551720",
         "nl": "applemusic://track/1088551720",
         "it": "applemusic://track/1088551720"
-      }
+      },
+      "uri_tidal": "tidal://track/58929343"
     },
     {
       "year": 1985,
@@ -4682,7 +4693,8 @@
         "es": "applemusic://track/1148642435",
         "nl": "applemusic://track/1148642435",
         "it": "applemusic://track/1148642435"
-      }
+      },
+      "uri_tidal": "tidal://track/58929339"
     },
     {
       "year": 1985,
@@ -4778,7 +4790,7 @@
       "awards_nl": [],
       "isrc": "GBCRL0800119",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1718063870",
+        "us": null,
         "de": "applemusic://track/1802225094",
         "gb": "applemusic://track/1802225094",
         "fr": "applemusic://track/1802225094",
@@ -4823,7 +4835,8 @@
         "es": "applemusic://track/1631301659",
         "nl": "applemusic://track/1870541724",
         "it": "applemusic://track/1631301659"
-      }
+      },
+      "uri_tidal": "tidal://track/100577988"
     },
     {
       "year": 1985,
@@ -4951,7 +4964,7 @@
       "awards_nl": [],
       "isrc": "USEE10608884",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1704536575",
+        "us": null,
         "de": null,
         "gb": null,
         "fr": null,
@@ -5373,7 +5386,7 @@
       "fun_fact_de": "Gianna Nanninis Durchbruchshit etablierte sie als Italiens führende Rock-Sängerin. Ihre raue Stimme und ihr energiegeladener Stil beeinflussten eine Generation italienischer Künstlerinnen.",
       "fun_fact_es": "El éxito revelación de Gianna Nannini la estableció como la principal cantante de rock femenina de Italia. Su voz ronca y estilo energético influyeron en una generación de artistas italianas.",
       "fun_fact_fr": "Le tube de la consécration de Gianna Nannini l'a établie comme la première rockeuse d'Italie. Sa voix rauque et son énergie scénique ont influencé toute une génération d'artistes féminines italiennes.",
-      "uri_apple_music": "applemusic://track/1048058595",
+      "uri_apple_music": "applemusic://track/6768669296",
       "uri_youtube_music": "https://music.youtube.com/watch?v=xzCO9FenHhc",
       "uri_tidal": "tidal://track/18004852",
       "uri_deezer": "deezer://track/16513318",
@@ -5381,13 +5394,13 @@
       "awards_nl": [],
       "isrc": "ITB001500273",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1048058595",
-        "de": "applemusic://track/1048058595",
-        "gb": "applemusic://track/1048058595",
-        "fr": "applemusic://track/1048058595",
-        "es": "applemusic://track/1048058595",
-        "nl": "applemusic://track/1048058595",
-        "it": "applemusic://track/1048058595"
+        "us": "applemusic://track/6768669296",
+        "de": "applemusic://track/6768669296",
+        "gb": "applemusic://track/6768669296",
+        "fr": "applemusic://track/6768669296",
+        "es": "applemusic://track/6768669296",
+        "nl": "applemusic://track/6768669296",
+        "it": "applemusic://track/6768669296"
       }
     },
     {
@@ -5461,7 +5474,8 @@
         "es": "applemusic://track/1888548782",
         "nl": "applemusic://track/1888548782",
         "it": "applemusic://track/1888548782"
-      }
+      },
+      "uri_tidal": "tidal://track/614764"
     },
     {
       "year": 1986,
@@ -5703,12 +5717,12 @@
       "isrc": "GBUM71029621",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440783385",
-        "de": "applemusic://track/1441459175",
-        "gb": "applemusic://track/1441459175",
-        "fr": "applemusic://track/1441459175",
-        "es": "applemusic://track/1441459175",
-        "nl": "applemusic://track/1441459175",
-        "it": "applemusic://track/1441459175"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -5784,12 +5798,12 @@
       "isrc": "USSM19802604",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/200007628",
-        "de": "applemusic://track/292101153",
-        "gb": "applemusic://track/292101153",
-        "fr": "applemusic://track/292101153",
-        "es": "applemusic://track/292101153",
-        "nl": "applemusic://track/292101153",
-        "it": "applemusic://track/292101153"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -5889,7 +5903,8 @@
         "es": "applemusic://track/1294750451",
         "nl": "applemusic://track/1294750451",
         "it": "applemusic://track/1294750451"
-      }
+      },
+      "uri_tidal": "tidal://track/271200"
     },
     {
       "year": 1987,
@@ -6030,7 +6045,8 @@
         "es": "applemusic://track/1469573442",
         "nl": "applemusic://track/1442921368",
         "it": "applemusic://track/1469573442"
-      }
+      },
+      "uri_tidal": "tidal://track/35716399"
     },
     {
       "year": 1987,
@@ -6099,7 +6115,7 @@
       "awards_nl": [],
       "isrc": "GBAYE1700799",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1755142580",
+        "us": null,
         "de": "applemusic://track/1755142580",
         "gb": "applemusic://track/1755142580",
         "fr": "applemusic://track/1755142580",
@@ -6331,7 +6347,8 @@
         "es": "applemusic://track/1329359020",
         "nl": "applemusic://track/1329359020",
         "it": "applemusic://track/1329359020"
-      }
+      },
+      "uri_tidal": "tidal://track/82842804"
     },
     {
       "year": 1987,
@@ -6449,7 +6466,8 @@
         "es": "applemusic://track/6762970661",
         "nl": "applemusic://track/6762970661",
         "it": "applemusic://track/6762970661"
-      }
+      },
+      "uri_tidal": "tidal://track/21884076"
     },
     {
       "year": 1988,
@@ -6718,7 +6736,8 @@
         "es": "applemusic://track/1796180237",
         "nl": "applemusic://track/1796180237",
         "it": "applemusic://track/1796180237"
-      }
+      },
+      "uri_tidal": "tidal://track/1548945"
     },
     {
       "year": 1988,
@@ -6817,8 +6836,8 @@
       "awards_nl": [],
       "isrc": "GBAYK8800055",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1730001805",
-        "de": "applemusic://track/1730001805",
+        "us": null,
+        "de": null,
         "gb": "applemusic://track/1702790221",
         "fr": "applemusic://track/1702790221",
         "es": "applemusic://track/1702790221",
@@ -6860,7 +6879,8 @@
         "es": "applemusic://track/890507762",
         "nl": "applemusic://track/890507762",
         "it": "applemusic://track/890507762"
-      }
+      },
+      "uri_tidal": "tidal://track/1886377"
     },
     {
       "year": 1988,
@@ -7385,7 +7405,8 @@
         "es": "applemusic://track/1714984620",
         "nl": "applemusic://track/1714984620",
         "it": "applemusic://track/1714984620"
-      }
+      },
+      "uri_tidal": "tidal://track/2060835"
     },
     {
       "year": 1989,
@@ -7452,12 +7473,12 @@
       "isrc": "USSM18700216",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/429802577",
-        "de": "applemusic://track/471197726",
-        "gb": "applemusic://track/471197726",
-        "fr": "applemusic://track/211481198",
-        "es": "applemusic://track/211481198",
-        "nl": "applemusic://track/211481198",
-        "it": "applemusic://track/471197726"
+        "de": null,
+        "gb": null,
+        "fr": null,
+        "es": null,
+        "nl": null,
+        "it": null
       }
     },
     {
@@ -7697,7 +7718,7 @@
         "it": "applemusic://track/1797543617"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LXZFtJceQC4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2938882",
       "uri_deezer": "deezer://track/3929350",
       "fun_fact": "A chart hit by The B-52's (1989).",
       "fun_fact_de": "Ein Chart-Hit von The B-52's (1989).",
@@ -7722,7 +7743,7 @@
         "it": "applemusic://track/1891813116"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=iX_TFkut1PM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1325625",
       "uri_deezer": "deezer://track/3166505",
       "fun_fact": "A chart hit by Don McLean (1987).",
       "fun_fact_de": "Ein Chart-Hit von Don McLean (1987).",
@@ -7747,7 +7768,7 @@
         "it": "applemusic://track/1445835892"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Y9mPp5IZbrY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1127288",
       "uri_deezer": "deezer://track/3168234",
       "fun_fact": "A chart hit by The J. Geils Band (1989).",
       "fun_fact_de": "Ein Chart-Hit von The J. Geils Band (1989).",
@@ -7772,7 +7793,7 @@
         "it": "applemusic://track/1666655533"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=lQuln0tbgDA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2909308",
       "uri_deezer": "deezer://track/3164587",
       "fun_fact": "A chart hit by George Harrison (1987).",
       "fun_fact_de": "Ein Chart-Hit von George Harrison (1987).",
@@ -7797,7 +7818,7 @@
         "it": "applemusic://track/1512944833"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Sik6eDQ18WE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/141174374",
       "uri_deezer": "deezer://track/958716392",
       "fun_fact": "A chart hit by Gipsy Kings (2012).",
       "fun_fact_de": "Ein Chart-Hit von Gipsy Kings (2012).",
@@ -7822,7 +7843,7 @@
         "it": "applemusic://track/906486219"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ruauz315oms",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/45973475",
       "uri_deezer": "deezer://track/14750330",
       "fun_fact": "A chart hit by Bandolero (2011).",
       "fun_fact_de": "Ein Chart-Hit von Bandolero (2011).",
@@ -7847,7 +7868,7 @@
         "it": "applemusic://track/1882033162"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ZTGOAFXUEyI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/503876008",
       "uri_deezer": "deezer://track/3878886741",
       "fun_fact": "A chart hit by Eddy Grant (2026).",
       "fun_fact_de": "Ein Chart-Hit von Eddy Grant (2026).",
@@ -7872,7 +7893,7 @@
         "it": "applemusic://track/1769118265"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=kgbxH-Ii6dM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/37378724",
       "uri_deezer": "deezer://track/89339263",
       "fun_fact": "A chart hit by T.S. Monk (2014).",
       "fun_fact_de": "Ein Chart-Hit von T.S. Monk (2014).",
@@ -7897,7 +7918,7 @@
         "it": "applemusic://track/1444173794"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4ERFvbvUJRE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/319063690",
       "uri_deezer": "deezer://track/121588468",
       "fun_fact": "A chart hit by Central Line (2015).",
       "fun_fact_de": "Ein Chart-Hit von Central Line (2015).",
@@ -7922,7 +7943,7 @@
         "it": "applemusic://track/994361949"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=GYiIzez8LrM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/122120386",
       "uri_deezer": "deezer://track/540503442",
       "fun_fact": "A chart hit by Peter Gabriel (2012).",
       "fun_fact_de": "Ein Chart-Hit von Peter Gabriel (2012).",
@@ -7947,7 +7968,7 @@
         "it": "applemusic://track/559334751"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=-DlMoJ2V6uk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/16951562",
       "uri_deezer": "deezer://track/59509531",
       "fun_fact": "A chart hit by Michael Jackson (2012).",
       "fun_fact_de": "Ein Chart-Hit von Michael Jackson (2012).",
@@ -7972,7 +7993,7 @@
         "it": "applemusic://track/1700309643"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=yvXFGUWBMHY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/188224023",
       "uri_deezer": "deezer://track/1408780112",
       "fun_fact": "A chart hit by Michael McDonald (2021).",
       "fun_fact_de": "Ein Chart-Hit von Michael McDonald (2021).",
@@ -7997,7 +8018,7 @@
         "it": "applemusic://track/1445227982"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QsppPGDrNdg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/93788078",
       "uri_deezer": "deezer://track/541624382",
       "fun_fact": "A chart hit by Kool & The Gang (2018).",
       "fun_fact_de": "Ein Chart-Hit von Kool & The Gang (2018).",
@@ -8022,7 +8043,7 @@
         "it": "applemusic://track/712911374"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=_-zk_dWBmAg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/14644058",
       "uri_deezer": "deezer://track/18111574",
       "fun_fact": "A chart hit by Matia Bazar (2012).",
       "fun_fact_de": "Ein Chart-Hit von Matia Bazar (2012).",
@@ -8047,7 +8068,7 @@
         "it": "applemusic://track/1760798546"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=pqlZQIsRdmQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/92066640",
       "uri_deezer": "deezer://track/518970902",
       "fun_fact": "A chart hit by Pino D'Angiò (2011).",
       "fun_fact_de": "Ein Chart-Hit von Pino D'Angiò (2011).",
@@ -8072,7 +8093,7 @@
         "it": "applemusic://track/559334762"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=aUD0juRwb3I",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/16953809",
       "uri_deezer": "deezer://track/59509611",
       "fun_fact": "A chart hit by Michael Jackson (2012).",
       "fun_fact_de": "Ein Chart-Hit von Michael Jackson (2012).",
@@ -8097,7 +8118,7 @@
         "it": "applemusic://track/209953751"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=DPm3qb-zDqs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/33966386",
       "uri_deezer": "deezer://track/9437107",
       "fun_fact": "A chart hit by Miami Sound Machine (2011).",
       "fun_fact_de": "Ein Chart-Hit von Miami Sound Machine (2011).",
@@ -8122,7 +8143,7 @@
         "it": "applemusic://track/908640278"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=UhLDA4Wr2GU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3493390",
       "uri_deezer": "deezer://track/5503498",
       "fun_fact": "A chart hit by Matthew Wilder (2010).",
       "fun_fact_de": "Ein Chart-Hit von Matthew Wilder (2010).",
@@ -8147,7 +8168,7 @@
         "it": "applemusic://track/1441026535"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=xLq0JpDk8po",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/491296838",
       "uri_deezer": "deezer://track/3785971252",
       "fun_fact": "A chart hit by Kylie Minogue (2006).",
       "fun_fact_de": "Ein Chart-Hit von Kylie Minogue (2006).",
@@ -8172,7 +8193,7 @@
         "it": "applemusic://track/825319966"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=VVRHtUes7go",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1287428",
       "uri_deezer": "deezer://track/565055",
       "alt_artists": [
         "Gloria Estefan"
@@ -8200,7 +8221,7 @@
         "it": "applemusic://track/1290563059"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=CfUuamLRsbE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/5114336",
       "uri_deezer": "deezer://track/13200806",
       "fun_fact": "A chart hit by Tom Browne (2009).",
       "fun_fact_de": "Ein Chart-Hit von Tom Browne (2009).",
@@ -8225,7 +8246,7 @@
         "it": "applemusic://track/725785285"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=k-6EWSnagDM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/126218",
       "uri_deezer": "deezer://track/3116051",
       "fun_fact": "A chart hit by Huey Lewis & The News (2006).",
       "fun_fact_de": "Ein Chart-Hit von Huey Lewis & The News (2006).",
@@ -8250,7 +8271,7 @@
         "it": "applemusic://track/254813986"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=-69Hhh-ez8o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/102314",
       "uri_deezer": "deezer://track/565049",
       "fun_fact": "A chart hit by Gloria Estefan (2006).",
       "fun_fact_de": "Ein Chart-Hit von Gloria Estefan (2006).",
@@ -8275,7 +8296,7 @@
         "it": "applemusic://track/1817295288"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=tykf2xYPNdc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1335096",
       "uri_deezer": "deezer://track/3104486",
       "fun_fact": "A chart hit by Blondie (2003).",
       "fun_fact_de": "Ein Chart-Hit von Blondie (2003).",
@@ -8300,7 +8321,7 @@
         "it": "applemusic://track/1692152831"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=i893TotpH0o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3392907",
       "uri_deezer": "deezer://track/1132667092",
       "fun_fact": "A chart hit by Shakin' Stevens (2005).",
       "fun_fact_de": "Ein Chart-Hit von Shakin' Stevens (2005).",
@@ -8325,7 +8346,7 @@
         "it": "applemusic://track/1393964798"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=O-4OQ03mU58",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2972600",
       "uri_deezer": "deezer://track/3500793",
       "fun_fact": "A chart hit by Jaki Graham (2009).",
       "fun_fact_de": "Ein Chart-Hit von Jaki Graham (2009).",
@@ -8350,7 +8371,7 @@
         "it": "applemusic://track/329064716"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=h_r620DGoiE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/496064056",
       "uri_deezer": "deezer://track/3824997421",
       "fun_fact": "A chart hit by Madonna (2009).",
       "fun_fact_de": "Ein Chart-Hit von Madonna (2009).",
@@ -8375,7 +8396,7 @@
         "it": "applemusic://track/1719041756"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=VOiZC020nl0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3728807",
       "uri_deezer": "deezer://track/2168095",
       "fun_fact": "A chart hit by Billy Ocean (2005).",
       "fun_fact_de": "Ein Chart-Hit von Billy Ocean (2005).",
@@ -8400,7 +8421,7 @@
         "it": "applemusic://track/580182060"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LPM1_OvqIA0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1846772",
       "uri_deezer": "deezer://track/582418",
       "fun_fact": "A chart hit by Paul Young (2003).",
       "fun_fact_de": "Ein Chart-Hit von Paul Young (2003).",
@@ -8425,7 +8446,7 @@
         "it": "applemusic://track/1692882776"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=uKWgYKa2Fh0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/34004256",
       "uri_deezer": "deezer://track/2233196",
       "fun_fact": "A chart hit by Glenn Frey (2009).",
       "fun_fact_de": "Ein Chart-Hit von Glenn Frey (2009).",

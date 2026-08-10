@@ -7,8 +7,10 @@ to play music guessing games.
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,12 +18,14 @@ from homeassistant.components.frontend import (
     async_register_built_in_panel,
     async_remove_panel,
 )
+from homeassistant.helpers.event import async_track_time_interval
 
 from .analytics import AnalyticsStorage
 from .const import (
     CONF_ENABLE_COMPANION_AUTH_BYPASS,
     DEFAULT_ENABLE_COMPANION_AUTH_BYPASS,
     DOMAIN,
+    ROUND_SUPERVISOR_INTERVAL_SECONDS,
 )
 from .game.playlist import (
     async_discover_playlists,
@@ -49,17 +53,21 @@ from .server.views import (
     TtsTestView,
     PlayerView,
     PlaylistRequestsView,
+    MixPlaylistView,
     SavePlaylistView,
     SwJsView,
     RematchGameView,
+    SetSuddenDeathView,
     SongStatsView,
     StartGameplayView,
     StartGameView,
     StatsView,
     StatusView,
+    SetupView,
     UsageView,
 )
 from .server.websocket import BeatifyWebSocketHandler
+from .server.ws_handlers.admin import _finalize_and_end
 from .services.media_player import async_get_media_players
 from .services.stats import StatsService
 
@@ -153,6 +161,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Set up round end callback for timer expiry (Story 4.5)
     game_state.set_round_end_callback(ws_handler.broadcast_state)
 
+    # #1753: wire the terminal game-end one-shot so the unattended REVEAL
+    # auto-advance final round records stats + runs the podium ceremony through
+    # the same claim as the admin sockets (no double record / double podium TTS).
+    game_state.set_game_end_callback(
+        functools.partial(_finalize_and_end, ws_handler, game_state)
+    )
+
     # Set up metadata update callback for fast transitions (Issue #42)
     game_state.set_metadata_update_callback(ws_handler.broadcast_metadata_update)
 
@@ -188,6 +203,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # reload is needed — companion_auth.py reads hass.data live per request.
     entry.async_on_unload(entry.add_update_listener(_async_update_options))
 
+    # #1865: server-side round backstop. The round timer is a single asyncio
+    # task owned by the round; if it is cancelled, raises, or blocks in the
+    # time-up announcement, nothing on the server notices and the game sits on
+    # PLAYING. The only rescue was a countdown running in a player's browser,
+    # which a TV-only setup or a locked phone does not provide.
+    #
+    # This tick is deliberately owned by the config entry rather than by the
+    # game: it must outlive whatever went wrong inside the round. It runs for
+    # the life of the entry and costs a phase comparison when no round is in
+    # flight, which is cheaper than starting and stopping it around games —
+    # and the start/stop wiring would itself be something that can fail to run.
+    entry.async_on_unload(
+        async_track_time_interval(
+            hass,
+            functools.partial(_async_supervise_round, hass),
+            timedelta(seconds=ROUND_SUPERVISOR_INTERVAL_SECONDS),
+        )
+    )
+
     # Issue #441: Forward sensor and binary_sensor platforms
     await hass.config_entries.async_forward_entry_setups(
         entry, ["sensor", "binary_sensor"]
@@ -210,6 +244,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_view(BeatifyAuthRefreshView(hass))
         hass.http.register_view(StatusView(hass))
         hass.http.register_view(CapabilitiesView(hass))
+        hass.http.register_view(SetupView(hass))  # #1663 — server-side setup flag
         hass.http.register_view(LightsView(hass))  # Issue #331
         hass.http.register_view(AlbumArtView(hass))  # Issue #933 — remote album art
         hass.http.register_view(PreviewLightsView(hass))  # Issue #408
@@ -217,6 +252,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_view(TtsTestView(hass))
         hass.http.register_view(StartGameView(hass))
         hass.http.register_view(StartGameplayView(hass))
+        hass.http.register_view(SetSuddenDeathView(hass))  # Issue #827
         hass.http.register_view(EndGameView(hass))
         hass.http.register_view(
             ForceResetView(hass)
@@ -234,6 +270,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_view(SongStatsView(hass))  # Story 19.7
         hass.http.register_view(PlaylistRequestsView(hass))  # Story 44
         hass.http.register_view(SavePlaylistView(hass))  # #1057
+        hass.http.register_view(MixPlaylistView(hass))  # #1538 — Smart Playlist Mixer
         hass.http.register_view(UsageView(hass))  # v3.3 Playlist Hub local stats
 
         # Register WebSocket endpoint via a stable dispatch closure that
@@ -278,6 +315,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Beatify integration setup complete")
     return True
+
+
+async def _async_supervise_round(
+    hass: HomeAssistant, _now: datetime | None = None
+) -> None:
+    """Periodic tick: end a round whose own timer failed to end it (#1865).
+
+    Resolves the game from ``hass.data`` on every tick rather than closing over
+    it, so a config-entry reload that swaps in a fresh ``GameState`` cannot
+    leave this driving the old one.
+
+    Errors are swallowed with a log. ``async_track_time_interval`` keeps firing
+    after a raising callback, but a round that is already stuck should not also
+    be producing an unhandled-exception traceback every two seconds.
+    """
+    domain_data = hass.data.get(DOMAIN)
+    if not isinstance(domain_data, dict):
+        return
+    game_state = domain_data.get("game")
+    if game_state is None:
+        return
+    try:
+        await game_state.force_end_round_if_overdue()
+    except Exception:  # noqa: BLE001
+        _LOGGER.warning("Round backstop failed to end an overdue round", exc_info=True)
 
 
 async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -350,6 +412,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             analytics = domain_data.get("analytics")
             if analytics is not None:
                 await analytics.async_shutdown()
+            # Flush any pending debounced per-round stats save before teardown (#1708)
+            stats = domain_data.get("stats")
+            if stats is not None:
+                await stats.async_shutdown()
 
         _LOGGER.info("Beatify integration unloaded")
     else:

@@ -226,6 +226,7 @@ const state = {
     recentPlaylists: [],
     requests: [],
     currentTab: 'bundled',
+    topTab: 'list',            // #1568: 'list' = playlist picker, 'mix' = Smart Playlist Mixer
     genreFilter: 'all',
     searchQuery: '',
     selectedPaths: new Set(),
@@ -251,6 +252,7 @@ export function mount(rootEl, options = {}) {
         locale: null,
     }, options);
     state.mounted = true;
+    state.topTab = 'list';            // #1568: always open on the playlist picker
     state.selectedPaths = new Set(state.options.initialSelected || []);
     if (Array.isArray(state.options.initialPlaylists)) {
         state.playlists = state.options.initialPlaylists;
@@ -352,6 +354,16 @@ function _detachDelegates(rootEl) {
 }
 
 function _onClick(e) {
+    // #1568: top-level Playlists / Mix tab strip.
+    const topTab = e.target.closest('[data-plh-toptab]');
+    if (topTab) {
+        const next = topTab.dataset.plhToptab;
+        if (next && next !== state.topTab) {
+            state.topTab = next;
+            _applyTopTab();
+        }
+        return;
+    }
     const tab = e.target.closest('[data-plh-tab]');
     if (tab) {
         state.currentTab = tab.dataset.plhTab;
@@ -484,6 +496,17 @@ function _onClick(e) {
         }
         return;
     }
+    const mixContinue = e.target.closest('[data-plh-action="mix-continue"]');
+    if (mixContinue) {
+        // #1625: assemble the mix, then hand its path to the wizard's onContinue
+        // (same advance path the list "Continue" uses). mix.js owns assembly +
+        // the busy state on the #mix-continue button.
+        const opts = state.options || {};
+        if (window.BeatifyMixPanel && typeof window.BeatifyMixPanel.continueInWizard === 'function') {
+            window.BeatifyMixPanel.continueInWizard(opts.onContinue);
+        }
+        return;
+    }
     const back = e.target.closest('[data-plh-action="back"]');
     if (back) {
         const opts = state.options || {};
@@ -528,16 +551,160 @@ function _emitSelectionChange() {
 
 function _renderAll() {
     if (!state.root) return;
+    // #1568: a top-level "Playlists / 🎚️ Mix" tab strip wraps the hub so the
+    // Smart Playlist Mixer is reachable in EVERY hub mount (incl. the wizard
+    // step-3 picker — the live first-run surface). "Playlists" = the existing
+    // Bundled/Community/Mine picker; "Mix" = the component-owned Mix panel.
+    // Reuses the global .playlist-tabs/.playlist-tab/.playlist-panel styles.
+    // #1625: in the wizard the hub gets an `onContinue` callback (it owns the
+    // "advance" step). The Mix tab must then offer the same "Weiter →" CTA — and
+    // hide its standalone "Start mix" button, which launches the game directly.
+    const inWizard = !!(state.options && state.options.onContinue);
     state.root.innerHTML = `
-        <div class="plh-header" data-plh-header></div>
-        <div class="plh-body" data-plh-body></div>
-        <div class="plh-cta-bar" data-plh-cta></div>
-        <div class="plh-sheet-host" data-plh-sheet></div>
+        ${_topTabsHtml(state.topTab)}
+        <div class="playlist-panel plh-list-view ${state.topTab === 'mix' ? 'hidden' : ''}" data-plh-list-view role="tabpanel">
+            <div class="plh-header" data-plh-header></div>
+            <div class="plh-body" data-plh-body></div>
+            <div class="plh-cta-bar" data-plh-cta></div>
+            <div class="plh-sheet-host" data-plh-sheet></div>
+        </div>
+        <div class="playlist-panel plh-mix-view ${state.topTab === 'mix' ? '' : 'hidden'}" data-plh-mix-view role="tabpanel">
+            <div class="plh-body plh-mix-body">
+                ${_mixPanelHtml(inWizard)}
+            </div>
+            <div class="plh-cta-bar plh-mix-cta" data-plh-mix-cta></div>
+        </div>
     `;
     _renderHeader();
     _renderChips();
     _renderTabBody();
     _renderCtaBar();
+    _renderMixCtaBar();
+    _bindMixPanel();
+    _applyI18n();
+}
+
+/**
+ * #1568: top-level tab strip. Pure (no DOM) — exported for unit tests.
+ * @param {string} activeTab - 'list' | 'mix'
+ */
+export function _topTabsHtml(activeTab) {
+    const listActive = activeTab !== 'mix';
+    return `
+        <div class="playlist-tabs plh-toptabs" role="tablist" aria-label="${_escape(_t('playlistHub.topTabs.label', 'Playlist source'))}">
+            <button type="button" class="playlist-tab ${listActive ? 'active' : ''}" role="tab" aria-selected="${listActive}" data-plh-toptab="list" data-i18n="admin.playlistTabList">Playlists</button>
+            <button type="button" class="playlist-tab ${listActive ? '' : 'active'}" role="tab" aria-selected="${!listActive}" data-plh-toptab="mix"><span aria-hidden="true">🎚️</span> <span data-i18n="admin.playlistTabMix">Mix</span></button>
+        </div>
+    `;
+}
+
+/**
+ * #1568: Smart Playlist Mixer panel markup. Component-owned so it ships with
+ * every hub mount. Behaviour (chip cloud, target count, preview, start) is
+ * wired by admin/sections/mix.js via window.BeatifyMixPanel.bind(). Pure (no
+ * DOM) — exported for unit tests.
+ */
+export function _mixPanelHtml(inWizard = false) {
+    // #1625: in the wizard the standalone "Start mix" button (which launches the
+    // game immediately, bypassing the rest of the wizard) is omitted — the hub's
+    // "Weiter →" CTA bar carries the assembled mix into the next wizard step.
+    const startBtn = inWizard ? '' : `
+                <button type="button" id="mix-start" class="btn btn-primary" disabled>
+                    <span aria-hidden="true">▶</span> <span data-i18n="admin.mixStart">Start mix</span>
+                </button>`;
+    return `
+        <div class="mix-card">
+            <div class="mix-card-head">
+                <span class="mix-card-icon" aria-hidden="true">🎚️</span>
+                <h3 class="mix-card-title" data-i18n="admin.mixTitle">Smart Playlist Mixer</h3>
+            </div>
+            <p class="mix-card-sub" data-i18n="admin.mixSubtitle">Pick tags — Beatify assembles a de-duplicated set from your catalogue on the fly.</p>
+
+            <div id="mix-chip-cloud" class="mix-chip-cloud"></div>
+
+            <div class="mix-divider"></div>
+
+            <div class="mix-count-row">
+                <span class="mix-count-label" data-i18n="admin.mixTargetCount">Target songs</span>
+                <div class="mix-segmented" role="radiogroup" aria-label="Target song count">
+                    <button type="button" class="mix-seg" role="radio" aria-checked="false" data-mix-count="30">30</button>
+                    <button type="button" class="mix-seg active" role="radio" aria-checked="true" data-mix-count="50">50</button>
+                    <button type="button" class="mix-seg" role="radio" aria-checked="false" data-mix-count="100">100</button>
+                </div>
+            </div>
+
+            <div id="mix-preview" class="mix-preview" aria-live="polite">
+                <span class="mix-preview-dot" aria-hidden="true"></span>
+                <span id="mix-preview-text" data-i18n="admin.mixPreviewEmpty">Select tags to preview your mix.</span>
+            </div>
+
+            <div class="mix-tracklist-row">
+                <button type="button" id="mix-preview-btn" class="btn btn-secondary btn-sm" disabled
+                        aria-expanded="false" aria-controls="mix-tracklist">
+                    <span aria-hidden="true">🎵</span> <span data-i18n="admin.mixPreviewTracks">Preview tracklist</span>
+                </button>
+            </div>
+            <div id="mix-tracklist" class="mix-tracklist hidden" aria-live="polite"></div>
+
+            <div class="mix-actions">${startBtn}
+                <label class="mix-save-label">
+                    <input type="checkbox" id="mix-save-community">
+                    <span data-i18n="admin.mixSaveCommunity">Save as community playlist</span>
+                </label>
+            </div>
+            <p id="mix-error" class="validation-msg hidden"></p>
+        </div>
+    `;
+}
+
+/** #1568: ask mix.js to wire the hub-rendered Mix panel (no-op if not loaded). */
+function _bindMixPanel() {
+    try {
+        if (window.BeatifyMixPanel && typeof window.BeatifyMixPanel.bind === 'function') {
+            window.BeatifyMixPanel.bind();
+        }
+    } catch (e) { console.warn('[PlaylistHub] mix panel bind failed:', e); }
+}
+
+/**
+ * #1568: translate the data-i18n nodes the hub just rendered (top tabs + Mix
+ * panel). Scoped to the hub root so we don't re-touch the rest of the page.
+ * Mirrors BeatifyI18n.initPageTranslations() (only overwrite when the key
+ * actually resolves to a real translation).
+ */
+function _applyI18n() {
+    if (!state.root) return;
+    const i18n = window.BeatifyI18n;
+    if (!i18n || typeof i18n.t !== 'function') return;
+    state.root.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (!key) return;
+        const val = i18n.t(key);
+        if (val && val !== key) el.textContent = val;
+    });
+}
+
+/** #1568: show/hide the list vs mix panel + sync the top-tab active state. */
+function _applyTopTab() {
+    const root = state.root;
+    if (!root) return;
+    root.querySelectorAll('[data-plh-toptab]').forEach((btn) => {
+        const active = btn.dataset.plhToptab === state.topTab;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const listView = root.querySelector('[data-plh-list-view]');
+    const mixView = root.querySelector('[data-plh-mix-view]');
+    if (listView) listView.classList.toggle('hidden', state.topTab === 'mix');
+    if (mixView) mixView.classList.toggle('hidden', state.topTab !== 'mix');
+    // Refresh chips from the live catalogue whenever the Mix tab is shown.
+    if (state.topTab === 'mix') {
+        try {
+            if (window.BeatifyMixPanel && typeof window.BeatifyMixPanel.renderChips === 'function') {
+                window.BeatifyMixPanel.renderChips();
+            }
+        } catch (e) { /* noop */ }
+    }
 }
 
 function _renderHeader() {
@@ -612,6 +779,50 @@ function _renderTabBody() {
         case 'mine': _renderMine(host); break;
         default: _renderBundled(host);
     }
+    _renderSeasonalChip(host);
+}
+
+/**
+ * #1570: surface the seasonal "Suggestion of the season" chip (#1539) at the
+ * TOP of the live Bundled picker. The chip used to render only into the flat
+ * #playlists-list, which is dead UI since rc11/#1138 — the same mount gap the
+ * Mix tab hit (#1568/#1569), so it never appeared on the live wizard step-3
+ * surface. seasonal-suggestion.js exposes its API on window.BeatifySeasonal
+ * (it's a bundled module the standalone hub can't import directly — same bridge
+ * as window.BeatifyMixPanel).
+ *
+ * Gated to the Bundled tab, over the hub's current (search + genre) filtered
+ * set minus already-selected playlists, plus the per-season dismiss state. Add
+ * delegates to the hub's selection model; Dismiss reuses the per-season
+ * localStorage flag.
+ */
+function _renderSeasonalChip(host) {
+    if (!host || state.currentTab !== 'bundled') return;
+    const api = (typeof window !== 'undefined') ? window.BeatifySeasonal : null;
+    if (!api || typeof api.seasonalSuggestionHtml !== 'function') return;
+    // Mirror _renderBundled's filtered set, then drop already-selected paths so
+    // the chip vanishes once its playlist is added: the hub owns selection, so
+    // pickSeasonalSuggestion's adminState.selectedPlaylists check never sees the
+    // hub's picks — pre-filtering here is what makes "skip if selected" hold.
+    const all = (state.playlists || []).filter((p) => p.source !== 'community');
+    const filtered = filterByGenre(all.filter((p) => matchesSearch(p, state.searchQuery)), state.genreFilter);
+    const candidates = filtered.filter((p) => !state.selectedPaths.has(p.path || p.filename || p.name));
+    let chipHtml = '';
+    try { chipHtml = api.seasonalSuggestionHtml(candidates) || ''; }
+    catch (e) { console.warn('[PlaylistHub] seasonal chip render failed:', e); return; }
+    if (!chipHtml) return;
+    host.insertAdjacentHTML('afterbegin', chipHtml);
+    try {
+        if (typeof api.wireSeasonalSuggestionHub === 'function') {
+            api.wireSeasonalSuggestionHub(host, (path) => {
+                if (!path || state.selectedPaths.has(path)) return;
+                state.selectedPaths.add(path);   // hub selection model (getSelection/setSelection-backed)
+                _emitSelectionChange();
+                _renderTabBody();
+                _renderCtaBar();
+            });
+        }
+    } catch (e) { console.warn('[PlaylistHub] seasonal chip wire failed:', e); }
 }
 
 // ---------- Bundled view ----------
@@ -1265,4 +1476,36 @@ function _renderCtaBar() {
             <svg class="plh-cta-start-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
     `;
+}
+
+/**
+ * #1625: sticky "Weiter →" CTA markup for the Mix tab. Mirrors `_renderCtaBar`'s
+ * Back + primary-start buttons so the wizard can advance from a built mix —
+ * but deliberately WITHOUT the request FAB (playlists-specific) and WITHOUT a
+ * count chip (a mix has no selected-playlist count). Returns '' unless the host
+ * passed an `onContinue` callback (i.e. the hub is running inside the wizard),
+ * so standalone mounts show no Mix CTA. Pure (no DOM) — exported for unit tests.
+ */
+export function _mixCtaBarHtml(opts = {}) {
+    if (typeof opts.onContinue !== 'function') return '';
+    const backBtn = opts.showBack
+        ? `<button class="plh-cta-back" data-plh-action="back" aria-label="${_escape(opts.backLabel || _t('playlistHub.cta.back', 'Back'))}">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+               <span>${_escape(opts.backLabel || _t('playlistHub.cta.back', 'Back'))}</span>
+           </button>`
+        : '';
+    return `
+        ${backBtn}
+        <button class="plh-cta-start" data-plh-action="mix-continue" id="mix-continue">
+            <span class="plh-cta-start-label">${_escape(_t('playlistHub.cta.start', 'Continue'))}</span>
+            <svg class="plh-cta-start-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+    `;
+}
+
+/** #1625: populate the Mix tab's sticky CTA host from the pure builder. */
+function _renderMixCtaBar() {
+    const host = state.root && state.root.querySelector('[data-plh-mix-cta]');
+    if (!host) return;
+    host.innerHTML = _mixCtaBarHtml(state.options || {});
 }

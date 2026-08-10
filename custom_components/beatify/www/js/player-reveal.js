@@ -8,7 +8,8 @@ import {
     prefersReducedMotion, animateValue, animateScoreChange, showPointsPopup,
     previousState, isPreviousStateInitialized, isStreakMilestone,
     AnimationUtils, updatePreviousState,
-    triggerConfetti, stopConfetti
+    triggerConfetti, stopConfetti, isTitleArtistMode,
+    createModalFocusTrap
 } from './player-utils.js';
 
 import { renderArtistReveal, renderMovieReveal } from './player-game.js';
@@ -17,6 +18,14 @@ var utils = window.BeatifyUtils || {};
 
 var VOTE_WINDOW_SECONDS = 30;  // mirrors TITLE_ARTIST_VOTE_WINDOW_SECONDS
 var _taVoteCountdownTimer = null;
+
+// #1706: cache the last art URL applied to the reveal cover + backdrop. REVEAL
+// broadcasts fire for every reaction/vote/override; without these guards each
+// one re-assigned <img>.src and allocated a fresh Image() to re-decode the same
+// backdrop, causing repeated decodes/repaints during the most interactive phase.
+// Reset on stopRevealCountdown (phase leaves REVEAL) so a new round re-probes.
+var _lastRevealCoverSrc = null;
+var _lastBackdropArt = null;
 
 // ============================================
 // Reveal View (Story 4.6)
@@ -77,10 +86,16 @@ export function updateRevealView(data) {
         // entity gone, MA-side hiccup). Fallback to the precached no-artwork
         // SVG so the cover slot always renders something — without onerror the
         // .song-strip-cover gradient bleeds through and looks intentional.
-        albumCover.onerror = function() {
-            albumCover.src = '/beatify/static/img/no-artwork.svg';
-        };
-        albumCover.src = song.album_art || '/beatify/static/img/no-artwork.svg';
+        var coverSrc = song.album_art || '/beatify/static/img/no-artwork.svg';
+        // #1706: only reassign when the URL actually changed — a re-broadcast
+        // with the same art must not re-trigger a decode/repaint.
+        if (coverSrc !== _lastRevealCoverSrc) {
+            albumCover.onerror = function() {
+                albumCover.src = '/beatify/static/img/no-artwork.svg';
+            };
+            albumCover.src = coverSrc;
+            _lastRevealCoverSrc = coverSrc;
+        }
     }
 
     // Spotlight Stage backdrop: blur the album art behind the top of the
@@ -90,21 +105,29 @@ export function updateRevealView(data) {
     // the cover <img> has an onerror handler above).
     var backdrop = document.getElementById('reveal-backdrop');
     if (backdrop) {
-        var art = song.album_art;
-        if (art) {
-            var probe = new Image();
-            probe.onload = function() {
-                backdrop.style.backgroundImage = 'url("' + art + '")';
-                backdrop.classList.remove('reveal-backdrop--synthetic');
-            };
-            probe.onerror = function() {
+        var art = song.album_art || null;
+        // #1706: early-return when the backdrop art is unchanged — skip the new
+        // Image() allocation, the URL reload and the backgroundImage reassign
+        // (the expensive decode+repaint) on every re-broadcast of the same song.
+        if (art !== _lastBackdropArt) {
+            _lastBackdropArt = art;
+            if (art) {
+                var probe = new Image();
+                probe.onload = function() {
+                    backdrop.style.backgroundImage = 'url("' + art + '")';
+                    backdrop.classList.remove('reveal-backdrop--synthetic');
+                };
+                probe.onerror = function() {
+                    // Reset the cache so a later retry with the same URL re-probes.
+                    if (_lastBackdropArt === art) _lastBackdropArt = null;
+                    backdrop.style.backgroundImage = '';
+                    backdrop.classList.add('reveal-backdrop--synthetic');
+                };
+                probe.src = art;
+            } else {
                 backdrop.style.backgroundImage = '';
                 backdrop.classList.add('reveal-backdrop--synthetic');
-            };
-            probe.src = art;
-        } else {
-            backdrop.style.backgroundImage = '';
-            backdrop.classList.add('reveal-backdrop--synthetic');
+            }
         }
     }
 
@@ -160,7 +183,11 @@ export function updateRevealView(data) {
     // emotion ("BINGO" + "You said × N years × Actually <year>") and the
     // year chip row don't apply — hide them and let the Title & Artist reveal
     // carry the round result. The mode-agnostic score row stays.
-    var taMode = !!(data.title_artist_challenge && data.title_artist_challenge.correct_title);
+    // #1664 item 3: unified on the top-level `title_artist_mode` flag (via
+    // isTitleArtistMode) — same source player-game.js and the TV dashboard use.
+    // Previously this sniffed `title_artist_challenge.correct_title`, which
+    // diverged when the mode was on but the challenge payload hadn't populated.
+    var taMode = isTitleArtistMode(data);
     var duelEl = document.querySelector('#reveal-view .duel');
     if (duelEl) duelEl.classList.toggle('hidden', taMode);
     if (taMode) {
@@ -238,6 +265,10 @@ export function stopRevealCountdown() {
     }
     var chip = document.getElementById('player-reveal-countdown');
     if (chip) chip.classList.add('hidden');
+    // #1706: leaving REVEAL — drop the cover/backdrop caches so the NEXT round's
+    // REVEAL re-applies the (new) art even if the DOM was reused.
+    _lastRevealCoverSrc = null;
+    _lastBackdropArt = null;
 }
 
 /**
@@ -340,6 +371,21 @@ function renderPlayerDotAxis(allGuesses, correctYear, currentPlayerName) {
         return 'c' + ((h % 4) + 1);
     }
 
+    // #1663 item 3 (A11y — Icon+Text Status): map each guess to an accuracy
+    // state carrying BOTH a glyph and a word, so the result no longer relies on
+    // the cyan-glow colour alone (exact = ◎, near = ≈, off = ✕). "Near" is
+    // "scored but not exact" — round_score>0 means the guess was close enough to
+    // earn points, which is the same threshold the scoring engine uses.
+    function accuracyStatus(item) {
+        if (item && item.years_off === 0) {
+            return { glyph: '◎', word: utils.t('reveal.correct') || 'Correct!', cls: 'exact' };
+        }
+        if (item && (item.round_score || 0) > 0) {
+            return { glyph: '≈', word: utils.t('reveal.close') || 'Close!', cls: 'near' };
+        }
+        return { glyph: '✕', word: utils.t('reveal.wrong') || 'Wrong', cls: 'off' };
+    }
+
     var dotsHtml = '';
     for (var k = 0; k < allGuesses.length; k++) {
         var g = allGuesses[k];
@@ -352,11 +398,18 @@ function renderPlayerDotAxis(allGuesses, correctYear, currentPlayerName) {
         var score = g.round_score || 0;
         var scoreCls = score > 0 ? 'dotaxis-score--pos' : 'dotaxis-score--zero';
         var scoreText = score > 0 ? '+' + score : '+0';
+        // #1663 item 3: fold the accuracy WORD into the dot's accessible label so
+        // a screen-reader user hears "Anna — 1985 (Close!) (+8)" rather than a
+        // bare colour cue.
+        var dotAcc = accuracyStatus(g);
+        var dotLabel = escapeHtml(g.name) + ' — ' + g.guess + ' (' + dotAcc.word + ') (' + scoreText + ')';
 
         dotsHtml +=
             '<div class="dotaxis-dot dotaxis-dot--' + cls + glowCls + meCls + '" ' +
+                'role="img" ' +
                 'style="left:' + p + '%" ' +
-                'title="' + escapeHtml(g.name) + ' — ' + g.guess + ' (' + scoreText + ')">' +
+                'aria-label="' + dotLabel + '" ' +
+                'title="' + dotLabel + '">' +
             initial +
             '</div>' +
             '<div class="dotaxis-score ' + scoreCls + '" style="left:' + p + '%">' + scoreText + '</div>';
@@ -374,11 +427,19 @@ function renderPlayerDotAxis(allGuesses, correctYear, currentPlayerName) {
         var medal = m < 3 ? '<span class="dotaxis-legend-medal">' + medals[m] + '</span>' : '';
         var meMark = (currentPlayerName && item.name === currentPlayerName)
             ? ' <span class="dotaxis-legend-me">' + utils.t('analytics.youMarker') + '</span>' : '';
+        // #1663 item 3: icon+text accuracy chip per legend row — glyph + word,
+        // colour is only reinforcement.
+        var acc = accuracyStatus(item);
+        var accChip =
+            ' <span class="dotaxis-legend-acc dotaxis-legend-acc--' + acc.cls + '">' +
+                '<span class="dotaxis-legend-acc-glyph" aria-hidden="true">' + acc.glyph + '</span>' +
+                escapeHtml(acc.word) +
+            '</span>';
         legendHtml +=
             '<span class="dotaxis-legend-entry">' +
                 medal +
                 '<span class="dotaxis-legend-dot dotaxis-dot--' + lcls + '"></span>' +
-                escapeHtml(item.name || '?') + meMark +
+                escapeHtml(item.name || '?') + meMark + accChip +
             '</span>';
     }
 
@@ -702,6 +763,23 @@ function showRevealEmotion(player, correctYear) {
  * @param {Object} player - Current player data
  * @param {number} correctYear - The correct year
  */
+/**
+ * The "your shield took it" line (#1666).
+ *
+ * Deliberately states the streak it saved rather than a bare "shield used":
+ * the value of the moment is the run that survived, and the number is what
+ * makes it land. Rendered on both the missed-round and the wrong-answer path,
+ * because a shield only ever fires on a round the player got wrong.
+ */
+function renderStreakShieldUsed(player) {
+    var streak = player.streak || 0;
+    var text = utils.t('reveal.streakShieldUsed', { streak: streak });
+    return '<div class="streak-shield-used">' +
+               '<span class="streak-shield-icon">🛡️</span>' +
+               '<span class="streak-shield-text">' + text + '</span>' +
+           '</div>';
+}
+
 function renderPersonalResult(player, correctYear) {
     var resultContent = document.getElementById('result-content');
     if (!resultContent) return;
@@ -718,6 +796,13 @@ function renderPersonalResult(player, correctYear) {
                 '<div class="result-missed-text">' + utils.t('reveal.noSubmission') + '</div>' +
             '</div>';
 
+        // #1666: a shield absorbed this miss — the streak is intact, so the
+        // "lost your streak" line would be a lie. Say what actually happened
+        // instead; a wrong answer that leaves the streak standing with no
+        // explanation reads as a scoring bug.
+        if (player.streak_shield_used) {
+            missedHtml += renderStreakShieldUsed(player);
+        }
         var previousStreak = player.previous_streak || 0;
         if (previousStreak >= 2) {
             missedHtml +=
@@ -819,6 +904,7 @@ function renderPersonalResult(player, correctYear) {
         scoreBreakdown +
         betOutcomeHtml +
         '<div class="result-score" id="personal-result-score">+<span class="score-value">0</span> pts</div>' +
+        (player.streak_shield_used ? renderStreakShieldUsed(player) : '') +
         streakBonusHtml +
         artistBonusHtml +
         (hasBonuses ? '<div class="result-total">' + utils.t('reveal.total') + ': +<span class="total-value">0</span> pts</div>' : '');
@@ -1456,20 +1542,31 @@ export function renderRoundStatsSheet() {
 
 // ---------- Sheet open/close wiring ----------
 
+var _sheetTraps = {};
+
 function openSheet(id, populate) {
     var sheet = document.getElementById(id);
     if (!sheet) return;
     if (typeof populate === 'function') populate();
     sheet.classList.remove('hidden');
-    // Trap focus lightly: move focus to the close button if present
+    // #1760: real focus trap (Tab-cycle + Escape close + focus restore) instead
+    // of just moving focus to the close button once. The sheets declared
+    // aria-modal=true but kept focus in the background before this.
     var closeBtn = sheet.querySelector('.sheet-close');
-    if (closeBtn) closeBtn.focus();
+    var trap = _sheetTraps[id] || (_sheetTraps[id] = createModalFocusTrap(sheet, {
+        contentSelector: '.sheet-content'
+    }));
+    trap.activate({
+        initialFocus: closeBtn,
+        onEscape: function() { closeSheet(id); }
+    });
 }
 
 function closeSheet(id) {
     var sheet = document.getElementById(id);
     if (!sheet) return;
     sheet.classList.add('hidden');
+    if (_sheetTraps[id]) _sheetTraps[id].deactivate(); // #1760
 }
 
 /**
@@ -1523,6 +1620,30 @@ function _resetReportBtn() {
     if (!btn) return;
     btn.textContent = utils.t('reveal.reportBtn') || '🚩 Wrong year?';
     btn.disabled = false;
+    _clearReportError();
+}
+
+// #1663: the report submit used to fail silently (a dead WS just returned).
+// Surface an inline error next to the button so the user knows to retry.
+// Reuses the existing `.validation-msg` styling so no CSS change is needed.
+function _showReportError() {
+    var row = document.querySelector('.reveal-report-row');
+    if (!row) return;
+    var err = document.getElementById('reveal-report-error');
+    if (!err) {
+        err = document.createElement('p');
+        err.id = 'reveal-report-error';
+        err.className = 'validation-msg reveal-report-error';
+        err.setAttribute('role', 'alert');
+        row.appendChild(err);
+    }
+    err.textContent = utils.t('reveal.reportBtnError') || "Couldn't send report — please try again.";
+    err.classList.remove('hidden');
+}
+
+function _clearReportError() {
+    var err = document.getElementById('reveal-report-error');
+    if (err) err.classList.add('hidden');
 }
 
 /**
@@ -1534,15 +1655,26 @@ export function setupRevealReportBtn() {
     if (!btn) return;
     btn.addEventListener('click', function() {
         var ctx = state.lastRevealContext;
-        if (!ctx || !ctx.song) return;
-        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+        if (!ctx || !ctx.song) return;  // nothing to report — leave button idle
+        // #1663: a closed/absent socket previously returned silently. Tell the
+        // user instead of pretending nothing happened.
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+            _showReportError();
+            return;
+        }
 
-        state.ws.send(JSON.stringify({
-            type: 'report_data',
-            artist: ctx.song.artist || '',
-            title: ctx.song.title || '',
-            year: ctx.song.year || null,
-        }));
+        _clearReportError();
+        try {
+            state.ws.send(JSON.stringify({
+                type: 'report_data',
+                artist: ctx.song.artist || '',
+                title: ctx.song.title || '',
+                year: ctx.song.year || null,
+            }));
+        } catch (e) {
+            _showReportError();
+            return;
+        }
 
         btn.textContent = utils.t('reveal.reportBtnDone') || '✓ Reported — thanks!';
         btn.disabled = true;

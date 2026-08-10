@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from typing import TYPE_CHECKING
@@ -12,6 +13,7 @@ from aiohttp import WSCloseCode, WSMsgType, web
 from custom_components.beatify.const import (
     ERR_GAME_NOT_STARTED,
     LOBBY_DISCONNECT_GRACE_PERIOD,
+    MAX_GUESS_LEN,
 )
 from custom_components.beatify.server.serializers import (
     REDACTED_PLACEHOLDER,
@@ -24,6 +26,7 @@ from custom_components.beatify.server.ws_handlers import (
     handle_admin_connect,
     handle_artist_guess,
     handle_get_state,
+    handle_get_sabotage_targets,
     handle_get_steal_targets,
     handle_join,
     handle_leave,
@@ -34,12 +37,14 @@ from custom_components.beatify.server.ws_handlers import (
     handle_reconnect,
     handle_report_data,
     handle_round_timeout,
+    handle_sabotage,
     handle_steal,
     handle_submit,
     handle_title_artist_guess,
     handle_title_artist_override,
     handle_title_artist_vote,
 )
+from custom_components.beatify.wire_debug import get_wire_logger
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -47,6 +52,17 @@ if TYPE_CHECKING:
     from custom_components.beatify.analytics import AnalyticsStorage
 
 _LOGGER = logging.getLogger(__name__)
+# #1866: per-request / per-frame traffic goes to the opt-in wire logger so
+# `custom_components.beatify: debug` stays usable (it used to cost 50-500x on
+# the HTTP path). See custom_components/beatify/wire_debug.py.
+_WIRE_LOGGER = get_wire_logger()
+
+# Free-text guess fields that must be length-capped at the ingest boundary
+# (#1581). aiohttp accepts WS frames up to 4 MB; an unbounded guess would feed a
+# multi-megabyte string into the O(n*m) Levenshtein DP and freeze the HA event
+# loop. Truncating here — before the message is dispatched, classified, stored,
+# or re-broadcast — keeps any oversized payload from flowing through the backend.
+_GUESS_TEXT_FIELDS = ("title", "artist", "movie")
 
 
 class BeatifyWebSocketHandler:
@@ -70,6 +86,12 @@ class BeatifyWebSocketHandler:
         self.connections: set[web.WebSocketResponse] = set()
         self._admin_disconnect_task: asyncio.Task | None = None
         self._analytics: AnalyticsStorage | None = None
+        # #1702: game_ids whose terminal end sequence (finalize_game +
+        # record_game + advance_to_end) has already been claimed. An admin has
+        # two admin-capable sockets (participant WS + spectator _admin_ws); on
+        # the final round both can pass the REVEAL/last_round checks. The claim
+        # (see _claim_game_end) makes the end run exactly once per game.
+        self._recorded_game_ids: set[str] = set()
         # Debouncing for concurrent player joins (Issue #41)
         self._broadcast_debounce_task: asyncio.Task | None = None
         self._broadcast_debounce_delay = 0.05  # 50ms
@@ -85,6 +107,8 @@ class BeatifyWebSocketHandler:
             "get_state": handle_get_state,
             "get_steal_targets": handle_get_steal_targets,
             "steal": handle_steal,
+            "get_sabotage_targets": handle_get_sabotage_targets,  # #1665
+            "sabotage": handle_sabotage,  # #1665
             "reaction": handle_reaction,
             "artist_guess": handle_artist_guess,
             "movie_guess": handle_movie_guess,
@@ -117,6 +141,40 @@ class BeatifyWebSocketHandler:
         """
         if self._analytics:
             self._analytics.record_error(error_type, message)
+
+    def _claim_game_end(self, game_id: str | None) -> bool:
+        """Claim the one-shot game-end for ``game_id`` (#1702).
+
+        Returns ``True`` exactly once per game — for the first terminal path to
+        reach the game-end (either admin socket or the unattended REVEAL
+        auto-advance, #1753) — and ``False`` for any concurrent or repeat
+        caller, so ``record_game`` (double stats) and ``advance_to_end`` (double
+        podium TTS) run at most once per game. The check + insert has no
+        ``await`` between them, so two callers in the same tick can't both win.
+        ``rematch_game`` / ``create_game`` mint a fresh ``game_id``, so a later
+        game is claimable again.
+
+        #1754: only one game is ever active per handler, so the claim set is
+        pruned to just the current ``game_id`` on each successful claim — it can
+        never grow unbounded across a long-lived handler's many games.
+        """
+        if game_id is None or game_id in self._recorded_game_ids:
+            return False
+        # Bound the set: drop any stale predecessor id, keep only this claim.
+        self._recorded_game_ids = {game_id}
+        return True
+
+    def _release_game_end(self, game_id: str | None) -> None:
+        """Release a claimed game-end so the terminal sequence can be retried (#1754).
+
+        ``_finalize_and_end`` claims BEFORE its side effects (``record_game``
+        storage I/O + ``advance_to_end``). If either raises, the claim would
+        otherwise be burned: every retry hits "already claimed" and returns
+        without advancing, stranding the game in REVEAL/PAUSED. Discarding the
+        id on failure lets the next tap re-run the end sequence.
+        """
+        if game_id is not None:
+            self._recorded_game_ids.discard(game_id)
 
     # ------------------------------------------------------------------
     # Rate limiting
@@ -172,13 +230,8 @@ class BeatifyWebSocketHandler:
         await ws.prepare(request)
 
         self.connections.add(ws)
-        # rc11 diagnostic (#1131 follow-up, player-join "Reconnecting" issue):
-        # the HTTP bypass works (admin loads) but the WS player-join fails.
-        # Log every WS upgrade with the *exact* UA + remote the server saw at
-        # upgrade time so we can confirm whether the WS path sees the same
-        # Companion signature the HTTP path does, or whether the upgrade
-        # arrives with a different UA / through a different proxy hop.
-        _LOGGER.info(
+        # #1662: demoted to DEBUG — fires on every WS upgrade and floods INFO logs.
+        _WIRE_LOGGER.debug(
             "[WS-Debug] upgrade path=%s remote=%s ua=%r total=%d",
             request.path,
             request.remote,
@@ -191,7 +244,7 @@ class BeatifyWebSocketHandler:
                 if msg.type == WSMsgType.TEXT:
                     try:
                         parsed = msg.json()
-                        _LOGGER.info(
+                        _WIRE_LOGGER.debug(
                             "[WS-Debug] recv type=%s keys=%s",
                             parsed.get("type") if isinstance(parsed, dict) else "?",
                             list(parsed.keys()) if isinstance(parsed, dict) else None,
@@ -209,7 +262,7 @@ class BeatifyWebSocketHandler:
 
                     self._record_error(ERROR_WEBSOCKET_DISCONNECT, err_msg)
                 else:
-                    _LOGGER.info(
+                    _WIRE_LOGGER.debug(
                         "[WS-Debug] non-text msg type=%s",
                         msg.type,
                     )
@@ -217,7 +270,7 @@ class BeatifyWebSocketHandler:
         finally:
             self.connections.discard(ws)
             await self._handle_disconnect(ws)
-            _LOGGER.info(
+            _WIRE_LOGGER.debug(
                 "[WS-Debug] disconnect path=%s remote=%s total=%d ws_closed=%s close_code=%s",
                 request.path,
                 request.remote,
@@ -242,6 +295,14 @@ class BeatifyWebSocketHandler:
 
         """
         msg_type = data.get("type")
+
+        # Truncate free-text guesses at the ingest boundary (#1581), before the
+        # message is dispatched to a handler, classified, stored, or rebroadcast.
+        for field in _GUESS_TEXT_FIELDS:
+            value = data.get(field)
+            if isinstance(value, str) and len(value) > MAX_GUESS_LEN:
+                data[field] = value[:MAX_GUESS_LEN]
+
         game_state = get_game_state(self.hass)
 
         # Heartbeat ping: answer before the active-game guard so the client
@@ -302,11 +363,20 @@ class BeatifyWebSocketHandler:
 
         admin_ws = game_state._admin_ws if game_state else None
 
+        # #1711: there are at most two payload variants per broadcast (the
+        # admin/spectator copy and the redacted player copy). Serialize each to a
+        # JSON string ONCE here instead of letting aiohttp's ws.send_json run
+        # json.dumps per connection on the event loop. When no redaction applied
+        # (_redact_for_player returns the same object), both variants are one
+        # string, so we dump only once.
+        player_json = json.dumps(player_message)
+        admin_json = player_json if player_message is message else json.dumps(message)
+
         # Build list of send tasks for all open connections
         tasks = []
         for ws in list(targets):
             if not ws.closed:
-                payload = message if ws is admin_ws else player_message
+                payload = admin_json if ws is admin_ws else player_json
                 tasks.append(self._safe_send(ws, payload))
 
         # Execute all sends in parallel
@@ -341,17 +411,20 @@ class BeatifyWebSocketHandler:
                 return {**message, "song": song}
         return message
 
-    async def _safe_send(self, ws: web.WebSocketResponse, message: dict) -> None:
+    async def _safe_send(self, ws: web.WebSocketResponse, message: str) -> None:
         """
-        Send message to a single WebSocket, catching errors.
+        Send a pre-serialized JSON string to a single WebSocket, catching errors.
+
+        #1711: takes an already-``json.dumps``-ed string and uses ``send_str`` so
+        the same payload isn't re-serialized once per connection.
 
         Args:
             ws: WebSocket connection
-            message: Message to send
+            message: JSON string to send
 
         """
         try:
-            await ws.send_json(message)
+            await ws.send_str(message)
         except (ConnectionError, RuntimeError) as err:
             _LOGGER.warning("Failed to send to WebSocket: %s", err)
 
@@ -376,6 +449,15 @@ class BeatifyWebSocketHandler:
 
     async def broadcast_state(self) -> None:
         """Broadcast current game state to all connected players."""
+        # #1763: an immediate broadcast supersedes any pending debounced one —
+        # cancel it so a queued in-round progress frame can't land a redundant
+        # (or momentarily stale) broadcast right after a phase-transition frame.
+        # Guard against cancelling the debounce task from inside its own run
+        # (delayed_broadcast calls this method).
+        task = self._broadcast_debounce_task
+        if task and not task.done() and task is not asyncio.current_task():
+            task.cancel()
+
         game_state = get_game_state(self.hass)
         if not game_state:
             _LOGGER.warning("broadcast_state: No game state found in hass.data")
@@ -428,15 +510,12 @@ class BeatifyWebSocketHandler:
         if not game_state:
             return
 
-        # Find player by WebSocket
-        player_name = None
-        player = None
-        for name, p in list(game_state.players.items()):
-            if p.ws == ws:
-                player_name = name
-                player = p
-                player.connected = False
-                break
+        # Find player by WebSocket (#1664 PR-2: players keyed by player_id now,
+        # so resolve via the WS lookup and read the display name off the object)
+        player = game_state.get_player_by_ws(ws)
+        player_name = player.name if player else None
+        if player is not None:
+            player.connected = False
 
         # Issue #477: Clear admin spectator WS if it disconnected
         if game_state._admin_ws is ws:
@@ -450,8 +529,12 @@ class BeatifyWebSocketHandler:
             "Player disconnected: %s (is_admin: %s)", player_name, player.is_admin
         )
 
-        # Broadcast disconnect state immediately
-        await self.broadcast_state()
+        # #1763: route the disconnect flag through the debounce — a mass Wi-Fi
+        # blip drops N players near-simultaneously and each drop previously
+        # forced a full back-to-back broadcast. The debounce coalesces them into
+        # one frame; a disconnect that actually completes the round still gets an
+        # immediate phase-transition broadcast from trigger_early_reveal below.
+        await self.debounced_broadcast_state()
 
         # #928: a mid-round disconnect can itself complete the round. If
         # everyone still active has already submitted, the departing player
@@ -464,18 +547,37 @@ class BeatifyWebSocketHandler:
 
         # Admin disconnect: pause game after grace period (Story 7-1)
         if player.is_admin:
+            # #1703: snapshot the game identity so a grace timer that outlives
+            # the game (rematch / new game / dismiss) can't pause an unrelated
+            # later game.
+            armed_game_id = game_state.game_id
 
             async def pause_after_timeout() -> None:
                 await asyncio.sleep(LOBBY_DISCONNECT_GRACE_PERIOD)
-                # Check if admin still disconnected
-                if player_name in game_state.players:
-                    admin = game_state.players[player_name]
-                    if not admin.connected:
-                        # pause_game() is async and handles media stop internally
-                        if await game_state.pause_game("admin_disconnected"):
-                            await self.broadcast_state()
-                            _LOGGER.info("Game paused due to admin disconnect")
+                # #1703: bail if the game changed identity while we waited.
+                if game_state.game_id != armed_game_id:
+                    _LOGGER.debug(
+                        "Admin-disconnect pause skipped — game changed (%s→%s)",
+                        armed_game_id,
+                        game_state.game_id,
+                    )
+                    return
+                # Check if admin still present and disconnected (#1664 PR-2:
+                # resolve by stable player_id, not by display name)
+                admin = game_state.get_player_by_session_id(player.player_id)
+                if admin is not None and not admin.connected:
+                    # pause_game() is async and handles media stop internally
+                    if await game_state.pause_game("admin_disconnected"):
+                        await self.broadcast_state()
+                        _LOGGER.info("Game paused due to admin disconnect")
 
+            # #1703: cancel any still-pending disconnect-pause task before
+            # overwriting the handle. Without this, a superseded task keeps
+            # running and its grace timer can fire against a later game — e.g.
+            # after a rematch (which preserves player records with the admin
+            # marked disconnected), pausing the brand-new LOBBY.
+            if self._admin_disconnect_task and not self._admin_disconnect_task.done():
+                self._admin_disconnect_task.cancel()
             # Store task for cancellation on reconnect
             self._admin_disconnect_task = asyncio.create_task(pause_after_timeout())
         # Story 11.3: Regular players persist indefinitely - no removal timeout

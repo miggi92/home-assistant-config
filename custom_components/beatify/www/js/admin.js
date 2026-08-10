@@ -21,9 +21,20 @@ import { adminState } from './admin/state.js';
 // #1279 step 4b: shared constants (localStorage keys) extracted so both this
 // core and the setup-section modules import the same literals.
 import { STORAGE_LAST_PLAYER, STORAGE_GAME_SETTINGS } from './admin/constants.js';
+// #1927: reconcile the server-side setup blob with this browser's localStorage
+// so a stale local speaker can no longer outlive a newer pick from another device.
+import { reconcileSavedSetup, speakerLabelFor } from './admin/setup-sync.js';
 // #1402 B7: consolidated modal Escape-close registry (replaces 3 duplicate
 // document keydown listeners; adds Escape to the reset + request modals).
 import { registerModalClose, setupModalEscapeHandler } from './admin/modal-escape.js';
+// #1715: in-flight guard for in-game Next/Skip/Stop/Volume controls (debounce
+// double-taps that would otherwise skip a whole round).
+import { createControlGuard } from './admin/control-guard.js';
+
+// #1663 item 1: non-blocking notices replace the old blocking alert(). Transient
+// notices → neon top-toast; setup/validation errors → inline panel-banner docked
+// above the home Start button.
+import { showToast, showBanner, clearBanner } from './notify.js';
 
 import {
     setCurrentGameResolver,
@@ -36,6 +47,10 @@ import {
     escapeHtml,
     acquireWakeLockFirst,
     applyStoredGameSettings,
+    roundDurationLabel,
+    adminHasVisibleView,
+    createRenderCoalescer,
+    adminStateEqual,
 } from './admin/util.js';
 
 // #1279 Schritt 3/6: REST/WS hub layer. The admin WS connection lifecycle +
@@ -84,6 +99,15 @@ import {
     updateStartButtonState,
 } from './admin/sections/playlists.js';
 
+// mix.js (#1538): Smart Playlist Mixer "Mix" tab. initMixTab() is wired once at
+// admin init with the core startGame injected (the mixer reuses the validated
+// start-game path); renderMixChipCloud() is re-run after each playlist (re)load
+// so the chip-cloud reflects the live catalogue.
+import {
+    initMixTab,
+    renderMixChipCloud,
+} from './admin/sections/mix.js';
+
 // media-players.js: speaker list render + radio-selection + platform-capability
 // gate (updateProviderOptions toggles the music-service provider chips). No
 // window shim: the no-players empty state's inline onclick="loadStatus()" resolves
@@ -104,6 +128,22 @@ import {
     setupGameSettings,
     loadSavedSettings,
 } from './admin/sections/game-settings.js';
+
+// #1589 (continuation of #1279 step 4b): two fully self-contained "modal
+// wiring" slices lifted out of the admin.js god file with no behavior change.
+// qr-modal.js: the tap-to-enlarge join-QR modal. admin.js init calls
+// setupQRModal() once; the home-view handlers call openQRModal() (still behind
+// their `typeof openQRModal === 'function'` guards). closeQRModal is internal.
+import {
+    openQRModal,
+    setupQRModal,
+} from './admin/sections/qr-modal.js';
+// force-reset.js: the emergency #777 recovery modal (no admin token needed).
+// Only setupResetModal() crosses the module boundary (admin.js init); show/
+// close/confirm are wired internally.
+import {
+    setupResetModal,
+} from './admin/sections/force-reset.js';
 
 // Token helpers in util.js need the live `currentGame`. The resolver reads it
 // off the shared `adminState` object (#1279 step 5), so it stays in sync across
@@ -218,6 +258,13 @@ document.addEventListener('visibilitychange', function() {
 // Lobby polling timer handle (Story 16.8)
 let lobbyPollingInterval = null;
 
+// #1927: epoch ms of the last setup change made ON THIS DEVICE (set by
+// persistSetupToServer). loadStatus() uses it to tell "my pick is newer than
+// the snapshot I am holding" from "the server knows something I don't" —
+// both timestamps come from this browser's clock, so no cross-machine
+// clock comparison is involved.
+let localSetupWriteAt = 0;
+
 // #949: the home "Start game" button's pre-"Starting…" HTML, stashed so a WS
 // start-failure error (MEDIA_PLAYER_UNAVAILABLE etc.) can un-stick the button.
 let _homeStartBtnHTML = null;
@@ -252,8 +299,10 @@ let revealAdvanceOrigIcon = null;
 // STORAGE keys are still read here (BeatifyHome hydrate, force-reset cleanup);
 // PLATFORM_LABELS moved entirely into media-players.js with its renderer.
 
-// Setup sections to hide/show as a group
-const setupSections = ['media-players', 'music-service', 'playlists', 'game-settings', 'admin-actions', 'my-requests', 'party-lights', 'tts-settings', 'ha-entities'];
+// Setup sections to hide/show as a group.
+// #1138 cleanup: 'my-requests' + 'ha-entities' removed — those legacy flat
+// sections were deleted from admin.html (dead UI hidden under body.home-mode).
+const setupSections = ['media-players', 'music-service', 'playlists', 'game-settings', 'admin-actions', 'party-lights', 'tts-settings'];
 
 // Alias BeatifyUtils for convenience
 const utils = window.BeatifyUtils || {};
@@ -279,6 +328,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.chip[data-lang]').forEach(c => {
         c.classList.toggle('chip--active', c.dataset.lang === adminState.selectedLanguage);
     });
+
+    // #1941: seed the server-side setup BEFORE the wizard decides whether to
+    // open. `shouldTrigger()` reads localStorage, and until now that read
+    // happened here — while the seed only landed later, inside loadStatus().
+    // A browser opening Beatify for the first time therefore got the wizard
+    // even on a fully configured instance, and once open the wizard persisted
+    // its own state, so it kept coming back on every later load. One extra
+    // fetch of an endpoint the wizard hits anyway is a cheap price for the
+    // decision being made on the real state.
+    try {
+        const seedResp = await fetch('/beatify/api/status');
+        if (seedResp.ok) {
+            const seedStatus = await seedResp.json();
+            adminState.setupComplete = seedStatus.setup_complete === true;
+            reconcileSavedSetup(seedStatus.saved_setup, globalThis.localStorage);
+        }
+    } catch (e) {
+        // Offline or the endpoint is down: fall through with whatever this
+        // device already knows. The wizard then behaves exactly as before.
+        console.warn('[Beatify] setup seed before wizard failed:', e);
+    }
 
     // First-run wizard — initializes after i18n is ready (DESIGN.md ## Patterns)
     if (window.BeatifyWizard && typeof window.BeatifyWizard.init === 'function') {
@@ -548,8 +618,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     : `${pls.length} playlists`;
                 const autoAdv = typeof s.revealAutoAdvance === 'number' ? s.revealAutoAdvance : 0;
                 const autoLabel = autoAdv > 0 ? `${autoAdv}s` : 'Off';
-                const mode = `${s.difficulty || 'normal'} · ${s.duration || 45}s · ${(s.language || 'en').toUpperCase()} · ⏭️ ${autoLabel}`;
-                const meta = `${playlistLabel} · ${mode}`;
+                // #1867: once a game exists, show the duration the SERVER is
+                // running (`active_game.round_duration`), not what this browser
+                // intends to send. `round_duration` is fixed at create_game and
+                // no endpoint changes it afterwards, so every settings edit made
+                // after the lobby was minted is inert — yet the chip used to
+                // render the new value as though it had taken effect. Reading
+                // client-side state (the previous fix) could not close that gap
+                // because the wizard rewrites that same state post-create.
+                // When the two disagree, both are shown: the number in force,
+                // and what the next game will use.
+                const mode = `${s.difficulty || 'normal'} · ${roundDurationLabel(adminState)} · ${(s.language || 'en').toUpperCase()} · ⏭️ ${autoLabel}`;
+                // #1927: name the speaker that will actually be played on. The
+                // wrong-room bug was invisible precisely because no screen ever
+                // said which entity the game targets — it took a log dive to
+                // see that "Esszimmer" had been started on the kitchen Sonos.
+                const speakerId = (adminState.selectedMediaPlayer && adminState.selectedMediaPlayer.entityId)
+                    || localStorage.getItem(STORAGE_LAST_PLAYER)
+                    || '';
+                const meta = `${speakerLabelFor(speakerId, adminState.mediaPlayers)} · ${playlistLabel} · ${mode}`;
                 const metaEl = document.getElementById('home-meta');
                 if (metaEl) metaEl.textContent = meta;
             } catch (e) { /* ignore */ }
@@ -560,8 +647,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const raw = localStorage.getItem(STORAGE_GAME_SETTINGS);
                 const s = raw ? JSON.parse(raw) : {};
                 const hasPlaylist = Array.isArray(s.selectedPlaylists) && s.selectedPlaylists.length > 0;
-                return hasPlayer && hasPlaylist;
-            } catch (e) { return false; }
+                if (hasPlayer && hasPlaylist) return true;
+            } catch (e) { /* fall through to server flag */ }
+            // #1663: server-side fallback — a configured instance opened on a
+            // new device (empty localStorage) still reports as configured.
+            return adminState.setupComplete === true;
         },
     };
     // Home-view: End game delegates to existing endGame()
@@ -605,6 +695,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // before any await; the later calls are idempotent re-affirms
         // (guarded by _noSleepActive).
         _requestWakeLock();
+        // #1663 item 1: clear any stale setup-error banner from a previous
+        // rejected start so the host isn't left staring at an outdated error.
+        clearBanner('home-start-banner');
         // Home-mode auto-creates the LOBBY session on enter, so the user's Start
         // button triggers the actual "begin rounds" action (startGameplay).
         // #935: adminState.currentGame is null until the async loadStatus() fetch returns,
@@ -625,7 +718,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (players.length === 0) {
                 const msg = (window.BeatifyI18n && BeatifyI18n.t('admin.home.needPlayerToStart')) ||
                     'Join as player (or ask a guest to scan the QR) before starting.';
-                showError(msg);
+                // #1663 item 1: setup/validation error → inline banner above Start.
+                showSetupError(msg);
                 return;
             }
             // Onboarding v2: confirm if any non-admin player is still on tour.
@@ -643,7 +737,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ? BeatifyI18n.t(key, { count })
                     : fallback;
                 const msg = (rawMsg === key) ? fallback : rawMsg;
-                if (!window.confirm(msg)) return;
+                // #1758: styled in-page modal (focus-managed) instead of native
+                // window.confirm() — which blocks the thread, clashes with the
+                // neon theme, and is silently suppressed in some Android
+                // WebView/PWA contexts (auto-returns false → Start looks dead).
+                showStartAnywayModal(msg, startGameplay);
+                return;
             }
             startGameplay();
         } else {
@@ -662,10 +761,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Wire event listeners
     document.getElementById('start-game')?.addEventListener('click', startGame);
-    document.getElementById('print-qr')?.addEventListener('click', printQRCode);
 
-    document.getElementById('end-game')?.addEventListener('click', endGame);
-    document.getElementById('end-game-lobby')?.addEventListener('click', endGame);
+    // #1538: Smart Playlist Mixer "Mix" tab. Inject startGame so the mixer
+    // funnels through the validated start-game path after assembling its set.
+    initMixTab({ startGame });
 
     // #1402 B7: one document-level Escape handler for all registered modals.
     // Wire it before the per-modal setups so their registerModalClose() calls
@@ -704,6 +803,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Issue #108: Rematch modal setup
     setupRematchModal();
 
+    // #1719: "Start New Game" confirmation modal setup
+    setupNewGameModal();
+
     // #777 follow-up: emergency reset button + modal
     setupResetModal();
 
@@ -716,40 +818,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Playlist requests setup (Story 44.2, 44.3)
     setupPlaylistRequests();
 
-    // Load saved game settings from localStorage
-    await loadSavedSettings();
+    // #1868: everything from here on can fail — a rejected settings load, a
+    // status call that times out, a game the server has since forgotten. The
+    // `finally` guarantees the page still ends up on a usable view instead of
+    // rendering nothing at all.
+    try {
+        // Load saved game settings from localStorage
+        await loadSavedSettings();
 
-    await loadStatus();
+        await loadStatus();
 
-    // #1098: enter home-mode only after loadStatus() has resolved.
-    // Previously this ran before the status fetch, so adminState.currentGame was always
-    // null at this point — BeatifyHome.enter() would auto-call startSession()
-    // → POST /start-game, hit 409 GAME_IN_LOBBY on an existing lobby, and the
-    // silent recovery would transition LOBBY → PLAYING (auto-starting the
-    // game). Visible regression when navigating Analytics → Admin with a
-    // lobby open.
-    // - If loadStatus found an active LOBBY, it already called showLobbyView()
-    //   which invokes BeatifyHome.renderSession() — no extra enter() needed.
-    // - If there is no active game, adminState.currentGame stays null → enter() runs and
-    //   (for a configured user) creates a fresh LOBBY, as before.
-    // #1365: loadStatus() may already have entered home-mode via showSetupView()
-    // (its else-branch) — that path itself calls BeatifyHome.enter(). Re-running
-    // enter() here fires a SECOND startSession() → duplicate POST /start-game
-    // (the first is still in-flight, so currentGame is null), which 409s and the
-    // recovery auto-starts an empty lobby. Only enter() if home-mode isn't on yet.
-    if (!adminState.currentGame && !document.body.classList.contains('home-mode')) {
-        window.BeatifyHome.enter();
+        // #1098: enter home-mode only after loadStatus() has resolved.
+        // Previously this ran before the status fetch, so adminState.currentGame was always
+        // null at this point — BeatifyHome.enter() would auto-call startSession()
+        // → POST /start-game, hit 409 GAME_IN_LOBBY on an existing lobby, and the
+        // silent recovery would transition LOBBY → PLAYING (auto-starting the
+        // game). Visible regression when navigating Analytics → Admin with a
+        // lobby open.
+        // - If loadStatus found an active LOBBY, it already called showLobbyView()
+        //   which invokes BeatifyHome.renderSession() — no extra enter() needed.
+        // - If there is no active game, adminState.currentGame stays null → enter() runs and
+        //   (for a configured user) creates a fresh LOBBY, as before.
+        // #1365: loadStatus() may already have entered home-mode via showSetupView()
+        // (its else-branch) — that path itself calls BeatifyHome.enter(). Re-running
+        // enter() here fires a SECOND startSession() → duplicate POST /start-game
+        // (the first is still in-flight, so currentGame is null), which 409s and the
+        // recovery auto-starts an empty lobby. Only enter() if home-mode isn't on yet.
+        if (!adminState.currentGame && !document.body.classList.contains('home-mode')) {
+            window.BeatifyHome.enter();
+        }
+
+        // Initialize playlist requests display (Story 44.3, 44.4)
+        initPlaylistRequests();
+    } finally {
+        ensureAdminViewVisible();
     }
-
-    // Initialize playlist requests display (Story 44.3, 44.4)
-    initPlaylistRequests();
 });
+
+/**
+ * Last line of defence against an empty admin page (#1868).
+ *
+ * Runs in the boot path's `finally`, so it fires whatever happened above —
+ * including an exception that skipped the normal routing. If some view is
+ * already showing this is a no-op; the interesting case is the dead end, where
+ * both roots are hidden and the user's only escape was clearing localStorage.
+ *
+ * Recovery is ordered by how much it preserves: the home view first (it is
+ * where a configured user belongs), and the wizard only if that fails, since
+ * reopening the wizard is more disruptive than a lobby card.
+ */
+function ensureAdminViewVisible() {
+    try {
+        if (adminHasVisibleView(document)) return;
+        console.warn('[Beatify] no admin view visible after init — recovering (#1868)');
+        try {
+            window.BeatifyHome?.enter();
+        } catch (e) {
+            console.warn('[Beatify] BeatifyHome.enter failed during recovery:', e);
+        }
+        if (adminHasVisibleView(document)) return;
+        try {
+            window.BeatifyWizard?.show(1);
+        } catch (e) {
+            console.warn('[Beatify] BeatifyWizard.show failed during recovery:', e);
+        }
+    } catch (e) {
+        console.warn('[Beatify] view-visibility guard failed:', e);
+    }
+}
 
 /**
  * Fetch and render current status from the API
  */
 async function loadStatus() {
     try {
+        // #1927: remember when this snapshot was requested. A speaker picked on
+        // THIS device between the request and the response is newer than the
+        // blob in the response, so adopting the response would revert the pick.
+        const requestedAt = Date.now();
         const response = await fetch('/beatify/api/status');
 
         if (!response.ok) {
@@ -757,6 +903,25 @@ async function loadStatus() {
         }
 
         const status = await response.json();
+
+        // #1663: server-side setup flag, so a device that was never configured
+        // locally still lights up as configured.
+        // #1927: the seed used to run ONLY for a pristine browser, which let a
+        // stale local speaker outlive a newer pick made on another device — the
+        // game then played in the wrong room with nothing in the UI saying so.
+        // reconcileSavedSetup() gives the speaker a single source of truth (the
+        // server blob) and keeps settings seed-only; see setup-sync.js.
+        adminState.setupComplete = status.setup_complete === true;
+        if (localSetupWriteAt <= requestedAt) {
+            const reconciled = reconcileSavedSetup(status.saved_setup, globalThis.localStorage);
+            if (reconciled.playerAdopted) {
+                console.info(
+                    '[Beatify] speaker taken over from the saved server setup:',
+                    reconciled.playerAdopted,
+                    '(#1927)'
+                );
+            }
+        }
 
         // #935 follow-up: the server embeds the active game's admin token in
         // the page (<meta name="beatify-admin-token">). Capture it before the
@@ -773,6 +938,9 @@ async function loadStatus() {
 
         adminState.playlistDocsUrl = status.playlist_docs_url || '';
         adminState.mediaPlayerDocsUrl = status.media_player_docs_url || '';
+        // #1627 follow-up: native→MA twin map used by ensureMediaPlayerHydrated()
+        // to heal a stale saved selection that points at a now-hidden native twin.
+        adminState.mediaPlayerTwinRemap = status.media_player_twin_remap || {};
         // Set Music Assistant availability from backend (not based on entity names)
         adminState.hasMusicAssistant = status.has_music_assistant === true;
         // Display version in footer and expose globally (Story 44.5)
@@ -781,8 +949,13 @@ async function loadStatus() {
             versionEl.textContent = 'v' + status.version;
             window.BEATIFY_VERSION = status.version;
         }
+        // #1627 follow-up: stash the raw players payload so the wizard-path
+        // ensureMediaPlayerHydrated() can validate a saved selection against the
+        // live list (the Mix tab renders before the media-players list exists).
+        adminState.mediaPlayers = status.media_players || [];
         renderMediaPlayers(status.media_players);
         renderPlaylists(status.playlists, status.playlist_dir);
+        renderMixChipCloud();  // #1538: refresh Mix-tab chips from live catalogue
         updateStartButtonState();
 
         // Check for active game and show appropriate view
@@ -805,11 +978,33 @@ async function loadStatus() {
         } else {
             showSetupView();
         }
+
+        // #1940: the meta line is built from data that only exists after this
+        // fetch — the saved settings seeded above, and adminState.mediaPlayers
+        // for the speaker's friendly name. BeatifyHome.refresh() previously ran
+        // only from enter(), which fires before any of that on a fresh device,
+        // so the line stayed on its "—" placeholder. Re-render it here, once
+        // the values it describes are actually present.
+        try {
+            window.BeatifyHome?.refresh?.();
+        } catch (e) {
+            console.warn('[Beatify] home refresh after status failed:', e);
+        }
     } catch (error) {
         console.error('Failed to load status:', error);
         const container = document.getElementById('media-players-list');
         if (container) {
             container.innerHTML = '<span class="status-error">Failed to load status</span>';
+        }
+        // #1868: that container lives in the legacy flat layout, which CSS keeps
+        // hidden — so on its own this branch renders an error nobody can see and,
+        // worse, leaves the page on neither view. Route into the home view like
+        // the success path's else-branch does. The user gets the lobby card and
+        // can retry instead of staring at an empty page.
+        try {
+            showSetupView();
+        } catch (e) {
+            console.warn('[Beatify] showSetupView failed after status error:', e);
         }
     }
 }
@@ -911,6 +1106,16 @@ function showLobbyView(gameData) {
     adminState.currentView = 'lobby';
     adminState.currentGame = gameData;
     if (window.BeatifyHome) {
+        // Reveal the container BEFORE rendering into it. `renderSession` fills
+        // `#home-view`, which ships `hidden` (admin.html:206) and is un-hidden
+        // only by `BeatifyHome.enter()`. On the boot path that found an existing
+        // LOBBY game, `enter()` is deliberately skipped — it would fire a second
+        // `startSession()` (#1365) — so nothing ever removed `hidden` and the
+        // host got a page with just the logo, three header buttons and the
+        // version line. `enter()` is not the fix here: it auto-creates a game.
+        // Only the two lines that make the view visible belong on this path.
+        document.body.classList.add('home-mode');
+        document.getElementById('home-view')?.classList.remove('hidden');
         window.BeatifyHome.renderSession(gameData);
     }
     // WS push is the primary source; fall back to REST polling if WS is down
@@ -920,74 +1125,62 @@ function showLobbyView(gameData) {
     }
 }
 
-// ==========================================
-// QR Modal Functions (tap to enlarge)
-// ==========================================
-
-/**
- * Open QR modal with enlarged code
- */
-function openQRModal() {
-    if (!adminState.cachedQRUrl) return;
-
-    var modal = document.getElementById('qr-modal');
-    var modalCode = document.getElementById('qr-modal-code');
-    if (!modal || !modalCode) return;
-
-    // Clear and render larger QR
-    modalCode.innerHTML = '';
-
-    if (typeof QRCode !== 'undefined') {
-        new QRCode(modalCode, {
-            text: adminState.cachedQRUrl,
-            width: 280,
-            height: 280,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-        });
-    }
-
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    // Focus close button for accessibility
-    var closeBtn = document.getElementById('qr-modal-close');
-    if (closeBtn) closeBtn.focus();
-}
-
-/**
- * Close QR modal
- */
-function closeQRModal() {
-    var modal = document.getElementById('qr-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-}
-
-/**
- * Wire the QR modal once at init. The modal itself is shared between the
- * home-view tap-to-enlarge (BeatifyHome triggers openQRModal) and the
- * admin-playing view's QR preview, so only backdrop/close/escape are wired
- * here — the triggers live with each view.
- */
-function setupQRModal() {
-    var modal = document.getElementById('qr-modal');
-    var backdrop = modal ? modal.querySelector('.qr-modal-backdrop') : null;
-    var closeBtn = document.getElementById('qr-modal-close');
-
-    if (backdrop) backdrop.addEventListener('click', closeQRModal);
-    if (closeBtn) closeBtn.addEventListener('click', closeQRModal);
-
-    // #1402 B7: Escape handled by the consolidated setupModalEscapeHandler().
-    registerModalClose('qr-modal', closeQRModal);
-}
+// QR Modal Functions (tap to enlarge) — extracted to
+// ./admin/sections/qr-modal.js (#1589). openQRModal + setupQRModal are imported
+// above; closeQRModal is now internal to that module.
 
 // ==========================================
 // Game Control Functions (Story 2.3)
 // ==========================================
+
+/**
+ * Persist the host's setup (speaker + game settings) server-side (#1663).
+ *
+ * The wizard only ever wrote these to localStorage, so a configured instance
+ * looked unconfigured on a new device. Mirroring them to the server (verbatim
+ * blob) lets any device re-hydrate them via /beatify/api/status. Best-effort:
+ * a failed POST never blocks the game — the localStorage copy still works on
+ * this device.
+ */
+async function persistSetupToServer() {
+    // #1927: stamp the moment this device changed its own setup. loadStatus()
+    // compares it against the age of the /api/status snapshot it holds and
+    // skips the reconcile when the local pick is the newer of the two — without
+    // it, a status response that was already in flight when the user tapped a
+    // speaker would hand the older server value straight back.
+    localSetupWriteAt = Date.now();
+    try {
+        const lastPlayer = localStorage.getItem(STORAGE_LAST_PLAYER);
+        const rawSettings = localStorage.getItem(STORAGE_GAME_SETTINGS);
+        if (!lastPlayer && !rawSettings) return;  // nothing configured yet
+        await BeatifyAuth.fetch('/beatify/api/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                last_player: lastPlayer || null,
+                game_settings: rawSettings ? JSON.parse(rawSettings) : null,
+            }),
+        });
+    } catch (e) {
+        console.warn('[Beatify] setup persist failed (non-fatal):', e);
+    }
+}
+// Exposed so wizard.js can persist the host's picks the moment setup finishes,
+// even before the first game starts.
+window.BeatifyPersistSetup = persistSetupToServer;
+
+/**
+ * Mark a local setup change that is NOT (yet) published to the server (#1927).
+ *
+ * wizard.js commits the speaker to localStorage the moment it is tapped but
+ * only POSTs the blob when the wizard finishes. Without this stamp a
+ * loadStatus() landing in that window would hand the older server value back
+ * and move the pick under the user. Stamp-only on purpose: a wizard the host
+ * has not finished should not publish its speaker to every other device.
+ */
+window.BeatifyNoteLocalSetupWrite = function() {
+    localSetupWriteAt = Date.now();
+};
 
 /**
  * Start a new game
@@ -1041,6 +1234,21 @@ async function startGame() {
             ? window.BeatifyTitleArtist.applyTitleArtistBonusPrecedence(rawBonusFlags, adminState.titleArtistModeEnabled)
             : { ...rawBonusFlags, ...(adminState.titleArtistModeEnabled ? { artist_challenge_enabled: false, closest_wins_mode: false } : {}) };  // #1180: must match YEAR_ROUND_BONUS_KEYS — movie quiz + intro stay ON in TA mode
 
+        // Issue #827: Sudden Death is the host's wizard choice, persisted to
+        // beatify_game_settings.suddenDeathMode (mirrors how closestWinsMode is
+        // stored). The admin submodules don't hydrate a dedicated adminState
+        // field for it, so read it straight from localStorage here. Default false.
+        var suddenDeathMode = false;
+        try {
+            var _sdRaw = localStorage.getItem(STORAGE_GAME_SETTINGS);
+            if (_sdRaw) {
+                var _sdSettings = JSON.parse(_sdRaw);
+                if (_sdSettings && typeof _sdSettings.suddenDeathMode === 'boolean') {
+                    suddenDeathMode = _sdSettings.suddenDeathMode;
+                }
+            }
+        } catch (e) { /* private mode / malformed — keep default false */ }
+
         const response = await BeatifyAuth.fetch('/beatify/api/start-game', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1056,7 +1264,14 @@ async function startGame() {
                 movie_quiz_enabled: bonusFlags.movie_quiz_enabled,  // #947 (#1180: suppressed in TA mode)
                 intro_mode_enabled: bonusFlags.intro_mode_enabled,  // Issue #23 (#1180: suppressed in TA mode)
                 closest_wins_mode: bonusFlags.closest_wins_mode,  // Issue #442 (#1180: suppressed in TA mode)
+                sudden_death_mode: suddenDeathMode,  // Issue #827
                 title_artist_mode: adminState.titleArtistModeEnabled,  // #1180
+                rampup_order_enabled: adminState.rampupOrderEnabled,  // Issue #1726
+                finale_double_enabled: adminState.finaleDoubleEnabled,  // Issue #1725
+                finale_tiebreaker_enabled: adminState.finaleTiebreakerEnabled,  // Issue #1725
+                comeback_token_enabled: adminState.comebackTokenEnabled,  // Issue #1724
+                difficulty_bet_scaling_enabled: adminState.difficultyBetScalingEnabled,  // Issue #1727
+                sabotage_enabled: adminState.sabotageEnabled,  // Issue #1665
                 party_lights: window._partyLightsConfig ? window._partyLightsConfig() : null,  // Issue #331
                 tts: window._ttsConfig ? window._ttsConfig() : null  // Issue #447
             })
@@ -1080,13 +1295,20 @@ async function startGame() {
             }
             // #864: prefer i18n-by-code over the backend's English message.
             // Matches the playlist-request pattern at line ~2964.
+            // #1663: pass the whole error body as interpolation params so codes
+            // like PROVIDER_NOT_SUPPORTED render concretely ("Speaker X can't
+            // play Apple Music") from the {speaker}/{provider} details. If the
+            // localized string still has an unfilled {placeholder} (older
+            // backend without details), keep the backend's plain message.
             let msg = data.message || 'Failed to start game';
             if (data.code && window.BeatifyI18n) {
                 const key = 'errors.' + String(data.code).toUpperCase();
-                const t = BeatifyI18n.t(key);
-                if (t && t !== key) msg = t;
+                const t = BeatifyI18n.t(key, data);
+                if (t && t !== key && !/\{[a-z_]+\}/i.test(t)) msg = t;
             }
-            showError(msg);
+            // #1663 item 1: start rejected (e.g. provider not supported) is a
+            // setup/validation error → inline banner above Start, not a toast.
+            showSetupError(msg);
             return;
         }
 
@@ -1101,6 +1323,10 @@ async function startGame() {
 
         showLobbyView(data);
         _requestWakeLock(); // #622: keep screen on during game
+
+        // #1663: a successful start means this instance is fully configured —
+        // mirror the picks to the server so a new device recognises it.
+        persistSetupToServer();
 
         // Issue #477: Connect admin WebSocket for real-time updates
         connectAdminWebSocket();
@@ -1166,7 +1392,8 @@ async function startGameplay() {
         const data = await response.json();
 
         if (!response.ok) {
-            showError(data.message || 'Failed to start gameplay');
+            // #1663 item 1: gameplay-start rejection is a setup/validation error.
+            showSetupError(data.message || (window.BeatifyI18n && BeatifyI18n.t('admin.startGameplayFailed')) || 'Failed to start gameplay');
             return;
         }
 
@@ -1183,6 +1410,122 @@ async function startGameplay() {
     }
 }
 
+// ==========================================
+// #1716: focus management for admin confirmation dialogs
+// ==========================================
+// The admin aria-modal dialogs (End Game, Rematch, Start New Game) opened with
+// classList.remove('hidden') but never moved focus in, trapped Tab, or restored
+// focus on close — focus stayed on the trigger behind the backdrop, so the next
+// Enter/Tab operated on the obscured page. This mirrors, for admin.js's own
+// dialogs, the centralized dialog focus behaviour tracked in #1716 (the shared
+// player-utils/registry part is handled separately). Escape-to-close is already
+// provided by the consolidated setupModalEscapeHandler() + registerModalClose().
+
+var _modalFocusState = Object.create(null); // modalId -> { prevFocus, keydownHandler }
+
+function _focusablesIn(container) {
+    if (!container) return [];
+    var sel = 'a[href], button:not([disabled]), textarea:not([disabled]), ' +
+        'input:not([disabled]):not([type="hidden"]), select:not([disabled]), ' +
+        '[tabindex]:not([tabindex="-1"])';
+    return Array.prototype.slice.call(container.querySelectorAll(sel))
+        .filter(function (el) {
+            // Skip elements that are hidden (no layout box). activeElement is
+            // always eligible so an already-focused control isn't dropped.
+            return el === document.activeElement || el.offsetParent !== null;
+        });
+}
+
+/**
+ * Move focus into a just-opened modal, trap Tab within its .modal-content, and
+ * remember the previously-focused element for restore on close.
+ * @param {string} modalId
+ * @param {string} [preferredBtnId] control to focus first (usually Cancel)
+ */
+function activateModalFocus(modalId, preferredBtnId) {
+    var modal = document.getElementById(modalId);
+    if (!modal || _modalFocusState[modalId]) return;
+    var content = modal.querySelector('.modal-content') || modal;
+    var state = { prevFocus: document.activeElement, keydownHandler: null };
+
+    var target = preferredBtnId ? document.getElementById(preferredBtnId) : null;
+    if (!target || target.disabled) {
+        target = _focusablesIn(content)[0] || content;
+    }
+    if (target && typeof target.focus === 'function') target.focus();
+
+    state.keydownHandler = function (e) {
+        if (e.key !== 'Tab') return;
+        var focusables = _focusablesIn(content);
+        if (focusables.length === 0) { e.preventDefault(); return; }
+        var first = focusables[0];
+        var last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    };
+    modal.addEventListener('keydown', state.keydownHandler);
+    _modalFocusState[modalId] = state;
+}
+
+/** Tear down the Tab-trap and restore focus to the pre-open trigger. */
+function deactivateModalFocus(modalId) {
+    var state = _modalFocusState[modalId];
+    if (!state) return;
+    var modal = document.getElementById(modalId);
+    if (modal && state.keydownHandler) {
+        modal.removeEventListener('keydown', state.keydownHandler);
+    }
+    delete _modalFocusState[modalId];
+    if (state.prevFocus && typeof state.prevFocus.focus === 'function' &&
+        document.contains(state.prevFocus)) {
+        state.prevFocus.focus();
+    }
+}
+
+/**
+ * #1758: styled "Start anyway?" confirmation, replacing window.confirm() on the
+ * onboarding gate. Mirrors the #1719 modal pattern (Tab-trap + focus restore
+ * via activate/deactivateModalFocus). One-shot listeners so repeated opens
+ * don't stack handlers.
+ * @param {string} message
+ * @param {Function} onConfirm invoked only when the host confirms
+ */
+function showStartAnywayModal(message, onConfirm) {
+    const modal = document.getElementById('start-anyway-modal');
+    if (!modal) {
+        // Fallback keeps Start working if the markup is somehow absent.
+        if (window.confirm(message)) onConfirm();
+        return;
+    }
+    const msgEl = document.getElementById('start-anyway-message');
+    if (msgEl) msgEl.textContent = message;
+    const confirmBtn = document.getElementById('start-anyway-confirm-btn');
+    const cancelBtn = document.getElementById('start-anyway-cancel-btn');
+    const backdrop = modal.querySelector('.modal-backdrop');
+
+    function close() {
+        modal.classList.add('hidden');
+        deactivateModalFocus('start-anyway-modal');
+        confirmBtn.removeEventListener('click', onYes);
+        cancelBtn.removeEventListener('click', onNo);
+        if (backdrop) backdrop.removeEventListener('click', onNo);
+    }
+    function onYes() { close(); onConfirm(); }
+    function onNo() { close(); }
+
+    confirmBtn.addEventListener('click', onYes);
+    cancelBtn.addEventListener('click', onNo);
+    if (backdrop) backdrop.addEventListener('click', onNo);
+
+    modal.classList.remove('hidden');
+    activateModalFocus('start-anyway-modal', 'start-anyway-cancel-btn');
+}
+
 /**
  * Show end game confirmation modal (Story 9.10)
  */
@@ -1190,6 +1533,7 @@ function showEndGameModal() {
     const modal = document.getElementById('end-game-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        activateModalFocus('end-game-modal', 'end-game-cancel-btn'); // #1716
     }
 }
 
@@ -1200,6 +1544,7 @@ function closeEndGameModal() {
     const modal = document.getElementById('end-game-modal');
     if (modal) {
         modal.classList.add('hidden');
+        deactivateModalFocus('end-game-modal'); // #1716
     }
 }
 
@@ -1258,80 +1603,10 @@ function setupEndGameModal() {
     // ESC key handling added to global handler below
 }
 
-// ==========================================
-// Force-Reset Modal (#777 follow-up)
-// ==========================================
-
-// localStorage keys Beatify writes — cleared on force-reset.
-// Add new keys here if you introduce more, otherwise stuck state survives.
-const _BEATIFY_LS_KEYS = [
-    'beatify_wizard_state',
-    'beatify_last_player',
-    'beatify_game_settings',
-    'beatify_party_lights',
-    'beatify_tts',
-    'beatify_admin_token',
-    'beatify_admin_token_game_id',
-];
-
-function showResetModal() {
-    document.getElementById('reset-modal')?.classList.remove('hidden');
-}
-
-function closeResetModal() {
-    document.getElementById('reset-modal')?.classList.add('hidden');
-}
-
-/**
- * Force-reset Beatify: end any active game on the server, clear local
- * Beatify state, unregister the service worker, and reload. Designed to
- * recover from any stuck state — does NOT require an admin token. The
- * server endpoint is rate-limited per IP (3 per hour). On endpoint
- * failure we still clear local state + reload, because most stuck
- * symptoms are client-side and a reload often clears them anyway.
- */
-async function confirmReset() {
-    closeResetModal();
-
-    // 1. Hit the server, but don't block local cleanup on its result.
-    try {
-        await BeatifyAuth.fetch('/beatify/api/force-reset', { method: 'POST' });
-    } catch (err) {
-        console.warn('[Reset] force-reset POST failed (continuing with local cleanup):', err);
-    }
-
-    // 2. Clear Beatify-owned localStorage entries.
-    try {
-        _BEATIFY_LS_KEYS.forEach((k) => localStorage.removeItem(k));
-    } catch (err) {
-        console.warn('[Reset] localStorage clear failed:', err);
-    }
-
-    // 3. Unregister the SW so a fresh registration happens on next load
-    //    (matters since #780 fixed SW activation — stale caches can now
-    //    actually exist).
-    try {
-        if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
-        }
-    } catch (err) {
-        console.warn('[Reset] SW unregister failed:', err);
-    }
-
-    // 4. Reload onto the admin entry point.
-    window.location.replace('/beatify/admin');
-}
-
-function setupResetModal() {
-    document.getElementById('reset-btn')?.addEventListener('click', showResetModal);
-    document.getElementById('reset-confirm-btn')?.addEventListener('click', confirmReset);
-    document.getElementById('reset-cancel-btn')?.addEventListener('click', closeResetModal);
-    document.querySelector('#reset-modal .modal-backdrop')?.addEventListener('click', closeResetModal);
-
-    // #1402 B7: reset modal previously had no Escape support — register it now.
-    registerModalClose('reset-modal', closeResetModal);
-}
+// Force-Reset Modal (#777 follow-up) — extracted to
+// ./admin/sections/force-reset.js (#1589). setupResetModal is imported above;
+// show/close/confirm + the _BEATIFY_LS_KEYS list are now internal to that
+// module.
 
 // ==========================================
 // Rematch Functions (Issue #108)
@@ -1346,6 +1621,7 @@ function showRematchModal() {
     var modal = document.getElementById('rematch-modal');
     if (modal) {
         modal.classList.remove('hidden');
+        activateModalFocus('rematch-modal', 'rematch-cancel-btn'); // #1716
     }
 }
 
@@ -1356,6 +1632,7 @@ function closeRematchModal() {
     var modal = document.getElementById('rematch-modal');
     if (modal) {
         modal.classList.add('hidden');
+        deactivateModalFocus('rematch-modal'); // #1716
     }
 }
 
@@ -1376,14 +1653,6 @@ async function confirmRematch() {
     // idempotent re-affirm (guarded by _noSleepActive).
     acquireWakeLockFirst(_requestWakeLock);
 
-    // F8 fix: Show loading state on rematch button
-    var rematchBtn = document.getElementById('rematch-game');
-    var originalText = rematchBtn ? rematchBtn.textContent : '';
-    if (rematchBtn) {
-        rematchBtn.disabled = true;
-        rematchBtn.textContent = '⏳';
-    }
-
     closeRematchModal();
 
     // Issue #477: Prefer WS for rematch
@@ -1401,18 +1670,14 @@ async function confirmRematch() {
             await loadStatus();
         } else {
             var errData = await response.json();
-            alert(errData.message || 'Failed to start rematch');
+            // #1663 item 1: transient failure → toast (was blocking alert()).
+            showToast(errData.message || (window.BeatifyI18n && BeatifyI18n.t('admin.startRematchFailed')) || 'Failed to start rematch');
         }
     } catch (error) {
         console.error('Rematch failed:', error);
-        alert('Failed to start rematch');
+        showToast((window.BeatifyI18n && BeatifyI18n.t('admin.startRematchFailed')) || 'Failed to start rematch');
     } finally {
         rematchInProgress = false;
-        // Restore button state (in case of error)
-        if (rematchBtn) {
-            rematchBtn.disabled = false;
-            rematchBtn.textContent = originalText;
-        }
     }
 }
 
@@ -1433,19 +1698,37 @@ function setupRematchModal() {
 }
 
 /**
- * Print QR code
- */
-function printQRCode() {
-    window.print();
-}
-
-/**
- * Show error message to user
+ * Show a transient error to the user (#1663 item 1).
+ * Was a blocking native alert(); now a non-blocking neon top-toast so the admin
+ * can keep interacting. Setup/validation errors that need to stay put use
+ * showSetupError() (inline panel-banner) instead.
  * @param {string} message
  */
 function showError(message) {
-    // Simple alert for now - can be enhanced with toast notifications
-    alert(message);
+    showToast(message, { type: 'error' });
+}
+
+/**
+ * Show a persistent setup/validation error docked above the home Start button
+ * (#1663 item 1, Variant C inline panel-banner). Used for errors the host must
+ * act on before a game can start (no players, provider not supported, …) — it
+ * stays in the screen-reader flow and next to the control that failed, unlike
+ * the transient toast.
+ * @param {string} message
+ */
+function showSetupError(message) {
+    var anchor = document.getElementById('home-start-game');
+    if (!anchor) {
+        // No start button in view (e.g. mid-game) — fall back to a toast.
+        showToast(message, { type: 'error' });
+        return;
+    }
+    showBanner(message, {
+        anchor: anchor,
+        id: 'home-start-banner',
+        title: (window.BeatifyI18n && BeatifyI18n.t('errors.startNotPossible')) || 'Cannot start',
+        type: 'error',
+    });
 }
 
 
@@ -1476,8 +1759,35 @@ function openAdminJoinModal() {
 
     const modal = document.getElementById('admin-join-modal');
     if (modal) {
+        // #1579: always reopen in the idle state. Without this, a button left
+        // disabled on "Joining…"/"Connecting…" by a prior attempt (NAME_TAKEN /
+        // NAME_INVALID error, or a WS reconnect that closed the modal mid-join)
+        // stayed visible on the next open, so the user couldn't retry cleanly.
+        resetAdminJoinModalState();
         modal.classList.remove('hidden');
         document.getElementById('admin-name-input')?.focus();
+    }
+}
+
+/**
+ * #1579: Reset the join button + label + inline error back to the idle state.
+ * Single source of truth for "idle" so open, close and the error path all agree:
+ * label is "Join", and the button is enabled only when the current input holds a
+ * valid name (non-empty, ≤20 chars). Does NOT clear the typed name — the caller
+ * decides that (close clears it; open/error-retry keeps it so the user can edit).
+ */
+function resetAdminJoinModalState() {
+    const nameInput = document.getElementById('admin-name-input');
+    const joinBtn = document.getElementById('admin-join-btn');
+    const errorMsg = document.getElementById('admin-name-error');
+    if (joinBtn) {
+        joinBtn.textContent = BeatifyI18n.t('admin.join');
+        const name = nameInput ? nameInput.value.trim() : '';
+        joinBtn.disabled = !name || name.length > 20;
+    }
+    if (errorMsg) {
+        errorMsg.classList.add('hidden');
+        errorMsg.textContent = '';
     }
 }
 
@@ -1489,16 +1799,10 @@ function closeAdminJoinModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
-    // Reset form
+    // Reset form — clear the name, then converge on the shared idle state.
     const nameInput = document.getElementById('admin-name-input');
-    const joinBtn = document.getElementById('admin-join-btn');
-    const errorMsg = document.getElementById('admin-name-error');
     if (nameInput) nameInput.value = '';
-    if (joinBtn) {
-        joinBtn.disabled = true;
-        joinBtn.textContent = BeatifyI18n.t('admin.join');
-    }
-    if (errorMsg) errorMsg.classList.add('hidden');
+    resetAdminJoinModalState();
 }
 
 /**
@@ -1699,66 +2003,23 @@ async function setLanguage(lang) {
     BeatifyI18n.initPageTranslations();
 }
 
-// ==========================================
-// Timer Selector Functions (Story 13.1)
-// ==========================================
-
-/**
- * Setup timer selector buttons
- */
-function setupTimerSelector() {
-    var timerButtons = document.querySelectorAll('.timer-btn');
-
-    timerButtons.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var duration = parseInt(btn.getAttribute('data-duration'), 10);
-            if (duration && duration !== adminState.selectedDuration) {
-                setTimerDuration(duration);
-            }
-        });
-    });
-}
-
-/**
- * Update timer button states
- * @param {number} duration - Duration in seconds (15, 30, or 45)
- */
-function updateTimerButtons(duration) {
-    var timerButtons = document.querySelectorAll('.timer-btn');
-    timerButtons.forEach(function(btn) {
-        var btnDuration = parseInt(btn.getAttribute('data-duration'), 10);
-        if (btnDuration === duration) {
-            btn.classList.add('timer-btn--active');
-        } else {
-            btn.classList.remove('timer-btn--active');
-        }
-    });
-}
-
-/**
- * Set timer duration
- * @param {number} duration - Duration in seconds (10-60 range)
- */
-function setTimerDuration(duration) {
-    // Validate duration is within valid range (matches backend: 10-60)
-    if (typeof duration !== 'number' || duration < 10 || duration > 60) {
-        duration = 30;
-    }
-
-    adminState.selectedDuration = duration;
-    updateTimerButtons(duration);
-}
+// #1867: the flat-admin timer selector (`setupTimerSelector`,
+// `updateTimerButtons`, `setTimerDuration`) lived here and was removed. It
+// bound to `.timer-btn`, which no longer appears in any template — the wizard
+// uses `.chip[data-duration]` in admin/sections/game-settings.js. So it was
+// unreachable: `setupTimerSelector` had no caller and `setTimerDuration` was
+// only ever called from the listener it installed.
+//
+// It is called out rather than deleted quietly because its "clamp anything
+// non-numeric to exactly 30" line was the prime suspect for #1867's 30s timer,
+// and a reader tracing that bug should learn here that the code could not run.
+// The clamp behaviour it stood for is replaced by `normalizeRoundDuration` in
+// admin/util.js, which returns null instead of substituting a value.
+// The matching `.timer-btn` CSS in styles.css is likewise dead.
 
 // ==========================================
 // Difficulty Selector Functions (Story 14.1)
 // ==========================================
-
-// Mapping of difficulty levels to their description i18n keys
-const difficultyDescriptions = {
-    easy: 'admin.difficultyEasyDesc',
-    normal: 'admin.difficultyNormalDesc',
-    hard: 'admin.difficultyHardDesc'
-};
 
 /**
  * Setup difficulty selector buttons
@@ -1805,17 +2066,6 @@ function setDifficulty(difficulty) {
 
     adminState.selectedDifficulty = difficulty;
     updateDifficultyButtons(difficulty);
-
-    // Update description text
-    var descriptionEl = document.getElementById('difficulty-description');
-    if (descriptionEl) {
-        var descKey = difficultyDescriptions[difficulty];
-        descriptionEl.setAttribute('data-i18n', descKey);
-        // Use i18n translation if available
-        if (typeof BeatifyI18n !== 'undefined' && BeatifyI18n.t) {
-            descriptionEl.textContent = BeatifyI18n.t(descKey);
-        }
-    }
 }
 
 /**
@@ -1873,130 +2123,12 @@ function setupArtistChallengeToggle() {
  * @param {Array} players - Array of player objects from game state
  */
 function renderLobbyPlayers(players) {
-    var listEl = document.getElementById('lobby-players');
-    var countEl = document.getElementById('lobby-player-count');
-    var summaryEl = document.getElementById('admin-players-summary');
-    var emptyEl = document.getElementById('lobby-players-empty');
-
     players = players || [];
 
     // Mirror live player updates into the home-view pill row. If BeatifyHome
     // is active, this keeps the Variant A landing in sync with the real lobby.
     if (window.BeatifyHome && typeof window.BeatifyHome.renderPlayers === 'function') {
         window.BeatifyHome.renderPlayers(players);
-    }
-
-    if (!listEl) return;
-
-    // Update player count (stat card value - just the number)
-    if (countEl) {
-        countEl.textContent = players.length;
-    }
-
-    // Update players section summary badge
-    if (summaryEl) {
-        summaryEl.textContent = players.length;
-    }
-
-    // Handle empty state visibility
-    if (players.length === 0) {
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.classList.remove('hidden');
-        var startBtn = document.getElementById("start-gameplay-btn");
-        if (startBtn) startBtn.classList.add("hidden");
-        adminState.previousLobbyPlayers = [];
-        return;
-    }
-
-    // Hide empty state when we have players
-    if (emptyEl) emptyEl.classList.add('hidden');
-
-    // Sort: connected first, disconnected last
-    var sortedPlayers = players.slice().sort(function(a, b) {
-        if (a.connected !== b.connected) {
-            return a.connected ? -1 : 1;
-        }
-        return 0;
-    });
-
-    // Find new players by comparing with previous list
-    var previousNames = adminState.previousLobbyPlayers.map(function(p) { return p.name; });
-    var newNames = sortedPlayers
-        .filter(function(p) { return previousNames.indexOf(p.name) === -1; })
-        .map(function(p) { return p.name; });
-
-    // Render player cards (grid layout)
-    listEl.innerHTML = sortedPlayers.map(function(player) {
-        var isNew = newNames.indexOf(player.name) !== -1;
-        var isDisconnected = player.connected === false;
-        var isAdmin = player.is_admin === true;
-        var canKick = isDisconnected && !isAdmin;
-        var classes = [
-            'player-card',
-            isNew ? 'is-new' : '',
-            isDisconnected ? 'player-card--disconnected' : ''
-        ].filter(Boolean).join(' ');
-
-        // Crown badge for admin
-        var adminBadge = isAdmin ? '<span class="admin-badge">👑</span>' : '';
-        // Badge for disconnected players
-        var awayBadge = isDisconnected ? '<span class="away-badge">' + utils.t('lobby.away', 'away') + '</span>' : '';
-        // Kick button for disconnected non-admin players (#659)
-        var kickBtn = canKick
-            ? '<button class="kick-player-btn" data-player="' + utils.escapeHtml(player.name) + '" title="' + (BeatifyI18n.t('admin.kickPlayerTitle') || 'Remove player') + '">×</button>'
-            : '';
-
-        return '<div class="' + classes + '" data-player="' + utils.escapeHtml(player.name) + '">' +
-            '<span class="player-name">' +
-                utils.escapeHtml(player.name) +
-                adminBadge +
-            '</span>' +
-            awayBadge +
-            kickBtn +
-        '</div>';
-    }).join('');
-
-    // Wire up kick buttons (#659)
-    listEl.querySelectorAll('.kick-player-btn').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            handleKickPlayer(btn.dataset.player);
-        });
-    });
-
-    // Remove .is-new class after animation
-    setTimeout(function() {
-        var newCards = listEl.querySelectorAll('.is-new');
-        for (var i = 0; i < newCards.length; i++) {
-            newCards[i].classList.remove('is-new');
-        }
-    }, 2000);
-
-    // Show Start button when there are players. The admin page IS the admin
-    // control surface — the host should always be able to start the game,
-    // whether they joined as a player or not.
-    var startBtn = document.getElementById("start-gameplay-btn");
-    if (startBtn) {
-        startBtn.classList.remove("hidden");
-    }
-
-    adminState.previousLobbyPlayers = players.slice();
-}
-
-/**
- * Handle kick player action — remove disconnected player from lobby (#659)
- */
-function handleKickPlayer(playerName) {
-    var message = (BeatifyI18n.t('admin.kickPlayerConfirm') || 'Remove {name} from the lobby?')
-        .replace('{name}', playerName);
-    if (!confirm(message)) return;
-
-    if (isAdminWsOpen()) {
-        sendAdminWs({
-            type: 'admin',
-            action: 'kick_player',
-            player_name: playerName
-        });
     }
 }
 
@@ -2052,13 +2184,10 @@ function setupPlaylistRequests() {
     const urlError = document.getElementById('spotify-url-error');
     const submitBtn = document.getElementById('request-submit-btn');
 
-    // Open request modal from button
-    document.getElementById('request-playlist-btn')?.addEventListener('click', () => {
-        if (requestModal) {
-            requestModal.classList.remove('hidden');
-            urlInput?.focus();
-        }
-    });
+    // #1138 cleanup: the #request-playlist-btn open-modal listener was removed
+    // along with the legacy flat #my-requests section that hosted the button.
+    // The Request Custom Playlist modal is opened by the live wizard
+    // (#wiz-request-playlist) and the Playlist Hub (onRequestClick) instead.
 
     // Close request modal
     document.getElementById('request-cancel-btn')?.addEventListener('click', () => {
@@ -2183,32 +2312,13 @@ async function initPlaylistRequests() {
  * Render the list of playlist requests
  */
 async function renderRequestsList() {
-    if (!window.PlaylistRequests) {
-        document.getElementById('my-requests')?.classList.add('hidden');
-        return;
-    }
+    if (!window.PlaylistRequests) return;
 
-    // Load requests from backend (async)
-    const requests = await window.PlaylistRequests.getRequestsForDisplayAsync();
-
-    // Legacy #my-requests section — null-safe so the section can be deleted later
-    const section = document.getElementById('my-requests');
-    const listContainer = document.getElementById('my-requests-list');
-    const emptyState = document.getElementById('my-requests-empty');
-    const summary = document.getElementById('my-requests-summary');
-
-    if (!section || !listContainer) return; // section deleted from DOM — home-view modal carries the load
-
-    if (adminState.currentView === 'setup') section.classList.remove('hidden');
-    if (summary) summary.textContent = requests.length.toString();
-
-    if (requests.length === 0) {
-        listContainer.innerHTML = '';
-        emptyState?.classList.remove('hidden');
-    } else {
-        emptyState?.classList.add('hidden');
-        listContainer.innerHTML = requests.map((r) => buildRequestRowHtml(r)).join('');
-    }
+    // #1589 dead-selector cleanup: the legacy flat #my-requests section
+    // (list / empty-state / summary) was removed from admin.html; the home-view
+    // request modal is now the sole surface. The backend load is kept for its
+    // refresh side-effect; all DOM rendering below the old null guard was dead.
+    await window.PlaylistRequests.getRequestsForDisplayAsync();
 }
 
 // ============================================
@@ -2286,8 +2396,27 @@ async function renderRequestsList() {
 // notably handleAdminStateUpdate below.)
 /**
  * Handle game state update from WebSocket — route to correct phase view.
+ *
+ * #1584: this rebuilds leaderboard + result cards + reveal in one shot, so a
+ * burst of `state` broadcasts (many players / fast rounds) used to repaint the
+ * whole view on every frame and janked weak hosts. The public entry point is
+ * now the thin `handleAdminStateUpdate` wrapper below — it coalesces a burst
+ * onto the next animation frame (rendering only the LATEST payload, so the
+ * final state is never dropped) and skips the repaint when the payload is
+ * byte-identical to what's already on screen. The heavy render itself is
+ * unchanged.
  */
-function handleAdminStateUpdate(data) {
+function renderAdminState(data) {
+    // #1765: re-attach the per-player fields (score/connected/eliminated/…) the
+    // server no longer duplicates into every slim in-round leaderboard entry,
+    // joining from data.players by name so every admin leaderboard render is
+    // unchanged. Hydrate into a shallow copy (non-destructive → the END final
+    // leaderboard passes through) and store that as the current game.
+    if (data && data.leaderboard) {
+        data = Object.assign({}, data, {
+            leaderboard: utils.hydrateLeaderboard(data.leaderboard, data.players)
+        });
+    }
     adminState.currentGame = data;
 
     // Restore adminState.isPlaying state from player list (survives page reload)
@@ -2380,6 +2509,32 @@ function handleAdminStateUpdate(data) {
         default:
             showSetupView();
     }
+}
+
+// #1584: coalesce bursts of state broadcasts into one render/frame, latest
+// payload wins (final state always rendered), and skip when nothing changed.
+// #1659: the dirty-check is `adminStateEqual` (admin/util.js) — it strips the
+// volatile timestamp keys before comparing, so a broadcast that differs only
+// by a re-stamped `deadline` / `reveal_started_at` still skips the repaint.
+const _scheduleAdminRender = createRenderCoalescer(renderAdminState, {
+    isEqual: adminStateEqual,
+});
+
+/**
+ * Public entry point for a game-state update (WS `state` broadcast or a
+ * programmatic refresh). Coalesces the heavy `renderAdminState` — see its
+ * doc-comment for the #1584 rationale.
+ */
+function handleAdminStateUpdate(data) {
+    // Keep the live game-state pointer fresh synchronously (other async code
+    // reads adminState.currentGame between broadcasts); only the heavy DOM
+    // render is deferred and coalesced. renderAdminState re-assigns the same
+    // value when it flushes — idempotent.
+    adminState.currentGame = data;
+    // #1715: a fresh state broadcast means the last in-game control command was
+    // processed — release the in-flight guard so Next/Stop/Volume are live again.
+    releaseAllAdminControls();
+    _scheduleAdminRender(data);
 }
 
 // ---- #660: Playing mode banner + switch button ----
@@ -2698,11 +2853,128 @@ function showAdminRevealView(data) {
         }
     }
 
+    // Issue #827: Sudden Death — live toggle on the control bar (S7-A) +
+    // elimination/final highlight chips in the reveal header (S4-B / S5-B).
+    // Guarded so non-Sudden-Death games are wholly unaffected.
+    _renderSuddenDeathLiveToggle(data);
+    _renderSuddenDeathRevealChips(data);
+
     // All guesses grid (player-style result cards)
     renderAdminResultCards(data.players, data.closest_wins_mode, data.song ? data.song.year : null);
 
     // Leaderboard (player-style entries)
     renderAdminLeaderboard(data.leaderboard);
+}
+
+/**
+ * Issue #827: Sudden Death live toggle (design S7-A) on the REVEAL control bar.
+ * Lets the host arm/disarm Sudden Death between rounds. POSTs to the live
+ * endpoint via the authed BeatifyAuth.fetch helper (same as Start/End game),
+ * then lets the WS broadcast drive the UI — no optimistic desync. Disabled
+ * when fewer than 3 non-eliminated players remain (arming is pointless there).
+ */
+function _renderSuddenDeathLiveToggle(data) {
+    var controlBar = document.getElementById('admin-control-bar');
+    if (!controlBar) return;
+
+    var existing = document.getElementById('admin-sudden-death-toggle');
+
+    if (!data) {
+        if (existing) existing.remove();
+        return;
+    }
+
+    // S7-A is a *live* control: the host arms or disarms Sudden Death between
+    // rounds, so the toggle is always present on the reveal control bar. Its
+    // .is-on state mirrors the top-level WS flag `sudden_death_mode`.
+    var players = data.players || [];
+    var remaining = players.filter(function(p) { return !p.eliminated; }).length;
+    var isOn = !!data.sudden_death_mode;
+    var label = (BeatifyI18n.t && BeatifyI18n.t('admin.suddenDeathLive')) || 'Sudden Death';
+
+    var btn = existing;
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'admin-sudden-death-toggle';
+        btn.type = 'button';
+        btn.className = 'sd-live-toggle';
+        // POST the inverse of the *current server* state, then wait for the WS
+        // broadcast to repaint. We snapshot on click to avoid stale-closure bugs.
+        btn.addEventListener('click', function() {
+            if (btn.disabled) return;
+            var enable = !(btn.classList.contains('is-on'));
+            btn.disabled = true;  // debounce until the broadcast lands
+            BeatifyAuth.fetch('/beatify/api/sudden-death', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enable })
+            }).catch(function(err) {
+                console.warn('[Admin] Sudden Death toggle failed:', err);
+                btn.disabled = false;  // re-enable so the host can retry
+            });
+        });
+        controlBar.appendChild(btn);
+    }
+
+    btn.innerHTML = '💀 <span class="control-label">' + escapeHtml(label) +
+        '</span><span class="sd-live-toggle__switch"></span>';
+    btn.classList.toggle('is-on', isOn);
+    // Arming below 3 survivors is pointless (2 left = final already / 1 = winner).
+    btn.disabled = remaining < 3;
+}
+
+/**
+ * Issue #827: Reveal-header highlight chips for Sudden Death.
+ *  - S4-B: red elimination chip when players were eliminated THIS round.
+ *  - S5-B: pink FINAL chip when exactly 2 survivors remain.
+ * Both live in a dynamically-created `.arc-chip-row` inside the reveal header.
+ */
+function _renderSuddenDeathRevealChips(data) {
+    var section = document.getElementById('admin-reveal-section');
+    if (!section) return;
+
+    var row = document.getElementById('admin-reveal-arc-chip-row');
+
+    // Non-Sudden-Death game → no chips; clear any stale row.
+    if (!data || !data.sudden_death_mode) {
+        if (row) row.remove();
+        return;
+    }
+
+    if (!row) {
+        row = document.createElement('div');
+        row.id = 'admin-reveal-arc-chip-row';
+        row.className = 'arc-chip-row';
+        // Place it just under the reveal header so chips read as round context.
+        var header = section.querySelector('.reveal-header-compact');
+        if (header && header.parentNode) {
+            header.parentNode.insertBefore(row, header.nextSibling);
+        } else {
+            section.appendChild(row);
+        }
+    }
+
+    var chips = '';
+
+    // S4-B: elimination chip (prepended). eliminated_this_round is only present
+    // in REVEAL state and only when sudden_death_mode is on.
+    var elim = data.eliminated_this_round || [];
+    if (elim.length > 0) {
+        chips += '<span class="arc-chip arc-chip--elim">💀 ' +
+            escapeHtml(utils.t('game.eliminated', 'Eliminated')) + ': ' +
+            escapeHtml(elim.join(', ')) + '</span>';
+    }
+
+    // S5-B: final chip when exactly 2 players are still in it.
+    var players = data.players || [];
+    var remaining = players.filter(function(p) { return !p.eliminated; }).length;
+    if (remaining === 2) {
+        var finalLabel = (BeatifyI18n.t && BeatifyI18n.t('game.finalShowdown')) || 'FINAL — SUDDEN DEATH';
+        chips += '<span class="arc-chip arc-chip--final">🔥 ' + escapeHtml(finalLabel) + '</span>';
+    }
+
+    row.innerHTML = chips;
+    row.classList.toggle('hidden', chips === '');
 }
 
 /**
@@ -2838,6 +3110,21 @@ function _renderPauseRecoveryBanner(data) {
         msgEl.textContent = msg;
     }
 
+    // #1927: name the speaker the game was playing on. The banner already said
+    // WHAT failed and WHICH provider to re-authenticate, but never WHERE — and
+    // a game started on the wrong speaker fails in exactly this way.
+    var speakerEl = document.getElementById('admin-pause-recovery-speaker');
+    if (speakerEl) {
+        var speakerId = data && data.media_player ? data.media_player : '';
+        if (speakerId) {
+            speakerEl.textContent = speakerLabelFor(speakerId, adminState.mediaPlayers);
+            speakerEl.classList.remove('hidden');
+        } else {
+            speakerEl.textContent = '';
+            speakerEl.classList.add('hidden');
+        }
+    }
+
     var detailEl = document.getElementById('admin-pause-recovery-detail');
     if (detailEl) {
         if (detail) {
@@ -2881,23 +3168,93 @@ function showAdminPausedView(data) {
 // ---- Admin game controls (sent via WS) ----
 // (#1279 step 3: sendAdminCommand moved to ./admin/api.js — imported above.)
 
+// #1715: in-flight guard shared by all in-game controls. next_round/stop_song
+// have no client-side ack that resets the button, so a laggy double-tap of Next
+// sent the command twice and skipped a round. Disable the tapped control on
+// send; re-enable it on the next WS state broadcast (releaseAll() in
+// handleAdminStateUpdate) or a safety timeout — mirroring the start
+// (_startInFlight) / rematch (rematchInProgress) guards.
+const _controlGuard = createControlGuard();
+var ADMIN_CONTROL_GUARD_MS = 4000; // Next/Stop: cleared far sooner by the WS state broadcast
+var ADMIN_VOLUME_GUARD_MS = 300;   // Volume: short debounce so repeat presses still ramp
+
+// Exposed so unit tests / re-render code can reset a stuck guard if needed.
+function releaseAllAdminControls() {
+    _controlGuard.releaseAll();
+}
+
 function adminNextRound() {
-    sendAdminCommand({ type: 'admin', action: 'next_round' });
+    _controlGuard.run('next_round', ['admin-next-round', 'admin-skip-round'],
+        function () { return sendAdminCommand({ type: 'admin', action: 'next_round' }); },
+        ADMIN_CONTROL_GUARD_MS);
 }
 
 function adminStopSong() {
-    sendAdminCommand({ type: 'admin', action: 'stop_song' });
+    _controlGuard.run('stop_song', ['admin-stop-song'],
+        function () { return sendAdminCommand({ type: 'admin', action: 'stop_song' }); },
+        ADMIN_CONTROL_GUARD_MS);
 }
 
 function adminVolumeUp() {
-    sendAdminCommand({ type: 'admin', action: 'set_volume', direction: 'up' });
+    _controlGuard.run('vol_up', ['admin-vol-up'],
+        function () { return sendAdminCommand({ type: 'admin', action: 'set_volume', direction: 'up' }); },
+        ADMIN_VOLUME_GUARD_MS);
 }
 
 function adminVolumeDown() {
-    sendAdminCommand({ type: 'admin', action: 'set_volume', direction: 'down' });
+    _controlGuard.run('vol_down', ['admin-vol-down'],
+        function () { return sendAdminCommand({ type: 'admin', action: 'set_volume', direction: 'down' }); },
+        ADMIN_VOLUME_GUARD_MS);
 }
 
+// #1719: "Start New Game" (adminDismissGame) destructively wipes the saved
+// speaker/playlists/settings and relaunches the wizard — yet it sat next to
+// Rematch on the end screen with NO confirmation, while both End Game and
+// Rematch are gated by confirm modals. One stray tap silently forgot the host's
+// whole setup. Gate the wipe behind the same confirm-modal pattern; the actual
+// clearing now lives in confirmDismissGame().
+
+/** Show the "Start New Game" confirmation modal (#1719). */
+function showNewGameModal() {
+    var modal = document.getElementById('new-game-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        activateModalFocus('new-game-modal', 'new-game-cancel-btn'); // #1716
+    }
+}
+
+/** Close the "Start New Game" confirmation modal (#1719). */
+function closeNewGameModal() {
+    var modal = document.getElementById('new-game-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        deactivateModalFocus('new-game-modal'); // #1716
+    }
+}
+
+/** Entry point wired to the "Start New Game" button — asks first (#1719). */
 function adminDismissGame() {
+    showNewGameModal();
+}
+
+/** Wire the new-game confirmation modal (#1719). */
+function setupNewGameModal() {
+    var confirmBtn = document.getElementById('new-game-confirm-btn');
+    var cancelBtn = document.getElementById('new-game-cancel-btn');
+    var backdrop = document.querySelector('#new-game-modal .modal-backdrop');
+
+    confirmBtn?.addEventListener('click', function () {
+        closeNewGameModal();
+        confirmDismissGame();
+    });
+    cancelBtn?.addEventListener('click', closeNewGameModal);
+    backdrop?.addEventListener('click', closeNewGameModal);
+
+    registerModalClose('new-game-modal', closeNewGameModal);
+}
+
+/** Actually forget speaker/playlists/settings + relaunch the wizard (#1719). */
+function confirmDismissGame() {
     if (isAdminWsOpen()) {
         sendAdminWs({ type: 'admin', action: 'dismiss_game' });
     }

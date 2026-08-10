@@ -76,6 +76,7 @@
     "yourGuess": "Tu respuesta",
     "ofLabel": "de",
     "finalRound": "Ronda final!",
+    "finaleDouble": "✨ Final ×2 — ¡Puntos dobles!",
     "selectYear": "Selecciona el ano",
     "submit": "Enviar",
     "submitGuess": "Enviar respuesta",
@@ -88,13 +89,13 @@
     "timeRemaining": "{seconds}s restantes",
     "bet": "Triple o nada",
     "betShort": "×3",
+    "betActive": "Apuesta activa!",
     "noBonusThisRound": "Sin bonus esta ronda — acierta el año",
     "lockedIn": "Bloqueado · esperando a los demás",
     "lockedInWaitingCount": "Bloqueado · esperando a {count} más",
     "lockedInAllSubmitted": "Bloqueado · todos enviaron",
     "waitingForOthers": "Esperando a los demás",
     "allSubmitted": "Todos dentro",
-    "betActive": "Apuesta activa!",
     "guessArtist": "Adivina el artista",
     "artistPlaceholder": "Nombre del artista",
     "paused": "Juego pausado",
@@ -116,7 +117,18 @@
     "stop": "Stop",
     "ending": "Terminando...",
     "starting": "Iniciando...",
-    "joining": "Uniéndose..."
+    "joining": "Uniéndose...",
+    "suddenDeath": "MUERTE SÚBITA",
+    "youreOut": "Estás fuera",
+    "eliminated": "Eliminado",
+    "eliminatedRound": "Eliminado · Ronda {round}",
+    "watchingSidelines": "Mirando desde la banda",
+    "lastOneStanding": "Último en Pie",
+    "cutLine": "LÍNEA DE CORTE",
+    "outRound": "Fuera · R{round}",
+    "finalShowdown": "FINAL — MUERTE SÚBITA",
+    "winnerTakesAll": "El ganador se lo lleva todo",
+    "out": "FUERA"
   },
   "steal": {
     "available": "Robo disponible!",
@@ -130,6 +142,24 @@
     "success": "Robaste la respuesta de {name}: {year}",
     "stolenFrom": "Robado de {name}",
     "stolenBy": "Respuesta robada por {name}"
+  },
+  "sabotage": {
+    "available": "¡Sabotaje listo!",
+    "button": "Sabotaje",
+    "selectTarget": "Elige a quién sabotear",
+    "selectTargetHint": "El efecto es aleatorio: recorte de tiempo, apuesta forzada o congelación.",
+    "noTargets": "No queda nadie a quien sabotear — todos han enviado.",
+    "confirm": "¿Sabotear a {name}? El efecto es aleatorio.",
+    "confirmTitle": "¿Sabotear?",
+    "confirmButton": "Sabotaje",
+    "success": "{name} saboteado · {effect}",
+    "hit": "¡{name} te ha saboteado! ({effect})",
+    "frozen": "Congelado — espera un momento",
+    "effect": {
+      "timer_cut": "Recorte de tiempo",
+      "forced_bet": "Apuesta forzada",
+      "freeze": "Congelación"
+    }
   },
   "reaction": {
     "fire": "Reacción de fuego",
@@ -285,7 +315,10 @@
     "weeksShort": "sem",
     "moreAwards": "mas",
     "playerNotFound": "Jugador no encontrado",
-    "autoAdvanceAria": "Cuenta atrás para la siguiente ronda"
+    "autoAdvanceAria": "Cuenta atrás para la siguiente ronda",
+    "reportBtnError": "No se pudo enviar el informe — intentalo de nuevo.",
+    "streakShieldUsed": "¡Escudo usado — racha de {streak} salvada!",
+    "streakShieldHeld": "Escudo de racha listo"
   },
   "leaderboard": {
     "title": "Clasificacion",
@@ -312,6 +345,26 @@
     "skipRound": "Saltar",
     "mediaPlayers": "Reproductores",
     "playlists": "Listas de reproduccion",
+    "playlistTabList": "Listas",
+    "playlistTabMix": "Mezcla",
+    "mixTitle": "Mezclador inteligente de listas",
+    "mixSubtitle": "Elige etiquetas — Beatify arma al instante un conjunto sin duplicados a partir de tu catálogo.",
+    "mixTargetCount": "Canciones objetivo",
+    "mixPreviewEmpty": "Selecciona etiquetas para previsualizar tu mezcla.",
+    "mixPreviewNone": "Ninguna lista coincide con estas etiquetas.",
+    "mixPreview": "≈ {songs} canciones de {playlists} listas · duplicados eliminados",
+    "mixPreviewTracks": "Ver lista de canciones",
+    "mixPreviewLoading": "Cargando vista previa…",
+    "mixTracklistHeading": "{count} canciones en esta mezcla",
+    "mixTracklistEmpty": "No hay canciones para previsualizar.",
+    "mixStart": "Iniciar mezcla",
+    "mixAssembling": "Armando…",
+    "mixSaveCommunity": "Guardar como lista de la comunidad",
+    "mixNoTags": "No se encontraron listas etiquetadas para mezclar.",
+    "mixNoTagsSelected": "Selecciona al menos una etiqueta.",
+    "mixNoMediaPlayer": "Selecciona primero un reproductor.",
+    "mixFailed": "No se pudo armar la mezcla.",
+    "mixStartUnavailable": "Mezcla creada, pero no se pudo iniciar el juego.",
     "selectPlaylist": "Seleccionar lista",
     "selectMediaPlayer": "Seleccionar altavoz",
     "selectMediaPlayerHint": "Selecciona un reproductor",
@@ -348,10 +401,15 @@
     "newGame": "Nuevo juego",
     "newGameTitle": "¿Nuevo juego?",
     "newGameConfirm": "¿Iniciar un nuevo juego?",
+    "newGameConfirmTitle": "¿Iniciar un nuevo juego?",
+    "newGameConfirmMessage": "¿Olvidar tu altavoz + listas y empezar la configuración de cero?",
     "startNewGame": "Iniciar nuevo juego",
     "stop": "Detener",
     "stopSong": "Detener canción",
     "connectionLost": "Conexión perdida — reconectando...",
+    "connectionDisrupted": "Conexión interrumpida — recarga la página.",
+    "wsAuthFailed": "Home Assistant rechazó el token de acceso. Volviendo a autenticar…",
+    "companionLocalNetworkRequired": "El administrador de Beatify requiere acceso a la red local desde la app Companion — abre Beatify en un navegador externo o conéctate a tu wifi doméstica.",
     "confirmIntro": "Iniciar ronda",
     "next": "Siguiente",
     "nextRound": "Siguiente ronda",
@@ -403,6 +461,18 @@
     "titleArtistMode": "Modo Título y Artista",
     "titleArtistModeHint": "Los jugadores escriben el título y el artista en lugar de adivinar el año. Reemplaza la ronda de año — el desafío del artista y «el más cercano gana» no se aplican, pero el cuestionario de películas y el modo intro sí.",
     "closestWinsHint": "Solo el jugador con la respuesta más cercana gana puntos en cada ronda. Duelo de todo o nada.",
+    "rampupOrder": "Orden progresivo",
+    "rampupOrderHint": "Ordena las canciones por dificultad en lugar de al azar: rondas fáciles primero y la canción más difícil conocida reservada para la final. Vuelve al orden aleatorio hasta que las canciones tengan suficiente historial de juego.",
+    "finaleDouble": "Final ×2",
+    "finaleDoubleHint": "Duplica la puntuación de cada jugador en la ronda final, para que un jugador rezagado aún pueda dar la vuelta al juego. En la última ronda se muestra un cartel \"Final ×2\".",
+    "finaleTiebreaker": "Desempate final",
+    "finaleTiebreakerHint": "Si el juego termina con empate en el primer puesto y quedan canciones, se juega un desempate a muerte súbita solo entre los jugadores empatados en lugar de una victoria compartida.",
+    "difficultyBetScaling": "Escala de apuesta por dificultad",
+    "difficultyBetScalingHint": "Escala la recompensa de una apuesta ganada con la dificultad (fácil ×2, normal ×3, difícil ×5) en lugar de un ×3 fijo, para que apostar siga mereciendo la pena en Difícil, donde acertar el año exacto es raro. Una apuesta fallida sigue perdiendo la ronda.",
+    "sabotage": "Sabotaje",
+    "sabotageHint": "Da a cada jugador una ficha de Sabotaje por partida. Úsala contra un rival que aún está adivinando: el efecto es aleatorio (recorte de tiempo, apuesta forzada de doble o nada, o una breve congelación). El saboteador solo elige el objetivo, nunca el efecto.",
+    "comebackToken": "Ficha de remontada",
+    "comebackTokenHint": "Tras la ronda de la mitad, entrega al tercio rezagado de jugadores un potenciador de Robo por única vez, para que una diferencia a mitad de partida sea más fácil de cerrar. Los jugadores que ya tienen un robo no se ven afectados.",
     "roundsHint": "Número total de rondas en el juego, basado en las playlists seleccionadas.",
     "languageHint": "Establece el idioma para todos los jugadores durante la partida.",
     "timerHint": "Cuántos segundos tienen los jugadores para enviar su respuesta en cada ronda.",
@@ -519,8 +589,8 @@
     "ttsTestNoSpeaker": "Elige primero un altavoz",
     "pauseRecovery": {
       "title": "Partida en pausa",
-      "mediaPlayerError": "La reproducción no se ha iniciado — el altavoz no responde. Causa habitual: {provider} en Music Assistant necesita reautenticarse — Ajustes → Music Assistant → {provider} → Reconectar, y luego pulsa Reanudar.",
-      "mediaPlayerErrorGeneric": "La reproducción no se ha iniciado — el altavoz no responde. Causa habitual: tu proveedor de música en Music Assistant necesita reautenticarse — Ajustes → Music Assistant → tu proveedor → Reconectar, y luego pulsa Reanudar.",
+      "mediaPlayerError": "La reproducción no se ha iniciado en varias canciones seguidas. Dos causas habituales: {provider} en Music Assistant necesita volver a autenticarse (Ajustes → Music Assistant → {provider} → Reconectar), o {provider} está limitando las peticiones ahora mismo — en ese caso espera un minuto y pulsa Reanudar.",
+      "mediaPlayerErrorGeneric": "La reproducción no se ha iniciado en varias canciones seguidas. Dos causas habituales: tu proveedor de música en Music Assistant necesita volver a autenticarse (Ajustes → Music Assistant → proveedor → Reconectar), o está limitando las peticiones ahora mismo — en ese caso espera un minuto y pulsa Reanudar.",
       "noSongsAvailable": "No quedan canciones reproducibles para este proveedor. Reanuda para reintentarlo, o finaliza la partida.",
       "resume": "Reanudar",
       "endGame": "Finalizar partida",
@@ -559,7 +629,35 @@
       "needPlayerToStart": "Únete como jugador (o pide a un invitado que escanee el QR) antes de empezar.",
       "wsReconnecting": "Reconectando con el servidor del juego — inténtalo de nuevo.",
       "waitingForGuests": "Esperando a los invitados…"
-    }
+    },
+    "startRematchFailed": "No se pudo iniciar la revancha",
+    "startGameplayFailed": "No se pudo iniciar el juego",
+    "noPlaylistsFoundHint": "No se encontraron listas. Añade archivos JSON de listas en:",
+    "howToCreatePlaylists": "Cómo crear listas de reproducción",
+    "noPlaylistsMatchFilter": "Ninguna lista coincide con el filtro seleccionado.",
+    "clearFilters": "Borrar filtros",
+    "noCompatiblePlayersTitle": "🎵 No se encontraron reproductores compatibles",
+    "noCompatiblePlayersDesc": "Beatify funciona con reproductores Music Assistant, Sonos y Alexa.",
+    "recommendedLabel": "Recomendado:",
+    "installMusicAssistant": "Instala Music Assistant para la mejor experiencia con cualquier altavoz.",
+    "musicAssistantSetupGuide": "📖 Guía de configuración de Music Assistant",
+    "refresh": "🔄 Actualizar",
+    "requestStatusPending": "⏳ Pendiente",
+    "requestStatusReady": "✅ Listo",
+    "requestStatusInstalled": "✓ Instalado",
+    "requestStatusDeclined": "❌ Rechazado",
+    "seasonalReasonCarnival": "Llega el Carnaval — éxitos de Colonia para Weiberfastnacht y Rosenmontag.",
+    "seasonalReasonEurovision": "Es hora de Eurovisión — pon los ganadores desde 1956 hasta hoy.",
+    "seasonalReasonWorldCup": "Fiebre del Mundial — himnos para cada fiesta de partido.",
+    "seasonalReasonSummer": "Llegó el verano — 100 himnos para la fiesta en el jardín.",
+    "seasonalBadge": "Sugerencia de la temporada",
+    "seasonalAdd": "Añadir",
+    "seasonalDismiss": "Descartar sugerencia de temporada",
+    "suddenDeathMode": "Muerte Súbita",
+    "suddenDeathModeHint": "El último de cada ronda queda eliminado. Gana el último en pie.",
+    "suddenDeathDisabledTooltip": "Muerte Súbita necesita al menos 3 jugadores.",
+    "suddenDeathDisabledGate": "Se necesitan al menos 3 jugadores",
+    "suddenDeathLive": "Muerte Súbita"
   },
   "analyticsDashboard": {
     "title": "Estadisticas de Beatify",
@@ -670,7 +768,10 @@
     "wakeLockTitle": "¿Mantener la pantalla encendida?",
     "wakeLockBody": "Evita que la pantalla del TV se apague durante la partida.",
     "wakeLockActivate": "Activar",
-    "wakeLockDismiss": "Cerrar"
+    "wakeLockDismiss": "Cerrar",
+    "reconnecting": "Reconectando…",
+    "qrUnavailable": "Escaneo no disponible: introduce la dirección web de abajo",
+    "joinAddressLabel": "Dirección para unirse"
   },
   "launcher": {
     "title": "Beatify",
@@ -712,13 +813,13 @@
   },
   "movieChallenge": {
     "whichMovie": "¿En qué película aparece esta canción?",
-    "youGotIt": "¡Correcto! #{rank} — +{bonus} puntos",
+    "youGotIt": "¡Correcto! +{bonus} puntos",
     "alreadyGuessed": "¡Ya respondiste!",
-    "someoneFaster": "Correcto, pero otros fueron más rápidos",
+    "someoneFaster": "Correcto, pero alguien fue más rápido",
     "wrongGuess": "Casi...",
     "theMovieWas": "La película era",
     "noWinner": "Nadie adivinó la película",
-    "winnersTitle": "Ganadores del Quiz de Películas"
+    "winnersTitle": "Ganador del Quiz de Películas"
   },
   "titleArtist": {
     "titleLabel": "Título de la canción",
@@ -809,6 +910,7 @@
     "ADMIN_EXISTS": "El anfitrion ya existe",
     "ALREADY_SUBMITTED": "Ya enviaste tu respuesta",
     "CONNECTION_LOST": "Conexion perdida",
+    "EMPTY_MIX": "Ninguna canción coincide con las etiquetas seleccionadas para este proveedor. Prueba con menos etiquetas o distintas.",
     "GAME_ALREADY_STARTED": "Ya hay una partida en curso. Termínala antes de empezar una nueva.",
     "GAME_ENDED": "El juego ha terminado",
     "GAME_FULL": "El juego esta lleno",
@@ -818,19 +920,24 @@
     "INVALID_ACTION": "Accion invalida",
     "INVALID_FORMAT": "Esa no parece ser una URL valida de playlist de Spotify.",
     "MEDIA_PLAYER_UNAVAILABLE": "Reproductor no disponible",
+    "MIX_INVALID": "La mezcla creada no pasó la validación. Inténtalo de nuevo con otras etiquetas.",
     "NAME_INVALID": "Nombre invalido",
     "NAME_TAKEN": "Nombre ya en uso",
     "NOT_ADMIN": "Se requiere acceso de administrador",
     "NOT_IN_GAME": "No estas en el juego",
     "NO_SONGS_REMAINING": "No quedan canciones",
+    "NO_TAGS": "Elige al menos una etiqueta para crear una mezcla.",
     "PLAYLIST_NOT_FOUND": "Playlist no encontrada. La URL es correcta y la playlist es publica?",
     "RATE_LIMITED": "Demasiadas solicitudes — espera un minuto e intentalo de nuevo.",
     "RECONNECTING": "Reconectando...",
     "ROUND_EXPIRED": "La ronda ha expirado",
+    "SAVE_FAILED": "No se pudo guardar la mezcla. Inténtalo de nuevo.",
     "SESSION_NOT_FOUND": "Sesion expirada",
     "SESSION_TAKEOVER": "Sesion tomada por otra pestana",
+    "UNAUTHORIZED": "No tienes permiso para hacer eso.",
     "UNKNOWN": "Ocurrio un error",
     "askHostNewGame": "Pide al anfitrion que inicie un nuevo juego.",
+    "startNotPossible": "No se puede iniciar",
     "askHostQr": "Pide al anfitrion un nuevo codigo QR.",
     "checkNetwork": "Asegurate de estar conectado a la red",
     "connectionLost": "Conexión perdida. Por favor, recarga.",
@@ -842,7 +949,14 @@
     "gameNotFoundHint": "Este juego no existe o el enlace es incorrecto.",
     "submissionFailed": "Error al enviar",
     "thanksForPlaying": "Gracias por jugar Beatify!",
-    "timesUp": "¡Tiempo agotado!"
+    "timesUp": "¡Tiempo agotado!",
+    "secondsRemaining": "Quedan {count} segundos",
+    "sessionTakeoverTitle": "Te uniste en otro dispositivo",
+    "sessionTakeoverHint": "Esta pantalla ahora está inactiva porque abriste el juego en otro dispositivo o pestaña.",
+    "sessionTakeoverJoin": "Unirse aquí de nuevo",
+    "PROVIDER_NOT_SUPPORTED": "{speaker} no puede reproducir {provider}. Cambia a un altavoz de Music Assistant.",
+    "UNSUPPORTED_PLAYER": "{speaker} no es un tipo de altavoz compatible. Usa Music Assistant.",
+    "joinTimeout": "No se pudo conectar. Intentalo de nuevo."
   },
   "highlights": {
     "highlight_exact_match": "¡{player} clavó '{song}' — {year}!",
@@ -1022,6 +1136,166 @@
     "titleArtistCaption": "A veces: escribe título y artista",
     "titleArtistHint": "¿Cerca? La sala vota 👍/👎."
   },
+  "playlistHub": {
+    "title": "Centro de listas",
+    "loading": "Cargando…",
+    "close": "Cerrar",
+    "retry": "Reintentar",
+    "seeAll": "Ver todo",
+    "by": "de",
+    "bundledBy": "Equipo de Beatify",
+    "songs": "canciones",
+    "played": "reproducida",
+    "players": "jugadores",
+    "min": "min",
+    "local": "Local",
+    "search": {
+      "placeholder": "Buscar listas, artistas, años…"
+    },
+    "tabs": {
+      "bundled": "Incluidas",
+      "community": "Comunidad",
+      "mine": "Mías"
+    },
+    "chips": {
+      "all": "Todos los géneros",
+      "pop": "Pop",
+      "rock": "Rock",
+      "hiphop": "Hip-Hop",
+      "metal": "Metal",
+      "jazz": "Jazz",
+      "electronic": "Electrónica",
+      "latin": "Latina",
+      "schlager": "Schlager",
+      "soul": "Soul / R&B",
+      "other": "Otros"
+    },
+    "shelves": {
+      "yourMostPlayed": "Las más reproducidas",
+      "recentlyPlayed": "Reproducidas recientemente",
+      "editorsPicks": "Selección del equipo",
+      "fromCommunity": "De la comunidad",
+      "popularIn": "Populares en",
+      "recentlyAdded": "Añadidas recientemente",
+      "regional": "Regional y especiales",
+      "searchResults": "Resultados"
+    },
+    "community": {
+      "tag": "COMUNIDAD",
+      "banner": {
+        "title": "¿No hay nada para ti? Pide una lista.",
+        "sub": "Describe el género, la época, el ambiente. Un responsable la publica en 24–48 h."
+      }
+    },
+    "mine": {
+      "requests": "PETICIONES",
+      "done": "LISTAS",
+      "inFlight": "EN CURSO",
+      "untitled": "Petición sin título",
+      "submitted": "Enviada",
+      "empty": {
+        "title": "Aún no hay peticiones",
+        "body": "¿Falta un género, una época o una escena regional? Pídelo. Un responsable lo añade en 24–48 h."
+      },
+      "request": {
+        "title": "Pedir una lista",
+        "sub": "Pega la URL de una lista de Spotify y envíala.",
+        "cta": "Iniciar una petición"
+      },
+      "newRequest": {
+        "title": "Pedir otra lista",
+        "sub": "Pega una URL de Spotify, nosotros nos encargamos."
+      },
+      "meanwhile": {
+        "title": "Mientras tanto, explora listas de la comunidad",
+        "sub": "Selecciones de usuarios, instalables con un toque."
+      },
+      "generator": {
+        "title": "O crea la tuya con una IA",
+        "sub": "URL de Spotify → copia el prompt → ejecútalo en tu IA → pégalo de vuelta → valida → envía.",
+        "subShort": "URL de Spotify → prompt → JSON → validar → enviar."
+      },
+      "step": {
+        "submitted": "Enviada",
+        "reviewed": "Revisada",
+        "building": "En construcción",
+        "inBundled": "Incluida"
+      }
+    },
+    "status": {
+      "pending": "Pendiente",
+      "building": "En construcción",
+      "done": "Lista",
+      "declined": "Rechazada"
+    },
+    "detail": {
+      "add": "Añadir a la ronda",
+      "remove": "Quitar de la ronda",
+      "added": "Añadida",
+      "language": "Idioma",
+      "tags": "Etiquetas",
+      "streaming": "Cobertura de streaming"
+    },
+    "sources": {
+      "bundled": "Incluidas",
+      "community": "Comunidad"
+    },
+    "empty": {
+      "noSearch": {
+        "title": "Sin resultados para",
+        "body": "No hay coincidencias. Prueba con otra búsqueda o mira la otra pestaña.",
+        "searchOther": "Buscar",
+        "request": "Pedir esta lista",
+        "clear": "Borrar búsqueda"
+      },
+      "noFilter": {
+        "title": "Ninguna lista coincide",
+        "body": "Prueba a quitar el filtro o a pedir este género.",
+        "clear": "Borrar filtro de género",
+        "request": "Pedir este género"
+      },
+      "communityEmpty": {
+        "title": "No hay listas de la comunidad instaladas",
+        "body": "Las listas de la comunidad vienen con Beatify. Actualiza la integración para obtener las últimas."
+      }
+    },
+    "error": {
+      "title": "No se pudieron cargar las listas"
+    },
+    "time": {
+      "justNow": "ahora mismo",
+      "minutesAgo": "hace {n} min",
+      "hoursAgo": "hace {n} h",
+      "daysAgo": "hace {n} d",
+      "weeksAgo": "hace {n} sem"
+    },
+    "cta": {
+      "start": "Continuar",
+      "pickSome": "Elige algunas →",
+      "back": "Atrás"
+    },
+    "pill": {
+      "add": "Añadir",
+      "added": "Añadida",
+      "ariaAdd": "Añadir a la ronda",
+      "ariaRemove": "Quitar de la ronda"
+    },
+    "sections": {
+      "byCountry": "Por país",
+      "byStyle": "Por estilo",
+      "countries": "países",
+      "styles": "estilos"
+    },
+    "selected": {
+      "title": "Tus listas seleccionadas",
+      "subtitleOne": "1 lista seleccionada",
+      "subtitleN": "{n} listas seleccionadas",
+      "empty": "Aún no hay listas seleccionadas",
+      "remove": "Quitar",
+      "removeAria": "Quitar {name}",
+      "openAria": "Mostrar listas seleccionadas"
+    }
+  },
   "playlistGenerator": {
     "title": "Generador de listas",
     "intro": "Pega una URL de lista de Spotify → copia un prompt → ejecútalo en tu propio LLM (ChatGPT, Claude.ai, local) → pega el JSON de vuelta → valida → envía. <b>Beatify no realiza ninguna llamada a un LLM.</b>",
@@ -1081,5 +1355,10 @@
   "starting": {
     "headline": "¡Ya empezamos!",
     "sub": "Conectando el altavoz y cargando la primera ronda. Preparad vuestros pulsadores."
+  },
+  "auth": {
+    "errorTitle": "Error al iniciar sesión",
+    "errorBody": "Beatify no pudo conectarse a Home Assistant. Comprueba la configuración de Beatify (URL interna / SSL) e inténtalo de nuevo.",
+    "errorRetry": "Inténtalo de nuevo"
   }
 }

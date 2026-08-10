@@ -104,11 +104,24 @@ def build_status_response(
     version: str,
     media_players: list[dict[str, Any]],
     playlists: list[dict[str, Any]],
+    media_player_twin_remap: dict[str, str] | None = None,
+    saved_setup: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the admin ``/api/status`` JSON payload.
 
     Centralises the status dict so the admin view and any future consumer
     assemble the same shape.
+
+    ``media_player_twin_remap`` (#1627 follow-up) maps each native-platform
+    media_player entity_id to the Music Assistant twin for the same physical
+    speaker. The admin frontend uses it to heal a stale saved selection that
+    points at a now-hidden native twin (see ``ensureMediaPlayerHydrated`` in
+    ``mix.js``). Defaults to an empty map.
+
+    ``saved_setup`` (#1663) is the host's persisted setup blob (speaker + game
+    settings) or ``None``. It drives ``setup_complete`` — the server-side
+    replacement for the localStorage-only "is configured?" check that made a
+    configured instance look unconfigured on a new device.
     """
     data = hass.data.get(DOMAIN, {})
     game_state: GameState | None = data.get("game")
@@ -125,13 +138,32 @@ def build_status_response(
     return {
         "version": version,
         "media_players": media_players,
+        "media_player_twin_remap": media_player_twin_remap or {},
         "playlists": playlists,
         "playlist_dir": data.get("playlist_dir", ""),
         "playlist_docs_url": PLAYLIST_DOCS_URL,
         "media_player_docs_url": MEDIA_PLAYER_DOCS_URL,
         "active_game": active_game,
         "has_music_assistant": has_music_assistant,
+        # #1663: server-side setup flag. "Configured" means a speaker was saved
+        # AND at least one playlist was picked — mirrors the frontend
+        # isConfigured() check, but survives a device/browser switch.
+        "setup_complete": _is_setup_complete(saved_setup),
+        "saved_setup": saved_setup,
     }
+
+
+def _is_setup_complete(saved_setup: dict[str, Any] | None) -> bool:
+    """True when the persisted setup blob has both a speaker and a playlist."""
+    if not isinstance(saved_setup, dict):
+        return False
+    if not saved_setup.get("last_player"):
+        return False
+    settings = saved_setup.get("game_settings")
+    if not isinstance(settings, dict):
+        return False
+    playlists = settings.get("selectedPlaylists")
+    return isinstance(playlists, list) and len(playlists) > 0
 
 
 def build_game_status_response(

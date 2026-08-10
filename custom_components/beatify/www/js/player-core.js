@@ -23,13 +23,14 @@ import {
 import {
     startCountdown, stopCountdown,
     updateGameView, handleMetadataUpdate,
-    updateLeaderboard, setupLeaderboardToggle,
+    updateLeaderboard, setupLeaderboardToggle, resetLeaderboardSummary,
     initYearSelector, handleSubmitAck, handleSubmitError,
     resetSubmissionState,
     handleArtistGuessAck, handleMovieGuessAck, handleTitleArtistGuessAck,
     handleStealAck, handleStealTargets,
+    handleSabotageAck, handleSabotageTargets, handleSabotaged,
     showAdminControlBar, hideAdminControlBar,
-    showReactionBar, hideReactionBar, setupReactionBar,
+    showReactionBar, hideReactionBar, setupReactionBar, resetReactionButtons,
     showFloatingReaction,
     updateControlBarState, handleSongStopped, handleVolumeChanged,
     handleNextRound, resetNextRoundPending, setupAdminControlBar, setupRevealControls,
@@ -42,21 +43,46 @@ import { updateRevealView, setupRevealSheets, setupRevealReportBtn, setupTitleAr
 
 import { updateEndView, updatePausedView, handleNewGame } from './player-end.js';
 
+// #1706/#1707: coalesce REVEAL/PLAYING re-renders. REVEAL broadcasts fire for
+// every reaction/vote/override and PLAYING for every submission; without this a
+// single socket frame re-ran the whole render pipeline (full leaderboard
+// innerHTML rebuild + album backdrop decode) on every phone. The shared,
+// unit-tested coalescer collapses a burst into ONE render per animation frame,
+// rendering only the latest payload.
+import { createRenderCoalescer } from './admin/util.js';
+
 import {
     shouldShowTour, startTour, replayTour, forceExit as exitTour,
     setupTour, isActive as isTourActive, updateReadyCount
 } from './player-tour.js';
 
+// #1663 item 1: non-blocking toast replaces the blocking alert() (host-cannot-leave).
+import { showToast } from './notify.js';
+
+// #1664 item 2: retry game-status on transient errors before showing not-found.
+import { fetchGameStatusWithRetry } from './player-game-status.js';
+
 var utils = window.BeatifyUtils || {};
 var debug = utils.debug || function() {};
+
+// #1706/#1707: one coalesced render per phase. push(data) renders the latest
+// payload of a burst on the next animation frame; .cancel() drops a pending
+// render so a stale REVEAL frame can't flush into the PLAYING view after a
+// phase flip (and vice-versa).
+var pushRevealRender = createRenderCoalescer(updateRevealView);
+var pushGameRender = createRenderCoalescer(updateGameView);
 
 // ============================================
 // Constants
 // ============================================
 
-var MAX_RECONNECT_ATTEMPTS = 10;
+var MAX_RECONNECT_ATTEMPTS = 7;
 var MAX_RECONNECT_DELAY_MS = 30000;
 var MAX_NAME_LENGTH = 20;
+// #1663: how long a guest may sit on "Joining…" before we surface a retry.
+// The join WS has no server-side ack timeout, so a dead/slow socket would
+// otherwise hang the spinner forever.
+var JOIN_TIMEOUT_MS = 10000;
 var STORAGE_KEY_NAME = 'beatify_player_name';
 var STORAGE_KEY_GAME_ID = 'beatify_game_id';
 var STORAGE_KEY_LANGUAGE = 'beatify_language';
@@ -170,9 +196,72 @@ function getStoredLanguage() {
 // ============================================
 
 function getReconnectDelay() {
-    // #646: First 3 attempts are fast (500ms), then linear ramp to cap
-    if (state.reconnectAttempts <= 3) return 500;
-    return Math.min(1000 * (state.reconnectAttempts - 2), MAX_RECONNECT_DELAY_MS);
+    // #1662: unified capped-exponential backoff shared with the spectator
+    // dashboard via BeatifyUtils.reconnectBackoffDelay, so the reconnect policy
+    // lives in ONE place instead of a bespoke linear ramp here (was #646:
+    // 500ms x3 then linear) and an exponential curve on the dashboard.
+    // state.reconnectAttempts is 1-based here (it is incremented in the onclose
+    // handler BEFORE this is called); the helper never overflows for large
+    // attempt counts, so the delay simply saturates at the 30s cap.
+    if (utils.reconnectBackoffDelay) {
+        return utils.reconnectBackoffDelay(state.reconnectAttempts, { maxDelay: MAX_RECONNECT_DELAY_MS });
+    }
+    // Fallback if utils failed to load: same capped exponential, 1-based attempt.
+    return Math.min(1000 * Math.pow(2, state.reconnectAttempts - 1), MAX_RECONNECT_DELAY_MS);
+}
+
+/**
+ * Build the shared WebSocket onclose handler (#1662).
+ *
+ * Both WS setups (connectWithSession / connectWebSocket) previously carried a
+ * near-identical onclose block that diverged only in how it rescheduled the
+ * reconnect. They now share the single, unit-tested orchestration in
+ * BeatifyUtils.createWsCloseHandler; only the reconnect target differs and is
+ * passed in as `scheduleReconnect`, so the guard/UI/backoff side effects stay
+ * identical across both sockets.
+ *
+ * @param {Function} scheduleReconnect - performs the actual reconnect call.
+ * @returns {Function} a WebSocket onclose handler.
+ */
+function makeSocketCloseHandler(scheduleReconnect) {
+    var deps = {
+        state: state,
+        maxAttempts: MAX_RECONNECT_ATTEMPTS,
+        getDelay: getReconnectDelay,
+        scheduleReconnect: scheduleReconnect,
+        stopHeartbeat: stopHeartbeat,
+        onReconnecting: function(attempt, delay) {
+            showReconnectingOverlay();
+            updateReconnectStatus(attempt);
+            debug('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + attempt + ')');
+        },
+        onGiveUp: function() {
+            hideReconnectingOverlay();
+            showConnectionLostView();
+        }
+    };
+    if (utils.createWsCloseHandler) {
+        return utils.createWsCloseHandler(deps);
+    }
+    // Fallback if utils failed to load: inline the same contract so a missing
+    // shared helper degrades to (not diverges from) the canonical behaviour.
+    return function() {
+        deps.stopHeartbeat();
+        if (state.intentionalLeave) {
+            state.intentionalLeave = false;
+            return;
+        }
+        if (state.playerName && state.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            state.isReconnecting = true;
+            state.reconnectAttempts++;
+            var delay = getReconnectDelay();
+            deps.onReconnecting(state.reconnectAttempts, delay);
+            setTimeout(scheduleReconnect, delay);
+        } else if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            state.isReconnecting = false;
+            deps.onGiveUp();
+        }
+    };
 }
 
 function showConnectionIndicator() {
@@ -226,9 +315,10 @@ function showConnectionLostView() {
 // ============================================
 
 /**
- * Check game status with the server
+ * Check game status with the server.
+ * Exported for #1664 retry coverage in __tests__/player-check-game-status.test.js.
  */
-async function checkGameStatus() {
+export async function checkGameStatus() {
     if (!state.gameId) {
         showView('not-found-view');
         return;
@@ -239,40 +329,47 @@ async function checkGameStatus() {
         return;
     }
 
-    try {
-        var response = await fetch('/beatify/api/game-status?game=' + encodeURIComponent(state.gameId));
-        var data = await response.json();
+    // #1664 item 2: silently retry transport/server errors (network blip, 5xx,
+    // JSON-parse failure) a few times BEFORE falling back to not-found. During
+    // the retries the current (loading) view stays put — no flash. Returns the
+    // parsed data, or null once every attempt has failed.
+    var data = await fetchGameStatusWithRetry(state.gameId);
 
-        if (!data.exists) {
-            showView('not-found-view');
-            return;
-        }
-
-        if (data.phase === 'END') {
-            showView('ended-view');
-            return;
-        }
-
-        var adminName = sessionStorage.getItem('beatify_admin_name');
-        if (adminName) {
-            return;
-        }
-
-        var sessionCookie = getSessionCookie();
-        if (sessionCookie) {
-            connectWithSession();
-            return;
-        }
-
-        if (data.can_join) {
-            showView('join-view');
-        } else {
-            showView('in-progress-view');
-        }
-
-    } catch (err) {
-        console.error('Failed to check game status:', err);
+    if (data === null) {
+        // Every attempt hit a transport/server error → keep the previous
+        // fallback behaviour and show not-found.
+        console.error('Failed to check game status after retries');
         showView('not-found-view');
+        return;
+    }
+
+    // A successful HTTP-200 {exists:false} is a legitimate "game does not exist"
+    // answer from the server — show not-found immediately, no retry involved.
+    if (!data.exists) {
+        showView('not-found-view');
+        return;
+    }
+
+    if (data.phase === 'END') {
+        showView('ended-view');
+        return;
+    }
+
+    var adminName = sessionStorage.getItem('beatify_admin_name');
+    if (adminName) {
+        return;
+    }
+
+    var sessionCookie = getSessionCookie();
+    if (sessionCookie) {
+        connectWithSession();
+        return;
+    }
+
+    if (data.can_join) {
+        showView('join-view');
+    } else {
+        showView('in-progress-view');
     }
 }
 
@@ -346,6 +443,22 @@ function connectWithSession() {
         return;
     }
 
+    // #1701: stamp the attempt so the visibilitychange foreground reconnect can
+    // throttle bursts instead of hammering the server's per-IP WS rate limit.
+    state.lastConnectStartedAt = Date.now();
+
+    // #1700: the INITIAL session reconnect (before any reconnect_ack has set
+    // state.playerName) had no failure path. The onclose ladder is gated on
+    // state.playerName, so a first WS that fails to open retried nothing and
+    // left the player on the loading spinner forever. Arm the join watchdog
+    // around this initial connect: any server frame (reconnect_ack / state)
+    // clears it via handleServerMessage → clearJoinTimeout, and if the socket
+    // stalls the watchdog surfaces a retry instead of an infinite spinner.
+    // Reconnects (playerName already known) keep relying on the onclose ladder.
+    if (!state.playerName) {
+        startJoinTimeout();
+    }
+
     var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     var wsUrl = wsProtocol + '//' + window.location.host + '/beatify/ws';
 
@@ -373,32 +486,15 @@ function connectWithSession() {
         }
     };
 
-    state.ws.onclose = function() {
-        stopHeartbeat();
-        if (state.intentionalLeave) {
-            state.intentionalLeave = false;
-            return;
+    // #1662: shared onclose orchestration. This socket prefers the session
+    // reconnect while the cookie exists, else falls back to a name-based join.
+    state.ws.onclose = makeSocketCloseHandler(function() {
+        if (getSessionCookie()) {
+            connectWithSession();
+        } else {
+            connectWebSocket(state.playerName);
         }
-        if (state.playerName && state.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            state.isReconnecting = true;
-            state.reconnectAttempts++;
-            showReconnectingOverlay();
-            updateReconnectStatus(state.reconnectAttempts);
-
-            var delay = getReconnectDelay();
-            debug('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
-            // #646: Keep using session reconnect while cookie exists
-            if (getSessionCookie()) {
-                setTimeout(connectWithSession, delay);
-            } else {
-                setTimeout(function() { connectWebSocket(state.playerName); }, delay);
-            }
-        } else if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            state.isReconnecting = false;
-            hideReconnectingOverlay();
-            showConnectionLostView();
-        }
-    };
+    });
 
     state.ws.onerror = function(err) {
         console.error('WebSocket error:', err);
@@ -438,6 +534,9 @@ function connectWebSocket(name) {
     state.playerName = name;
     storePlayerName(name);
 
+    // #1701: stamp the attempt for the foreground-reconnect throttle.
+    state.lastConnectStartedAt = Date.now();
+
     var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     var wsUrl = wsProtocol + '//' + window.location.host + '/beatify/ws';
 
@@ -471,27 +570,11 @@ function connectWebSocket(name) {
         }
     };
 
-    state.ws.onclose = function() {
-        stopHeartbeat();
-        if (state.intentionalLeave) {
-            state.intentionalLeave = false;
-            return;
-        }
-        if (state.playerName && state.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            state.isReconnecting = true;
-            state.reconnectAttempts++;
-            showReconnectingOverlay();
-            updateReconnectStatus(state.reconnectAttempts);
-
-            var delay = getReconnectDelay();
-            debug('WebSocket closed. Reconnecting in ' + delay + 'ms... (attempt ' + state.reconnectAttempts + ')');
-            setTimeout(function() { connectWebSocket(state.playerName); }, delay);
-        } else if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            state.isReconnecting = false;
-            hideReconnectingOverlay();
-            showConnectionLostView();
-        }
-    };
+    // #1662: shared onclose orchestration. The name-based join reconnects by
+    // rejoining under the same name (its original, unchanged behaviour).
+    state.ws.onclose = makeSocketCloseHandler(function() {
+        connectWebSocket(state.playerName);
+    });
 
     state.ws.onerror = function(err) {
         console.error('WebSocket error:', err);
@@ -517,6 +600,10 @@ function handleServerMessage(data) {
         return;
     }
 
+    // #1663: the server answered, so the initial join isn't hanging — cancel the
+    // join watchdog before it can wrongly reset a join that actually succeeded.
+    clearJoinTimeout();
+
     // #1287: cold-start bridge. The admin pressed start; the server fires this
     // the moment it begins connecting the Music Assistant speaker + loading
     // round 1 (~10-15s of otherwise-empty wait). Show the animated vinyl-disc
@@ -540,6 +627,17 @@ function handleServerMessage(data) {
     var nameInput = document.getElementById('name-input');
 
     if (data.type === 'state') {
+        // #1765: the server sends a slim in-round leaderboard ({rank, name,
+        // rank_change}). Re-attach each player's score/streak/connected/… from
+        // data.players by name once, here (into a shallow copy), so every
+        // downstream consumer (standings, previous-state snapshot, cached
+        // lastLeaderboard, steal modal) sees full entries with no per-callsite
+        // change.
+        if (data.leaderboard) {
+            data = Object.assign({}, data, {
+                leaderboard: utils.hydrateLeaderboard(data.leaderboard, data.players)
+            });
+        }
         var players = data.players || [];
         var currentPlayer = players.find(function(p) { return p.name === state.playerName; });
         if (currentPlayer) {
@@ -557,7 +655,7 @@ function handleServerMessage(data) {
                         renderDifficultyBadge(data.difficulty, data.title_artist_mode);
                     }
                     if (data.phase === 'REVEAL') {
-                        updateRevealView(data);
+                        pushRevealRender(data);
                     }
                     // Re-apply control bar labels after language load (#300)
                     // updateControlBarState() uses utils.t() which needs i18n ready
@@ -578,6 +676,8 @@ function handleServerMessage(data) {
         if (data.phase === 'LOBBY') {
             stopCountdown();
             stopRevealCountdown();
+            pushGameRender.cancel();     // #1707: drop any pending coalesced render
+            pushRevealRender.cancel();   // #1706
             hideAdminControlBar();
             hideReactionBar();
             state.currentRoundNumber = 0;
@@ -634,7 +734,8 @@ function handleServerMessage(data) {
             setEnergyLevel('party');
             showView('game-view');
             closeInviteModal();
-            updateGameView(data);
+            pushRevealRender.cancel();   // #1706: leaving REVEAL — drop stale render
+            pushGameRender(data);        // #1707: coalesced PLAYING render
             if (data.intro_splash_pending) {
                 showIntroSplashModal(state.isAdmin);
             } else {
@@ -644,7 +745,9 @@ function handleServerMessage(data) {
                 renderDifficultyBadge(data.difficulty, data.title_artist_mode);
             }
             if (data.deadline) {
-                startCountdown(data.deadline);
+                // #1662: pass the server's relative seconds_remaining so the
+                // countdown anchors to the client's own clock (skew-immune).
+                startCountdown(data.deadline, data.seconds_remaining);
             }
             initYearSelector();
             setupLeaderboardToggle();
@@ -658,15 +761,26 @@ function handleServerMessage(data) {
             }
             setEnergyLevel('party');
             showView('reveal-view');
-            updateRevealView(data);
+            pushGameRender.cancel();     // #1707: leaving PLAYING — drop stale render
+            pushRevealRender(data);      // #1706: coalesced REVEAL render
             setupRevealLeaderboardToggle();
             showAdminControlBar();
             updateControlBarState('REVEAL');
-            state.hasReactedThisPhase = false;
+            // #1757: reset the one-per-reveal reaction budget + button used-
+            // state only when a NEW reveal round begins, not on every REVEAL
+            // re-broadcast (vote tallies etc.), so the used-state feedback
+            // persists through the phase.
+            if (state._reactionRevealRound !== data.round) {
+                state._reactionRevealRound = data.round;
+                state.hasReactedThisPhase = false;
+                resetReactionButtons();
+            }
             showReactionBar();
         } else if (data.phase === 'PAUSED') {
             stopCountdown();
             stopRevealCountdown();
+            pushGameRender.cancel();
+            pushRevealRender.cancel();
             hideAdminControlBar();
             hideReactionBar();
             setEnergyLevel('warmup');
@@ -675,6 +789,8 @@ function handleServerMessage(data) {
         } else if (data.phase === 'END') {
             stopCountdown();
             stopRevealCountdown();
+            pushGameRender.cancel();
+            pushRevealRender.cancel();
             hideAdminControlBar();
             hideReactionBar();
             releaseWakeLock(); // #622: allow screen to sleep again
@@ -727,10 +843,14 @@ function handleServerMessage(data) {
             return;
         }
         if (data.code === 'SESSION_TAKEOVER') {
+            // #1718: NOT a network failure — the player reopened the game on
+            // another device/tab. Show dedicated copy (no "check your network"
+            // hint, no blind Try-Again that would just race the takeover); the
+            // rejoin button starts a fresh join instead.
             state.isReconnecting = false;
             hideReconnectingOverlay();
             state.playerName = null;
-            showConnectionLostView();
+            showView('session-takeover-view');
             console.warn('Session taken over by another tab');
             return;
         }
@@ -750,7 +870,8 @@ function handleServerMessage(data) {
         }
         if (data.code === 'ADMIN_CANNOT_LEAVE') {
             state.intentionalLeave = false;
-            alert(data.message || 'Host cannot leave. End the game instead.');
+            // #1663 item 1: non-blocking toast (was blocking alert()).
+            showToast(data.message || 'Host cannot leave. End the game instead.');
             return;
         }
         if (data.code === 'INVALID_ACTION' && data.message === 'No song playing') {
@@ -790,6 +911,7 @@ function handleServerMessage(data) {
         debug('[Player] Rematch started - transitioning to lobby');
         AnimationQueue.clear();
         stopConfetti();
+        resetLeaderboardSummary();  // #1663: drop the previous game's leader badge
         showView('lobby-view');
         // Reset any rematch button spinner (in case admin triggered this)
         var rematchBtn = document.getElementById('player-rematch-btn');
@@ -812,6 +934,12 @@ function handleServerMessage(data) {
         handleStealTargets(data);
     } else if (data.type === 'steal_ack') {
         handleStealAck(data);
+    } else if (data.type === 'sabotage_targets') {  // #1665
+        handleSabotageTargets(data);
+    } else if (data.type === 'sabotage_ack') {  // #1665
+        handleSabotageAck(data);
+    } else if (data.type === 'sabotaged') {  // #1665 — private hit for the target
+        handleSabotaged(data);
     } else if (data.type === 'artist_guess_ack') {
         handleArtistGuessAck(data);
     } else if (data.type === 'movie_guess_ack') {
@@ -843,7 +971,8 @@ async function handleLeaveGame() {
     }
 
     if (state.isAdmin) {
-        alert(utils.t('player.hostCannotLeave'));
+        // #1663 item 1: non-blocking toast (was blocking alert()).
+        showToast(utils.t('player.hostCannotLeave'));
         return;
     }
 
@@ -943,6 +1072,45 @@ function handleJoinClick() {
     }
 
     connectWebSocket(result.name);
+    startJoinTimeout();
+}
+
+// #1663: guard the initial guest join. connectWebSocket() opens a WS but the
+// join only "succeeds" once the server answers (join_ack / first state frame).
+// If the socket stalls, the join button stays a disabled "Joining…" spinner
+// forever. Arm a timer on join; clearJoinTimeout() cancels it the moment any
+// server message arrives (see handleServerMessage).
+function startJoinTimeout() {
+    clearJoinTimeout();
+    state.joinTimeoutId = setTimeout(handleJoinTimeout, JOIN_TIMEOUT_MS);
+}
+
+function clearJoinTimeout() {
+    if (state.joinTimeoutId) {
+        clearTimeout(state.joinTimeoutId);
+        state.joinTimeoutId = null;
+    }
+}
+
+function handleJoinTimeout() {
+    state.joinTimeoutId = null;
+
+    // Tear the stalled socket down so "Try again" starts from a clean slate
+    // (and the onclose reconnect ladder doesn't fire behind our back).
+    if (state.ws) {
+        state.intentionalLeave = true;
+        try { state.ws.close(); } catch (e) { /* ignore */ }
+        state.ws = null;
+    }
+
+    // Re-enable the join form and surface the retry affordance.
+    var joinBtn = document.getElementById('join-btn');
+    if (joinBtn) {
+        joinBtn.disabled = false;
+        joinBtn.textContent = utils.t('join.joinButton') || 'Join Game';
+    }
+    showJoinError(utils.t('errors.joinTimeout') || "Couldn't connect. Please try again.");
+    showView('join-view');
 }
 
 function setupJoinForm() {
@@ -983,6 +1151,21 @@ function setupRetryConnection() {
             } else {
                 checkGameStatus();
             }
+        });
+    }
+
+    // #1718: session-takeover rejoin — this tab lost the session to another
+    // device/tab, so drop our (now-orphaned) session cookie and re-run the
+    // status check to land on a fresh join, rather than racing the takeover.
+    var rejoinBtn = document.getElementById('session-rejoin-btn');
+    if (rejoinBtn) {
+        rejoinBtn.addEventListener('click', function() {
+            clearSessionCookie();
+            clearStoredPlayerName();
+            state.playerName = null;
+            state.reconnectAttempts = 0;
+            showView('loading-view');
+            checkGameStatus();
         });
     }
 }
@@ -1122,6 +1305,13 @@ if ('serviceWorker' in navigator) {
 // iOS aggressively closes WebSocket connections when the app is backgrounded.
 // When the user returns from another app (e.g. WhatsApp, Safari), we immediately
 // reconnect if the socket is dead — without waiting for the onclose backoff timer.
+// #1701: minimum gap between two foreground-triggered reconnects. A phone that
+// toggles foreground rapidly (or a shared IP behind a proxy/CGNAT) must not open
+// a fresh socket on every single foreground — that bursts past the server's
+// per-IP WS rate limit (10/60s → 429) and locks the player out while the server
+// is healthy.
+var FOREGROUND_RECONNECT_MIN_INTERVAL_MS = 3000;
+
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
         // #646: Re-acquire wake lock when tab becomes visible during any active session
@@ -1131,8 +1321,23 @@ document.addEventListener('visibilitychange', function() {
         var ws = state.ws;
         if (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
             if (state.playerName) {
-                debug('[Beatify] Page visible, WebSocket dead — reconnecting immediately.');
-                state.reconnectAttempts = 0; // reset backoff so it reconnects instantly
+                // #1701: throttle rapid foreground reconnects.
+                var sinceLast = Date.now() - (state.lastConnectStartedAt || 0);
+                if (sinceLast < FOREGROUND_RECONNECT_MIN_INTERVAL_MS) {
+                    debug('[Beatify] Foreground reconnect throttled ('
+                        + sinceLast + 'ms since last attempt).');
+                    return;
+                }
+                // #1701: do NOT reset the attempt counter on every foreground —
+                // that restarted the ladder mid-outage and let a backgrounding
+                // phone exhaust the server's per-IP budget by itself. onopen
+                // already resets it on a real reconnect; here we only grant a
+                // fresh ladder once we've fully exhausted the previous one (the
+                // user explicitly returned, so give them one more clean run).
+                if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    state.reconnectAttempts = 0;
+                }
+                debug('[Beatify] Page visible, WebSocket dead — reconnecting.');
                 connectWithSession();
             }
         }

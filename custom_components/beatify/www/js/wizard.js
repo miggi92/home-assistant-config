@@ -121,6 +121,15 @@ export function shouldShowPill(localStorage) {
  * @param {boolean} value - the new value for that toggle.
  * @returns {Object} a new flags object with precedence applied.
  */
+// Issue #1799 — the hint line of a mode card. When the mode is gated by an
+// unmet requirement, the line carries the requirement itself instead of the
+// mode description: on touch there is no hover, so the `title` tooltip that
+// used to be the only explanation never shows.
+export function modeHintHtml(disabled, gateText, hintHtml) {
+    if (!disabled) return `<div class="wiz-mode-hint">${hintHtml}</div>`;
+    return `<div class="wiz-mode-hint gated">🔒 ${escapeText(gateText)}</div>`;
+}
+
 export function applyGameModeTogglePrecedence(flags, key, value) {
     const next = { ...flags };
     switch (key) {
@@ -232,6 +241,7 @@ let chosenArtistChallenge = true;
 let chosenMovieQuiz = true;
 let chosenIntroMode = false;
 let chosenClosestWins = false;
+let chosenSuddenDeath = true; // Issue #827 — default ON (unlike the other bonuses); gated to >=3 players
 let chosenTitleArtistMode = false; // #1180
 const chosenLevelUps = { lights: false, tts: false };
 // Details the user sets when a level-up is toggled on
@@ -506,6 +516,10 @@ function _renderSpeakers() {
             const speakerChanged = chosenSpeaker !== newSpeaker;
             chosenSpeaker = newSpeaker;
             try { localStorage.setItem(LS_SELECTED_PLAYER, chosenSpeaker); } catch (e) { /* private mode */ }
+            // #1927: tell admin.js that this device just changed its speaker, so
+            // an /api/status snapshot that was already in flight cannot reconcile
+            // the fresh pick away. The POST still happens at wizard finish.
+            try { window.BeatifyNoteLocalSetupWrite?.(); } catch (e) { /* admin core not loaded */ }
             // Switching speakers invalidates the provider step — stale explainer
             // would reference the previous platform, and a previously-picked
             // provider may no longer be supported.
@@ -613,7 +627,10 @@ function _renderProviders() {
         if (active && supported) classes.push('active');
         if (!supported) classes.push('disabled');
         const lock = supported ? '' : CHIP_LOCK_ICON;
-        const aria = supported ? '' : 'aria-disabled="true"';
+        // #1583: aria-pressed conveys the single-select state to screen readers
+        // (these are native <button>s, so role + Enter/Space activation are native).
+        const pressed = active && supported ? 'true' : 'false';
+        const aria = supported ? `aria-pressed="${pressed}"` : 'aria-pressed="false" aria-disabled="true"';
         return `<button type="button" class="${classes.join(' ')}" data-provider="${p.id}" ${aria}><span>${p.label}</span>${lock}</button>`;
     }).join('');
     list.querySelectorAll('[data-provider]').forEach((btn) => {
@@ -917,7 +934,34 @@ const GAME_MODES = [
         get: () => chosenClosestWins,
         set: (v) => { _setGameModeToggle('closest', v); },
     },
+    // Issue #827 — Sudden Death. Standalone toggle (not part of the
+    // year-round/TA precedence group), so it sets chosenSuddenDeath directly.
+    // Defaults ON, but is gated to >=3 connected players (see _renderGameModes).
+    {
+        key: 'suddenDeath',
+        icon: '💀',
+        titleKey: 'admin.suddenDeathMode',
+        titleFallback: 'Sudden Death',
+        hintKey: 'admin.suddenDeathModeHint',
+        hintFallback: 'When the timer runs out, the lowest-scoring player is eliminated. Last player standing wins. Requires at least 3 players.',
+        get: () => chosenSuddenDeath,
+        set: (v) => { chosenSuddenDeath = v; },
+    },
 ];
+
+// Issue #827 — Sudden Death needs at least 3 connected players to be playable.
+// The wizard already fetches /beatify/api/status into cachedStatus; an active
+// game's connected players live under active_game.players (built by
+// build_status_response → game_state.get_state()). No game / no players ⇒ 0.
+const SUDDEN_DEATH_MIN_PLAYERS = 3;
+function _connectedPlayerCount() {
+    const game = cachedStatus && cachedStatus.active_game;
+    const players = game && Array.isArray(game.players) ? game.players : [];
+    // Count only genuinely connected players — the backend keeps disconnected
+    // players in the list with connected:false, and the ≥3 floor is about who
+    // can actually play (mirrors the server-side connected check in #827).
+    return players.filter(function (p) { return p && p.connected !== false; }).length;
+}
 
 // Core game mode — exactly one selected. Backed by the chosenTitleArtistMode
 // boolean (Jahr = false, Titel & Interpret = true). Clicking routes through the
@@ -980,6 +1024,11 @@ function _renderCoreMode() {
 function _renderGameModes() {
     const el = document.getElementById('wiz-modes');
     if (!el) return;
+    // Issue #827 — Sudden Death is only playable with >=3 connected players.
+    // When below that, force the choice off so a <3-player game never starts in
+    // Sudden Death, and render the card disabled (dimmed, non-interactive).
+    const suddenDeathDisabled = _connectedPlayerCount() < SUDDEN_DEATH_MIN_PLAYERS;
+    if (suddenDeathDisabled) chosenSuddenDeath = false;
     el.innerHTML = GAME_MODES.map((m) => {
         const on = m.get();
         // #1180: hide modes incompatible with Title & Artist mode (artist
@@ -987,11 +1036,26 @@ function _renderGameModes() {
         if (chosenTitleArtistMode && (m.key === 'artist' || m.key === 'closest')) {
             return '';
         }
-        return `<div class="wiz-mode-card ${on ? 'on' : ''}" data-mode="${m.key}" role="button" tabindex="0">
+        // Issue #827 — disabled Sudden Death card: dimmed, non-interactive, with
+        // a tooltip explaining the >=3 player requirement.
+        // Issue #1799 — the tooltip is hover-only, so on touch (the primary way
+        // the wizard is used) the requirement was invisible and the dimmed card
+        // read as broken. Swap the hint line for the requirement itself, and
+        // mark it .gated so the CSS can keep it legible against the dimming.
+        const disabled = m.key === 'suddenDeath' && suddenDeathDisabled;
+        const titleAttr = disabled
+            ? ` title="${escapeAttr(_t('admin.suddenDeathDisabledTooltip', 'Needs at least 3 players'))}"`
+            : '';
+        const hint = modeHintHtml(
+            disabled,
+            _t('admin.suddenDeathDisabledGate', 'Needs at least 3 players'),
+            _t(m.hintKey, m.hintFallback),
+        );
+        return `<div class="wiz-mode-card ${on ? 'on' : ''}${disabled ? ' disabled' : ''}" data-mode="${m.key}" role="button" tabindex="0" aria-disabled="${disabled}"${titleAttr}>
             <div class="wiz-mode-icon" aria-hidden="true">${m.icon}</div>
             <div class="wiz-mode-body">
                 <div class="wiz-mode-title">${_t(m.titleKey, m.titleFallback)}</div>
-                <div class="wiz-mode-hint">${_t(m.hintKey, m.hintFallback)}</div>
+                ${hint}
             </div>
             <div class="wiz-lvl-toggle"></div>
         </div>`;
@@ -1000,6 +1064,8 @@ function _renderGameModes() {
         card.addEventListener('click', () => {
             const mode = GAME_MODES.find((m) => m.key === card.dataset.mode);
             if (!mode) return;
+            // Issue #827 — the disabled Sudden Death card must not be flippable on.
+            if (mode.key === 'suddenDeath' && suddenDeathDisabled) return;
             mode.set(!mode.get());
             _renderGameModes();
         });
@@ -1481,7 +1547,7 @@ function _playlistName(id) {
 }
 
 // Merge wizard choices into beatify_game_settings so admin.js picks them up on load.
-// Preserves existing keys (artistChallenge, introMode, closestWinsMode) the wizard doesn't touch.
+// Preserves existing keys (artistChallenge, introMode, closestWinsMode, suddenDeathMode) the wizard doesn't touch.
 function _persistGameSettings() {
     try {
         const raw = localStorage.getItem(LS_GAME_SETTINGS);
@@ -1497,6 +1563,7 @@ function _persistGameSettings() {
             movieQuiz: chosenMovieQuiz,
             introMode: chosenIntroMode,
             closestWinsMode: chosenClosestWins,
+            suddenDeathMode: chosenSuddenDeath,  // Issue #827
             titleArtistMode: chosenTitleArtistMode,  // #1180
         };
         if (chosenPlaylists.size > 0) {
@@ -1566,6 +1633,7 @@ export async function show(stepOverride) {
             if (typeof s.movieQuiz === 'boolean') chosenMovieQuiz = s.movieQuiz;
             if (typeof s.introMode === 'boolean') chosenIntroMode = s.introMode;
             if (typeof s.closestWinsMode === 'boolean') chosenClosestWins = s.closestWinsMode;
+            if (typeof s.suddenDeathMode === 'boolean') chosenSuddenDeath = s.suddenDeathMode;  // Issue #827
             if (typeof s.titleArtistMode === 'boolean') chosenTitleArtistMode = s.titleArtistMode;
             if (Array.isArray(s.selectedPlaylists)) {
                 s.selectedPlaylists.forEach((entry) => {
@@ -1593,6 +1661,14 @@ export function hide({ dismissed } = {}) {
         try { localStorage.setItem(LS_WIZARD_STATE, 'dismissed'); } catch (e) { /* private mode */ }
     }
     _updatePill();
+    // #1940: the home view is already on screen underneath — refresh it, or the
+    // user is left looking at the placeholder meta line ("—") instead of the
+    // speaker, playlist and mode the next game will use. Only the *completion*
+    // path called BeatifyHome.enter() (which refreshes); skipping the wizard
+    // went straight to a stale screen.
+    try {
+        window.BeatifyHome?.refresh?.();
+    } catch (e) { /* home view not mounted — nothing to refresh */ }
 }
 
 function _updatePill() {
@@ -1643,6 +1719,12 @@ async function _advance() {
         // stale/default values. See window.loadSavedSettings in admin.js (#1180).
         if (typeof window !== 'undefined' && typeof window.loadSavedSettings === 'function') {
             try { await window.loadSavedSettings(); } catch (e) { /* non-fatal */ }
+        }
+        // #1663: persist the freshly-completed setup server-side so the host is
+        // recognised as configured on any other device — even before the first
+        // game starts. Best-effort; localStorage still drives this device.
+        if (typeof window !== 'undefined' && typeof window.BeatifyPersistSetup === 'function') {
+            try { await window.BeatifyPersistSetup(); } catch (e) { /* non-fatal */ }
         }
         if (typeof window !== 'undefined' && typeof window.loadStatus === 'function') {
             window.loadStatus();

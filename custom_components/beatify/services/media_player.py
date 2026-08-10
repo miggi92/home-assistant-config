@@ -15,6 +15,8 @@ from urllib.parse import quote
 from homeassistant.exceptions import HomeAssistantError, ServiceNotFound
 from homeassistant.helpers.event import async_track_state_change_event
 
+from custom_components.beatify.game.playlist import get_playback_uri
+
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
@@ -98,6 +100,19 @@ PLAYBACK_TIMEOUT = 8.0
 # a new track on the first round. #777 showed 8s was too aggressive — rounds
 # advanced before the track had actually swapped on the speaker.
 MA_PLAYBACK_TIMEOUT = 15.0
+
+# #1936: the FIRST play of a game gets a third more time (15.0s → 20.0s). A
+# speaker idle for a while was measured at 10.1s to first audio (Sonos via MA,
+# Apple Music) — close enough to the deadline that a cold start regularly lost
+# the race and the game paused before a single note had played. Later rounds
+# keep the shorter deadline: by then the speaker is warm and a longer wait is
+# just silence in front of the players.
+#
+# Expressed as a FACTOR, not a second absolute constant, so the one existing
+# patch point still governs both budgets — eight tests patch
+# MA_PLAYBACK_TIMEOUT down to keep the suite fast, and a separate absolute
+# constant would have silently made each of them wait the full 20s.
+MA_FIRST_PLAY_TIMEOUT_FACTOR = 4 / 3
 
 # #1381: Fast-path Path 2 (title-advanced-without-exact-match) must not
 # instant-accept an *arbitrary* title change. If a requested URI fails to
@@ -317,6 +332,17 @@ class MediaPlayerService:
         #                   broken provider auth across the board).
         self.last_failure_reason: str | None = None
 
+        # #1927 follow-up: the URI actually handed to the player for the most
+        # recent attempt. `state_lifecycle` used to log `song["uri"]` on a
+        # playback failure — the song's Spotify base field — so an Apple Music
+        # attempt was reported as `spotify:track:…` and every reader was sent
+        # hunting in the wrong provider. None until the first attempt.
+        self.last_attempted_uri: str | None = None
+
+        # #1936: True until the first playback attempt of this game has been
+        # made. Drives the longer cold-start budget in _try_ma_play.
+        self._first_play_pending: bool = True
+
         # #1363: set when Beatify itself issues a same-song media_stop after a
         # stale-title detect (line ~729). The stop forces the speaker to
         # 'idle'; if the NEXT cascade candidate also fails to resolve, the
@@ -432,7 +458,11 @@ class MediaPlayerService:
             True if playback started successfully, False otherwise
 
         """
-        uri = song.get("_resolved_uri") or song.get("uri")
+        uri = get_playback_uri(song)
+        # #1927 follow-up: start each song with a clean attempt record, then seed
+        # it with the dispatcher's URI. The MA path overwrites it per candidate
+        # (it walks several URI fields); sonos/alexa play exactly this one.
+        self.last_attempted_uri = uri or None
         if not uri:
             _LOGGER.error(
                 "Song has no URI to play: %s - %s",
@@ -750,7 +780,17 @@ class MediaPlayerService:
         an arbitrary title change from the prior queue auto-advancing is not
         instant-accepted as our track.
         """
-        _LOGGER.debug("MA playback: %s on %s", uri, self._entity_id)
+        # #1927 follow-up: remember what we are about to play, so a failure is
+        # reported with the URI that was really tried.
+        self.last_attempted_uri = uri
+        # #1936: cold-start budget for the very first attempt of a game only.
+        timeout = MA_PLAYBACK_TIMEOUT * (
+            MA_FIRST_PLAY_TIMEOUT_FACTOR if self._first_play_pending else 1
+        )
+        self._first_play_pending = False
+        _LOGGER.debug(
+            "MA playback: %s on %s (budget %.0fs)", uri, self._entity_id, timeout
+        )
 
         # Snapshot speaker state before the call — we need both fields to
         # distinguish #345 slow-buffer (one of them changed during the wait)
@@ -887,7 +927,7 @@ class MediaPlayerService:
                 )
                 return True
 
-            await asyncio.wait_for(confirmed.wait(), timeout=MA_PLAYBACK_TIMEOUT)
+            await asyncio.wait_for(confirmed.wait(), timeout=timeout)
             elapsed = asyncio.get_event_loop().time() - start_time
             final = self._safe_state()
             _LOGGER.debug(
@@ -921,7 +961,7 @@ class MediaPlayerService:
                     "Beatify stopped it after a same-song stale-title detect. "
                     "Treating as a storefront/catalog gap (unavailable), not a "
                     "systemic error — game will skip this song silently. (#1363)",
-                    MA_PLAYBACK_TIMEOUT,
+                    timeout,
                     uri,
                 )
                 self.last_failure_reason = "unavailable"
@@ -930,8 +970,11 @@ class MediaPlayerService:
                 "MA playback failed after %.1fs for %s (state: %s). "
                 "Either the speaker is offline, MA's provider is unauthenticated, "
                 "or the track is not available in your provider's catalog. If this "
-                "happens for many tracks, re-authenticate your music provider in MA.",
-                MA_PLAYBACK_TIMEOUT,
+                "happens for many tracks, re-authenticate your music provider in MA. "
+                "A rate-limiting provider looks the same from here — Music "
+                "Assistant then retries the track after its own backoff, which "
+                "can outlast this budget. (#1936)",
+                timeout,
                 uri,
                 speaker_state,
             )
@@ -981,7 +1024,7 @@ class MediaPlayerService:
                 "not available in your provider's catalog/storefront, OR "
                 "your provider needs re-authentication in MA. Skipping "
                 "this song silently — game will try the next one. (#795)",
-                MA_PLAYBACK_TIMEOUT,
+                timeout,
                 uri,
                 title_before,
                 "advanced — prior track still playing"
@@ -1019,6 +1062,45 @@ class MediaPlayerService:
             self.last_failure_reason = "unavailable"
             return False
 
+        # #1863: "still buffering" requires that Music Assistant actually owns
+        # this player. An MA-platform entity reports the queue it is playing
+        # from in `active_queue`; while MA is buffering a track it has already
+        # taken the queue, so `active_queue` is set. A *null* `active_queue`
+        # means MA never accepted the play_media call for this player at all —
+        # the entity is only mirroring whatever the underlying speaker was
+        # doing before the game (in the report: a leftover Spotify context,
+        # `state: paused`, `media_position: 0`). That is a silent failure, not
+        # slow buffering, and the #345 tolerance below would wave it through as
+        # success: the round then starts, the timer arms, and the players get a
+        # silent PLAYING phase with no music and no error.
+        #
+        # Deliberately narrow: only when the attribute is PRESENT and falsy. If
+        # a Music Assistant / HA version does not expose `active_queue` at all
+        # the key is missing, and we keep the old tolerance rather than turning
+        # every slow buffer on that version into a failure.
+        attrs_after = current_state.attributes if current_state else {}
+        if "active_queue" in attrs_after and not attrs_after.get("active_queue"):
+            _LOGGER.error(
+                "MA playback failed after %.1fs for %s — the player reports no "
+                "active Music Assistant queue (state: %s, title %r → %r). MA "
+                "never took ownership of this speaker, so nothing was ever "
+                "dispatched. Check that the speaker is exposed to Music "
+                "Assistant and that your provider is authenticated there. "
+                "(#1863)",
+                timeout,
+                uri,
+                speaker_state,
+                title_before,
+                title_after,
+            )
+            # Systemic, not a per-track catalog gap: MA declined the whole
+            # play_media call, so the next song would fail identically.
+            # Classify as "error" so start_round pauses the game and shows the
+            # recovery banner within seconds instead of silently burning
+            # through the playlist one unplayable song at a time.
+            self.last_failure_reason = "error"
+            return False
+
         # #345 slow-buffer tolerance, narrowed to "title genuinely changed":
         # title is now different from what it was before the call, so MA is
         # making progress on *some* new track. We still don't require the
@@ -1030,7 +1112,7 @@ class MediaPlayerService:
             "MA playback not confirmed after %.1fs for %s (state: %s). "
             "Title moved %r → %r. Continuing anyway — MA may still be "
             "buffering. (#345)",
-            MA_PLAYBACK_TIMEOUT,
+            timeout,
             uri,
             speaker_state,
             title_before,
@@ -1537,28 +1619,120 @@ class MediaPlayerService:
             return False, msg
 
 
-async def async_get_media_players(hass: HomeAssistant) -> list[dict[str, Any]]:
+def _collect_ma_twin_maps(
+    ent_reg: Any,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Walk the entity registry ONCE and derive both Music Assistant twin maps.
+
+    #1709: ``async_get_media_players`` and ``async_get_native_twin_remap`` used
+    to iterate ``ent_reg.entities`` 3-4 times per status request to rebuild
+    essentially the same data. This single pass builds them both:
+
+    - ``ma_by_unique_id``: ``{unique_id: ma_entity_id}`` for every
+      music_assistant-owned media_player (its keys are the MA unique-id set used
+      to hide native twins from the picker, #1627/#1628).
+    - ``native_twin_remap``: ``{native_entity_id: ma_entity_id}`` for every
+      native-platform media_player that shares a unique_id with an MA twin
+      (#1627 follow-up — heals stale saved selections).
+
+    A native entity can appear before its MA twin in the registry, so natives
+    are collected in the same pass and resolved against the completed MA map
+    afterwards (no second full registry walk).
     """
-    Get all available media player entities with platform and capability info.
+    ma_by_unique_id: dict[str, str] = {}
+    native_media_players: list[tuple[str, str]] = []  # (entity_id, unique_id)
+    for entry in ent_reg.entities.values():
+        if entry.domain != "media_player" or not entry.unique_id:
+            continue
+        if entry.platform == "music_assistant":
+            ma_by_unique_id[entry.unique_id] = entry.entity_id
+        else:
+            native_media_players.append((entry.entity_id, entry.unique_id))
 
-    Filters out unsupported platforms (raw Cast devices without Music Assistant).
+    native_twin_remap = {
+        entity_id: ma_by_unique_id[unique_id]
+        for entity_id, unique_id in native_media_players
+        if unique_id in ma_by_unique_id
+    }
+    return ma_by_unique_id, native_twin_remap
 
-    Returns:
-        List of media player dicts with entity_id, friendly_name, state,
-        platform, supports_spotify, supports_apple_music, playback_method,
-        warning, caveat fields.
 
+# #1866: the compatibility scan below runs on EVERY /beatify/api/status call,
+# and the admin polls that endpoint roughly every 3 s. Its per-entity skip
+# reasons ("unsupported platform", "native twin of an MA player") are static for
+# the lifetime of an entity, so re-emitting them per request produced ~10 DEBUG
+# records every 3 s from this one code path. HA writes log records synchronously
+# on the event loop, so that is loop time: with `custom_components.beatify:
+# debug` a status call took 2-15 s instead of 0.03 s and the server-side round
+# timer missed its deadline (#1865).
+#
+# We therefore remember the last line emitted per entity and only log again when
+# it actually changes. Bookkeeping happens ONLY while DEBUG is enabled — if we
+# populated the cache while logging was off, enabling debug later would show
+# nothing until something changed, which is exactly when the user needs it.
+_SCAN_LOG_STATE: dict[str, tuple[Any, ...]] = {}
+
+#: Cache key for the "Found N compatible media players" summary line.
+_SCAN_COUNT_KEY = "__scan_count__"
+
+
+def _log_scan_change(
+    key: str, signature: tuple[Any, ...], msg: str, *args: Any
+) -> None:
+    """Emit a compatibility-scan DEBUG line only when it changed (#1866).
+
+    ``key`` identifies the line (an entity_id, or :data:`_SCAN_COUNT_KEY`) and
+    ``signature`` is the tuple of values that would make the line differ.
+    Building the signature is cheap; the message itself is still formatted
+    lazily by the logging module.
     """
-    # Late import: homeassistant.helpers.entity_registry is not available in
-    # the test environment without a full HA setup, so we import it here to
-    # avoid ImportError during unit tests.  (noqa: PLC0415)
+    if not _LOGGER.isEnabledFor(logging.DEBUG):
+        return
+    if _SCAN_LOG_STATE.get(key) == signature:
+        return
+    _SCAN_LOG_STATE[key] = signature
+    _LOGGER.debug(msg, *args)
+
+
+def _prune_scan_log_state(live_keys: set[str]) -> None:
+    """Forget remembered scan lines for entities that no longer exist (#1866).
+
+    Without this a removed-and-re-added entity would stay silent, and the dict
+    would grow across HA's lifetime.
+    """
+    if not _SCAN_LOG_STATE:
+        return
+    for stale in [k for k in _SCAN_LOG_STATE if k not in live_keys]:
+        del _SCAN_LOG_STATE[stale]
+
+
+def _reset_scan_log_state() -> None:
+    """Drop all remembered scan lines (test seam — module state must not leak)."""
+    _SCAN_LOG_STATE.clear()
+
+
+def _build_media_player_list(
+    hass: HomeAssistant, ma_by_unique_id: dict[str, str]
+) -> list[dict[str, Any]]:
+    """Build the compatible-player list from live states + precomputed twin map.
+
+    Factored out of :func:`async_get_media_players` (#1709) so the player list
+    and the native-twin remap can be produced from a single registry walk (see
+    :func:`async_get_media_players_with_remap`). ``ma_by_unique_id`` keys are the
+    MA unique-id set used to drop native twins (#1627/#1628).
+    """
+    # Late import mirrors the callers: entity_registry isn't importable in the
+    # unit-test env without a full HA setup. (noqa: PLC0415)
     from homeassistant.helpers import entity_registry as er  # noqa: PLC0415
 
-    # Get entity registry to check which platform created each entity
     ent_reg = er.async_get(hass)
 
     media_players = []
+    # #1866: entity_ids seen this pass, so stale cache entries can be dropped.
+    scanned_keys: set[str] = {_SCAN_COUNT_KEY}
     for state in hass.states.async_all("media_player"):
+        scanned_keys.add(state.entity_id)
+        # async_get is an O(1) dict lookup, not a registry walk.
         entity_entry = ent_reg.async_get(state.entity_id)
         platform = entity_entry.platform if entity_entry else "unknown"
 
@@ -1567,11 +1741,36 @@ async def async_get_media_players(hass: HomeAssistant) -> list[dict[str, Any]]:
 
         # Skip unsupported platforms (Cast without MA)
         if not capabilities.get("supported"):
-            _LOGGER.debug(
+            reason = capabilities.get("reason", "unknown")
+            # #1866: logged once per entity, not once per status request.
+            _log_scan_change(
+                state.entity_id,
+                ("unsupported", platform, reason),
                 "Skipping unsupported player: %s (platform=%s, reason=%s)",
                 state.entity_id,
                 platform,
-                capabilities.get("reason", "unknown"),
+                reason,
+            )
+            continue
+
+        # #1627: Skip the native-platform twin of a Music Assistant speaker.
+        # Runs independently of the supported-platform check above so a native
+        # twin is dropped even when its own platform (sonos) is supported —
+        # picking it would route provider URIs to a player that can't resolve
+        # them (UPnP Error 800). The MA twin (same unique_id) is kept.
+        if (
+            platform != "music_assistant"
+            and entity_entry is not None
+            and entity_entry.unique_id in ma_by_unique_id
+        ):
+            # #1866: logged once per entity, not once per status request.
+            _log_scan_change(
+                state.entity_id,
+                ("native-twin", platform, entity_entry.unique_id),
+                "Skipping native twin of MA player: %s (platform=%s, unique_id=%s)",
+                state.entity_id,
+                platform,
+                entity_entry.unique_id,
             )
             continue
 
@@ -1592,5 +1791,92 @@ async def async_get_media_players(hass: HomeAssistant) -> list[dict[str, Any]]:
             }
         )
 
-    _LOGGER.debug("Found %d compatible media players", len(media_players))
+    # #1866: only when the count actually moves, not on every poll.
+    _log_scan_change(
+        _SCAN_COUNT_KEY,
+        (len(media_players),),
+        "Found %d compatible media players",
+        len(media_players),
+    )
+    _prune_scan_log_state(scanned_keys)
     return media_players
+
+
+async def async_get_media_players(hass: HomeAssistant) -> list[dict[str, Any]]:
+    """
+    Get all available media player entities with platform and capability info.
+
+    Filters out unsupported platforms (raw Cast devices without Music Assistant).
+
+    Returns:
+        List of media player dicts with entity_id, friendly_name, state,
+        platform, supports_spotify, supports_apple_music, playback_method,
+        warning, caveat fields.
+
+    """
+    # Late import: homeassistant.helpers.entity_registry is not available in
+    # the test environment without a full HA setup, so we import it here to
+    # avoid ImportError during unit tests.  (noqa: PLC0415)
+    from homeassistant.helpers import entity_registry as er  # noqa: PLC0415
+
+    # Get entity registry to check which platform created each entity
+    ent_reg = er.async_get(hass)
+
+    # #1627: A speaker exposed through Music Assistant appears in the registry
+    # twice with the SAME unique_id — once on its native platform (e.g. sonos)
+    # and once on music_assistant. Both are the same physical speaker, but only
+    # the MA twin can stream Beatify's provider URIs (spotify:track:… etc.); the
+    # native twin throws "UPnP Error 800" and the game pauses with
+    # media_player_error. Collect the unique_ids owned by an MA media_player so
+    # we can drop the native twins below (even when the native platform — sonos
+    # — is itself "supported"). Single registry walk (#1709).
+    ma_by_unique_id, _ = _collect_ma_twin_maps(ent_reg)
+    return _build_media_player_list(hass, ma_by_unique_id)
+
+
+async def async_get_media_players_with_remap(
+    hass: HomeAssistant,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Return the player list AND the native→MA twin remap from ONE walk (#1709).
+
+    Callers that need both (e.g. the status path) should prefer this over
+    calling :func:`async_get_media_players` and
+    :func:`async_get_native_twin_remap` back to back, which repeats the entity
+    registry walk. Behaviour of the two returned values is identical to calling
+    those functions individually.
+    """
+    from homeassistant.helpers import entity_registry as er  # noqa: PLC0415
+
+    ent_reg = er.async_get(hass)
+    ma_by_unique_id, native_twin_remap = _collect_ma_twin_maps(ent_reg)
+    players = _build_media_player_list(hass, ma_by_unique_id)
+    return players, native_twin_remap
+
+
+async def async_get_native_twin_remap(hass: HomeAssistant) -> dict[str, str]:
+    """Map each native-platform media_player entity_id to the Music Assistant
+    entity_id for the same physical speaker (same unique_id). #1627 follow-up.
+
+    #1628 made :func:`async_get_media_players` *hide* the native-platform twin
+    of a Music Assistant speaker from the picker (a native ``sonos`` entity and
+    a ``music_assistant`` entity that share a ``unique_id`` are the same physical
+    speaker; only the MA twin can stream provider URIs — the native one throws
+    "UPnP Error 800"). That fixes the live picker list, but NOT a *saved*
+    selection (``localStorage.beatify_last_player`` or a direct API call) that
+    still points at the now-hidden native twin. This map lets the wizard
+    hydration AND the game-start path heal such a stale id by substituting the
+    MA twin.
+
+    Returns:
+        ``{native_entity_id: ma_entity_id}`` for every twin pair found. Empty
+        when no Music Assistant twins exist.
+    """
+    # Late import: mirrors async_get_media_players — entity_registry is not
+    # importable in the unit-test env without a full HA setup. (noqa: PLC0415)
+    from homeassistant.helpers import entity_registry as er  # noqa: PLC0415
+
+    ent_reg = er.async_get(hass)
+
+    # Single registry walk (#1709): previously two full passes (MA map + remap).
+    _, remap = _collect_ma_twin_maps(ent_reg)
+    return remap

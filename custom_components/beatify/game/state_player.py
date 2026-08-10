@@ -59,7 +59,12 @@ class PlayerLifecycleMixin:
 
     @property
     def players(self) -> dict[str, PlayerSession]:
-        """Player dict — delegated to PlayerRegistry."""
+        """Player dict keyed by player_id (== session_id) — delegated to PlayerRegistry.
+
+        #1664 PR-2: the key is the stable ``player_id`` now, not the display
+        name. Name-based access goes through ``get_player`` / ``remove_player``
+        / ``set_admin`` (case-insensitive via the registry name index).
+        """
         return self._player_registry.players
 
     @players.setter
@@ -108,7 +113,7 @@ class PlayerLifecycleMixin:
     ) -> tuple[bool, str | None]:
         """Add a player to the game. Delegates to PlayerRegistry."""
         return self._player_registry.add_player(
-            name, ws, self.phase, self.get_average_score
+            name, ws, self.phase, self.get_average_score, self.round
         )
 
     def get_player(self, name: str) -> PlayerSession | None:
@@ -135,6 +140,16 @@ class PlayerLifecycleMixin:
         """Execute steal power-up (Story 15.3). Delegates to PowerUpManager."""
         return self._powerup_manager.use_steal(
             stealer_name, target_name, self.players, self.phase, self._now()
+        )
+
+    def get_sabotage_targets(self, saboteur_name: str) -> list[str]:
+        """Get list of players who can be sabotaged (#1665). Delegates to PowerUpManager."""
+        return self._powerup_manager.get_sabotage_targets(saboteur_name, self.players)
+
+    def use_sabotage(self, saboteur_name: str, target_name: str) -> dict[str, Any]:
+        """Execute sabotage power-up (#1665). Delegates to PowerUpManager."""
+        return self._powerup_manager.use_sabotage(
+            saboteur_name, target_name, self.players, self.phase, self._now()
         )
 
     def remove_player(self, name: str) -> None:

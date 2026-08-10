@@ -97,10 +97,11 @@ import logging
 from custom_components.beatify.const import (
     ERR_GAME_ALREADY_STARTED,
     ERR_GAME_NOT_STARTED,
+    MAX_CONSECUTIVE_PLAYBACK_FAILURES,
     MIN_PLAYERS,
 )
 
-from .playlist import get_song_uri
+from .playlist import get_playback_uri, get_song_uri
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,12 +132,48 @@ class RoundLifecycleMixin:
             return False, ERR_GAME_NOT_STARTED  # Need at least MIN_PLAYERS to play
 
         self._set_phase(GamePhase.PLAYING)
+
+        # Issue #1665: hand every player their single sabotage token. Unlike the
+        # steal (unlocked by a streak), the sabotage token exists from round 1 —
+        # a token you have to earn first would rarely be spent in a short game.
+        # No-op when the setting is off, so default games are unchanged.
+        if self.sabotage_enabled:
+            for player in self.players.values():
+                player.unlock_sabotage()
+
         # Round and song selection will be implemented in Epic 4
         _LOGGER.info("Game started: %d players", len(self.players))
         return True, None
 
+    def _get_round_start_lock(self) -> asyncio.Lock:
+        """Get (lazily creating) the #1697 round-start serialization lock.
+
+        The lock is not created in ``GameState.__init__`` (that file owns the
+        attribute set but the mixin must stay self-contained); it is built on
+        first use instead. Creation is a plain ``getattr``/``setattr`` pair with
+        no ``await`` in between, so two coroutines entering ``start_round`` in the
+        same event-loop tick still share a single lock instance.
+        """
+        lock = getattr(self, "_round_start_lock", None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._round_start_lock = lock
+        return lock
+
     async def start_round(self, _retry_count: int = 0) -> bool:
         """Start a new round with song playback (#390).
+
+        #1697: serialized behind ``_round_start_lock`` so a manual
+        ``admin_next_round`` and the REVEAL ``_reveal_auto_advance`` (which both
+        call this method) can never drive a round-start concurrently. Before the
+        lock existed, the auto-advance parked in ``start_round``'s long awaits
+        while the phase was still REVEAL, and an admin tapping "Next" passed its
+        own REVEAL check and launched a second concurrent ``start_round`` — two
+        songs pulled/marked played, the round incremented twice, two
+        ``play_media`` calls, an orphaned timer cutting the round short. Holding
+        the lock also serializes the internal skip/retry recursion (it stays a
+        single logical round-start). After acquiring, a phase re-check makes the
+        losing caller a no-op if the winner already reached PLAYING.
 
         Args:
             _retry_count: Internal counter for failed song attempts (max 3)
@@ -144,6 +181,36 @@ class RoundLifecycleMixin:
         Returns:
             True if round started successfully, False otherwise
 
+        """
+        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+
+        # Snapshot the phase BEFORE we contend for the lock. The double-advance
+        # bug is specifically: this caller entered while the phase was still
+        # REVEAL (or LOBBY for round 1), parked waiting for the lock, and the
+        # race winner flipped it to PLAYING in the meantime. Bailing only when
+        # the phase changed to PLAYING *under us* keeps legitimate PLAYING-phase
+        # entries working (e.g. the Sudden-Death auto-end check runs inside
+        # start_round, and the #1358 ghost-round guard tests drive it directly).
+        entry_phase = self.phase
+        async with self._get_round_start_lock():
+            if (
+                _retry_count == 0
+                and entry_phase != GamePhase.PLAYING
+                and self.phase == GamePhase.PLAYING
+            ):
+                _LOGGER.info(
+                    "start_round: race winner already advanced to PLAYING while "
+                    "we held for the lock — skipping duplicate round-start (#1697)"
+                )
+                return True
+            return await self._start_round_locked(_retry_count)
+
+    async def _start_round_locked(self, _retry_count: int = 0) -> bool:
+        """Round-start orchestration body, run under ``_round_start_lock`` (#1697).
+
+        Carries the exact pre-#1697 ``start_round`` logic. The skip/retry paths
+        recurse into *this* method (not the public ``start_round``) so the
+        non-reentrant lock is acquired once per logical round-start.
         """
         from .state import GamePhase  # noqa: PLC0415 — avoid circular import
 
@@ -164,6 +231,19 @@ class RoundLifecycleMixin:
 
         if not self._playlist_manager:
             _LOGGER.error("No playlist manager configured")
+            return False
+
+        # Issue #827: Sudden Death — when only one player is left standing, the
+        # game is over. Carry the just-finished round's REVEAL through to END
+        # rather than starting another round. round >= 2 guards against ending
+        # a fresh game (round 1 never eliminates).
+        if (
+            self.sudden_death_mode
+            and self.round >= 2
+            and len(self.non_eliminated_players()) <= 1
+        ):
+            _LOGGER.info("Sudden Death: one player remains — ending game")
+            self._set_phase(GamePhase.END)
             return False
 
         # Get next playable song (skip songs without URI for selected provider)
@@ -188,7 +268,7 @@ class RoundLifecycleMixin:
                 )
                 await self.pause_game("no_songs_available")
                 return False
-            return await self.start_round(_retry_count + 1)
+            return await self._start_round_locked(_retry_count + 1)
 
         self.last_round = self._playlist_manager.get_remaining_count() <= 1
         self._ensure_media_player_service()
@@ -241,9 +321,7 @@ class RoundLifecycleMixin:
                 failure_reason = getattr(
                     self._media_player_service, "last_failure_reason", None
                 )
-                self._playlist_manager.mark_played(
-                    song.get("_resolved_uri") or song.get("uri")
-                )
+                self._playlist_manager.mark_played(get_playback_uri(song))
 
                 if failure_reason == "unavailable":
                     _LOGGER.info(
@@ -252,7 +330,49 @@ class RoundLifecycleMixin:
                         song.get("title") or song.get("uri"),
                     )
                     await asyncio.sleep(0.2)
-                    return await self.start_round(_retry_count)
+                    return await self._start_round_locked(_retry_count)
+
+                # #1936: a timeout is not proof of a broken system. Music
+                # Assistant's Apple Music provider rate-limits and then retries
+                # after its OWN backoff — measured at 15.7s, i.e. longer than
+                # the deadline we just gave it. Pausing the whole game on that
+                # first timeout ended the evening for a provider that was
+                # working, and handed the host a re-authenticate banner for a
+                # problem they did not have.
+                #
+                # So the first failures skip the song, exactly like a
+                # storefront gap; only MAX_CONSECUTIVE_PLAYBACK_FAILURES in a
+                # row still means systemic and pauses. An offline speaker or a
+                # genuinely dead provider therefore still reaches the recovery
+                # banner — a few songs later instead of instantly, which is the
+                # deliberate price for not ending a game over one slow start.
+                self._consecutive_playback_failures = (
+                    getattr(self, "_consecutive_playback_failures", 0) + 1
+                )
+                if (
+                    self._consecutive_playback_failures
+                    < MAX_CONSECUTIVE_PLAYBACK_FAILURES
+                ):
+                    # Stop the speaker BEFORE moving on. MA may still be
+                    # retrying the track we just gave up on; without this it can
+                    # start mid-way through the *next* round and play the wrong
+                    # song under a live question. This does not provably cancel
+                    # MA's internal retry — it is the strongest lever this side
+                    # of the boundary has.
+                    try:
+                        await self._media_player_service.stop()
+                    except Exception as err:  # noqa: BLE001 — must not raise
+                        _LOGGER.warning("Stop before skip failed: %s (#1936)", err)
+                    _LOGGER.warning(
+                        "Playback timed out for %s — skipping this song "
+                        "(failure %d of %d in a row; the provider may be "
+                        "rate-limiting). Trying the next song. (#1936)",
+                        song.get("title") or song.get("uri"),
+                        self._consecutive_playback_failures,
+                        MAX_CONSECUTIVE_PLAYBACK_FAILURES,
+                    )
+                    await asyncio.sleep(0.2)
+                    return await self._start_round_locked(_retry_count)
 
                 # #949: a systemic playback failure — the speaker stayed idle,
                 # or the Music Assistant provider is unauthenticated — does not
@@ -262,12 +382,38 @@ class RoundLifecycleMixin:
                 # now so the recovery banner (which names the provider to
                 # re-authenticate) appears within seconds; its Resume button
                 # is the manual retry if it really was a transient blip.
-                _LOGGER.error(
-                    "Playback failed for %s — speaker unreachable, pausing game",
-                    song.get("uri"),
+                # #1927 follow-up: report the URI that was ACTUALLY tried, not
+                # the song's Spotify base field. An Apple Music attempt used to
+                # be logged as `spotify:track:…`, which reads like a Spotify
+                # defect and sends the next reader into the wrong provider.
+                # Falls back to the base field when no attempt was recorded
+                # (e.g. the song carried no playable URI at all).
+                attempted_uri = getattr(
+                    self._media_player_service, "last_attempted_uri", None
+                ) or song.get("uri")
+                # #1927: name the speaker too. The pause banner used to explain
+                # *what* failed and *which provider* to re-authenticate, but
+                # never *where* it was playing — the whole reason a game running
+                # on the wrong speaker looked like a provider outage.
+                self.last_error_detail = (
+                    f"{song.get('artist')} — {song.get('title')} "
+                    f"on {self.media_player} ({attempted_uri})"
                 )
+                _LOGGER.error(
+                    "Playback failed for %s on %s — speaker unreachable, pausing game",
+                    attempted_uri,
+                    self.media_player,
+                )
+                # #1936: the budget is spent — reset it so the Resume button
+                # gets a full one rather than pausing again on the next timeout.
+                self._consecutive_playback_failures = 0
                 await self.pause_game("media_player_error")
                 return False
+
+            # #1936: a confirmed start clears the streak. Only CONSECUTIVE
+            # timeouts mean systemic; one bad song between two good ones does
+            # not accumulate toward the pause.
+            self._consecutive_playback_failures = 0
 
             # #1358: play_song just succeeded, but it parks for a full Music
             # Assistant timeout — long enough for the admin to end the game
@@ -369,7 +515,13 @@ class RoundLifecycleMixin:
         return True
 
     def _ensure_media_player_service(self) -> None:
-        """Create MediaPlayerService lazily on first round."""
+        """Create MediaPlayerService lazily on first round.
+
+        Idempotent: if the service was already built (e.g. by the #1540 LOBBY
+        pre-warm — see :meth:`prewarm_media_player_service`), the
+        ``not self._media_player_service`` guard makes this a no-op, so the
+        round path keeps working unchanged whether or not the pre-warm ran.
+        """
         # Lazy import: only the concrete class for instantiation; type hints
         # use MediaPlayerProtocol (module-level) to keep the import graph acyclic.
         from custom_components.beatify.services.media_player import (  # noqa: PLC0415
@@ -386,6 +538,82 @@ class RoundLifecycleMixin:
             # Connect analytics for error recording (Story 19.1 AC: #2)
             if self._stats_service and hasattr(self._stats_service, "_analytics"):
                 self._media_player_service.set_analytics(self._stats_service._analytics)
+
+    def schedule_media_player_prewarm(self) -> None:
+        """Pre-warm the MediaPlayerService during LOBBY (#1540).
+
+        Follow-up to #803: ``_ensure_media_player_service`` builds the service
+        lazily on the first round, so on a cold Music Assistant start the first
+        round pays the construction + first-call (preflight) latency. This kicks
+        that work off in the background as soon as ``create_game`` has a media
+        player selected, so Round 1 starts without the cold-start lag.
+
+        Best-effort and non-blocking: ``create_game`` MUST NOT wait on this.
+        Requires ``_hass`` (the event loop owner) and a selected media player;
+        otherwise it silently no-ops and the lazy round path stays the fallback.
+        The actual warming runs in :meth:`prewarm_media_player_service`.
+        """
+        if not (self._hass and self.media_player):
+            return
+
+        # #1540 review: supersede any still-running pre-warm from a prior
+        # create_game before scheduling a new one, so a stale warm-up can't
+        # race the fresh game's first round.
+        self._cancel_prewarm()
+
+        async def _runner() -> None:
+            try:
+                await self.prewarm_media_player_service()
+            except asyncio.CancelledError:
+                # A game reset/recreate cancelled the warm-up — expected, not a
+                # failure. Re-raise so the task is marked cancelled, not errored.
+                raise
+            except Exception as err:  # noqa: BLE001 — pre-warm must never raise
+                # #1540 review: warn (not debug) so a permanently offline
+                # speaker surfaces in the log instead of being silently masked.
+                _LOGGER.warning("Media player pre-warm failed (best-effort): %s", err)
+
+        # Use HA's tracked task helper when available so the warm-up is tied to
+        # the integration's lifecycle; fall back to a bare task otherwise (e.g.
+        # the slimmed-down hass stub used in unit tests). Keep the handle so the
+        # reset path can cancel it.
+        creator = getattr(self._hass, "async_create_background_task", None)
+        if callable(creator):
+            self._prewarm_task = creator(_runner(), name="beatify_media_player_prewarm")
+        else:
+            self._prewarm_task = asyncio.create_task(_runner())
+
+    def _cancel_prewarm(self) -> None:
+        """Cancel the pending LOBBY media-player pre-warm task, if any (#1540)."""
+        if self._prewarm_task is not None:
+            self._prewarm_task.cancel()
+            self._prewarm_task = None
+
+    async def prewarm_media_player_service(self) -> None:
+        """Construct + warm the MediaPlayerService ahead of Round 1.
+
+        Builds the service via the idempotent :meth:`_ensure_media_player_service`
+        (so a later round-path call recycles this instance). For non-Music-
+        Assistant players it then issues ``verify_responsive`` — a *blocking*
+        speaker service call — so the first real playback isn't the cold one,
+        mirroring the round path (``start_round``), which only probes non-MA
+        players. For Music Assistant it deliberately skips the probe: firing a
+        speaker service call in the LOBBY would be a wasted (and potentially
+        wake-on-LAN-triggering) call, and the round path doesn't probe MA
+        either. Any probe failure propagates to the runner, which warns; the
+        round path re-checks availability and surfaces real errors there.
+        """
+        self._ensure_media_player_service()
+        service = self._media_player_service
+        if service is None:
+            return
+        # #1540 review: match the round path — only non-MA players get the
+        # blocking verify_responsive probe.
+        if self.platform == "music_assistant":
+            return
+        probe = getattr(service, "verify_responsive", None)
+        if callable(probe):
+            await probe()
 
     def _prepare_intro_round(self, song: dict) -> bool:
         """Determine if this is an intro round. Delegates to RoundManager."""

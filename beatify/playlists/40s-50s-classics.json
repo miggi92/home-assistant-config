@@ -1,6 +1,6 @@
 {
   "name": "40s & 50s Classics",
-  "version": "1.0",
+  "version": "1.11",
   "tags": [
     "1940s",
     "1950s",
@@ -30,7 +30,7 @@
         "it": "applemusic://track/1434878503"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=pCgyKVxSkuw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/122089871",
       "uri_deezer": "deezer://track/542807362",
       "fun_fact": "Billie Holiday — one of the most influential jazz singers of all time.",
       "fun_fact_de": "Billie Holiday — eine der einflussreichsten Jazzsängerinnen aller Zeiten.",
@@ -55,7 +55,7 @@
         "it": "applemusic://track/1814188169"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=njCoOSJSDTI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/122089884",
       "uri_deezer": "deezer://track/593692922",
       "fun_fact": "Billie Holiday — one of the most influential jazz singers of all time.",
       "fun_fact_de": "Billie Holiday — eine der einflussreichsten Jazzsängerinnen aller Zeiten.",
@@ -80,7 +80,7 @@
         "it": "applemusic://track/1837486323"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=KFtI42u88LI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/99351999",
       "uri_deezer": "deezer://track/541542932",
       "fun_fact": "Billie Holiday — one of the most influential jazz singers of all time.",
       "fun_fact_de": "Billie Holiday — eine der einflussreichsten Jazzsängerinnen aller Zeiten.",
@@ -105,7 +105,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FArD1hJMmPA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/99999861",
       "uri_deezer": "deezer://track/62794564",
       "fun_fact": "Billie Holiday — one of the most influential jazz singers of all time.",
       "fun_fact_de": "Billie Holiday — eine der einflussreichsten Jazzsängerinnen aller Zeiten.",
@@ -130,7 +130,7 @@
         "it": "applemusic://track/1760714172"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=nZeyY0NSTW4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1308225",
       "uri_deezer": "deezer://track/609537",
       "fun_fact": "A 1940s classic (1949).",
       "fun_fact_de": "Ein 40er-Klassiker (1949).",
@@ -155,7 +155,7 @@
         "it": "applemusic://track/1467439589"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2kVNTB9dJXQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94445466",
       "uri_deezer": "deezer://track/547739802",
       "fun_fact": "A 1940s classic (1949).",
       "fun_fact_de": "Ein 40er-Klassiker (1949).",
@@ -180,7 +180,7 @@
         "it": "applemusic://track/1467439395"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Ry_-p-0stx4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94445460",
       "uri_deezer": "deezer://track/548862852",
       "fun_fact": "A 1940s classic (1949).",
       "fun_fact_de": "Ein 40er-Klassiker (1949).",
@@ -205,7 +205,7 @@
         "it": "applemusic://track/181567834"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=-91ZKvNiiJc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3559045",
       "uri_deezer": "deezer://track/5690691",
       "fun_fact": "A 1940s classic (1949).",
       "fun_fact_de": "Ein 40er-Klassiker (1949).",
@@ -230,7 +230,7 @@
         "it": "applemusic://track/293997893"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=0nf_bjcYRpI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/80814490",
       "uri_deezer": "deezer://track/6086891",
       "fun_fact": "A 1950s classic (1950).",
       "fun_fact_de": "Ein 50er-Klassiker (1950).",
@@ -255,7 +255,7 @@
         "it": "applemusic://track/1718643436"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=zbaKVfMIxbk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94445479",
       "uri_deezer": "deezer://track/548862752",
       "fun_fact": "A 1950s classic (1951).",
       "fun_fact_de": "Ein 50er-Klassiker (1951).",
@@ -280,7 +280,7 @@
         "it": "applemusic://track/724837720"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=iF7kOq0peAU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/61134154",
       "uri_deezer": "deezer://track/1444376692",
       "fun_fact": "A 1950s classic (1951).",
       "fun_fact_de": "Ein 50er-Klassiker (1951).",
@@ -305,7 +305,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=l2Q0RsJ5-24",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/640973",
       "uri_deezer": "deezer://track/6084625",
       "fun_fact": "A 1950s classic (1951).",
       "fun_fact_de": "Ein 50er-Klassiker (1951).",
@@ -330,7 +330,7 @@
         "it": "applemusic://track/1872787434"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=HkplpL2P9YM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/108022897",
       "uri_deezer": "deezer://track/593695402",
       "fun_fact": "Billie Holiday — one of the most influential jazz singers of all time.",
       "fun_fact_de": "Billie Holiday — eine der einflussreichsten Jazzsängerinnen aller Zeiten.",
@@ -355,7 +355,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=96fyS2Wi7tg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/105363997",
       "uri_deezer": "deezer://track/1557002172",
       "fun_fact": "A 1950s classic (1952).",
       "fun_fact_de": "Ein 50er-Klassiker (1952).",
@@ -380,7 +380,7 @@
         "it": "applemusic://track/1705468065"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Mc_2sOWVTxI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94439290",
       "uri_deezer": "deezer://track/548865992",
       "fun_fact": "A 1950s classic (1952).",
       "fun_fact_de": "Ein 50er-Klassiker (1952).",
@@ -405,7 +405,7 @@
         "it": "applemusic://track/1814189052"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=9t8wwWzbMD0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/10829232",
       "uri_deezer": "deezer://track/3098857",
       "fun_fact": "A 1950s classic (1952).",
       "fun_fact_de": "Ein 50er-Klassiker (1952).",
@@ -430,7 +430,7 @@
         "it": "applemusic://track/1801287060"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=pam1eUkWfFM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/138209182",
       "uri_deezer": "deezer://track/427259512",
       "fun_fact": "A 1950s classic (1953).",
       "fun_fact_de": "Ein 50er-Klassiker (1953).",
@@ -455,7 +455,7 @@
         "it": "applemusic://track/1690654597"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QP2bgZOCDlc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/35217378",
       "uri_deezer": "deezer://track/3435056",
       "fun_fact": "A 1950s classic (1953).",
       "fun_fact_de": "Ein 50er-Klassiker (1953).",
@@ -480,7 +480,7 @@
         "it": "applemusic://track/1858098728"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=unf2AbrdXh0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1383080",
       "uri_deezer": "deezer://track/104622004",
       "fun_fact": "Frank Sinatra — 'Ol' Blue Eyes', the defining voice of the American songbook.",
       "fun_fact_de": "Frank Sinatra — 'Ol' Blue Eyes', die prägende Stimme des American Songbook.",
@@ -505,7 +505,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2tiGG45ge9g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94445493",
       "uri_deezer": "deezer://track/90172609",
       "fun_fact": "A 1950s classic (1953).",
       "fun_fact_de": "Ein 50er-Klassiker (1953).",
@@ -530,7 +530,7 @@
         "it": "applemusic://track/1702911175"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=K7y-puaBZgQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218667",
       "uri_deezer": "deezer://track/765625",
       "fun_fact": "A 1950s classic (1953).",
       "fun_fact_de": "Ein 50er-Klassiker (1953).",
@@ -555,7 +555,7 @@
         "it": "applemusic://track/1691773008"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=hzYBEJgKjv0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/36267506",
       "uri_deezer": "deezer://track/602444242",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -580,7 +580,7 @@
         "it": "applemusic://track/1444105843"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=JKEKsYyFs2c",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/36267507",
       "uri_deezer": "deezer://track/908740",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -605,7 +605,7 @@
         "it": "applemusic://track/6768427592"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=y6qfgwy77ms",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/158165",
       "uri_deezer": "deezer://track/3147915",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -630,7 +630,7 @@
         "it": "applemusic://track/1700948480"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QuMzUXPEPRM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/158162",
       "uri_deezer": "deezer://track/3147914",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -655,7 +655,7 @@
         "it": "applemusic://track/1837486322"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=hqRtTjQD0RE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/158161",
       "uri_deezer": "deezer://track/3363458",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -680,7 +680,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=aeYN5l4qi8g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/99179977",
       "uri_deezer": "deezer://track/104004728",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -705,7 +705,7 @@
         "it": "applemusic://track/288164984"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=sSnxwnPkgas",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1308873",
       "uri_deezer": "deezer://track/595056",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -730,7 +730,7 @@
         "it": "applemusic://track/1814188579"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=phS7BfOfTOY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/147096",
       "uri_deezer": "deezer://track/3240277",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -755,7 +755,7 @@
         "it": "applemusic://track/1876150167"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=alQqMveYv0I",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218672",
       "uri_deezer": "deezer://track/670897",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -780,7 +780,7 @@
         "it": "applemusic://track/277572768"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Cc_Mhd8Nk-M",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/48456019",
       "uri_deezer": "deezer://track/10678746",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -805,7 +805,7 @@
         "it": "applemusic://track/1803079799"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ESLa421KQaM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/108323673",
       "uri_deezer": "deezer://track/3613362",
       "fun_fact": "A 1950s classic (1954).",
       "fun_fact_de": "Ein 50er-Klassiker (1954).",
@@ -830,7 +830,7 @@
         "it": "applemusic://track/1444106497"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=NMP6IGJXG3o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/637109",
       "uri_deezer": "deezer://track/908742",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -855,7 +855,7 @@
         "it": "applemusic://track/306938867"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=WJLy-Fnedy8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94401957",
       "uri_deezer": "deezer://track/63232204",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -880,7 +880,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=JplU4wrHHvY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1399533",
       "uri_deezer": "deezer://track/90174113",
       "fun_fact": "Fats Domino — a New Orleans piano legend and one of rock'n'roll's first stars.",
       "fun_fact_de": "Fats Domino — eine Piano-Legende aus New Orleans und einer der ersten Rock'n'Roll-Stars.",
@@ -905,7 +905,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=-Ao8Yvfc1uI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/6759842",
       "uri_deezer": "deezer://track/112960022",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -930,7 +930,7 @@
         "it": "applemusic://track/1440938954"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=NnIIvWnpaBU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3049547",
       "uri_deezer": "deezer://track/2203627",
       "fun_fact": "Little Richard — the flamboyant 'Architect of Rock'n'Roll'.",
       "fun_fact_de": "Little Richard — der extravagante 'Architekt des Rock'n'Roll'.",
@@ -955,7 +955,7 @@
         "it": "applemusic://track/298178053"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=_9IIDE_45Pc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1308854",
       "uri_deezer": "deezer://track/595034",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -980,7 +980,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=B9j91-18Kb4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1323480",
       "uri_deezer": "deezer://track/3982486",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -1005,7 +1005,7 @@
         "it": "applemusic://track/1814190164"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=85-6op3kt_g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/9216645",
       "uri_deezer": "deezer://track/907897",
       "fun_fact": "A 1950s classic (1955).",
       "fun_fact_de": "Ein 50er-Klassiker (1955).",
@@ -1030,7 +1030,7 @@
         "it": "applemusic://track/394923324"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=boN1TMqmKKk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/60651680",
       "uri_deezer": "deezer://track/10820776",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1055,7 +1055,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=mvsYRAc-BWA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/12319041",
       "uri_deezer": "deezer://track/32959581",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1080,7 +1080,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=kTZQefSKxKw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/139954380",
       "uri_deezer": "deezer://track/942970102",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1105,7 +1105,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=lGfeCe0DHtI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/74131725",
       "uri_deezer": "deezer://track/1942643",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1130,7 +1130,7 @@
         "it": "applemusic://track/1757013593"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=WgDzYaVwb_o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94445629",
       "uri_deezer": "deezer://track/2268166",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1155,7 +1155,7 @@
         "it": "applemusic://track/256334189"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4ZOEfUZzDVE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/21194636",
       "uri_deezer": "deezer://track/17479889",
       "fun_fact": "Elvis Presley — the King of Rock'n'Roll, who reshaped popular music in the 50s.",
       "fun_fact_de": "Elvis Presley — der King of Rock'n'Roll, der die Popmusik der 50er neu prägte.",
@@ -1180,7 +1180,7 @@
         "it": "applemusic://track/261066721"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=0qz4sTM9XkM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/21277615",
       "uri_deezer": "deezer://track/6596861",
       "fun_fact": "Elvis Presley — the King of Rock'n'Roll, who reshaped popular music in the 50s.",
       "fun_fact_de": "Elvis Presley — der King of Rock'n'Roll, der die Popmusik der 50er neu prägte.",
@@ -1205,7 +1205,7 @@
         "it": "applemusic://track/217633894"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LGwO2BaDJQc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/5119978",
       "uri_deezer": "deezer://track/7675085",
       "fun_fact": "Elvis Presley — the King of Rock'n'Roll, who reshaped popular music in the 50s.",
       "fun_fact_de": "Elvis Presley — der King of Rock'n'Roll, der die Popmusik der 50er neu prägte.",
@@ -1230,7 +1230,7 @@
         "it": "applemusic://track/1443775790"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=IYRJC0_c8Wk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/63432908",
       "uri_deezer": "deezer://track/3092103",
       "fun_fact": "Fats Domino — a New Orleans piano legend and one of rock'n'roll's first stars.",
       "fun_fact_de": "Fats Domino — eine Piano-Legende aus New Orleans und einer der ersten Rock'n'Roll-Stars.",
@@ -1255,7 +1255,7 @@
         "it": "applemusic://track/1692399749"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=xz5W5bKLj_4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1381213",
       "uri_deezer": "deezer://track/3105125",
       "fun_fact": "Frank Sinatra — 'Ol' Blue Eyes', the defining voice of the American songbook.",
       "fun_fact_de": "Frank Sinatra — 'Ol' Blue Eyes', die prägende Stimme des American Songbook.",
@@ -1280,7 +1280,7 @@
         "it": "applemusic://track/1700949009"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=8XuL5xSVL7s",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1381205",
       "uri_deezer": "deezer://track/3105117",
       "fun_fact": "Frank Sinatra — 'Ol' Blue Eyes', the defining voice of the American songbook.",
       "fun_fact_de": "Frank Sinatra — 'Ol' Blue Eyes', die prägende Stimme des American Songbook.",
@@ -1305,7 +1305,7 @@
         "it": "applemusic://track/1846456726"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Wi6f5YO6om0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1381212",
       "uri_deezer": "deezer://track/3105124",
       "fun_fact": "Frank Sinatra — 'Ol' Blue Eyes', the defining voice of the American songbook.",
       "fun_fact_de": "Frank Sinatra — 'Ol' Blue Eyes', die prägende Stimme des American Songbook.",
@@ -1330,7 +1330,7 @@
         "it": "applemusic://track/689286034"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=KDCSG97anKU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/84526266",
       "uri_deezer": "deezer://track/3468934",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1355,7 +1355,7 @@
         "it": "applemusic://track/175547524"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=DYYkJ0kwNss",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/674903",
       "uri_deezer": "deezer://track/546692",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1380,7 +1380,7 @@
         "it": "applemusic://track/201414524"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=h9xacmsc4Xg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1745142",
       "uri_deezer": "deezer://track/585829",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1405,7 +1405,7 @@
         "it": "applemusic://track/1440936752"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=E68N5E1d0_M",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/80391229",
       "uri_deezer": "deezer://track/422278942",
       "fun_fact": "Little Richard — the flamboyant 'Architect of Rock'n'Roll'.",
       "fun_fact_de": "Little Richard — der extravagante 'Architekt des Rock'n'Roll'.",
@@ -1430,7 +1430,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=g3cp_KqvGI4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3049551",
       "uri_deezer": "deezer://track/101753763",
       "fun_fact": "Little Richard — the flamboyant 'Architect of Rock'n'Roll'.",
       "fun_fact_de": "Little Richard — der extravagante 'Architekt des Rock'n'Roll'.",
@@ -1455,7 +1455,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QtmRwHfp0Ok",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/80391226",
       "uri_deezer": "deezer://track/101753751",
       "fun_fact": "Little Richard — the flamboyant 'Architect of Rock'n'Roll'.",
       "fun_fact_de": "Little Richard — der extravagante 'Architekt des Rock'n'Roll'.",
@@ -1480,7 +1480,7 @@
         "it": "applemusic://track/1764557878"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=vnz_gbDJnhI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/296502573",
       "uri_deezer": "deezer://track/11974820",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1505,7 +1505,7 @@
         "it": "applemusic://track/726137203"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=6s7Dsb0v178",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/146233311",
       "uri_deezer": "deezer://track/3541319",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1530,7 +1530,7 @@
         "it": "applemusic://track/1846456938"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=5CXZB-dIF0g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/109010711",
       "uri_deezer": "deezer://track/676935942",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1555,7 +1555,7 @@
         "it": "applemusic://track/1234745935"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=rMwKIqsfV8k",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218666",
       "uri_deezer": "deezer://track/670909",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1580,7 +1580,7 @@
         "it": "applemusic://track/1705328531"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=NlKvcQ-hWXY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/34399546",
       "uri_deezer": "deezer://track/41376881",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1605,7 +1605,7 @@
         "it": "applemusic://track/1368002332"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=17QOUjVKOeo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/86974129",
       "uri_deezer": "deezer://track/2298343",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1630,7 +1630,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=1iXHzv7ZETM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/61857657",
       "uri_deezer": "deezer://track/6059442",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1655,7 +1655,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=tcHBRMg2JN4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/215520",
       "uri_deezer": "deezer://track/13019696",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1680,7 +1680,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=YUS4ED3Q4sU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/59931066",
       "uri_deezer": "deezer://track/90174113",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1705,7 +1705,7 @@
         "it": "applemusic://track/358042510"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=AwbXeB-Hpss",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/11335895",
       "uri_deezer": "deezer://track/12081830",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1730,7 +1730,7 @@
         "it": "applemusic://track/941321163"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=KALDQZSTSdk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/79058877",
       "uri_deezer": "deezer://track/90394975",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1755,7 +1755,7 @@
         "it": "applemusic://track/716335410"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=7BAwb_eTOy4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/15201073",
       "uri_deezer": "deezer://track/29088121",
       "fun_fact": "A 1950s classic (1956).",
       "fun_fact_de": "Ein 50er-Klassiker (1956).",
@@ -1780,7 +1780,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=EqWwy6BCxxU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94401436",
       "uri_deezer": "deezer://track/13210871",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -1805,7 +1805,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=M4TfFTmITLo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/40761539",
       "uri_deezer": "deezer://track/90174113",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -1830,7 +1830,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Zpni8tmIzaM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94401409",
       "uri_deezer": "deezer://track/4002674",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -1855,7 +1855,7 @@
         "it": "applemusic://track/1435973330"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=78423JSJtG0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94928163",
       "uri_deezer": "deezer://track/553408612",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -1880,7 +1880,7 @@
         "it": "applemusic://track/1605211898"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=PB0efeTW0NE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94928149",
       "uri_deezer": "deezer://track/750110082",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -1905,7 +1905,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ebxNUVuS0Es",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/380976",
       "uri_deezer": "deezer://track/1724849107",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -1930,7 +1930,7 @@
         "it": "applemusic://track/1777336812"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=fJyp4e4APV0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/99352269",
       "uri_deezer": "deezer://track/3068979431",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -1955,7 +1955,7 @@
         "it": "applemusic://track/332735039"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FD5gE6viJ9g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/62894578",
       "uri_deezer": "deezer://track/2483163",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -1980,7 +1980,7 @@
         "it": "applemusic://track/217634327"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=A99sV18J0mk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/515077",
       "uri_deezer": "deezer://track/6596867",
       "fun_fact": "Elvis Presley — the King of Rock'n'Roll, who reshaped popular music in the 50s.",
       "fun_fact_de": "Elvis Presley — der King of Rock'n'Roll, der die Popmusik der 50er neu prägte.",
@@ -2005,7 +2005,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=N9awCYgefCg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/5119983",
       "uri_deezer": "deezer://track/13210872",
       "fun_fact": "Elvis Presley — the King of Rock'n'Roll, who reshaped popular music in the 50s.",
       "fun_fact_de": "Elvis Presley — der King of Rock'n'Roll, der die Popmusik der 50er neu prägte.",
@@ -2030,7 +2030,7 @@
         "it": "applemusic://track/724490494"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=PaPYuUMLFIM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/90457566",
       "uri_deezer": "deezer://track/3092112",
       "fun_fact": "Fats Domino — a New Orleans piano legend and one of rock'n'roll's first stars.",
       "fun_fact_de": "Fats Domino — eine Piano-Legende aus New Orleans und einer der ersten Rock'n'Roll-Stars.",
@@ -2055,7 +2055,7 @@
         "it": "applemusic://track/403806790"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=3lZ2xjoBoXU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/320689270",
       "uri_deezer": "deezer://track/116857978",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2080,7 +2080,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=0VJ1NuAbEBI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/90456508",
       "uri_deezer": "deezer://track/105121570",
       "fun_fact": "Jerry Lee Lewis — 'The Killer', a wild rock'n'roll piano showman.",
       "fun_fact_de": "Jerry Lee Lewis — 'The Killer', ein wilder Rock'n'Roll-Piano-Showman.",
@@ -2105,7 +2105,7 @@
         "it": "applemusic://track/1890307026"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FAYEjb2Aqu8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/15662305",
       "uri_deezer": "deezer://track/101566916",
       "fun_fact": "Jerry Lee Lewis — 'The Killer', a wild rock'n'roll piano showman.",
       "fun_fact_de": "Jerry Lee Lewis — 'The Killer', ein wilder Rock'n'Roll-Piano-Showman.",
@@ -2130,7 +2130,7 @@
         "it": "applemusic://track/201414675"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=llqc9LKcDj0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/51072795",
       "uri_deezer": "deezer://track/585831",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2155,7 +2155,7 @@
         "it": "applemusic://track/201414349"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ILfUKbPPGfE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1745141",
       "uri_deezer": "deezer://track/585828",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2180,7 +2180,7 @@
         "it": "applemusic://track/1432874900"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=qYt56i8HCwE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/69305440",
       "uri_deezer": "deezer://track/544053252",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2205,7 +2205,7 @@
         "it": "applemusic://track/26088767"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=gRDLTF0djHg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/93426047",
       "uri_deezer": "deezer://track/5908975",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2230,7 +2230,7 @@
         "it": "applemusic://track/314000997"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4xsKpO1qsSQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/517191",
       "uri_deezer": "deezer://track/964938",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2255,7 +2255,7 @@
         "it": "applemusic://track/715509678"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LJCp7K__8Vo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/60683639",
       "uri_deezer": null,
       "fun_fact": "Ricky Nelson — a teen idol who became one of the 50s' biggest stars.",
       "fun_fact_de": "Ricky Nelson — ein Teenie-Idol, das zu einem der größten Stars der 50er wurde.",
@@ -2280,7 +2280,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=_YS23MA0Jtg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/99138546",
       "uri_deezer": "deezer://track/60240231",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2305,7 +2305,7 @@
         "it": "applemusic://track/941259917"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4mi2uXATgVw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94413908",
       "uri_deezer": "deezer://track/90427389",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2330,7 +2330,7 @@
         "it": "applemusic://track/1400161658"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=w1AcbP0_SYs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/25710479",
       "uri_deezer": "deezer://track/691215",
       "fun_fact": "The Everly Brothers — close-harmony pioneers who shaped 50s pop.",
       "fun_fact_de": "The Everly Brothers — Harmoniegesang-Pioniere, die den 50er-Pop prägten.",
@@ -2355,7 +2355,7 @@
         "it": "applemusic://track/358042641"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=oqSNChmm-mY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/118067999",
       "uri_deezer": "deezer://track/12081837",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2380,7 +2380,7 @@
         "it": "applemusic://track/358105982"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=mHizexVWcVc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/8672338",
       "uri_deezer": "deezer://track/12081869",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2405,7 +2405,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=9xWCy7b8bgg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/72778919",
       "uri_deezer": "deezer://track/349496981",
       "fun_fact": "A 1950s classic (1957).",
       "fun_fact_de": "Ein 50er-Klassiker (1957).",
@@ -2430,7 +2430,7 @@
         "it": "applemusic://track/1577370946"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4R53SaiFW9c",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218263",
       "uri_deezer": "deezer://track/691319",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2455,7 +2455,7 @@
         "it": "applemusic://track/451058102"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=E6yGhe2gQxw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/12722459",
       "uri_deezer": "deezer://track/12999373",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2480,7 +2480,7 @@
         "it": "applemusic://track/1483679734"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=TEzsrbxjyQU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94401443",
       "uri_deezer": "deezer://track/750109772",
       "fun_fact": "Buddy Holly — a rock'n'roll innovator whose career was cut tragically short.",
       "fun_fact_de": "Buddy Holly — ein Rock'n'Roll-Innovator, dessen Karriere tragisch früh endete.",
@@ -2505,7 +2505,7 @@
         "it": "applemusic://track/1830382385"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Y3edk9xfoUI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94414282",
       "uri_deezer": "deezer://track/4302809",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2530,7 +2530,7 @@
         "it": "applemusic://track/1692400065"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4mppAFu3dqw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/137333",
       "uri_deezer": "deezer://track/3434587",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2555,7 +2555,7 @@
         "it": "applemusic://track/724157973"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=igSj3hU6KkA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1508428",
       "uri_deezer": "deezer://track/3121409",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2580,7 +2580,7 @@
         "it": "applemusic://track/324167268"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=yzvlPKozW-A",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3381656",
       "uri_deezer": "deezer://track/1053695",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2605,7 +2605,7 @@
         "it": "applemusic://track/1444122663"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Wl1-uj1UQuk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1482410",
       "uri_deezer": "deezer://track/3089535",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2630,7 +2630,7 @@
         "it": "applemusic://track/730297255"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=yOzEeJZ92X8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1381139",
       "uri_deezer": "deezer://track/3103535",
       "fun_fact": "Frank Sinatra — 'Ol' Blue Eyes', the defining voice of the American songbook.",
       "fun_fact_de": "Frank Sinatra — 'Ol' Blue Eyes', die prägende Stimme des American Songbook.",
@@ -2655,7 +2655,7 @@
         "it": "applemusic://track/403809717"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=J9vG5BhOKaY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/319131548",
       "uri_deezer": "deezer://track/116857974",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2680,7 +2680,7 @@
         "it": "applemusic://track/714312494"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=bQLBvHMSBvM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1461673",
       "uri_deezer": "deezer://track/4227586",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2705,7 +2705,7 @@
         "it": "applemusic://track/1763342564"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QTDhQ2QECqE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3049549",
       "uri_deezer": "deezer://track/2203629",
       "fun_fact": "Little Richard — the flamboyant 'Architect of Rock'n'Roll'.",
       "fun_fact_de": "Little Richard — der extravagante 'Architekt des Rock'n'Roll'.",
@@ -2730,7 +2730,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=MzNswqHrd8I",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/36057628",
       "uri_deezer": "deezer://track/1631871972",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2755,7 +2755,7 @@
         "it": "applemusic://track/1700948227"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=JBANWpzsHts",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/157943",
       "uri_deezer": "deezer://track/3124340",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2780,7 +2780,7 @@
         "it": "applemusic://track/1443786396"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LIxHJpmvg7E",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/628494",
       "uri_deezer": "deezer://track/3291529",
       "fun_fact": "Ricky Nelson — a teen idol who became one of the 50s' biggest stars.",
       "fun_fact_de": "Ricky Nelson — ein Teenie-Idol, das zu einem der größten Stars der 50er wurde.",
@@ -2805,7 +2805,7 @@
         "it": "applemusic://track/6767663390"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=tEPefBWlBgk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/522861631",
       "uri_deezer": "deezer://track/3233830",
       "fun_fact": "Ricky Nelson — a teen idol who became one of the 50s' biggest stars.",
       "fun_fact_de": "Ricky Nelson — ein Teenie-Idol, das zu einem der größten Stars der 50er wurde.",
@@ -2830,7 +2830,7 @@
         "it": "applemusic://track/1828397031"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=BycLmWI97Nc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/7985177",
       "uri_deezer": "deezer://track/13975941",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2855,7 +2855,7 @@
         "it": "applemusic://track/29124600"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=0iJCAcKIwdI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/306884",
       "uri_deezer": "deezer://track/3860014",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2880,7 +2880,7 @@
         "it": "applemusic://track/1702867914"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2PRvejWMWl4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/306883",
       "uri_deezer": "deezer://track/682206",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2905,7 +2905,7 @@
         "it": "applemusic://track/1700465239"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FbcVFF0TISM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/93539847",
       "uri_deezer": "deezer://track/543099772",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2930,7 +2930,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=8fX4rxe9T3o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/90132108",
       "uri_deezer": "deezer://track/90174115",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2946,16 +2946,16 @@
       "uri": "spotify:track:14bUqUj1EUnQabWeAqnj39",
       "uri_apple_music": "applemusic://track/164459852",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/164459848",
-        "de": "applemusic://track/164459848",
-        "gb": "applemusic://track/164459848",
-        "fr": "applemusic://track/164459848",
-        "es": "applemusic://track/164459848",
-        "nl": "applemusic://track/164459848",
-        "it": "applemusic://track/164459848"
+        "us": "applemusic://track/164459852",
+        "de": "applemusic://track/164459852",
+        "gb": "applemusic://track/164459852",
+        "fr": "applemusic://track/164459852",
+        "es": "applemusic://track/164459852",
+        "nl": "applemusic://track/164459852",
+        "it": "applemusic://track/164459852"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4hswHOEQfj8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/77412839",
       "uri_deezer": "deezer://track/1201417",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -2980,7 +2980,7 @@
         "it": "applemusic://track/400798830"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=_kXKUSAbvuM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/22330291",
       "uri_deezer": "deezer://track/3991861",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -3005,7 +3005,7 @@
         "it": "applemusic://track/81979584"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FSliAkQg68Y",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/12722107",
       "uri_deezer": "deezer://track/2070824",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -3030,7 +3030,7 @@
         "it": "applemusic://track/1473830324"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Tvq1ZBkG5xM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/113767928",
       "uri_deezer": "deezer://track/717077602",
       "fun_fact": "A 1950s classic (1958).",
       "fun_fact_de": "Ein 50er-Klassiker (1958).",
@@ -3055,7 +3055,7 @@
         "it": "applemusic://track/1576448302"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=6qtqS9SGlnM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/16445116",
       "uri_deezer": "deezer://track/2511253",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3080,7 +3080,7 @@
         "it": "applemusic://track/1400158879"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Sq995BHejPU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218187",
       "uri_deezer": "deezer://track/3613860",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3105,7 +3105,7 @@
         "it": "applemusic://track/1339090794"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=ygVgxGSQIsw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218186",
       "uri_deezer": "deezer://track/691342",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3130,7 +3130,7 @@
         "it": "applemusic://track/1722432439"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=iAEZ9KtkAaI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218266",
       "uri_deezer": "deezer://track/3613861",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3155,7 +3155,7 @@
         "it": "applemusic://track/1722433182"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=uk4ZbUGRKt8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1500589",
       "uri_deezer": null,
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3180,7 +3180,7 @@
         "it": "applemusic://track/715570920"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QgLYidt45o8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/4389867",
       "uri_deezer": "deezer://track/6963239",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3196,16 +3196,16 @@
       "uri": "spotify:track:66iKqUazBbTlAEjcZrpDkD",
       "uri_apple_music": "applemusic://track/1434896962",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1707041008",
-        "de": "applemusic://track/1707041008",
-        "gb": "applemusic://track/1707041008",
-        "fr": "applemusic://track/1707041008",
-        "es": "applemusic://track/1707041008",
-        "nl": "applemusic://track/1707041008",
-        "it": "applemusic://track/1707041008"
+        "us": "applemusic://track/1434896962",
+        "de": "applemusic://track/1434896962",
+        "gb": "applemusic://track/1434896962",
+        "fr": "applemusic://track/1434896962",
+        "es": "applemusic://track/1434896962",
+        "nl": "applemusic://track/1434896962",
+        "it": "applemusic://track/1434896962"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=3UZmjs20Ms0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94441589",
       "uri_deezer": "deezer://track/548800502",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3230,7 +3230,7 @@
         "it": "applemusic://track/1765400390"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=41kQGnm6L9E",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/94441591",
       "uri_deezer": "deezer://track/591197102",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3255,7 +3255,7 @@
         "it": "applemusic://track/689286031"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=rXqHFm9G1Us",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/87357125",
       "uri_deezer": "deezer://track/3121408",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3280,7 +3280,7 @@
         "it": "applemusic://track/724391048"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Hi36ukbbTbw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1482416",
       "uri_deezer": "deezer://track/3139634",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3305,7 +3305,7 @@
         "it": "applemusic://track/1528525041"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=5Y3Oglbz4Cs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/31423629",
       "uri_deezer": "deezer://track/16195364",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3355,7 +3355,7 @@
         "it": "applemusic://track/258683258"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2pltz7p_tyA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/31826",
       "uri_deezer": "deezer://track/995204",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3380,7 +3380,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=sNz_bWhAuwM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/90631637",
       "uri_deezer": "deezer://track/2359104",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3405,7 +3405,7 @@
         "it": "applemusic://track/709657114"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Ytb_T7eTAKI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2943909",
       "uri_deezer": "deezer://track/585890",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3430,7 +3430,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=D8Rhg35qE5w",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/36057631",
       "uri_deezer": "deezer://track/90174113",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3455,7 +3455,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=d3IE6E7tgus",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/36267709",
       "uri_deezer": "deezer://track/530963431",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3480,7 +3480,7 @@
         "it": "applemusic://track/404635994"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=PekwWBHDKik",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/23081",
       "uri_deezer": "deezer://track/604891",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3505,7 +3505,7 @@
         "it": "applemusic://track/404635812"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=kvazBqAlx58",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/495622",
       "uri_deezer": "deezer://track/13177281",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3530,7 +3530,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LoOAtKh5c_I",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/517193",
       "uri_deezer": "deezer://track/964946",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3555,7 +3555,7 @@
         "it": "applemusic://track/46592268"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=8U3DT2nypv8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/218779",
       "uri_deezer": "deezer://track/3658386",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3580,7 +3580,7 @@
         "it": "applemusic://track/1746325119"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=EONn2gj1ngA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/306886",
       "uri_deezer": "deezer://track/682214",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3605,7 +3605,7 @@
         "it": "applemusic://track/1694329463"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=XPJ3HLoZrR8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/207101",
       "uri_deezer": "deezer://track/672050",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3630,7 +3630,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=sCM2iC7ktv0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/85677194",
       "uri_deezer": "deezer://track/2069570817",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3655,7 +3655,7 @@
         "it": "applemusic://track/1518810903"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=VcCV_ALcpss",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3191789",
       "uri_deezer": null,
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3680,7 +3680,7 @@
         "it": "applemusic://track/1195540939"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=1_urvud-Oi0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/69311672",
       "uri_deezer": "deezer://track/140044655",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3705,7 +3705,7 @@
         "it": "applemusic://track/1688287734"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=E18L9Zpos7g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1333016",
       "uri_deezer": "deezer://track/3122822",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3730,7 +3730,7 @@
         "it": "applemusic://track/1030462242"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=8jrQ_3AR_IY",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/50052227",
       "uri_deezer": "deezer://track/851871",
       "fun_fact": "A 1950s classic (1959).",
       "fun_fact_de": "Ein 50er-Klassiker (1959).",
@@ -3755,7 +3755,7 @@
         "it": "applemusic://track/1308704857"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Bhz7GT12oTw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/493487",
       "uri_deezer": "deezer://track/13162831",
       "fun_fact": "A 1950s classic (1960).",
       "fun_fact_de": "Ein 50er-Klassiker (1960).",
@@ -3780,7 +3780,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=NgLd_Ret1Ao",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/100002912",
       "uri_deezer": "deezer://track/86874277",
       "fun_fact": "A 1950s classic (1961).",
       "fun_fact_de": "Ein 50er-Klassiker (1961).",
@@ -3805,7 +3805,7 @@
         "it": "applemusic://track/192966100"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=dCwgYCMq11g",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1309035",
       "uri_deezer": "deezer://track/595128",
       "fun_fact": "A 1950s classic (1962).",
       "fun_fact_de": "Ein 50er-Klassiker (1962).",

@@ -1,6 +1,6 @@
 {
   "name": "100% Français 🇫🇷",
-  "version": "0.2",
+  "version": "0.6",
   "tags": [
     "french",
     "francais",
@@ -30,7 +30,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=qUSiJmZ-YyM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3244922",
       "uri_deezer": "deezer://track/1386410842",
       "alt_artists": [],
       "fun_fact": "Amel Bent, a 2004 'Nouvelle Star' finalist, became one of France's most enduring R&B-pop voices.",
@@ -56,7 +56,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=qyHmeySM14k",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1793719",
       "uri_deezer": "deezer://track/895161",
       "alt_artists": [],
       "fun_fact": "Nèg' Marrons emerged from the 1990s French ragga-rap scene around the Secteur Ä collective.",
@@ -82,7 +82,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=y8p0BxMykqg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/247479816",
       "uri_deezer": "deezer://track/2728101101",
       "alt_artists": [],
       "fun_fact": "Ilona Mitrecey was only 11 when 'Un monde parfait' topped the French chart in 2005.",
@@ -107,8 +107,8 @@
         "nl": null,
         "it": null
       },
-      "uri_youtube_music": "https://music.youtube.com/watch?v=zquFZaHw2TQ",
-      "uri_tidal": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=NpgPZB3tZks",
+      "uri_tidal": "tidal://track/140972048",
       "uri_deezer": "deezer://track/943928002",
       "alt_artists": [],
       "fun_fact": "Bosh's 'Djomb' was one of the biggest French rap hits of 2020, its 'bien ou quoi' hook going viral.",
@@ -134,7 +134,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=anrhMwxkxPQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1319424",
       "uri_deezer": "deezer://track/539702",
       "alt_artists": [],
       "fun_fact": "Jacques Dutronc's 1966 'Les cactus' is a sardonic slice of French 1960s yéyé-pop.",
@@ -160,7 +160,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2_r8KMzeA4o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/4853681",
       "uri_deezer": "deezer://track/823182022",
       "alt_artists": [],
       "fun_fact": "Nino Ferrer wrote 'La Rua Madureira' inspired by his childhood years in Brazil.",
@@ -186,7 +186,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=km6gUbW8s28",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/44020076",
       "uri_deezer": "deezer://track/13025822",
       "alt_artists": [],
       "fun_fact": "La Compagnie Créole turned Caribbean zouk-pop into French party staples in the 1980s.",
@@ -238,7 +238,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=-ojQYUAvqFo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/131178380",
       "uri_deezer": "deezer://track/886919302",
       "alt_artists": [],
       "fun_fact": "Teri Moïse's 'Je serai là' was a gentle 1996 hit from the Los Angeles-born French singer.",
@@ -264,7 +264,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=6c1PAeoaJOo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/164907802",
       "uri_deezer": "deezer://track/4306044",
       "alt_artists": [],
       "fun_fact": "PZK was a French teen-pop duo that scored hits in the late 2000s.",
@@ -290,7 +290,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Vkw4Dqd43nA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/61822606",
       "uri_deezer": "deezer://track/126846197",
       "alt_artists": [],
       "fun_fact": "Keen'V is a Normandy-born singer who built huge streaming numbers with feel-good pop-ragga.",
@@ -305,7 +305,7 @@
       "uri": "spotify:track:4tnPvwaN0aFPgqEV86NLJK",
       "year": 1998,
       "isrc": "FR6V89800242",
-      "uri_apple_music": "applemusic://track/509229466",
+      "uri_apple_music": "applemusic://track/205580615",
       "uri_apple_music_by_region": {
         "us": null,
         "de": null,
@@ -342,7 +342,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=KAOmC5qT02w",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/49210",
       "uri_deezer": "deezer://track/870090",
       "alt_artists": [],
       "fun_fact": "Indochine's 'J'ai demandé à la lune' (2002) was co-written with Mickael Furnon of Mickey 3D.",
@@ -368,7 +368,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=EelX_LwPHbA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/30065658",
       "uri_deezer": "deezer://track/78749541",
       "alt_artists": [],
       "fun_fact": "Carla Bruni's 'Quelqu'un m'a dit' (2002) launched the model's parallel career as a chanson singer.",
@@ -394,7 +394,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=AzaTyxMduH4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3182912",
       "uri_deezer": "deezer://track/4762933",
       "alt_artists": [],
       "fun_fact": "'Pour que tu m'aimes encore' was written by Jean-Jacques Goldman and became Céline Dion's French signature.",
@@ -420,7 +420,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=JthrO7hn2lQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1749507",
       "uri_deezer": "deezer://track/606908",
       "alt_artists": [],
       "fun_fact": "TRUST's 'Antisocial' (1980) is a landmark of French hard rock, later covered by Anthrax.",
@@ -446,7 +446,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Iy1gH00vkMw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/10942498",
       "uri_deezer": "deezer://track/15044236",
       "alt_artists": [],
       "fun_fact": "Sniper were among the most prominent French rap groups of the 2000s.",
@@ -472,7 +472,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=t82VZncQ8e8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/197797581",
       "uri_deezer": "deezer://track/1495554532",
       "alt_artists": [],
       "fun_fact": "Lââm's 'Chanter' was a major 1998 French-pop hit built on a soaring chorus.",
@@ -992,7 +992,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Rwbm281DTYc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/81915298",
       "uri_deezer": "deezer://track/3198384621",
       "alt_artists": [],
       "fun_fact": "Superbus, led by Jennifer Ayache, were one of France's biggest 2000s pop-rock bands.",
@@ -1018,7 +1018,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=6qpvDY6PYx4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1461304",
       "uri_deezer": "deezer://track/3088341",
       "alt_artists": [],
       "fun_fact": "Jean-Louis Aubert co-founded the legendary rock band Téléphone before his solo career.",
@@ -1044,7 +1044,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=adyT-z0MxGs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/5156415",
       "uri_deezer": "deezer://track/3466724961",
       "alt_artists": [],
       "fun_fact": "'Le temps de l'amour' is forever tied to Françoise Hardy and the early-1960s yéyé era.",
@@ -1070,7 +1070,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=oJ_x1yRyATA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/74540806",
       "uri_deezer": "deezer://track/367753611",
       "alt_artists": [],
       "fun_fact": "KOD's 'Chacun sa route' featured on the 1994 soundtrack of the film 'Un indien dans la ville'.",
@@ -1096,7 +1096,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LEremyjd0bk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/122841790",
       "uri_deezer": "deezer://track/811201102",
       "alt_artists": [],
       "fun_fact": "Belgian singer Axelle Red is one of francophone pop's most successful soul-pop voices.",
@@ -1122,7 +1122,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=akFZtK0GVU4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/40838025",
       "uri_deezer": "deezer://track/94400936",
       "alt_artists": [],
       "fun_fact": "La Caution's 'Thé à la menthe' featured in the chase scene of the film 'Ocean's Twelve'.",
@@ -1148,7 +1148,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=KVyZkQTx5xA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/311623788",
       "uri_deezer": "deezer://track/2417379575",
       "alt_artists": [],
       "fun_fact": "Léopold Nord & Vous's 'C'est l'amour' was a cheeky 1987 Belgian-French pop hit.",
@@ -1174,7 +1174,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=f5IruTV-LGQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/77624292",
       "uri_deezer": "deezer://track/350055571",
       "alt_artists": [],
       "fun_fact": "Polo & Pan craft sun-dappled French electronic pop; 'Canopée' became their breakout.",
@@ -1200,7 +1200,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=rtJogxTNa1o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3693611",
       "uri_deezer": "deezer://track/2238913",
       "alt_artists": [],
       "fun_fact": "Alain Bashung's 'Vertige de l'amour' (1981) is a cornerstone of arty French rock.",
@@ -1226,7 +1226,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=U556LvysfjI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/20428164",
       "uri_deezer": null,
       "alt_artists": [],
       "fun_fact": "Colonel Reyel rode a wave of French pop-ragga success in the early 2010s.",
@@ -1252,7 +1252,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=nG1fWSxSqBI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/491206046",
       "uri_deezer": "deezer://track/3786029842",
       "alt_artists": [],
       "fun_fact": "Mecano's 'Une femme avec une femme' was a Spanish band's francophone-era hit on same-sex love.",
@@ -1278,7 +1278,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=Nlw4jOOEgIo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/532993",
       "uri_deezer": "deezer://track/5403417",
       "alt_artists": [],
       "fun_fact": "Patrick Bruel's 'Au café des délices' (1999) nods to his Tunisian roots and childhood.",
@@ -1304,7 +1304,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=2XVHXW2u_98",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/191257375",
       "uri_deezer": "deezer://track/1436238632",
       "alt_artists": [],
       "fun_fact": "Ottawan, of 'D.I.S.C.O.' fame, were a French disco act masterminded by the Daniel Vangarde team.",
@@ -1330,7 +1330,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=BvPszccELCA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/287248955",
       "uri_deezer": "deezer://track/2222984647",
       "alt_artists": [],
       "fun_fact": "PLK is one of the most-streamed French rappers of the early 2020s.",
@@ -1356,7 +1356,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=6GQYdYlwXfw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3970663",
       "uri_deezer": "deezer://track/1093562",
       "alt_artists": [],
       "fun_fact": "Brigitte Bardot's 'La madrague' evokes her famous Saint-Tropez retreat.",
@@ -1371,7 +1371,7 @@
       "uri": "spotify:track:6xs2iOXaBfCeVKeyfo2VNE",
       "year": 2006,
       "isrc": "FRZ017400110",
-      "uri_apple_music": "applemusic://track/1444069780",
+      "uri_apple_music": "applemusic://track/1657882200",
       "uri_apple_music_by_region": {
         "us": null,
         "de": null,
@@ -1382,7 +1382,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=x8l43czQAy4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3985349",
       "uri_deezer": "deezer://track/2541557",
       "alt_artists": [],
       "fun_fact": "Daniel Guichard's 'Mon vieux' is a tear-jerking chanson tribute to a working father.",
@@ -1408,7 +1408,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=lACT1rmoR3E",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/4092273",
       "uri_deezer": "deezer://track/809639",
       "alt_artists": [],
       "fun_fact": "Louisy Joseph rose from the group L5 before her solo French-pop career.",
@@ -1434,7 +1434,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=tZ1ZsDmeOEc",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/67715127",
       "uri_deezer": "deezer://track/137092518",
       "alt_artists": [],
       "fun_fact": "Thierry Pastor's 'Le coup de folie' was a 1982 French new-wave-pop hit.",
@@ -1460,7 +1460,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=gQUOXqyIkj4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/14635447",
       "uri_deezer": "deezer://track/2635262",
       "alt_artists": [],
       "fun_fact": "François Valéry is a prolific French pop songwriter and performer since the 1970s.",
@@ -1486,7 +1486,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=eXF6hDCsPuU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/136556005",
       "uri_deezer": "deezer://track/3121388",
       "alt_artists": [],
       "fun_fact": "Mike Brant's 'Laisse-moi t'aimer' (1970) made the Israeli-French singer an overnight star.",
@@ -1512,7 +1512,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=YN-nTZmiA0M",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/32853312",
       "uri_deezer": "deezer://track/17426509",
       "alt_artists": [],
       "fun_fact": "Philippe Lafontaine's 'Cœur de loup' (1989) is a much-loved francophone pop earworm.",
@@ -1538,7 +1538,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=OohXkUCtVTI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/67676138",
       "uri_deezer": "deezer://track/137047046",
       "alt_artists": [],
       "fun_fact": "'Tu veux ou tu veux pas' is jazzman Marcel Zanini's playful, much-sampled signature.",
@@ -1564,7 +1564,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=cmE_aahc448",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/37677691",
       "uri_deezer": "deezer://track/70785260",
       "alt_artists": [],
       "fun_fact": "Julien Doré, a 2007 'Nouvelle Star' winner, became a major French indie-pop figure.",
@@ -1590,7 +1590,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=tVKaN_H35xs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/81115730",
       "uri_deezer": "deezer://track/429974992",
       "alt_artists": [],
       "fun_fact": "Dadju, brother of Gims, is a leading voice of late-2010s French R&B.",
@@ -2437,7 +2437,6 @@
       "uri": "spotify:track:5In3pvQJM6E1ckhsZS4vzM",
       "year": 2012,
       "isrc": "FR0W61213255",
-      "uri_apple_music": "applemusic://track/1551646999",
       "uri_apple_music_by_region": {
         "us": null,
         "de": null,
@@ -2578,7 +2577,7 @@
         "it": null
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=HXdP15Ubu6M",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/163856865",
       "uri_deezer": "deezer://track/886301",
       "alt_artists": [],
       "fun_fact": "Daniel Balavoine's 'Le chanteur' (1978) is a poignant self-portrait of a singer's dreams.",
@@ -2593,7 +2592,6 @@
       "uri": "spotify:track:1A3jtKS9NSvfOSOXSd9esh",
       "year": 2005,
       "isrc": null,
-      "uri_apple_music": "applemusic://track/1445055672",
       "uri_apple_music_by_region": {
         "us": null,
         "de": null,

@@ -1,6 +1,6 @@
 {
   "name": "2010s & 2020s Hits",
-  "version": "1.5",
+  "version": "1.6",
   "tags": [
     "pop",
     "charts",
@@ -171,15 +171,15 @@
       "year": 2019,
       "isrc": "US2BU1900125",
       "uri": "spotify:track:5w9c2J52mkdntKOmRLeM2m",
-      "uri_apple_music": "applemusic://track/1817038660",
+      "uri_apple_music": "applemusic://track/1449106558",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1817038660",
-        "de": "applemusic://track/1817038660",
-        "gb": "applemusic://track/1817038660",
-        "fr": "applemusic://track/1817038660",
-        "es": "applemusic://track/1817038660",
-        "nl": "applemusic://track/1817038660",
-        "it": "applemusic://track/1817038660"
+        "us": "applemusic://track/1449106558",
+        "de": "applemusic://track/1449106558",
+        "gb": "applemusic://track/1449106558",
+        "fr": "applemusic://track/1449106558",
+        "es": "applemusic://track/1449106558",
+        "nl": "applemusic://track/1449106558",
+        "it": "applemusic://track/1449106558"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=GQwj_FRntp8",
       "uri_tidal": null,
@@ -1874,7 +1874,7 @@
       "fun_fact_de": "Obwohl von 2010 (knapp außerhalb der 2000er), schrieb und produzierte Mike Posner den Song in seinem Studentenwohnheim an der Duke University. Der Gigamesh-Remix verwandelte ihn von einem Blog-Hit in einen weltweiten Erfolg.",
       "fun_fact_es": "Aunque es de 2010, Mike Posner escribió y produjo esta canción en su dormitorio de la Universidad Duke. El remix de Gigamesh la transformó de un éxito de blogs a un hit mundial.",
       "fun_fact_fr": "Bien que sorti en 2010 (juste en dehors des années 2000), Mike Posner a écrit et produit ce titre dans sa chambre d'étudiant à l'université Duke. Le remix de Gigamesh l'a transformé d'un tube de blogs en succès planétaire.",
-      "uri_apple_music": "applemusic://track/383458635",
+      "uri_apple_music": "applemusic://track/1744523906",
       "uri_youtube_music": "https://music.youtube.com/watch?v=Bsr8hb3TPBI",
       "uri_tidal": "tidal://track/4253935",
       "uri_deezer": "deezer://track/6697128",

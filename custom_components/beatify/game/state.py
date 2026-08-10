@@ -43,7 +43,7 @@ from .challenges import (
 from .config import GameStateConfig
 from .highlights import HighlightsTracker
 from .player import PlayerSession
-from .playlist import PlaylistManager
+from .playlist import PlaylistManager, get_playback_uri
 from .player_registry import PlayerRegistry
 from .powerups import PowerUpManager
 from .round_manager import RoundManager
@@ -117,7 +117,11 @@ class GamePhase(Enum):
 # Same-phase forward writes (LOBBY→LOBBY re-init, PLAYING→PLAYING next round)
 # are covered by the same-phase exemption, not by this table.
 _VALID_PHASE_TRANSITIONS: dict[GamePhase, frozenset[GamePhase]] = {
-    GamePhase.LOBBY: frozenset({GamePhase.PLAYING}),
+    # LOBBY -> PAUSED is legitimate: if the very first round's playback fails
+    # (e.g. the speaker is unreachable), the playback-failure handler pauses the
+    # game while it is still in LOBBY (the PLAYING transition never completes).
+    # See state_lifecycle playback-failure path (#768/#1627 speaker fails).
+    GamePhase.LOBBY: frozenset({GamePhase.PLAYING, GamePhase.PAUSED}),
     GamePhase.PLAYING: frozenset({GamePhase.REVEAL, GamePhase.PAUSED}),
     GamePhase.REVEAL: frozenset({GamePhase.PLAYING, GamePhase.PAUSED}),
     GamePhase.PAUSED: frozenset(),
@@ -128,6 +132,11 @@ _VALID_PHASE_TRANSITIONS: dict[GamePhase, frozenset[GamePhase]] = {
 _UNIVERSAL_PHASE_TARGETS: frozenset[GamePhase] = frozenset(
     {GamePhase.LOBBY, GamePhase.END}
 )
+
+# Issue #1725: hard cap on consecutive finale sudden-death playoff rounds so a
+# stubborn tie (e.g. nobody submitting) can never loop forever — once hit, the
+# game falls back to today's shared-winner behavior.
+FINALE_PLAYOFF_MAX_ROUNDS = 5
 
 
 class GameState(
@@ -281,6 +290,10 @@ class GameState(
         # #1012: REVEAL auto-advance (seconds; 0 = manual) + its task handle
         self.reveal_auto_advance: int = 0
         self._auto_advance_task: asyncio.Task | None = None
+        # #1540 review: handle for the LOBBY media-player pre-warm task so a
+        # game reset/recreate can cancel a still-running warm-up (analogous to
+        # _auto_advance_task) instead of orphaning it.
+        self._prewarm_task: asyncio.Task | None = None
         # #1180 Phase 4: title/artist near-miss vote window is open in REVEAL.
         self._title_artist_voting_open: bool = False
         # #1180: server-owned wall-clock deadline (in self._now units) for the
@@ -308,7 +321,7 @@ class GameState(
         )  # Issue #391: prevent GC of fire-and-forget tasks
 
         # Issue #347: Player management delegated to PlayerRegistry
-        self._player_registry = PlayerRegistry()
+        self._player_registry = PlayerRegistry(self._now)
 
         # Issue #464: Round lifecycle delegated to RoundManager
         self._round_manager = RoundManager(self._now)
@@ -325,6 +338,14 @@ class GameState(
 
         # Callback for round end (Story 4.5)
         self._on_round_end: Callable[[], Awaitable[None]] | None = None
+
+        # #1753: callback for the terminal game-end. Wired by the WS handler to
+        # `_finalize_and_end` so the unattended REVEAL auto-advance final round
+        # runs the SAME one-shot (claim + record_game + advance_to_end) as the
+        # two admin sockets — recording stats + firing the podium TTS exactly
+        # once. When unset (REST/service path or tests) the auto-advance falls
+        # back to `advance_to_end` directly.
+        self._on_game_end: Callable[[], Awaitable[None]] | None = None
 
         # Volume control (Story 6.4)
         self.volume_level: float = 0.5  # Default 50%
@@ -343,6 +364,33 @@ class GameState(
 
         # Issue #442: Closest Wins mode
         self.closest_wins_mode: bool = False
+
+        # Issue #1726: Ramp-up (difficulty-arc) song ordering
+        self.rampup_order_enabled: bool = False
+
+        # Issue #827: Sudden Death mode (last-place player eliminated per round)
+        self.sudden_death_mode: bool = False
+
+        # Issue #1725: Finale ×2 (double the last round's score) + finale
+        # sudden-death tiebreaker (playoff among tied leaders when songs remain).
+        self.finale_double_enabled: bool = False
+        self.finale_tiebreaker_enabled: bool = False
+        # Runtime bookkeeping for the tiebreaker playoff (reset per game).
+        self._finale_playoff_rounds: int = 0
+        self._finale_playoff_active: bool = False
+
+        # Issue #1724: Comeback Token — opt-in catch-up steal for trailing
+        # players after the halfway round.
+        self.comeback_token_enabled: bool = False
+
+        # Issue #1727: Difficulty-aware bet scaling — the won-bet payout scales
+        # with difficulty (easy 2x / normal 3x / hard 5x) instead of a flat 3x,
+        # so betting stays worthwhile on Hard. Opt-in; default off = flat 3x.
+        self.difficulty_bet_scaling_enabled: bool = False
+
+        # Issue #1665: Sabotage powerup — one token per player per game, spent on
+        # an opponent who is still guessing. Opt-in; default off = no tokens.
+        self.sabotage_enabled: bool = False
 
         # Issue #477: Admin spectator WebSocket (host without being a player)
         self._admin_ws: web.WebSocketResponse | None = None
@@ -548,6 +596,22 @@ class GameState(
         """
         self._on_round_end = callback
 
+    def set_game_end_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
+        """Set the terminal game-end callback (#1753).
+
+        The WS handler wires this to ``_finalize_and_end`` so the unattended
+        REVEAL auto-advance final round records stats + runs the podium ceremony
+        through the SAME one-shot claim as the two admin sockets, instead of
+        calling ``advance_to_end`` directly (which skipped ``record_game`` and
+        the game-end claim).
+
+        Args:
+            callback: Async function running the finalize + record + end-ceremony
+                one-shot for the current game.
+
+        """
+        self._on_game_end = callback
+
     def set_metadata_update_callback(
         self, callback: Callable[[dict[str, Any]], Awaitable[None]]
     ) -> None:
@@ -581,6 +645,13 @@ class GameState(
             self._challenge_manager if self.title_artist_mode else None
         )
         for player in self.players.values():
+            # #1748: an eliminated player (Sudden Death) is out of the game — do
+            # not accumulate any further score for them. Their frozen totals must
+            # stand, so skip the per-player scoring pass entirely. (The intro
+            # speed-rank pool in _score_intro_round independently excludes
+            # eliminated players so survivors' ranks are unaffected.)
+            if player.eliminated:
+                continue
             try:
                 ScoringService.score_player_round(
                     player,
@@ -596,6 +667,7 @@ class GameState(
                     streak_achievements=self.streak_achievements,
                     bet_tracking=self.bet_tracking,
                     title_artist_manager=title_artist_manager,
+                    difficulty_bet_scaling_enabled=self.difficulty_bet_scaling_enabled,
                 )
             except (KeyError, AttributeError, TypeError, ValueError) as err:
                 _LOGGER.error(
@@ -605,6 +677,24 @@ class GameState(
                     self.round,
                     err,
                 )
+                continue
+            # Issue #1725: Finale ×2 — on the last round, double the round score
+            # so a trailing player can still swing the game. Applied here (right
+            # after the per-player pass, before Closest-Wins zeroing in
+            # _score_round) so the extra half survives Closest-Wins the same way
+            # the original half does: for a non-closest player Closest-Wins later
+            # subtracts the (now doubled) round_score back out to 0, and the
+            # closest player keeps the doubled total. Only the year/title-artist
+            # accuracy component is doubled (round_score); streak/artist/movie/
+            # intro bonuses are left single. No-op for a missed round
+            # (round_score 0) or when the flag is off / it isn't the last round,
+            # so normal scoring stays byte-for-byte unchanged.
+            if self.finale_double_enabled and self.last_round and player.round_score:
+                bonus = player.round_score
+                player.score += bonus
+                player.round_score += bonus
+                if player.round_scores:
+                    player.round_scores[-1] = player.round_score
 
     async def _fetch_metadata_async(self, uri: str) -> None:
         """
@@ -631,9 +721,7 @@ class GameState(
             # Artist/title are authoritative from playlist data — media player
             # state can report stale/wrong track info (especially Sonos + Spotify).
             if self.current_song:
-                current_uri = self.current_song.get(
-                    "_resolved_uri"
-                ) or self.current_song.get("uri")
+                current_uri = get_playback_uri(self.current_song)
                 if current_uri == uri:
                     self.current_song["album_art"] = metadata.get(
                         "album_art", "/beatify/static/img/no-artwork.svg"
@@ -724,6 +812,23 @@ class GameState(
         # Phase 2: scoring pass (year/title-artist), closest-wins, round_results
         self._score_round(correct_year)
 
+        # Issue #827: Sudden Death — after scoring, eliminate the lowest
+        # round-delta survivor (from round 2 on). Runs before REVEAL so the
+        # elimination is part of the reveal broadcast.
+        #
+        # #1747: in the deferred title/artist near-miss path, _score_round has
+        # NOT scored anyone yet (per-player scores depend on the post-vote-window
+        # near-miss resolution). Running elimination now would read stale
+        # round_score / round-delta values and cut the wrong player. Defer it too
+        # — _finalize_title_artist_window runs it once after the deferred scoring
+        # pass. Only the non-deferred path eliminates here.
+        if not self._title_artist_scoring_deferred():
+            self._apply_sudden_death_elimination()
+            # Issue #1724: after the halfway round's scores are final, hand the
+            # trailing third a one-time catch-up steal. Deferred to the
+            # title/artist path (below) when scoring isn't final yet.
+            self._maybe_grant_comeback_tokens()
+
         # Phase 3: highlights, round analytics, persisted song-result stats
         await self._record_round_stats(correct_year)
 
@@ -746,10 +851,321 @@ class GameState(
                 _LOGGER.debug("Round_end callback completed successfully")
             except (ConnectionError, OSError, TypeError) as err:
                 _LOGGER.error("Round_end callback failed: %s", err)
+            except Exception:  # noqa: BLE001 — a broadcast error must not strand REVEAL
+                # #1575: any unexpected error in the broadcast callback must not
+                # escape — the round has already transitioned to REVEAL above, so
+                # swallowing it here keeps the game state consistent and avoids a
+                # frozen client. Log with traceback so the failure stays visible.
+                _LOGGER.error(
+                    "Round_end callback raised unexpectedly — REVEAL state may not "
+                    "have been broadcast (round %d)",
+                    self.round,
+                    exc_info=True,
+                )
         else:
             _LOGGER.warning(
                 "No round_end callback set - REVEAL state will not be broadcast!"
             )
+
+    # ------------------------------------------------------------------
+    # Sudden Death mode (Issue #827)
+    # ------------------------------------------------------------------
+
+    def non_eliminated_players(self) -> list[PlayerSession]:
+        """Players still in the game (not yet eliminated). Issue #827."""
+        return [p for p in self.players.values() if not p.eliminated]
+
+    def _title_artist_scoring_deferred(self) -> bool:
+        """Whether this round's scoring is deferred past the vote window (#1180).
+
+        In title/artist mode with vote-eligible near-misses, per-player scoring
+        depends on the final near-miss resolution, which only happens after the
+        REVEAL vote window closes — so ``_score_round`` skips the main scoring
+        loop and ``_finalize_title_artist_window`` runs the single post-resolve
+        pass instead. Single source of truth for that predicate so the scoring
+        pass (``_score_round``) and the Sudden Death elimination gate
+        (``_end_round_unlocked``, #1747) can never disagree on whether scores are
+        final yet.
+        """
+        return self.title_artist_mode and self.has_near_misses()
+
+    @staticmethod
+    def _sudden_death_round_delta(player: PlayerSession) -> int:
+        """Full leaderboard delta a player earned this round (#1751).
+
+        The Sudden Death elimination metric. Bare ``round_score`` is only the
+        accuracy×speed×bet component; the round gain the TV actually shows also
+        includes the streak, artist, movie and intro bonuses — exactly the sum
+        ``score_player_round`` adds to ``player.score``. Comparing that same sum
+        here keeps the OUT call consistent with the visible leaderboard delta: a
+        player who scored 0 on the year but won the movie quiz is no longer cut
+        ahead of a survivor whose leaderboard actually moved less.
+        """
+        return (
+            player.round_score
+            + player.streak_bonus
+            + player.artist_bonus
+            + player.movie_bonus
+            + player.intro_bonus
+        )
+
+    @staticmethod
+    def _sudden_death_order_key(
+        player: PlayerSession,
+    ) -> tuple[tuple[bool, int], int, tuple[bool, float]]:
+        """Rank a player from *least* to *most* eliminable (#1750).
+
+        Used with ``max()`` to pick the loser among the players tied for the
+        lowest round delta. Closest-Wins zeros every non-closest submitter's
+        round_score, so from round 2 the tie for last is essentially everyone
+        but the closest — breaking it purely by submission speed would eliminate
+        an accurate-but-deliberate player ahead of a wildly-wrong instant
+        tapper. Mirroring #1721 (accuracy survives Closest-Wins voiding),
+        accuracy decides first. Higher tuple = more eliminable:
+
+          1. accuracy — a non-submitter (``years_off`` is None) is least
+             accurate; otherwise a larger ``years_off`` is worse. (``years_off``
+             is None for everyone in title/artist mode too, so this key ties out
+             there and the next one decides.)
+          2. base_score — the mode-agnostic accuracy signal (year accuracy score
+             or title+artist points); lower is worse, so negate for ``max``.
+          3. submission speed — a non-submitter is slowest of all, then the
+             latest ``submission_time`` loses.
+        """
+        return (
+            (player.years_off is None, player.years_off or 0),
+            -player.base_score,
+            (player.submission_time is None, player.submission_time or 0.0),
+        )
+
+    def _apply_sudden_death_elimination(self) -> list[str]:
+        """Eliminate the lowest round-delta survivor. Issue #827.
+
+        Runs after scoring, from round 2 onward (round 1 never eliminates).
+        Among the eligible survivors, the player with the lowest *round delta*
+        (this round's full leaderboard gain, not cumulative — #1751) is
+        eliminated. A tie for last is broken by accuracy first, then submission
+        speed (#1750): the least-accurate / slowest submitter is out, and a
+        non-submitter counts as slowest of all. Mid-round joiners get one grace
+        round (#1752) — they are excluded from the candidate pool for the round
+        they joined. Returns the names eliminated this round (empty when nothing
+        happens).
+
+        Caller holds ``_score_lock`` (invoked from ``_end_round_unlocked`` for
+        the normal path, or ``_finalize_title_artist_window`` for the deferred
+        title/artist near-miss path — #1747).
+        """
+        if not self.sudden_death_mode or self.round < 2:
+            return []
+
+        survivors = self.non_eliminated_players()
+        # Never eliminate the last player standing — the auto-end guard in
+        # start_round carries a 1-survivor game to END instead.
+        if len(survivors) <= 1:
+            return []
+
+        # #1752: a mid-round joiner never played the round they joined (missed →
+        # round_score 0, submission_time None), which would make them prime
+        # elimination fodder in a round they never saw. Grant one grace round by
+        # excluding them from this round's candidate pool.
+        candidates = [p for p in survivors if p.joined_round != self.round]
+        if not candidates:
+            return []
+
+        # #1751: compare the full round delta, not bare round_score.
+        min_delta = min(self._sudden_death_round_delta(p) for p in candidates)
+        tied_for_last = [
+            p for p in candidates if self._sudden_death_round_delta(p) == min_delta
+        ]
+
+        # #1750: among the players tied for last, break by accuracy first, then
+        # submission speed (a non-submitter counts as slowest of all).
+        loser = max(tied_for_last, key=self._sudden_death_order_key)
+        loser.eliminated = True
+        loser.eliminated_round = self.round
+        _LOGGER.info(
+            "Sudden Death: eliminated %s in round %d (round delta %d)",
+            loser.name,
+            self.round,
+            self._sudden_death_round_delta(loser),
+        )
+        return [loser.name]
+
+    # ------------------------------------------------------------------
+    # Comeback Token (Issue #1724)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _halfway_round(total_rounds: int) -> int:
+        """Round number after which comeback tokens are granted (#1724).
+
+        The midpoint round: ``ceil(total_rounds / 2)``. For an even game
+        (10 rounds) that is round 5 — half the game still remains. For an odd
+        game (9 rounds) that is round 5, the true middle round, leaving rounds
+        6-9 to spend the token. Always strictly less than ``total_rounds`` for
+        ``total_rounds >= 2``, so trailing players get at least one round of
+        runway; a 1-round game has no meaningful halfway and never grants.
+        """
+        return (total_rounds + 1) // 2
+
+    def _maybe_grant_comeback_tokens(self) -> list[str]:
+        """Grant a one-time catch-up steal to the trailing third (#1724).
+
+        Fires exactly once per game — right after the halfway round's scores
+        are final (see :meth:`_halfway_round`). Rubber-banding: the Steal
+        power-up normally unlocks at a 3-streak, i.e. it is handed to players
+        already winning, while its effect helps strugglers. The Comeback Token
+        instead hands a steal to the players who are behind.
+
+        Bottom third: the ``floor(n / 3)`` lowest-ranked of the still-active
+        (non-eliminated) players, ranked by cumulative score descending with
+        name as a stable tiebreak — the same ordering the leaderboard renders,
+        so the cut-line is consistent and deterministic. A player already
+        holding or having spent a steal is skipped (``unlock_steal`` returns
+        False), and each player is granted at most once per game via the
+        ``comeback_token_granted`` flag — even if they stay in the bottom third
+        (defensive: the trigger already fires only once).
+
+        No-op — normal behavior byte-for-byte unchanged — when the setting is
+        off, it is not the halfway round, the game is too short to have a
+        meaningful halfway (``total_rounds < 2``), or the active pool is too
+        small for a non-empty bottom third (``n < 3``).
+
+        Returns the names granted a token this call (empty when nothing
+        happens). Caller holds ``_score_lock`` (same contract as
+        :meth:`_apply_sudden_death_elimination`).
+        """
+        if not self.comeback_token_enabled:
+            return []
+        if self.total_rounds < 2:
+            return []
+        if self.round != self._halfway_round(self.total_rounds):
+            return []
+
+        # Rank the still-active players; eliminated players (Sudden Death) are
+        # out of the game and cannot use a steal, so they never count toward or
+        # receive a token.
+        active = self.non_eliminated_players()
+        third = len(active) // 3
+        if third <= 0:
+            return []
+
+        ranked = sorted(active, key=lambda p: (-p.score, p.name))
+        bottom = ranked[-third:]
+
+        granted: list[str] = []
+        for player in bottom:
+            if player.comeback_token_granted:
+                continue
+            # unlock_steal skips players who already have / have used a steal,
+            # so a bottom-third player who earned a steal via streak keeps it
+            # and is not double-counted.
+            if player.unlock_steal():
+                player.comeback_token_granted = True
+                granted.append(player.name)
+
+        if granted:
+            _LOGGER.info(
+                "Comeback Token: granted a catch-up steal to %s after round %d "
+                "(halfway of %d)",
+                ", ".join(granted),
+                self.round,
+                self.total_rounds,
+            )
+        return granted
+
+    def set_sudden_death(self, enabled: bool) -> bool:
+        """Toggle Sudden Death mid-game from the reveal screen. Issue #827.
+
+        Returns the new state. Turning it ON arms eliminations starting next
+        round; the current round's results stand. Turning it OFF stops further
+        cuts but already-eliminated players stay out.
+        """
+        self.sudden_death_mode = bool(enabled)
+        _LOGGER.info(
+            "Sudden Death mode set to %s (live toggle)", self.sudden_death_mode
+        )
+        return self.sudden_death_mode
+
+    # ------------------------------------------------------------------
+    # Finale sudden-death tiebreaker (Issue #1725)
+    # ------------------------------------------------------------------
+
+    async def maybe_start_finale_playoff(self) -> bool:
+        """Arm + start a finale tiebreaker playoff round, if one is warranted.
+
+        Called at the game-end decision point (the ``_finalize_and_end`` WS
+        chokepoint) BEFORE stats are finalized. When the game is about to end on
+        a **tie for first** while **unplayed songs remain** and the host opted
+        in (``finale_tiebreaker_enabled``), rather than declaring a shared winner
+        this eliminates every non-tied player (reusing the #1472 ``eliminated``
+        flag / :meth:`non_eliminated_players`) and starts one more round among
+        ONLY the tied leaders. The tied players' scores then diverge and the next
+        end-check resolves to a single winner.
+
+        Returns ``True`` when a playoff round was started (the game continues in
+        PLAYING and the caller should re-broadcast instead of finalizing), or
+        ``False`` — keeping today's shared-winner behavior — in every other case:
+
+        * the setting is off,
+        * we are not at a genuine round boundary (only fires from REVEAL, where
+          the just-played round's scores are final),
+        * there is no tie for first (a single clear winner),
+        * ``0`` unplayed songs remain (a naturally-completed playlist → shared
+          winner, exactly the issue's fallback), or
+        * the ``FINALE_PLAYOFF_MAX_ROUNDS`` recursion cap is hit (a stubborn tie
+          falls back to a shared winner instead of looping forever).
+
+        Interacts cleanly with Sudden Death: :meth:`compute_winners` already
+        ranks survivors-first when Sudden Death has cut anyone, so the playoff
+        runs among the tied *survivors*; during the playoff round the normal
+        per-round Sudden-Death cut (if enabled) still applies and simply helps
+        break the tie faster.
+        """
+        if not self.finale_tiebreaker_enabled:
+            return False
+        # Only from REVEAL: the round that just ended has final scores, so a tie
+        # detected now is real. Force-ending from PLAYING (a round mid-flight)
+        # or re-entering from END is deliberately not a playoff trigger.
+        if self.phase != GamePhase.REVEAL:
+            return False
+        if self._finale_playoff_rounds >= FINALE_PLAYOFF_MAX_ROUNDS:
+            _LOGGER.info(
+                "Finale tiebreaker: playoff cap (%d) reached — shared winner stands",
+                FINALE_PLAYOFF_MAX_ROUNDS,
+            )
+            return False
+        if self.songs_remaining < 1:
+            return False
+        winners, _top = self.compute_winners()
+        if len(winners) <= 1:
+            return False
+
+        # Arm the playoff: freeze everyone who is NOT tied for first out of the
+        # game (reusing the Sudden-Death `eliminated` flag so scoring skips them
+        # and the leaderboard renders them below the cut-line). Leave
+        # `eliminated_round` unset so they are not mislabelled as a Sudden-Death
+        # "eliminated this round" cut.
+        winner_names = {w.name for w in winners}
+        for player in self.players.values():
+            if player.name not in winner_names and not player.eliminated:
+                player.eliminated = True
+        self._finale_playoff_rounds += 1
+        self._finale_playoff_active = True
+        _LOGGER.info(
+            "Finale tiebreaker: %d-way tie for first (%s) with songs remaining — "
+            "starting playoff round %d (of max %d)",
+            len(winners),
+            ", ".join(sorted(winner_names)),
+            self._finale_playoff_rounds,
+            FINALE_PLAYOFF_MAX_ROUNDS,
+        )
+        started = await self.start_round()
+        if not started:
+            # start_round couldn't launch (e.g. it paused / exhausted under us).
+            # Drop the active flag; the caller will finalize as usual.
+            self._finale_playoff_active = False
+        return started
 
     def _schedule_reveal_advance(self) -> None:
         """Schedule the REVEAL vote window or auto-advance task (#1272).
@@ -830,4 +1246,5 @@ class GameState(
             movie_quiz_enabled=self.movie_quiz_enabled,
             intro_mode_enabled=self.intro_mode_enabled,
             title_artist_mode_enabled=self.title_artist_mode,
+            sudden_death_mode_enabled=self.sudden_death_mode,
         )

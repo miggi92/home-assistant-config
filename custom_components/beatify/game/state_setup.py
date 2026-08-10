@@ -116,8 +116,15 @@ class GameSetupMixin:
         movie_quiz_enabled: bool = True,
         intro_mode_enabled: bool = False,
         closest_wins_mode: bool = False,
+        sudden_death_mode: bool = False,
         title_artist_mode: bool = False,
         reveal_auto_advance: int = 0,
+        rampup_order_enabled: bool = False,
+        finale_double_enabled: bool = False,
+        finale_tiebreaker_enabled: bool = False,
+        comeback_token_enabled: bool = False,
+        difficulty_bet_scaling_enabled: bool = False,
+        sabotage_enabled: bool = False,
     ) -> dict[str, Any]:
         """
         Create a new game session.
@@ -136,6 +143,19 @@ class GameSetupMixin:
             intro_mode_enabled: Whether to enable intro mode (~20% random rounds)
             closest_wins_mode: Whether only the closest guess(es) earn points
             title_artist_mode: Whether title/artist guessing replaces the year guess
+            rampup_order_enabled: Whether to order songs into a difficulty arc
+                instead of uniform random (#1726). Opt-in; default False.
+            finale_double_enabled: Whether the last round's score is doubled
+                (#1725). Opt-in; default False.
+            finale_tiebreaker_enabled: Whether an end-game tie for first with
+                songs remaining triggers a sudden-death playoff (#1725). Opt-in;
+                default False.
+            comeback_token_enabled: Whether bottom-third players are handed a
+                one-time catch-up steal after the halfway round (#1724). Opt-in;
+                default False.
+            difficulty_bet_scaling_enabled: Whether the won-bet payout scales
+                with difficulty (easy 2x / normal 3x / hard 5x) instead of a flat
+                3x (#1727). Opt-in; default False = flat 3x, unchanged.
 
         Returns:
             dict with game_id, join_url, song_count, phase
@@ -171,8 +191,12 @@ class GameSetupMixin:
         # _detect_storefront is read-only, so it is safe to run pre-mutation.
         storefront = self._detect_storefront()
 
-        # Initialize PlaylistManager for song selection (Epic 4, Story 17.2: with provider)
-        playlist_manager = PlaylistManager(songs, provider, storefront=storefront)
+        # Initialize PlaylistManager for song selection (Epic 4, Story 17.2: with
+        # provider). #1726: when ramp-up ordering is opted in, the manager also
+        # gets a difficulty-lookup so it can arrange the songs into an arc.
+        playlist_manager = self._build_playlist_manager(
+            songs, provider, storefront, rampup_order_enabled
+        )
 
         # #709: if the chosen provider has zero playable songs, fail fast with
         # a clear error rather than silently starting a game that will stall.
@@ -281,6 +305,21 @@ class GameSetupMixin:
 
         # Issue #442: Set closest wins mode
         self.closest_wins_mode = closest_wins_mode
+        # Issue #1726: Set ramp-up (difficulty-arc) ordering mode
+        self.rampup_order_enabled = rampup_order_enabled
+        # Issue #827: Set sudden death mode
+        self.sudden_death_mode = sudden_death_mode
+        # Issue #1725: Finale ×2 + finale sudden-death tiebreaker (opt-in)
+        self.finale_double_enabled = finale_double_enabled
+        self.finale_tiebreaker_enabled = finale_tiebreaker_enabled
+        self._finale_playoff_rounds = 0
+        self._finale_playoff_active = False
+        # Issue #1724: Comeback Token — opt-in catch-up steal for trailing players
+        self.comeback_token_enabled = comeback_token_enabled
+        # Issue #1727: Difficulty-aware bet scaling (opt-in; default flat 3x)
+        self.difficulty_bet_scaling_enabled = difficulty_bet_scaling_enabled
+        # Issue #1665: Sabotage powerup (opt-in; default off = no tokens)
+        self.sabotage_enabled = sabotage_enabled
         self.is_intro_round = False
         self.intro_stopped = False
         self._round_manager._intro_round_start_time = None
@@ -291,6 +330,13 @@ class GameSetupMixin:
         self.cancel_timer()
 
         _LOGGER.info("Game created: %s with %d songs", self.game_id, len(songs))
+
+        # #1540: pre-warm the MediaPlayerService during LOBBY so Round 1 doesn't
+        # pay the construction + cold first-call (preflight) latency that #803
+        # tracked. Fire-and-forget / best-effort — must NOT block create_game.
+        # _ensure_media_player_service() stays the idempotent fallback if this
+        # didn't run (or hasn't finished) by the time the first round starts.
+        self.schedule_media_player_prewarm()
 
         return {
             "game_id": self.game_id,
@@ -349,6 +395,10 @@ class GameSetupMixin:
         # is still REVEAL there) and trigger the next song after the game ended.
         # advance_to_end() already does this; the HTTP/force-end path lands here.
         self._cancel_auto_advance()
+        # #1540 review: cancel a still-running LOBBY media-player pre-warm so it
+        # can't keep probing the speaker after the game ended (analogous to the
+        # auto-advance cancel above).
+        self._cancel_prewarm()
         # #1358: bump the game-identity epoch synchronously, BEFORE the awaits
         # below (same rationale as the _cancel_auto_advance above). A start_round
         # that's parked in play_song and resumes anytime during this teardown —
@@ -405,10 +455,21 @@ class GameSetupMixin:
             "movie_quiz_enabled": self.movie_quiz_enabled,
             "intro_mode_enabled": self.intro_mode_enabled,
             "closest_wins_mode": self.closest_wins_mode,
+            "sudden_death_mode": self.sudden_death_mode,
             "title_artist_mode": self.title_artist_mode,
+            "rampup_order_enabled": self.rampup_order_enabled,  # #1726
+            "finale_double_enabled": self.finale_double_enabled,  # #1725
+            "finale_tiebreaker_enabled": self.finale_tiebreaker_enabled,  # #1725
+            "comeback_token_enabled": self.comeback_token_enabled,  # #1724
+            "difficulty_bet_scaling_enabled": self.difficulty_bet_scaling_enabled,  # #1727
+            "sabotage_enabled": self.sabotage_enabled,  # #1665
         }
 
         self._reset_game_internals()
+        # #1725: the playoff counters are runtime state, not config fields, so
+        # _reset_game_internals doesn't touch them — clear them for the rematch.
+        self._finale_playoff_rounds = 0
+        self._finale_playoff_active = False
 
         # Restore preserved settings for seamless rematch
         for attr, value in preserved.items():
@@ -418,10 +479,12 @@ class GameSetupMixin:
         # #808 follow-up: re-detect storefront for the rematch (in case
         # HA's country config changed) and re-attach it.
         self.storefront = self._detect_storefront()
-        self._playlist_manager = PlaylistManager(
+        # #1726: rebuild with the same ramp-up choice the host made at create.
+        self._playlist_manager = self._build_playlist_manager(
             preserved["songs"],
             preserved["provider"],
-            storefront=self.storefront,
+            self.storefront,
+            preserved["rampup_order_enabled"],
         )
         # #1377: derive total_rounds from the filtered/deduped playable pool
         # (exactly like create_game, state_setup.py), not the raw song list.
@@ -452,6 +515,38 @@ class GameSetupMixin:
             len(self.players),
             self.total_rounds,
             self.game_id,
+        )
+
+    def _build_playlist_manager(
+        self,
+        songs: list[dict[str, Any]],
+        provider: str,
+        storefront: str | None,
+        rampup_order_enabled: bool,
+    ) -> PlaylistManager:
+        """Construct a :class:`PlaylistManager`, wiring ramp-up ordering (#1726).
+
+        Shared by ``create_game`` and ``rematch_game`` so both build the manager
+        the same way. When ``rampup_order_enabled`` is True a difficulty-lookup
+        (backed by the connected StatsService via ``get_song_difficulty``) is
+        passed so the manager can arrange songs into a difficulty arc; otherwise
+        the manager keeps its historic uniform-random behaviour untouched.
+        """
+        from .playlist import SONG_ORDER_RAMPUP  # noqa: PLC0415
+
+        if not rampup_order_enabled:
+            return PlaylistManager(songs, provider, storefront=storefront)
+
+        def _difficulty_lookup(uri: str) -> int | None:
+            rating = self.get_song_difficulty(uri)
+            return rating["stars"] if rating else None
+
+        return PlaylistManager(
+            songs,
+            provider,
+            storefront=storefront,
+            song_order=SONG_ORDER_RAMPUP,
+            difficulty_lookup=_difficulty_lookup,
         )
 
     def _detect_storefront(self) -> str | None:

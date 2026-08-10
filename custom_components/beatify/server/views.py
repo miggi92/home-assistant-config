@@ -25,21 +25,22 @@ from custom_components.beatify.game.state import GamePhase
 from custom_components.beatify.game.playlist import async_discover_playlists
 from custom_components.beatify.server.base import (
     RateLimitMixin,
-    _apply_cache_tokens,
     _apply_html_lang,
     _get_html,
     _get_version,
     _json_error,
     _read_file,
+    async_apply_cache_tokens,
 )
 from custom_components.beatify.server.companion_auth import is_authorized_http
 from custom_components.beatify.server.serializers import (
     build_status_response,
 )
+from custom_components.beatify.server.setup_state import read_setup, write_setup
 from custom_components.beatify.services.lights import PartyLightsService
 from custom_components.beatify.services.media_player import (
     album_art_signature_is_valid,
-    async_get_media_players,
+    async_get_media_players_with_remap,
 )
 
 # Re-export game views
@@ -48,6 +49,7 @@ from custom_components.beatify.server.game_views import (  # noqa: F401
     ForceResetView,
     GameStatusView,
     RematchGameView,
+    SetSuddenDeathView,
     StartGameplayView,
     StartGameView,
 )
@@ -56,6 +58,11 @@ from custom_components.beatify.server.game_views import (  # noqa: F401
 from custom_components.beatify.server.playlist_views import (  # noqa: F401
     PlaylistRequestsView,
     SavePlaylistView,
+)
+
+# Re-export mix view (#1538 — Smart Playlist Mixer)
+from custom_components.beatify.server.mix_views import (  # noqa: F401
+    MixPlaylistView,
 )
 
 # Re-export stats views
@@ -119,7 +126,9 @@ class AdminView(HomeAssistantView):
             _LOGGER.error("Admin page not found: %s", html_path)
             return web.Response(text="Admin page not found", status=500)
         return _html_response(
-            _apply_html_lang(_apply_cache_tokens(html_content, self.hass), self.hass)
+            _apply_html_lang(
+                await async_apply_cache_tokens(self.hass, html_content), self.hass
+            )
         )
 
 
@@ -142,7 +151,9 @@ class LauncherView(HomeAssistantView):
             _LOGGER.error("Launcher page not found: %s", html_path)
             return web.Response(text="Launcher page not found", status=500)
         return _html_response(
-            _apply_html_lang(_apply_cache_tokens(html_content, self.hass), self.hass)
+            _apply_html_lang(
+                await async_apply_cache_tokens(self.hass, html_content), self.hass
+            )
         )
 
 
@@ -165,7 +176,9 @@ class PlayerView(HomeAssistantView):
             _LOGGER.error("Player page not found: %s", html_path)
             return web.Response(text="Player page not found", status=500)
         return _html_response(
-            _apply_html_lang(_apply_cache_tokens(html_content, self.hass), self.hass)
+            _apply_html_lang(
+                await async_apply_cache_tokens(self.hass, html_content), self.hass
+            )
         )
 
 
@@ -203,6 +216,14 @@ _REFRESH_COOKIE = "beatify_refresh"
 # refresh tokens are long-lived. 30 days lines up with HA's own refresh-
 # token rotation window and means a user who hits the admin once a month
 # never has to re-do the full OAuth dance.
+#
+# #1932: this is 30 days of INACTIVITY, not 30 days of existence. The
+# callback sets the cookie and every successful /beatify/auth/refresh
+# re-issues it with a fresh Max-Age, so the clock restarts on each use.
+# Before that, the cookie died 30 days after the FIRST login no matter how
+# often the user came back — which is the opposite of what the paragraph
+# above promises, and put every install on a 30-day fuse back through the
+# full OAuth round trip.
 _REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
 
 
@@ -444,10 +465,7 @@ class BeatifyAuthRefreshView(HomeAssistantView):
             return response
 
         # #1369: the fresh access token is returned ONLY in the JSON body —
-        # the frontend caches it in memory, never in a cookie. HA's
-        # refresh-token grant does NOT return a new refresh_token (the
-        # long-lived one stays in the HttpOnly cookie), so no Set-Cookie is
-        # needed here beyond wiping any legacy JS-readable access cookie.
+        # the frontend caches it in memory, never in a cookie.
         response = web.json_response(
             {
                 "access_token": parsed["access_token"],
@@ -458,8 +476,13 @@ class BeatifyAuthRefreshView(HomeAssistantView):
         _set_session_cookies(
             response,
             request,
-            # Don't overwrite the long-lived refresh cookie.
-            refresh_token=None,
+            # #1932: roll the refresh cookie. HA's refresh-token grant does not
+            # mint a new refresh_token, so this re-issues the SAME value the
+            # request arrived with — the point is the fresh Max-Age. Without it
+            # the cookie expired 30 days after the first login however active
+            # the user was, and the next page load fell all the way back to the
+            # /auth/authorize round trip.
+            refresh_token=refresh_token,
         )
         return response
 
@@ -494,7 +517,7 @@ class SwJsView(HomeAssistantView):
         # waiting for HTTP cache to expire on the SW bootstrap itself. Tokens
         # ({{ASSET_VER}}) are substituted at serve time (#1266).
         return web.Response(
-            text=_apply_cache_tokens(content, self.hass),
+            text=await async_apply_cache_tokens(self.hass, content),
             content_type="application/javascript",
             headers=_NO_CACHE_HEADERS,
         )
@@ -518,18 +541,35 @@ class StatusView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:  # noqa: ARG002
         """Return current status as JSON."""
-        # Fetch media players fresh (not cached) - Story 8-2
-        media_players = await async_get_media_players(self.hass)
+        # Fetch media players fresh (not cached) - Story 8-2.
+        # #1704: the player list and the native→MA twin remap (#1627: lets the
+        # admin frontend heal a stale saved selection pointing at a now-hidden
+        # native twin) come from a SINGLE entity-registry walk instead of two
+        # back-to-back walks (async_get_media_players +
+        # async_get_native_twin_remap), via the #1739 combined helper.
+        (
+            media_players,
+            media_player_twin_remap,
+        ) = await async_get_media_players_with_remap(self.hass)
 
-        # Fetch playlists fresh (not cached) - Issue #135
+        # Discover playlists (#1704: memoised — reuses the parsed corpus unless a
+        # file changed on disk; the heavy json.loads/validate/count now runs in
+        # the executor, not on the event loop, on every /api/status request).
         playlists = await async_discover_playlists(self.hass)
         self.hass.data.setdefault(DOMAIN, {})["playlists"] = playlists
+
+        # #1663: server-side "setup complete" flag + saved picks so a configured
+        # instance stays configured on a new device/browser. Disk read offloaded
+        # to the executor (blocking I/O off the event loop).
+        saved_setup = await self.hass.async_add_executor_job(read_setup, self.hass)
 
         status = build_status_response(
             self.hass,
             version=_get_version(self.hass),
             media_players=media_players,
             playlists=playlists,
+            media_player_twin_remap=media_player_twin_remap,
+            saved_setup=saved_setup,
         )
 
         return web.json_response(status)
@@ -563,6 +603,52 @@ class CapabilitiesView(HomeAssistantView):
                 "tts_service_count": len(tts_services),
             }
         )
+
+
+class SetupView(HomeAssistantView):
+    """Persist the host's "setup complete" blob server-side (#1663).
+
+    The first-run wizard stores the host's picks in ``localStorage`` only, so a
+    configured instance looks unconfigured on a new device. The admin frontend
+    POSTs its setup blob here after the wizard finishes / a game starts; the
+    blob is stored verbatim and surfaced back via ``/beatify/api/status``
+    (``setup_complete`` + ``saved_setup``) so any device can re-hydrate it.
+    """
+
+    url = "/beatify/api/setup"
+    name = "beatify:api:setup"
+    # requires_auth=False + in-handler check, matching CapabilitiesView so the
+    # HA Companion app (which can't reliably attach a Bearer token) still works.
+    requires_auth = False
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize the setup view."""
+        self.hass = hass
+
+    async def post(self, request: web.Request) -> web.Response:
+        """Persist the setup blob sent by the admin frontend."""
+        if not is_authorized_http(request, self.hass):
+            return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
+        try:
+            body = await request.json()
+        except (json.JSONDecodeError, ValueError):
+            return _json_error("Invalid JSON", 400, code="INVALID_REQUEST")
+        if not isinstance(body, dict):
+            return _json_error("Invalid setup payload", 400, code="INVALID_REQUEST")
+
+        # Store only the two keys the frontend re-hydrates. Everything is opaque
+        # to the server — it never parses the client-side settings schema.
+        blob = {
+            "last_player": body.get("last_player"),
+            "game_settings": body.get("game_settings"),
+        }
+        try:
+            await self.hass.async_add_executor_job(write_setup, self.hass, blob)
+        except OSError:
+            return _json_error(
+                "Failed to persist setup", 500, code="SETUP_WRITE_FAILED"
+            )
+        return web.json_response({"ok": True})
 
 
 class LightsView(HomeAssistantView):

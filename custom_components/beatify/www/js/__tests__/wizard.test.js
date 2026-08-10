@@ -3,7 +3,7 @@
  * These helpers drive the state machine: when to show, where to resume, when to show the pill.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resumeAtStep, shouldTrigger, shouldShowPill, providerSupportedForPlayer, capabilityBadgeForPlayer, applyGameModeTogglePrecedence, difficultyDisplayFor, buildWizChip, resolveGameLanguageDefault, buildTtsPayload } from '../wizard.js';
+import { resumeAtStep, shouldTrigger, shouldShowPill, providerSupportedForPlayer, capabilityBadgeForPlayer, applyGameModeTogglePrecedence, difficultyDisplayFor, buildWizChip, resolveGameLanguageDefault, buildTtsPayload, modeHintHtml } from '../wizard.js';
 
 function makeLS(initial = {}) {
     const store = { ...initial };
@@ -536,5 +536,71 @@ describe('buildTtsPayload (#1401 — preserve tts_pre_round_delay)', () => {
         });
         expect('tts_pre_round_delay' in out).toBe(false);
         expect(out.preset).toBe('standard');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// modeHintHtml — the gated mode card explains itself without hover (#1799)
+describe('modeHintHtml', () => {
+    it('renders the mode description when the card is not gated', () => {
+        const out = modeHintHtml(false, 'Needs at least 3 players', 'Last one out each round.');
+        expect(out).toBe('<div class="wiz-mode-hint">Last one out each round.</div>');
+        expect(out).not.toContain('gated');
+    });
+
+    it('replaces the description with the requirement when the card is gated', () => {
+        const out = modeHintHtml(true, 'Needs at least 3 players', 'Last one out each round.');
+        expect(out).toContain('wiz-mode-hint gated');
+        expect(out).toContain('Needs at least 3 players');
+        // The requirement must be visible on its own — not hidden behind hover.
+        expect(out).not.toContain('Last one out each round.');
+    });
+
+    it('escapes the gate text', () => {
+        const out = modeHintHtml(true, '<img src=x onerror=alert(1)>', 'hint');
+        expect(out).not.toContain('<img');
+        expect(out).toContain('&lt;img');
+    });
+});
+
+describe('#1940 — hiding the wizard refreshes the home view', () => {
+    it('calls BeatifyHome.refresh() when the wizard is dismissed', async () => {
+        const { hide } = await import('../wizard.js');
+        const calls = [];
+        const root = {
+            classList: { add() {}, remove() {} },
+            setAttribute() {},
+        };
+        globalThis.document = {
+            getElementById: (id) => (id === 'wizard-root' ? root : null),
+            body: { classList: { add() {}, remove() {} } },
+        };
+        globalThis.window = globalThis;
+        globalThis.BeatifyHome = { refresh: () => calls.push('refresh') };
+        globalThis.localStorage = {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+        };
+
+        hide({ dismissed: true });
+
+        // Skipping setup used to leave the home view on its "—" placeholder:
+        // only the *completion* path called enter(), which refreshes.
+        expect(calls).toEqual(['refresh']);
+    });
+
+    it('does not throw when the home view is not mounted', async () => {
+        const { hide } = await import('../wizard.js');
+        const root = { classList: { add() {}, remove() {} }, setAttribute() {} };
+        globalThis.document = {
+            getElementById: (id) => (id === 'wizard-root' ? root : null),
+            body: { classList: { add() {}, remove() {} } },
+        };
+        globalThis.window = globalThis;
+        delete globalThis.BeatifyHome;
+        globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+
+        expect(() => hide({})).not.toThrow();
     });
 });

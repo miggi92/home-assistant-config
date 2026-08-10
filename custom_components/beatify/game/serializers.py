@@ -13,6 +13,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from .playlist import get_playback_uri
+from .scoring import bet_win_multiplier
+
 if TYPE_CHECKING:
     from .state import GameState
 
@@ -44,10 +47,40 @@ class GameStateSerializer:
             "players": gs.get_players_state(),
             "language": gs.language,
             "difficulty": gs.difficulty,
+            # #1867: the round timer the server is ACTUALLY counting. Every
+            # other create-game setting was already echoed here; this one was
+            # not, so `round_duration` was write-only from the client's side —
+            # posted once at create, never readable again. A UI could only ever
+            # show its own local intent, which is why a lobby advertising "45S"
+            # over a server running 30.0s looked fine from every screen and
+            # took log archaeology to spot. Emitted in all phases: the lobby
+            # needs it before the first round exists.
+            "round_duration": gs.round_duration,
             # Issue #23: Intro mode (available in all phases)
             "intro_mode_enabled": gs.intro_mode_enabled,
             # Issue #442: Closest Wins mode
             "closest_wins_mode": gs.closest_wins_mode,
+            # Issue #1726: Ramp-up (difficulty-arc) ordering
+            "rampup_order_enabled": gs.rampup_order_enabled,
+            # Issue #1724: Comeback Token (catch-up steal for trailing players)
+            "comeback_token_enabled": gs.comeback_token_enabled,
+            "sabotage_enabled": gs.sabotage_enabled,  # #1665
+            # Issue #1727: Difficulty-aware bet scaling. Expose the opt-in flag
+            # plus the *active* won-bet payout multiplier so the player bet
+            # toggle can show what a bet is worth (3x when off, 2/3/5x when on)
+            # without duplicating the multiplier map in the frontend.
+            "difficulty_bet_scaling_enabled": gs.difficulty_bet_scaling_enabled,
+            "bet_win_multiplier": bet_win_multiplier(
+                gs.difficulty,
+                scaling_enabled=gs.difficulty_bet_scaling_enabled,
+            ),
+            # Issue #827: Sudden Death mode (drives wizard chip, player view,
+            # leaderboard cut-line, admin live toggle)
+            "sudden_death_mode": gs.sudden_death_mode,
+            # Issue #1725: Finale ×2 + finale sudden-death tiebreaker opt-ins
+            # (drive the wizard chip + the finish banner)
+            "finale_double_enabled": gs.finale_double_enabled,
+            "finale_tiebreaker_enabled": gs.finale_tiebreaker_enabled,
             # #1180: Title & Artist guessing mode (player UI renders inputs)
             "title_artist_mode": gs.title_artist_mode,
             "is_intro_round": gs.is_intro_round,
@@ -79,6 +112,11 @@ class GameStateSerializer:
             # The unauthenticated-MA-provider failure mode is the most
             # common cause of media_player_error pauses on MA setups.
             state["provider"] = gs.provider
+            # #1927: surface the speaker the game was playing on. A game that
+            # ran on the wrong speaker (a stale saved selection) failed with
+            # exactly this pause reason, and no screen named the entity — so
+            # the wrong-room case was indistinguishable from a dead provider.
+            state["media_player"] = gs.media_player
 
         elif gs.phase == GamePhase.END:
             GameStateSerializer._add_end_state(gs, state)
@@ -92,8 +130,21 @@ class GameStateSerializer:
         state["round"] = gs.round
         state["total_rounds"] = gs.total_rounds
         state["deadline"] = gs.deadline
+        # #1662: also expose the server-computed *relative* remaining seconds so
+        # clients can anchor their countdown to their OWN clock instead of
+        # subtracting a server wall-clock epoch (`deadline`) from a possibly
+        # skewed client `Date.now()`. Mirrors the TA-vote timer's
+        # ``vote_seconds_remaining``. The absolute ``deadline`` is kept for
+        # back-compat and the client-side smooth-correct ease (#1273).
+        if gs.deadline is not None:
+            state["seconds_remaining"] = max(0, round(gs.deadline / 1000 - gs._now()))
         state["last_round"] = gs.last_round
         state["songs_remaining"] = gs.songs_remaining
+        # Issue #1725: Finale ×2 is live this round (last round + opt-in) — drives
+        # the "Finale ×2" finish banner. Playoff flag lets the client badge a
+        # tiebreaker round.
+        state["finale_double_active"] = gs.finale_double_enabled and gs.last_round
+        state["finale_playoff_active"] = gs._finale_playoff_active
         # Submission tracking (Story 4.4)
         state["submitted_count"] = sum(1 for p in gs.players.values() if p.submitted)
         state["all_submitted"] = gs.all_submitted()
@@ -137,6 +188,10 @@ class GameStateSerializer:
         state["round"] = gs.round
         state["total_rounds"] = gs.total_rounds
         state["last_round"] = gs.last_round
+        # Issue #1725: mirror the PLAYING-phase finale flags so the reveal card
+        # can keep the "Finale ×2" / playoff badge visible.
+        state["finale_double_active"] = gs.finale_double_enabled and gs.last_round
+        state["finale_playoff_active"] = gs._finale_playoff_active
         # Filtered song info during REVEAL — exclude URIs, alt_artists, internal fields
         if gs.current_song:
             state["song"] = {
@@ -154,6 +209,14 @@ class GameStateSerializer:
             }
         # Include reveal-specific player data (guesses, round_score, missed)
         state["players"] = GameStateSerializer.get_reveal_players_state(gs)
+        # Issue #827: Sudden Death — names eliminated *this* round drive the
+        # TV "OUT" takeover + the admin elimination highlight card.
+        if gs.sudden_death_mode:
+            state["eliminated_this_round"] = [
+                p.name
+                for p in gs.players.values()
+                if p.eliminated and p.eliminated_round == gs.round
+            ]
         # Leaderboard (Story 5.5)
         state["leaderboard"] = gs.get_leaderboard()
         # Round analytics (Story 13.3 AC4)
@@ -165,9 +228,7 @@ class GameStateSerializer:
             state["game_performance"] = game_performance
         # Song difficulty rating (Story 15.1 AC1, AC4)
         if gs.current_song:
-            song_uri = gs.current_song.get("_resolved_uri") or gs.current_song.get(
-                "uri"
-            )
+            song_uri = get_playback_uri(gs.current_song)
             if song_uri:
                 difficulty = gs.get_song_difficulty(song_uri)
                 if difficulty:
@@ -247,6 +308,8 @@ class GameStateSerializer:
         for p in gs.players.values():
             player_data = {
                 "name": p.name,
+                # #1664 PR-1: stable id alias (== session_id), additive enabler
+                "player_id": p.player_id,
                 "score": p.score,
                 "streak": p.streak,
                 "is_admin": p.is_admin,
@@ -269,6 +332,29 @@ class GameStateSerializer:
                 "stole_from": p.stole_from,
                 "was_stolen_by": p.was_stolen_by.copy() if p.was_stolen_by else [],
                 "steal_available": p.steal_available,
+                # #1666: Streak-Shield. `streak_shield` is the badge (an
+                # unspent shield is held); `streak_shield_used` is the per-round
+                # event that just absorbed a miss. Both are broadcast because a
+                # shield nobody sees fire looks like a scoring bug — the player
+                # answered wrong and their streak did not drop.
+                "streak_shield": p.streak_shield,
+                "streak_shield_used": p.streak_shield_used_this_round,
+                # Issue #1724: True when this player's steal was handed to them
+                # as a Comeback Token (catch-up grant), so the client can label
+                # the reused steal UI as a comeback gift rather than a streak
+                # unlock. Purely a cue — the steal itself is driven by
+                # steal_available above.
+                "comeback_token_granted": p.comeback_token_granted,
+                # Issue #1665: Sabotage — who this player hit, and who hit them
+                # with which rolled effect. Broadcast to everyone on purpose:
+                # the "gotcha" only lands if the table can see it.
+                "sabotage_available": p.sabotage_available,
+                "sabotaged": p.sabotaged,
+                "sabotaged_by": p.sabotaged_by,
+                "sabotage_effect": p.sabotage_effect,
+                # Issue #827: Sudden Death state
+                "eliminated": p.eliminated,
+                "eliminated_round": p.eliminated_round,
             }
             # Story 20.4: Add artist bonus if challenge is enabled
             if gs.artist_challenge_enabled:
