@@ -13,7 +13,7 @@ condition: []
 action:
   - variables:
       special_day: "{{ states('sensor.special_day') }}"
-      icon: "{{ states('sensor.special_day_icon_awtrix') }}"
+      icon: "{{ states('sensor.wohnzimmer_awtrix_ng_special_day_icon_awtrix') }}"
   - if:
       - condition: template
         value_template: "{{ special_day != 'none' }}"
@@ -21,7 +21,7 @@ action:
       - action: script.awtrix3customapp
         data:
           app_id: special_day
-          text: "{{ special_day }}"
+          text: "{{ ' ' if special_day == 'Stern' else special_day }}"
           icon: "{{ icon }}"
     else:
       - action: script.awtrix3delapp
