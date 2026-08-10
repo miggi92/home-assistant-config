@@ -10,8 +10,8 @@ trigger:
       - person.miguel
 condition:
   - condition: state
-    entity_id: input_boolean.maja_home
-    state: "on"
+    entity_id: person.maja
+    state: "home"
 action:
   - if:
       - condition: state

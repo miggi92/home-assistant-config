@@ -27,12 +27,16 @@ change_dummy_locations:
         config:
           milo:
             person_sync: input_select.milo_person_sync
-            home_bool: input_boolean.milo_home
-            tracker: milo_dummy_tracker
+            long: input_number.milo_dummy_long
+            lat: input_number.milo_dummy_lat
           finn:
             person_sync: input_select.finn_unterwegs
-            home_bool: input_boolean.finn_home
-            tracker: finn_dummy_tracker
+            long: input_number.finn_dummy_long
+            lat: input_number.finn_dummy_lat
+          maja:
+            person_sync: input_select.maja_person_sync
+            long: input_number.maja_dummy_long
+            lat: input_number.maja_dummy_lat
         latitude: "{{ state_attr(target_zone, 'latitude') }}"
         longitude: "{{ state_attr(target_zone, 'longitude') }}"
     - action: input_select.select_option
@@ -40,13 +44,13 @@ change_dummy_locations:
         entity_id: "{{ config[who].person_sync }}"
       data:
         option: "alleine"
-    - action: input_boolean.turn_off
+    - action: input_number.set_value
       target:
-        entity_id: "{{ config[who].home_bool }}"
-    - delay: "00:00:05"
-    - action: device_tracker.see
+        entity_id: "{{ config[who].lat }}"
       data:
-        dev_id: "{{ config[who].tracker }}"
-        gps:
-          - "{{ latitude }}"
-          - "{{ longitude }}"
+        value: "{{ latitude }}"
+    - action: input_number.set_value
+      target:
+        entity_id: "{{ config[who].long }}"
+      data:
+        value: "{{ longitude }}"
