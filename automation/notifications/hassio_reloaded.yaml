@@ -6,8 +6,6 @@ trigger:
   - platform: homeassistant
     event: start
 action:
-  - service: script.dummy_tracker_states
-    data: {}
   - service: script.notify_engine
     data:
       title: "Home Assistant"
