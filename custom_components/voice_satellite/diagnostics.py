@@ -135,6 +135,53 @@ def _check_components(hass: HomeAssistant) -> list[dict[str, Any]]:
 # ── URLs and TTS mixed-content predictor ────────────────────────────
 
 
+def _redact_url(url: str) -> str:
+    """Replace the hostname with a classifying placeholder.
+
+    Diagnostics reports get pasted into public GitHub issues, and a full
+    URL announces the reporter's Home Assistant address next to its
+    version. The host *kind* is what URL bugs hinge on (LAN IP fallback,
+    mDNS, Nabu Casa remote), so classify instead of blanking; scheme and
+    port survive because the mixed-content check is about them.
+    """
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower()
+        if not host:
+            return "<redacted-url>"
+        if host in ("localhost", "127.0.0.1", "::1"):
+            placeholder = host
+        elif _is_ipv4(host):
+            placeholder = "<private-ip>" if _is_private_ipv4(host) else "<public-ip>"
+        elif ":" in host:
+            placeholder = "<redacted-ip>"
+        elif host.endswith(".local"):
+            placeholder = "<mdns-host>"
+        elif host.endswith(".ui.nabu.casa"):
+            placeholder = "<nabu-casa-host>"
+        else:
+            placeholder = "<redacted-host>"
+        port = f":{parsed.port}" if parsed.port else ""
+        return f"{parsed.scheme}://{placeholder}{port}{parsed.path or ''}"
+    except Exception:  # noqa: BLE001
+        return "<redacted-url>"
+
+
+def _is_ipv4(host: str) -> bool:
+    parts = host.split(".")
+    return len(parts) == 4 and all(p.isdigit() for p in parts)
+
+
+def _is_private_ipv4(host: str) -> bool:
+    a, b = (int(p) for p in host.split(".")[:2])
+    return (
+        a in (10, 127)
+        or (a == 172 and 16 <= b <= 31)
+        or (a == 192 and b == 168)
+        or (a == 169 and b == 254)
+    )
+
+
 def _check_urls(hass: HomeAssistant, page_protocol: str | None) -> list[dict[str, Any]]:
     out = []
     internal = hass.config.internal_url
@@ -181,7 +228,10 @@ def _url_result(
     try:
         parsed = urlparse(url)
     except Exception:  # noqa: BLE001
-        return _result(check_id, CAT_URLS, title, "warn", detail=f"Could not parse: {url}")
+        return _result(
+            check_id, CAT_URLS, title, "warn",
+            detail="Could not parse the configured URL.",
+        )
 
     scheme = (parsed.scheme or "").lower()
     if page_protocol == "https" and scheme != "https":
@@ -191,13 +241,13 @@ def _url_result(
             title,
             "fail",
             detail=(
-                f"This page is served over HTTPS but {title.lower()} is {url}. "
+                f"This page is served over HTTPS but {title.lower()} is {_redact_url(url)}. "
                 "The browser will block TTS audio as mixed content, which is the "
                 "most common cause of 'text shows but no voice'."
             ),
             remediation=remediation_https,
         )
-    return _result(check_id, CAT_URLS, title, "pass", detail=url)
+    return _result(check_id, CAT_URLS, title, "pass", detail=_redact_url(url))
 
 
 # ── Version ─────────────────────────────────────────────────────────

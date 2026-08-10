@@ -12,7 +12,7 @@ import logging
 from .haimports import *  # pylint: disable=W0401,W0614
 from .pydreo import PyDreo
 from .pydreo.pydreobasedevice import PyDreoBaseDevice
-from .pydreo.constant import DreoDeviceType
+from .pydreo.constant import DreoDeviceType, TIMER_MAX_MINUTES
 from .dreobasedevice import DreoBaseDeviceHA
 
 from .const import DOMAIN, PYDREO_MANAGER
@@ -34,6 +34,21 @@ class DreoNumberEntityDescription(NumberEntityDescription):
 
 
 NUMBERS: tuple[DreoNumberEntityDescription, ...] = (
+    # Diagnostic: runtime-tune fixedconf settle for models that declare it
+    # (e.g. DR-HPF017S). Disabled by default; pair with Angle settle pending.
+    # key is snake_case so unique_id tokens stay machine-friendly.
+    DreoNumberEntityDescription(
+        key="fixed_conf_settle_seconds",
+        translation_key="fixed_conf_settle_seconds",
+        attr_name="fixed_conf_settle_seconds",
+        icon="mdi:timer-outline",
+        min_value=0,
+        max_value=30,
+        step=0.5,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        exists_fn=lambda device: device.is_feature_supported("fixed_conf_settle_seconds"),
+    ),
     DreoNumberEntityDescription(
         key="Horizontal Angle",
         translation_key="horizontal_angle",
@@ -175,6 +190,28 @@ NUMBERS: tuple[DreoNumberEntityDescription, ...] = (
         exists_fn=lambda device: device.type in {DreoDeviceType.HUMIDIFIER, DreoDeviceType.EVAPORATIVE_COOLER}
         and device.is_feature_supported("rgbth"),
     ),
+    DreoNumberEntityDescription(
+        key="Timer On",
+        translation_key="timer_on",
+        attr_name="timer_on",
+        icon="mdi:timer-play-outline",
+        min_value=0,
+        max_value=TIMER_MAX_MINUTES,
+        step=1,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        exists_fn=lambda device: device.is_feature_supported("timer_on"),
+    ),
+    DreoNumberEntityDescription(
+        key="Timer Off",
+        translation_key="timer_off",
+        attr_name="timer_off",
+        icon="mdi:timer-off-outline",
+        min_value=0,
+        max_value=TIMER_MAX_MINUTES,
+        step=1,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        exists_fn=lambda device: device.is_feature_supported("timer_off"),
+    ),
 )
 
 
@@ -271,6 +308,9 @@ class DreoNumberHA(DreoBaseDeviceHA, NumberEntity):  # pylint: disable=abstract-
         self._attr_native_step = description.step
         self._attr_native_unit_of_measurement = description.native_unit_of_measurement
         self._device_class_name = description.device_class
+        if description.entity_category is not None:
+            self._attr_entity_category = description.entity_category
+        self._attr_entity_registry_enabled_default = description.entity_registry_enabled_default
 
         _LOGGER.info("new DreoNumberHA instance(%s), unique ID %s", description.key, self._attr_unique_id)
 

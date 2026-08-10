@@ -22,6 +22,7 @@ from .constant import (
     DreoACFanMode,
     POWERON_KEY,
     RGB_MODE_RANGE,
+    FIXEDCONF_SETTLE_SECONDS_KEY,
 )
 
 COOKING_MODES = [
@@ -370,7 +371,20 @@ SUPPORTED_DEVICES = {
     "DR-HPF017S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
         preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5), ("custom", 6)],
-        device_ranges={SPEED_RANGE: (1, 12), HORIZONTAL_ANGLE_RANGE: (-75, 75), VERTICAL_ANGLE_RANGE: (-30, 90)},
+        # FIXEDCONF_SETTLE_SECONDS_KEY (float seconds): min gap between fixedconf
+        # commands. Stacking pan/tilt moves before the previous move finishes can
+        # require app recalibration on this model. Omit or 0 = no settle (default).
+        #
+        # 8.0s is empirically tuned for DR-HPF017S motor travel: enough for a full
+        # pan/tilt move to finish before the next fixedconf is accepted. Increase
+        # if device reports mid-move rejects under rapid dual-axis HA updates;
+        # decrease only after validating on hardware.
+        device_ranges={
+            SPEED_RANGE: (1, 12),
+            HORIZONTAL_ANGLE_RANGE: (-75, 75),
+            VERTICAL_ANGLE_RANGE: (-30, 90),
+            FIXEDCONF_SETTLE_SECONDS_KEY: 8.0,
+        },
     ),
     "DR-HPF007S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
@@ -441,6 +455,13 @@ SUPPORTED_DEVICES = {
         device_ranges={SPEED_RANGE: (1, 4)},
         # The device rejects the plain "auto" mode command and requires "auto-regular" (issue #860).
         override_fn=_hap009s_override,
+    ),
+    # DR-HAP008S diagnostics report an empty controlsConf object. Hardcode its known fan
+    # capabilities so Home Assistant can create the primary fan entity.
+    "DR-HAP008S": DreoDeviceDetails(
+        device_type=DreoDeviceType.AIR_PURIFIER,
+        preset_modes=[("auto", "auto"), ("manual", "manual"), ("sleep", "sleep"), ("turbo", "turbo")],
+        device_ranges={SPEED_RANGE: (1, 4)},
     ),
     # Heaters
     "DR-HSH017BS": DreoHeaterDeviceDetails(
