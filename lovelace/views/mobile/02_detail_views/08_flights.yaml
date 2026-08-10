@@ -15,12 +15,16 @@ badges:
     show_name: true
     show_state: true
     show_icon: true
-    entity: sensor.flightradar24_most_tracked
+    entity: switch.aussen_flightradar24_meistverfolgt
     name: Most tracked
     state_content: count
     tap_action:
       action: navigate
       navigation_path: "#mostTracked"
+    visibility:
+      - condition: state
+        entity: switch.aussen_flightradar24_meistverfolgt
+        state: "on"
 sections:
   - type: grid
     cards:

@@ -9,7 +9,7 @@ most_tracked_popup:
     cards:
       - type: markdown
         content: >-
-          {% set flights = state_attr('sensor.flightradar24_most_tracked', 'flights') %}
+          {% set flights = state_attr('switch.aussen_flightradar24_meistverfolgt', 'flights') %}
           {% if flights %}
           {% for flight in flights %}
           <ha-icon icon="mdi:airplane"></ha-icon> **{{ flight.callsign | default('Unbekannt', true) }}**{% if flight.flight_number %} ({{ flight.flight_number }}){% endif %} - {{ flight.aircraft_model | default('Unbekanntes Flugzeug', true) }}<br>
