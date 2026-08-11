@@ -190,14 +190,11 @@ class AISStreamConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: ConfigEntry,
     ) -> AISStreamOptionsFlow:
-        return AISStreamOptionsFlow(config_entry)
+        return AISStreamOptionsFlow()
 
 
 class AISStreamOptionsFlow(OptionsFlow):
     """Handle changing the location/zone/bounding box or MMSI filter."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
