@@ -12,24 +12,46 @@ trigger:
 condition: []
 action:
   - variables:
-      special_day: "{{ states('sensor.special_day') }}"
-      icon: "{{ states('sensor.wohnzimmer_awtrix_ng_special_day_icon_awtrix') }}"
+      max_apps: 5
+      special_days: >-
+        {{ states('sensor.special_day').split(',')
+          | map('trim')
+          | reject('in', ['none', '', 'unknown', 'unavailable'])
+          | list }}
+      icons: >-
+        {{ states('sensor.wohnzimmer_awtrix_ng_special_day_icon_awtrix').split(',')
+          | map('trim')
+          | list }}
+  # Alle aktiven Special Days anzeigen (app_id durchnummeriert)
+  - repeat:
+      for_each: "{{ special_days }}"
+      sequence:
+        - action: script.awtrix3customapp
+          data:
+            app_id: "special_day_{{ repeat.index }}"
+            text: >-
+              {% if repeat.item == 'Stern' %}
+                {{ ' ' }}
+              {% elif repeat.item == 'Hochzeitstag' %}
+                {{ states('sensor.anniversaries_hochzeitstagsname') }}
+              {% else %}
+                {{ repeat.item }}
+              {% endif %}
+            icon: >-
+              {{ icons[repeat.index - 1]
+                if icons | length >= repeat.index
+                else icons[0] | default('') }}
+  # Übrige (alte) Apps bis max_apps löschen
+  - repeat:
+      count: "{{ max_apps - special_days | length }}"
+      sequence:
+        - action: script.awtrix3delapp
+          data:
+            app_id: "special_day_{{ special_days | length + repeat.index }}"
+  # Fasnacht-Sound
   - if:
       - condition: template
-        value_template: "{{ special_day != 'none' }}"
-    then:
-      - action: script.awtrix3customapp
-        data:
-          app_id: special_day
-          text: "{{ ' ' if special_day == 'Stern' else special_day }}"
-          icon: "{{ icon }}"
-    else:
-      - action: script.awtrix3delapp
-        data:
-          app_id: special_day
-  - if:
-      - condition: template
-        value_template: "{{ special_day == 'Fasnachtszeit'}}"
+        value_template: "{{ 'Fasnachtszeit' in special_days }}"
     then:
       - action: script.spotify_audio
         data:
