@@ -150,7 +150,7 @@ def is_not_date(date, one_time):
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        self._config_entry = config_entry
         self._data = {}
         self._data["unique_id"] = config_entry.options.get("unique_id")
 
@@ -206,4 +206,4 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
 class EmptyOptions(config_entries.OptionsFlow):
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        self._config_entry = config_entry
