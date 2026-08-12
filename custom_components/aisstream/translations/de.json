@@ -3,50 +3,60 @@
     "step": {
       "user": {
         "title": "Mit aisstream.io verbinden",
-        "description": "API-Key von aisstream.io eingeben. Danach das zu überwachende Gebiet festlegen - entweder Standort + Umkreis auf der Karte auswählen, eine bestehende Zone nutzen, oder eine manuelle Bounding Box angeben - und/oder eine Liste von MMSI-Nummern. Standort oder Zone haben Vorrang vor der manuellen Bounding Box. Eine unbegrenzte Abo ohne Filter ist nicht erlaubt.",
+        "description": "API-Key von aisstream.io eingeben. Danach fügst du dein erstes zu überwachendes Gebiet hinzu (z.B. einen Hafen) - weitere Gebiete kannst du später hinzufügen, ohne den Key erneut einzugeben.",
         "data": {
-          "api_key": "API-Key",
-          "location": "Gebiet: Standort und Umkreis auf der Karte auswählen (z.B. ein Hafen)",
-          "zone_entity_id": "Gebiet: stattdessen eine bestehende Zone verwenden",
-          "box_south": "Manuelle Bounding Box: Südliche Breite",
-          "box_west": "Manuelle Bounding Box: Westliche Länge",
-          "box_north": "Manuelle Bounding Box: Nördliche Breite",
-          "box_east": "Manuelle Bounding Box: Östliche Länge",
-          "mmsi_filter": "Zu verfolgende MMSI-Nummern (kommagetrennt, optional)"
+          "api_key": "API-Key"
         }
       }
     },
     "error": {
       "invalid_auth": "aisstream.io hat den API-Key abgelehnt",
-      "cannot_connect": "Verbindung zu aisstream.io fehlgeschlagen",
-      "no_filter": "Gebiet (Standort, Zone oder Bounding Box) eingrenzen oder mindestens eine MMSI-Nummer angeben, sonst würden alle Schiffe weltweit getrackt",
-      "zone_not_found": "Die ausgewählte Zone konnte nicht gefunden werden",
-      "invalid_location": "Dem ausgewählten Standort fehlt Breiten-/Längengrad"
+      "cannot_connect": "Verbindung zu aisstream.io fehlgeschlagen"
     },
     "abort": {
       "already_configured": "Dieser API-Key ist bereits konfiguriert"
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "description": "Gebiet (Standort, Zone oder manuelle Bounding Box) oder verfolgte MMSI-Nummern anpassen.",
-        "data": {
-          "api_key": "API-Key",
-          "location": "Gebiet: Standort und Umkreis auf der Karte auswählen (z.B. ein Hafen)",
-          "zone_entity_id": "Gebiet: stattdessen eine bestehende Zone verwenden",
-          "box_south": "Manuelle Bounding Box: Südliche Breite",
-          "box_west": "Manuelle Bounding Box: Westliche Länge",
-          "box_north": "Manuelle Bounding Box: Nördliche Breite",
-          "box_east": "Manuelle Bounding Box: Östliche Länge",
-          "mmsi_filter": "Zu verfolgende MMSI-Nummern (kommagetrennt, optional)"
+  "config_subentries": {
+    "area": {
+      "entry_type": "Gebiet",
+      "initiate_flow": {
+        "user": "Gebiet hinzufügen",
+        "reconfigure": "Gebiet anpassen"
+      },
+      "step": {
+        "user": {
+          "description": "Das zu überwachende Gebiet festlegen - entweder Standort + Umkreis auf der Karte auswählen, eine bestehende Zone nutzen, oder eine manuelle Bounding Box angeben - und/oder eine Liste von MMSI-Nummern. Standort oder Zone haben Vorrang vor der manuellen Bounding Box. Ein unbegrenztes Abo ohne Filter ist nicht erlaubt.",
+          "data": {
+            "location": "Gebiet: Standort und Umkreis auf der Karte auswählen (z.B. ein Hafen)",
+            "zone_entity_id": "Gebiet: stattdessen eine bestehende Zone verwenden",
+            "box_south": "Manuelle Bounding Box: Südliche Breite",
+            "box_west": "Manuelle Bounding Box: Westliche Länge",
+            "box_north": "Manuelle Bounding Box: Nördliche Breite",
+            "box_east": "Manuelle Bounding Box: Östliche Länge",
+            "mmsi_filter": "Zu verfolgende MMSI-Nummern (kommagetrennt, optional)"
+          }
+        },
+        "reconfigure": {
+          "description": "Standort, Zone, manuelle Bounding Box oder verfolgte MMSI-Nummern dieses Gebiets anpassen.",
+          "data": {
+            "location": "Gebiet: Standort und Umkreis auf der Karte auswählen (z.B. ein Hafen)",
+            "zone_entity_id": "Gebiet: stattdessen eine bestehende Zone verwenden",
+            "box_south": "Manuelle Bounding Box: Südliche Breite",
+            "box_west": "Manuelle Bounding Box: Westliche Länge",
+            "box_north": "Manuelle Bounding Box: Nördliche Breite",
+            "box_east": "Manuelle Bounding Box: Östliche Länge",
+            "mmsi_filter": "Zu verfolgende MMSI-Nummern (kommagetrennt, optional)"
+          }
         }
+      },
+      "error": {
+        "invalid_auth": "aisstream.io hat den API-Key abgelehnt",
+        "cannot_connect": "Verbindung zu aisstream.io fehlgeschlagen",
+        "no_filter": "Gebiet (Standort, Zone oder Bounding Box) eingrenzen oder mindestens eine MMSI-Nummer angeben, sonst würden alle Schiffe weltweit getrackt",
+        "zone_not_found": "Die ausgewählte Zone konnte nicht gefunden werden",
+        "invalid_location": "Dem ausgewählten Standort fehlt Breiten-/Längengrad"
       }
-    },
-    "error": {
-      "no_filter": "Gebiet (Standort, Zone oder Bounding Box) eingrenzen oder mindestens eine MMSI-Nummer angeben, sonst würden alle Schiffe weltweit getrackt",
-      "zone_not_found": "Die ausgewählte Zone konnte nicht gefunden werden",
-      "invalid_location": "Dem ausgewählten Standort fehlt Breiten-/Längengrad"
     }
   },
   "entity": {

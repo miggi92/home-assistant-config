@@ -13,6 +13,8 @@ CONF_MMSI_FILTER = "mmsi_filter"
 CONF_ZONE = "zone_entity_id"
 CONF_LOCATION = "location"
 
+SUBENTRY_TYPE_AREA = "area"
+
 DEFAULT_BOX_SOUTH = -90.0
 DEFAULT_BOX_WEST = -180.0
 DEFAULT_BOX_NORTH = 90.0

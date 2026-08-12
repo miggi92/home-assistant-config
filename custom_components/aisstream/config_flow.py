@@ -8,9 +8,14 @@ from typing import Any
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    ConfigSubentryFlow,
+    SubentryFlowResult,
+)
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
@@ -29,6 +34,7 @@ from .const import (
     DEFAULT_BOX_SOUTH,
     DEFAULT_BOX_WEST,
     DOMAIN,
+    SUBENTRY_TYPE_AREA,
 )
 from .geo import bounding_box_for_location, bounding_box_for_zone
 
@@ -37,11 +43,10 @@ _LOGGER = logging.getLogger(__name__)
 VALIDATE_TIMEOUT = 8
 
 
-def _build_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+def _area_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     defaults = defaults or {}
     return vol.Schema(
         {
-            vol.Required(CONF_API_KEY, default=defaults.get(CONF_API_KEY, "")): str,
             vol.Optional(
                 CONF_LOCATION,
                 description={"suggested_value": defaults.get(CONF_LOCATION)},
@@ -119,11 +124,34 @@ def _resolve_bounding_boxes(
     ], None
 
 
+def _area_title(hass: HomeAssistant, data: dict[str, Any]) -> str:
+    if zone_entity_id := data.get(CONF_ZONE):
+        state = hass.states.get(zone_entity_id)
+        return state.name if state else zone_entity_id
+
+    if location := data.get(CONF_LOCATION):
+        return f"{location['latitude']:.3f}, {location['longitude']:.3f}"
+
+    mmsi_filter = data.get(CONF_MMSI_FILTER) or []
+    if isinstance(mmsi_filter, str):
+        mmsi_filter = _parse_mmsi_filter(mmsi_filter)
+    if mmsi_filter:
+        return f"{len(mmsi_filter)} vessel(s)"
+
+    return "Custom area"
+
+
 async def _validate_api_key(
     api_key: str, bounding_boxes: list, mmsi_filter: list[str]
 ) -> None:
     """Open a short-lived websocket connection to verify the API key works."""
-    message: dict = {"APIKey": api_key, "BoundingBoxes": bounding_boxes}
+    # Send both casings - aisstream's own sources disagree on "APIKey" vs
+    # "Apikey" and this environment can't reach aisstream.io to verify.
+    message: dict = {
+        "APIKey": api_key,
+        "Apikey": api_key,
+        "BoundingBoxes": bounding_boxes,
+    }
     if mmsi_filter:
         message["FiltersShipMMSI"] = mmsi_filter
 
@@ -149,14 +177,85 @@ async def _validate_api_key(
 
 
 class AISStreamConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for aisstream.io."""
+    """Handle the initial (account-level) config flow for aisstream.io."""
 
     VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # A world-wide box is only used here to confirm the API key is
+            # accepted - the actual monitored areas are added as subentries
+            # right after this step.
+            try:
+                await _validate_api_key(
+                    user_input[CONF_API_KEY],
+                    [
+                        [
+                            [DEFAULT_BOX_SOUTH, DEFAULT_BOX_WEST],
+                            [DEFAULT_BOX_NORTH, DEFAULT_BOX_EAST],
+                        ]
+                    ],
+                    [],
+                )
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            else:
+                await self.async_set_unique_id(user_input[CONF_API_KEY])
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title="AISstream.io", data=user_input
+                )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            errors=errors,
+        )
+
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls, config_entry: ConfigEntry
+    ) -> dict[str, type[ConfigSubentryFlow]]:
+        """Return subentries supported by this integration."""
+        return {SUBENTRY_TYPE_AREA: AreaSubentryFlowHandler}
+
+
+class AreaSubentryFlowHandler(ConfigSubentryFlow):
+    """Add or reconfigure a single monitored area (e.g. a harbor)."""
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        return await self._async_step(user_input, step_id="user")
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        subentry = self._get_reconfigure_subentry()
+        return await self._async_step(
+            user_input, step_id="reconfigure", current=dict(subentry.data)
+        )
+
+    async def _async_step(
+        self,
+        user_input: dict[str, Any] | None,
+        step_id: str,
+        current: dict[str, Any] | None = None,
+    ) -> SubentryFlowResult:
+        errors: dict[str, str] = {}
+        current = current or {}
+        if isinstance(current.get(CONF_MMSI_FILTER), list):
+            current = {
+                **current,
+                CONF_MMSI_FILTER: ", ".join(current[CONF_MMSI_FILTER]),
+            }
 
         if user_input is not None:
             mmsi_filter = _parse_mmsi_filter(user_input.get(CONF_MMSI_FILTER, ""))
@@ -165,70 +264,29 @@ class AISStreamConfigFlow(ConfigFlow, domain=DOMAIN):
             if error:
                 errors["base"] = error
             else:
+                api_key = self._get_entry().data[CONF_API_KEY]
                 try:
-                    await _validate_api_key(
-                        user_input[CONF_API_KEY], bounding_boxes, mmsi_filter
-                    )
+                    await _validate_api_key(api_key, bounding_boxes, mmsi_filter)
                 except InvalidAuth:
                     errors["base"] = "invalid_auth"
                 except CannotConnect:
                     errors["base"] = "cannot_connect"
                 else:
-                    await self.async_set_unique_id(user_input[CONF_API_KEY])
-                    self._abort_if_unique_id_configured()
-                    return self.async_create_entry(
-                        title="AISstream.io",
-                        data={**user_input, CONF_MMSI_FILTER: mmsi_filter},
-                    )
+                    data = {**user_input, CONF_MMSI_FILTER: mmsi_filter}
+                    title = _area_title(self.hass, data)
+                    if step_id == "reconfigure":
+                        return self.async_update_and_abort(
+                            self._get_entry(),
+                            self._get_reconfigure_subentry(),
+                            title=title,
+                            data=data,
+                        )
+                    return self.async_create_entry(title=title, data=data)
 
         return self.async_show_form(
-            step_id="user", data_schema=_build_schema(user_input), errors=errors
-        )
-
-    @staticmethod
-    @callback
-    def async_get_options_flow(
-        config_entry: ConfigEntry,
-    ) -> AISStreamOptionsFlow:
-        return AISStreamOptionsFlow()
-
-
-class AISStreamOptionsFlow(OptionsFlow):
-    """Handle changing the location/zone/bounding box or MMSI filter."""
-
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        errors: dict[str, str] = {}
-        current = dict(self.config_entry.data)
-        if isinstance(current.get(CONF_MMSI_FILTER), list):
-            current[CONF_MMSI_FILTER] = ", ".join(current[CONF_MMSI_FILTER])
-
-        if user_input is not None:
-            mmsi_filter = _parse_mmsi_filter(user_input.get(CONF_MMSI_FILTER, ""))
-            bounding_boxes, error = _resolve_bounding_boxes(self.hass, user_input)
-
-            if error:
-                errors["base"] = error
-            else:
-                new_data = {
-                    **self.config_entry.data,
-                    **user_input,
-                    CONF_MMSI_FILTER: mmsi_filter,
-                }
-                new_data.pop(CONF_ZONE, None)
-                new_data.pop(CONF_LOCATION, None)
-                if user_input.get(CONF_ZONE):
-                    new_data[CONF_ZONE] = user_input[CONF_ZONE]
-                elif user_input.get(CONF_LOCATION):
-                    new_data[CONF_LOCATION] = user_input[CONF_LOCATION]
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=new_data
-                )
-                return self.async_create_entry(title="", data={})
-
-        return self.async_show_form(
-            step_id="init", data_schema=_build_schema(current), errors=errors
+            step_id=step_id,
+            data_schema=_area_schema(user_input or current),
+            errors=errors,
         )
 
 

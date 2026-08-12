@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import DEGREE, UnitOfSpeed
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -27,9 +27,11 @@ from .const import (
     PRESENCE_RECHECK_MINUTES,
     PRESENCE_TIMEOUT_MINUTES,
     SIGNAL_NEW_SHIP,
+    SUBENTRY_TYPE_AREA,
 )
 from .coordinator import AISStreamClient, ShipData
 from .entity import AISStreamShipEntity
+from .geo import point_in_box, resolve_area_box
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,11 +95,21 @@ SENSOR_DESCRIPTIONS: tuple[AISStreamSensorDescription, ...] = (
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up sensors for aisstream.io, added dynamically per vessel."""
+    """Set up sensors for aisstream.io: one count sensor per area, plus
+    per-vessel sensors added dynamically as ships are seen."""
     client: AISStreamClient = hass.data[DOMAIN][entry.entry_id]
     known_mmsi: set[str] = set()
 
-    async_add_entities([AISStreamAreaCountSensor(client, entry)])
+    for subentry_id, subentry in entry.subentries.items():
+        if subentry.subentry_type != SUBENTRY_TYPE_AREA:
+            continue
+        box = resolve_area_box(hass, subentry.data)
+        if box is None:
+            continue
+        async_add_entities(
+            [AISStreamAreaCountSensor(client, entry, subentry_id, subentry, box)],
+            config_subentry_id=subentry_id,
+        )
 
     @callback
     def _add_ship(mmsi: str) -> None:
@@ -140,7 +152,7 @@ class AISStreamSensor(AISStreamShipEntity, SensorEntity):
 
 
 class AISStreamAreaCountSensor(SensorEntity):
-    """Number of vessels currently present in the monitored area."""
+    """Number of vessels currently present in one monitored area."""
 
     _attr_should_poll = False
     _attr_has_entity_name = True
@@ -149,16 +161,26 @@ class AISStreamAreaCountSensor(SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:ferry"
 
-    def __init__(self, client: AISStreamClient, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        client: AISStreamClient,
+        entry: ConfigEntry,
+        subentry_id: str,
+        subentry: ConfigSubentry,
+        box: list,
+    ) -> None:
         self._client = client
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_vessels_in_area"
+        self._subentry_id = subentry_id
+        self._subentry = subentry
+        self._box = box
+        self._attr_unique_id = f"{subentry_id}_vessels_in_area"
 
     @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=self._entry.title,
+            identifiers={(DOMAIN, self._subentry_id)},
+            name=self._subentry.title,
             manufacturer="aisstream.io",
             model="AIS area monitor",
         )
@@ -172,7 +194,11 @@ class AISStreamAreaCountSensor(SensorEntity):
         return [
             ship
             for ship in self._client.ships.values()
-            if ship.last_position_update and ship.last_position_update >= threshold
+            if ship.last_position_update
+            and ship.last_position_update >= threshold
+            and ship.latitude is not None
+            and ship.longitude is not None
+            and point_in_box(ship.latitude, ship.longitude, self._box)
         ]
 
     @property
@@ -185,6 +211,12 @@ class AISStreamAreaCountSensor(SensorEntity):
             "vessels": sorted(
                 ship.name or f"MMSI {ship.mmsi}" for ship in self._present_ships()
             ),
+            "connected": self._client.available,
+            "bounding_box": self._box,
+            "messages_received": self._client.messages_received,
+            "last_message_at": self._client.last_message_at.isoformat()
+            if self._client.last_message_at
+            else None,
         }
 
     async def async_added_to_hass(self) -> None:

@@ -58,9 +58,11 @@ class AISStreamClient:
         self.entry_id = entry_id
         self.ships: dict[str, ShipData] = {}
         self.available = False
+        self.bounding_boxes = bounding_boxes
+        self.messages_received = 0
+        self.last_message_at: datetime | None = None
 
         self._api_key = api_key
-        self._bounding_boxes = bounding_boxes
         self._mmsi_filter = mmsi_filter or None
         self._session: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
@@ -82,10 +84,20 @@ class AISStreamClient:
                 await self._task
 
     def _subscribe_message(self) -> dict:
+        # Deliberately not sending FilterMessageTypes: aisstream.io only has a
+        # confirmed single-value example (["PositionReport"]) for that field,
+        # and unfiltered subscriptions are the reliably documented case.
+        # Unwanted message types are discarded client-side in _handle_message.
+        #
+        # Sending both "APIKey" (the casing used by aisstream's own generated
+        # client libraries) and "Apikey" (the casing shown on their live docs
+        # page) since the two sources disagree and this environment can't
+        # reach aisstream.io to verify which the server actually expects.
+        # Harmless either way: JSON APIs ignore fields they don't recognize.
         message: dict = {
             "APIKey": self._api_key,
-            "BoundingBoxes": self._bounding_boxes,
-            "FilterMessageTypes": ["PositionReport", "ShipStaticData"],
+            "Apikey": self._api_key,
+            "BoundingBoxes": self.bounding_boxes,
         }
         if self._mmsi_filter:
             message["FiltersShipMMSI"] = self._mmsi_filter
@@ -118,12 +130,18 @@ class AISStreamClient:
             self._ws = ws
             await ws.send_json(self._subscribe_message())
             self.available = True
-            _LOGGER.debug("Connected to aisstream.io")
+            _LOGGER.info(
+                "Subscribed to aisstream.io with bounding boxes %s%s",
+                self.bounding_boxes,
+                f" and MMSI filter {self._mmsi_filter}" if self._mmsi_filter else "",
+            )
 
             async for msg in ws:
                 if self._stopping:
                     break
                 if msg.type == aiohttp.WSMsgType.TEXT:
+                    self.messages_received += 1
+                    self.last_message_at = dt_util.utcnow()
                     self._handle_message(msg.json())
                 elif msg.type in (
                     aiohttp.WSMsgType.ERROR,

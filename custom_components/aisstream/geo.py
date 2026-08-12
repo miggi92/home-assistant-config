@@ -5,6 +5,15 @@ import math
 
 from homeassistant.core import HomeAssistant
 
+from .const import (
+    CONF_BOX_EAST,
+    CONF_BOX_NORTH,
+    CONF_BOX_SOUTH,
+    CONF_BOX_WEST,
+    CONF_LOCATION,
+    CONF_ZONE,
+)
+
 _EARTH_RADIUS_M = 6371000
 
 
@@ -59,3 +68,36 @@ def bounding_box_for_location(location: dict) -> list[list[list[float]]] | None:
         return None
 
     return bounding_box_for_point(latitude, longitude, radius)
+
+
+def resolve_area_box(
+    hass: HomeAssistant, data: dict
+) -> list[list[list[float]]] | None:
+    """Resolve one area subentry's bounding box from its stored config data.
+
+    Tries a zone, then a picked location, then falls back to the manual
+    south/west/north/east fields. Returns None only if a referenced zone
+    entity can't be resolved right now (e.g. not loaded yet at startup).
+    """
+    if zone_entity_id := data.get(CONF_ZONE):
+        return bounding_box_for_zone(hass, zone_entity_id)
+
+    if location := data.get(CONF_LOCATION):
+        boxes = bounding_box_for_location(location)
+        if boxes is not None:
+            return boxes
+
+    return [
+        [
+            [data[CONF_BOX_SOUTH], data[CONF_BOX_WEST]],
+            [data[CONF_BOX_NORTH], data[CONF_BOX_EAST]],
+        ]
+    ]
+
+
+def point_in_box(
+    latitude: float, longitude: float, box: list[list[list[float]]]
+) -> bool:
+    """Return whether a point lies within a single aisstream-format box."""
+    (south, west), (north, east) = box[0]
+    return south <= latitude <= north and west <= longitude <= east

@@ -3,50 +3,60 @@
     "step": {
       "user": {
         "title": "Connect to aisstream.io",
-        "description": "Enter your aisstream.io API key. Then set the area to monitor - pick a location + radius on the map, choose an existing zone, or set a manual bounding box - and/or a list of MMSI numbers. If a location or zone is set it takes precedence over the manual bounding box. Subscribing to the whole world without any filter is not allowed.",
+        "description": "Enter your aisstream.io API key. After this, you'll add your first monitored area (e.g. a harbor) - you can add more areas later without re-entering the key.",
         "data": {
-          "api_key": "API key",
-          "location": "Area: pick a location and radius on the map (e.g. a harbor)",
-          "zone_entity_id": "Area: use an existing zone instead",
-          "box_south": "Manual bounding box: South latitude",
-          "box_west": "Manual bounding box: West longitude",
-          "box_north": "Manual bounding box: North latitude",
-          "box_east": "Manual bounding box: East longitude",
-          "mmsi_filter": "MMSI numbers to track (comma-separated, optional)"
+          "api_key": "API key"
         }
       }
     },
     "error": {
       "invalid_auth": "aisstream.io rejected the API key",
-      "cannot_connect": "Failed to connect to aisstream.io",
-      "no_filter": "Restrict the area (location, zone or bounding box) or specify at least one MMSI number, otherwise every vessel on earth would be tracked",
-      "zone_not_found": "The selected zone could not be found",
-      "invalid_location": "The picked location is missing a latitude/longitude"
+      "cannot_connect": "Failed to connect to aisstream.io"
     },
     "abort": {
       "already_configured": "This API key is already configured"
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "description": "Update the monitored area (location, zone or manual bounding box) or the tracked MMSI numbers.",
-        "data": {
-          "api_key": "API key",
-          "location": "Area: pick a location and radius on the map (e.g. a harbor)",
-          "zone_entity_id": "Area: use an existing zone instead",
-          "box_south": "Manual bounding box: South latitude",
-          "box_west": "Manual bounding box: West longitude",
-          "box_north": "Manual bounding box: North latitude",
-          "box_east": "Manual bounding box: East longitude",
-          "mmsi_filter": "MMSI numbers to track (comma-separated, optional)"
+  "config_subentries": {
+    "area": {
+      "entry_type": "Area",
+      "initiate_flow": {
+        "user": "Add area",
+        "reconfigure": "Reconfigure area"
+      },
+      "step": {
+        "user": {
+          "description": "Set the area to monitor - pick a location + radius on the map, choose an existing zone, or set a manual bounding box - and/or a list of MMSI numbers. If a location or zone is set it takes precedence over the manual bounding box. Subscribing to the whole world without any filter is not allowed.",
+          "data": {
+            "location": "Area: pick a location and radius on the map (e.g. a harbor)",
+            "zone_entity_id": "Area: use an existing zone instead",
+            "box_south": "Manual bounding box: South latitude",
+            "box_west": "Manual bounding box: West longitude",
+            "box_north": "Manual bounding box: North latitude",
+            "box_east": "Manual bounding box: East longitude",
+            "mmsi_filter": "MMSI numbers to track (comma-separated, optional)"
+          }
+        },
+        "reconfigure": {
+          "description": "Update this area's location, zone, manual bounding box or tracked MMSI numbers.",
+          "data": {
+            "location": "Area: pick a location and radius on the map (e.g. a harbor)",
+            "zone_entity_id": "Area: use an existing zone instead",
+            "box_south": "Manual bounding box: South latitude",
+            "box_west": "Manual bounding box: West longitude",
+            "box_north": "Manual bounding box: North latitude",
+            "box_east": "Manual bounding box: East longitude",
+            "mmsi_filter": "MMSI numbers to track (comma-separated, optional)"
+          }
         }
+      },
+      "error": {
+        "invalid_auth": "aisstream.io rejected the API key",
+        "cannot_connect": "Failed to connect to aisstream.io",
+        "no_filter": "Restrict the area (location, zone or bounding box) or specify at least one MMSI number, otherwise every vessel on earth would be tracked",
+        "zone_not_found": "The selected zone could not be found",
+        "invalid_location": "The picked location is missing a latitude/longitude"
       }
-    },
-    "error": {
-      "no_filter": "Restrict the area (location, zone or bounding box) or specify at least one MMSI number, otherwise every vessel on earth would be tracked",
-      "zone_not_found": "The selected zone could not be found",
-      "invalid_location": "The picked location is missing a latitude/longitude"
     }
   },
   "entity": {
