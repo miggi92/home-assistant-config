@@ -215,10 +215,9 @@ mobile:
   show_labels: true
 media_player:
   players:
+    - entity: media_player.milo_tonie_box
     - entity: media_player.miguel_s_ford_sync
     - entity: media_player.spotify_miguel
-    - entity: media_player.wohnzimmer_tv
-    - entity: media_player.toniebox_milo
   album_cover_background: true
 layout:
   auto-padding:
