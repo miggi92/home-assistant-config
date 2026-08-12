@@ -5,16 +5,7 @@ icon: mdi:beach
 subview: true
 type: sections
 max_columns: 3
-header:
-  card:
-    type: markdown
-    title: Aktuelle Nachrichten
-    content: >-
-      <div class="news_ticker">
-      {% set news_items_list = state_attr('sensor.rss_feed_spanien', 'news_items') | default([], true) %}
-      {{ news_items_list | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
-      </div>
-    text_only: true
+header: []
 badges:
   - type: custom:mushroom-template-badge
     icon: mdi:arrow-left
@@ -78,4 +69,12 @@ sections:
         sort:
           method: friendly_name
   - type: grid
-    cards: []
+    cards:
+      - type: markdown
+        title: Aktuelle Nachrichten
+        content: >-
+          <div class="news_ticker">
+          {% set news_items_list = state_attr('sensor.rss_feed_spanien', 'news_items') | default([], true) %}
+          {{ news_items_list[:3] | map(attribute='title') | join('&nbsp;&nbsp;&nbsp;+++&nbsp;&nbsp;&nbsp; ') }}
+          </div>
+        text_only: true
