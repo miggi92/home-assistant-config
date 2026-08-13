@@ -12,7 +12,7 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.21"
+VERSION = "0.5.24"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -171,10 +171,12 @@ AMAZON_SHIPMENT_TRACKING = [
     "confirmation-commande",
     "verzending-volgen",
     "update-bestelling",
+    "pickup-point",
 ]
 AMAZON_DELIVERING_SUBJECT = [
     "Out for delivery:",
     "In Zustellung:",
+    "En cours de livraison:",
 ]
 AMAZON_SHIPMENT_SUBJECT = [
     "Shipped:",
@@ -182,9 +184,10 @@ AMAZON_SHIPMENT_SUBJECT = [
     "Spedito:",
     "Versandt:",
     "Versendet:",
+    "Expédié:",
     *AMAZON_DELIVERING_SUBJECT,
 ]
-AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:"]
+AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:", "Commandé:"]
 AMAZON_EMAIL = [
     "order-update@",
     "update-bestelling@",
@@ -514,8 +517,6 @@ SENSOR_DATA = {
             "wird gleich zugestellt",
             "Powiadomienie o przesyłce",
             "DHL Shipment Notification",
-            "ist unterwegs",
-            "Jetzt Live verfolgen",
             "vanavond voor de deur",
             "vandaag voor de deur",
             "pakket onderweg",
@@ -540,7 +541,23 @@ SENSOR_DATA = {
             "komen we bij je langs",
         ],
     },
-    "dhl_packages": {},
+    # Transit-only DHL DE subjects (not out-for-delivery).
+    # Do NOT match "Jetzt Live verfolgen" here — OFD subjects also contain it.
+    "dhl_packages": {
+        "email": [
+            "donotreply_odd@dhl.com",
+            "NoReply.ODD@dhl.com",
+            "noreply@dhl.de",
+            "no-reply@dhl.de",
+            "pl.no.reply@dhl.com",
+            "support@dhl.com",
+            "noreply@dhlecommerce.nl",
+            "noreply@dhl.nl",
+        ],
+        "subject": [
+            "ist unterwegs",
+        ],
+    },
     "dhl_tracking": {
         "pattern": [
             "(?:JJD\\d{18}|JVGL\\d{20}|MDP[A-Z0-9]{5,15}|00\\d{18}|(?<![0-9])\\d{10,11}(?![0-9]))",
