@@ -16,6 +16,7 @@ badges:
 sections:
   - type: grid
     cards:
+      - !include ../../../cards/nav-bar.yaml
       - type: grid
         title: Essen
         columns: 2
