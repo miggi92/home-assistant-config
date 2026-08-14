@@ -4,26 +4,57 @@ alias: MiloKita
 id: b2aeeef6-6e1f-441d-a1b4-1b678cd97467
 description: "Status aktualisieren, wenn Milo in der Kita ist."
 trigger:
+  - platform: zone
+    entity_id:
+      - person.silke
+      - person.miguel
+    zone: zone.kita
+    event: enter
   - platform: state
-    entity_id: schedule.milo_kita_zeiten
+    entity_id: schedule.milo_kita_bringzeit
+    to: "on"
+  - platform: state
+    entity_id: schedule.milo_kita_abholzeit
+    to: "on"
 condition:
   - condition: state
     entity_id: binary_sensor.milo_kita
     state: "on"
 action:
-  - if:
-      - condition: state
-        entity_id: schedule.milo_kita_zeiten
-        state: "on"
-    then:
-      - action: script.change_dummy_locations
-        data:
-          who: milo
-          target_zone: zone.kita
-    else:
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.milo_person_sync
-        data:
-          option: silke
+  - variables:
+      anwesend: >
+        {% set personen = state_attr('zone.kita', 'persons') | default([], true) %}
+        {{ personen | select('in', ['person.miguel', 'person.silke']) | list | first | default('') }}
+      anwesend_option: "{{ anwesend.split('.')[1] if anwesend else '' }}"
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: schedule.milo_kita_bringzeit
+            state: "on"
+          - condition: template
+            value_template: "{{ anwesend != '' }}"
+          - condition: template
+            value_template: "{{ states('input_select.milo_person_sync') == anwesend_option }}"
+        sequence:
+          - action: script.change_dummy_locations
+            data:
+              who: milo
+              target_zone: zone.kita
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.milo_person_sync
+            data:
+              option: allein
+      - conditions:
+          - condition: state
+            entity_id: schedule.milo_kita_abholzeit
+            state: "on"
+          - condition: template
+            value_template: "{{ anwesend != '' }}"
+        sequence:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.milo_person_sync
+            data:
+              option: "{{ anwesend_option }}"
 mode: single

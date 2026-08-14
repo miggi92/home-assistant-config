@@ -41,4 +41,6 @@ sections:
   - type: grid
     cards:
       - type: custom:mushroom-entity-card
-        entity: schedule.milo_kita_zeiten
+        entity: schedule.milo_kita_bringzeit
+      - type: custom:mushroom-entity-card
+        entity: schedule.milo_kita_abholzeit
