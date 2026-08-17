@@ -44,7 +44,7 @@ action:
             target:
               entity_id: input_select.milo_person_sync
             data:
-              option: allein
+              option: alleine
       - conditions:
           - condition: state
             entity_id: schedule.milo_kita_abholzeit
