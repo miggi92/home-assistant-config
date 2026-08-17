@@ -227,6 +227,10 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
         if s is not None:
             attrs["stop_word"] = s.state == "on"
 
+        s = self._get_child_state(registry, "switch", "_mute_timers")
+        if s is not None:
+            attrs["mute_timers"] = s.state == "on"
+
         s = self._get_child_state(registry, "switch", "_screensaver")
         if s is not None:
             attrs["screensaver"] = s.state == "on"
@@ -343,7 +347,7 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
         # extra_state_attributes are re-evaluated and the card sees updates.
         registry = er.async_get(self.hass)
         tracked_eids = []
-        for suffix in ("_mute", "_wake_sound", "_stop_word"):
+        for suffix in ("_mute", "_wake_sound", "_stop_word", "_mute_timers"):
             eid = registry.async_get_entity_id(
                 "switch", DOMAIN, f"{self._entry.entry_id}{suffix}"
             )

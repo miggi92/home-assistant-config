@@ -2,6 +2,7 @@
 
 Wake sound switch - enable/disable the wake word chime.
 Mute switch - mute/unmute the satellite microphone.
+Mute timers switch - silence the timer alert sounds.
 Screensaver switch - enable/disable the built-in screensaver.
 """
 
@@ -37,6 +38,7 @@ async def async_setup_entry(
     entities = [
         VoiceSatelliteWakeSoundSwitch(entry),
         VoiceSatelliteMuteSwitch(entry),
+        VoiceSatelliteMuteTimersSwitch(entry),
         VoiceSatelliteNoiseGateSwitch(entry),
         VoiceSatelliteStopWordSwitch(entry),
         VoiceSatelliteScreensaverSwitch(entry),
@@ -128,6 +130,52 @@ class VoiceSatelliteMuteSwitch(SwitchEntity, RestoreEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Unmute the satellite."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
+
+
+class VoiceSatelliteMuteTimersSwitch(SwitchEntity, RestoreEntity):
+    """Switch entity silencing the timer alert sounds.
+
+    Automation-facing counterpart of the panel's "Mute timers" toggle.
+    When on, a finished timer still shows its alert (pill, name, blur)
+    but the looping alert chime and the optional spoken alert phrase
+    stay silent until the alert is dismissed.  Nothing else the
+    satellite plays is affected.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_has_entity_name = True
+    _attr_translation_key = "mute_timers"
+    _attr_icon = "mdi:timer-off-outline"
+
+    def __init__(self, entry: ConfigEntry) -> None:
+        """Initialize the mute timers switch."""
+        self._entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_mute_timers"
+        self._attr_is_on = False  # Default: timer alerts audible
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device info - same identifiers as the satellite entity."""
+        return {
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+        }
+
+    async def async_added_to_hass(self) -> None:
+        """Restore previous state on startup."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            self._attr_is_on = last_state.state == "on"
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Silence the timer alert sounds."""
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Restore the timer alert sounds."""
         self._attr_is_on = False
         self.async_write_ha_state()
 

@@ -87,6 +87,9 @@
       "mute": {
         "name": "Mute"
       },
+      "mute_timers": {
+        "name": "Mute timers"
+      },
       "noise_gate": {
         "name": "Wake word noise gate"
       },
