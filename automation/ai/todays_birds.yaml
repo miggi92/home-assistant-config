@@ -6,6 +6,12 @@ id: 2cafed2b-add1-4d50-bb3c-d73292c17764
 triggers:
   - trigger: state
     entity_id: sensor.birdnet_daily
+    not_from:
+      - unknown
+      - unavailable
+    not_to:
+      - unknown
+      - unavailable
 conditions: []
 
 actions:
@@ -16,10 +22,10 @@ actions:
         {% set ns = namespace(names=[]) %}
         {% if bird_count > 0 %}
           {% for bird in state_attr('sensor.birdnet_daily', 'birds') or [] %}
-            {% set ns.names = ns.names + [bird.scientific_name] %}
+            {% set ns.names = ns.names + [bird.common_name | default(bird.scientific_name)] %}
           {% endfor %}
         {% endif %}
-        {{ ns.names | join(', ') }}
+        {{ ns.names | unique | list | join(', ') }}
       image_prompt: >-
         {% if bird_count == 0 %}
           A fine art painting in the style of a classic naturalist watercolour
@@ -34,12 +40,16 @@ actions:
           An elegant composition featuring these European bird species, each
           rendered with delicate brushwork, true to its real-life appearance:
           {{ todays_birds }}.
+          Each bird is labeled directly beneath it with its species name in
+          small, elegant handwritten script, as found in a vintage
+          ornithological field guide. The labels must spell the names exactly
+          as given: {{ todays_birds }}.
           Soft, painterly textures with visible brushstrokes and gentle washes
           of colour. The birds are arranged harmoniously among hand-painted
           branches, leaves, and foliage on a softly tinted parchment-like
           background. Muted, natural tones with warm light. Detailed yet artistic,
           evoking the work of John James Audubon.
-          No text, no words, no labels, no watermarks.
+          No other text besides these labels, no watermarks.
         {% endif %}
   - alias: Generate AI image based on bird count
     action: ai_task.generate_image
@@ -47,6 +57,10 @@ actions:
       task_name: "Todays birds"
       instructions: "{{ image_prompt }}"
     response_variable: birds
+
+  - alias: Only continue if image was generated
+    condition: template
+    value_template: "{{ birds.url is defined }}"
 
   - alias: Download the generated image file
     action: downloader.download_file
