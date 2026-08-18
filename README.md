@@ -41,10 +41,10 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔡 Eingabe-Auswahlen: 10
 - ☑️ Eingabe-Booleans: 70
 - 📅 Eingabe-Datum/Zeit: 30
-- 🔢 Eingabe-Nummern: 24
+- 🔢 Eingabe-Nummern: 26
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 45
-- 🧩 Entitäten: 4192
+- 🧩 Entitäten: 4197
 - 🎮 Fernbedienungen: 18
 - 📱 Geräte: 5190
 - 📍 Geräte-Tracker: 141
@@ -56,11 +56,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 💧 Luftbefeuchter: 0
 - 🌬️ Luftqualität: 0
 - 🎵 Mediaplayer: 33
-- 🔟 Nummern: 154
+- 🔟 Nummern: 156
 - 👤 Personen: 9
 - 🔌 Schalter: 375
 - 🔒 Schlösser: 2
-- 📟 Sensoren: 1908
+- 📟 Sensoren: 1909
 - 📢 Sirenen: 1
 - 📜 Skripte: 26
 - ☀️ Sonnen: 1
