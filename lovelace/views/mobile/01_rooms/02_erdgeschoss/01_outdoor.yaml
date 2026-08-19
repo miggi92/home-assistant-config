@@ -91,10 +91,8 @@ sections:
         show_state: false
         camera_image: camera.rathaus
       - type: picture-entity
-        entity: camera.schleuse_oberwasser
+        entity: image.aussen_lauffen_neckar_oberwasser
         show_state: false
-        camera_image: camera.schleuse_oberwasser
       - type: picture-entity
-        entity: camera.schleuse_unterwasser
+        entity: image.aussen_lauffen_neckar_unterwasser
         show_state: false
-        camera_image: camera.schleuse_unterwasser
