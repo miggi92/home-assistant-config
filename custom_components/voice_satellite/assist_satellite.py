@@ -53,6 +53,71 @@ _LOGGER = logging.getLogger(__name__)
 # Timeout for waiting for the card to ACK announcement playback
 ANNOUNCE_TIMEOUT = 120  # seconds
 
+# Layer III bitrate tables (kbps), indexed by the frame header's bitrate
+# field. Index 0 (free format) and 15 (bad) are unusable and skipped.
+_MP3_BITRATES_V1 = (0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0)
+_MP3_BITRATES_V2 = (0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0)
+# Sample rates (Hz) by MPEG version bits: 3 = MPEG1, 2 = MPEG2, 0 = MPEG2.5.
+_MP3_RATES = {3: (44100, 48000, 32000), 2: (22050, 24000, 16000), 0: (11025, 12000, 8000)}
+
+
+def _mp3_frame_walk_duration(data: bytes) -> float:
+    """Exact duration of a Layer III MPEG stream, by walking every frame.
+
+    Streaming TTS engines emit the MP3 as they synthesize it, so they can
+    never seek back to write a Xing/VBRI header. On such a headerless VBR
+    stream mutagen estimates length from the FIRST frame's bitrate alone
+    (filesize * 8 / bitrate), and a low-bitrate leading silence frame
+    inflates the result several-fold - measured 22.56s for a 2.76s reply,
+    which stalled remote TTS completion for the difference. Summing the
+    per-frame sample counts costs microseconds on TTS-sized payloads and
+    is exact regardless of bitrate switching.
+
+    Returns 0.0 when the payload is not a plain Layer III stream (caller
+    falls back to mutagen / wave).
+    """
+    n = len(data)
+    i = 0
+    # Skip a leading ID3v2 tag (syncsafe 28-bit size after the 10-byte header).
+    if n >= 10 and data[:3] == b"ID3":
+        i = 10 + (
+            ((data[6] & 0x7F) << 21)
+            | ((data[7] & 0x7F) << 14)
+            | ((data[8] & 0x7F) << 7)
+            | (data[9] & 0x7F)
+        )
+    seconds = 0.0
+    frames = 0
+    while i + 4 <= n:
+        if data[i] != 0xFF or (data[i + 1] & 0xE0) != 0xE0:
+            i += 1  # resync over junk between frames
+            continue
+        h1, h2 = data[i + 1], data[i + 2]
+        version = (h1 >> 3) & 0x03  # 3=MPEG1, 2=MPEG2, 0=MPEG2.5, 1=reserved
+        layer = (h1 >> 1) & 0x03  # 1 = Layer III
+        if version == 1 or layer != 1:
+            return 0.0  # not a plain Layer III stream - let mutagen decide
+        br_idx = (h2 >> 4) & 0x0F
+        sr_idx = (h2 >> 2) & 0x03
+        if br_idx in (0, 15) or sr_idx == 3:
+            i += 1  # free-format/bad header - treat as junk and resync
+            continue
+        bitrate = (_MP3_BITRATES_V1 if version == 3 else _MP3_BITRATES_V2)[br_idx] * 1000
+        rate = _MP3_RATES[version][sr_idx]
+        padding = (h2 >> 1) & 0x01
+        # MPEG1 Layer III: 1152 samples per frame; MPEG2/2.5: 576.
+        if version == 3:
+            frame_len = 144 * bitrate // rate + padding
+            seconds += 1152 / rate
+        else:
+            frame_len = 72 * bitrate // rate + padding
+            seconds += 576 / rate
+        if frame_len <= 0:
+            return 0.0
+        i += frame_len
+        frames += 1
+    return seconds if frames else 0.0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -1408,15 +1473,25 @@ class VoiceSatelliteEntity(AssistSatelliteEntity):
                 if resp.status == 200:
                     audio_data = await resp.read()
 
-                    # Try mutagen first (MP3, FLAC, OGG, etc.)
+                    # MP3 first, by exact frame walk. Streaming TTS produces
+                    # VBR MP3 with no Xing header, which mutagen can only
+                    # estimate - several-fold too long when a low-bitrate
+                    # silence frame leads the stream (see the helper).
                     try:
-                        import mutagen
-
-                        audio_file = mutagen.File(io.BytesIO(audio_data))
-                        if audio_file is not None and audio_file.info and audio_file.info.length:
-                            duration = round(audio_file.info.length, 2)
+                        duration = round(_mp3_frame_walk_duration(audio_data), 2)
                     except Exception:
-                        pass
+                        duration = 0
+
+                    # mutagen for everything else (FLAC, OGG, framed MP3...)
+                    if not duration:
+                        try:
+                            import mutagen
+
+                            audio_file = mutagen.File(io.BytesIO(audio_data))
+                            if audio_file is not None and audio_file.info and audio_file.info.length:
+                                duration = round(audio_file.info.length, 2)
+                        except Exception:
+                            pass
 
                     # Fallback: stdlib wave module for WAV/PCM
                     if not duration:

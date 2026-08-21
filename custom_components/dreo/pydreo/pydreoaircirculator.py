@@ -27,19 +27,21 @@ from .constant import (
     HWFPON_KEY,
     HWFPANGLE_KEY,
     HBODYCNT_KEY,
+    WINDTYPE_KEY,
+    WIND_MODE_KEY,
 )
 
 from .commandoutbox import OutboxTiming
+from .helpers import Helpers
 from .pydreofanbase import PyDreoFanBase
 from .models import DreoDeviceDetails
 
 _LOGGER = logging.getLogger(__name__)
 
-# Cloud control-reply / control-report can echo the requested fixedconf as an
-# optimistic ACK (see PyDreo._ACK_METHOD_NAMES). Some devices (notably
-# DR-HPF017S / 517S) then report the real encoder position and may reject the
-# move. Treat only non-optimistic updates (e.g. method "report") as authoritative.
-_FIXEDCONF_OPTIMISTIC_METHODS = frozenset({"control-reply", "control-report"})
+# Cloud control-reply can echo the requested fixedconf before the device moves.
+# control-report is the later device confirmation and carries encoder updates,
+# so it must remain authoritative along with method "report".
+_FIXEDCONF_OPTIMISTIC_METHODS = frozenset({"control-reply"})
 
 # Default: no inter-command settle (most air circulators handle rapid fixedconf).
 # Models that need a longer interval set FIXEDCONF_SETTLE_SECONDS_KEY (float seconds)
@@ -119,6 +121,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
         self._fixed_conf_at_command: str | None = None
         # Serialize fixedconf command state; never sleep while holding this lock.
         self._fixed_conf_lock = threading.Lock()
+        # Serialize transport writes without blocking websocket state updates.
+        self._fixed_conf_send_lock = threading.Lock()
         self._last_fixed_conf_command_time: float | None = None
         # Latest desired fixedconf when settle delays a send (coalesces rapid HA updates).
         self._pending_fixed_conf: str | None = None
@@ -160,6 +164,23 @@ class PyDreoAirCirculator(PyDreoFanBase):
         self._follow_me: bool = None
         self._follow_me_angle: int = None
         self._people_detected: int = None
+
+    def turn_on_with_preset_mode(self, preset_mode: str) -> None:
+        """Atomically turn on the fan and select a preset mode."""
+        if self._preset_modes is None:
+            raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support modes.")
+
+        key = WINDTYPE_KEY if self._wind_type is not None else WIND_MODE_KEY if self._wind_mode is not None else None
+        if key is None:
+            raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support wind type or wind mode keys.")
+
+        numeric_value = Helpers.value_from_name(self._preset_modes, preset_mode)
+        if numeric_value is None:
+            raise ValueError(f"Preset mode {preset_mode} is not in the acceptable list: {self.preset_modes}")
+        if self._power_on_key is None:
+            raise NotImplementedError("Attempting to turn on a device with an unknown power key.")
+
+        self._send_command_batch({self._power_on_key: True, key: numeric_value})
 
     def _uses_hangleadj_for_horizontal(self) -> bool:
         """Check if device uses hangleadj (simpler angle control) instead of hoscangle."""
@@ -612,12 +633,13 @@ class PyDreoAirCirculator(PyDreoFanBase):
         setup); cancel handles are also cleared on config-entry unload. Callers
         must still invoke dispose so device-level pending state is cleared.
         """
-        with self._fixed_conf_lock:
-            self._fixed_conf_disposed = True
-            self._pending_fixed_conf = None
-            self._cancel_fixed_conf_timer_locked()
-            self._clear_in_flight_fixed_conf()
-            _LOGGER.debug("dispose: cancelled fixedconf settle for %s", self.name)
+        with self._fixed_conf_send_lock:
+            with self._fixed_conf_lock:
+                self._fixed_conf_disposed = True
+                self._pending_fixed_conf = None
+                self._cancel_fixed_conf_timer_locked()
+                self._clear_in_flight_fixed_conf()
+                _LOGGER.debug("dispose: cancelled fixedconf settle for %s", self.name)
         self._notify_fixed_conf_ui()
 
     def _clear_in_flight_fixed_conf(self) -> bool:
@@ -697,15 +719,11 @@ class PyDreoAirCirculator(PyDreoFanBase):
         )
         return self._clear_in_flight_fixed_conf()
 
-    def _dispatch_fixed_conf_locked(self, normalized: str) -> None:
-        """Send fixedconf immediately. Caller must hold ``_fixed_conf_lock``.
-
-        On send failure, clears in-flight tracking so diagnostics do not show a
-        command as outstanding when it never left the client.
-        """
+    def _dispatch_fixed_conf_locked(self, normalized: str) -> str | None:
+        """Prepare an immediate fixedconf send. Caller must hold ``_fixed_conf_lock``."""
         if self._fixed_conf_disposed:
             _LOGGER.debug("_set_fixed_conf: disposed; skipping send of %s", normalized)
-            return
+            return None
         # If a previous command never confirmed, surface that before sending again.
         self._maybe_log_fixed_conf_reject(
             self._normalize_fixed_conf(self._fixed_conf), self._fixed_conf
@@ -714,21 +732,31 @@ class PyDreoAirCirculator(PyDreoFanBase):
         self._fixed_conf_at_command = self._normalize_fixed_conf(self._fixed_conf)
         self._last_commanded_fixed_conf = normalized
         self._pending_fixed_conf = None
-        _LOGGER.debug("_set_fixed_conf: commanding fixedconf %s", normalized)
-        try:
-            self._send_command(FIXEDCONF_KEY, normalized)
-        except Exception as ex:
-            # Avoid stuck commanded/pending diagnostics if I/O fails mid-send.
-            _LOGGER.error(
-                "_set_fixed_conf: send failed for %s on %s (%s): %s",
-                normalized,
-                self.name,
-                type(ex).__name__,
-                ex,
-            )
-            self._clear_in_flight_fixed_conf()
-            raise
         self._last_fixed_conf_command_time = time.monotonic()
+        _LOGGER.debug("_set_fixed_conf: commanding fixedconf %s", normalized)
+        return normalized
+
+    def _send_fixed_conf(self, normalized: str) -> None:
+        """Send a prepared fixedconf command without holding the state lock."""
+        with self._fixed_conf_send_lock:
+            with self._fixed_conf_lock:
+                if self._fixed_conf_disposed:
+                    return
+            try:
+                self._send_command(FIXEDCONF_KEY, normalized)
+            except Exception as ex:
+                # Avoid stuck commanded/pending diagnostics if I/O fails mid-send.
+                _LOGGER.error(
+                    "_set_fixed_conf: send failed for %s on %s (%s): %s",
+                    normalized,
+                    self.name,
+                    type(ex).__name__,
+                    ex,
+                )
+                with self._fixed_conf_lock:
+                    self._clear_in_flight_fixed_conf()
+                    self._last_fixed_conf_command_time = None
+                raise
 
     def _on_fixed_conf_settle_timer(self) -> None:
         """Delayed callback: send the latest pending fixedconf after settle.
@@ -737,6 +765,7 @@ class PyDreoAirCirculator(PyDreoFanBase):
         the standalone Timer fallback). Safe to call from a worker thread.
         """
         notify = False
+        send = None
         try:
             with self._fixed_conf_lock:
                 self._fixed_conf_cancel = None
@@ -754,10 +783,12 @@ class PyDreoAirCirculator(PyDreoFanBase):
                     self._pending_fixed_conf = None
                     notify = True
                 else:
-                    self._dispatch_fixed_conf_locked(pending)
+                    send = self._dispatch_fixed_conf_locked(pending)
                     notify = True
+            if send is not None:
+                self._send_fixed_conf(send)
         except Exception:
-            # Dispatch cleared in-flight on send failure; still refresh diagnostics.
+            # Send failure cleared in-flight state; still refresh diagnostics.
             self._notify_fixed_conf_ui()
             raise
         if notify:
@@ -781,6 +812,7 @@ class PyDreoAirCirculator(PyDreoFanBase):
             raise ValueError(f"Invalid fixedconf format: {value}")
 
         notify = False
+        send = None
         try:
             with self._fixed_conf_lock:
                 if self._fixed_conf_disposed:
@@ -800,7 +832,7 @@ class PyDreoAirCirculator(PyDreoFanBase):
                     remaining = self._remaining_fixed_conf_settle_seconds()
                     if remaining <= 0:
                         self._cancel_fixed_conf_timer_locked()
-                        self._dispatch_fixed_conf_locked(normalized)
+                        send = self._dispatch_fixed_conf_locked(normalized)
                         notify = True
                     else:
                         # Schedule a single delayed send of the latest pending value.
@@ -817,6 +849,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
                             remaining, self._on_fixed_conf_settle_timer
                         )
                         notify = True
+            if send is not None:
+                self._send_fixed_conf(send)
         except Exception:
             # Send failed after clearing in-flight; refresh diagnostics for HA.
             self._notify_fixed_conf_ui()
@@ -1162,8 +1196,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
         val_fixed_conf = self.get_server_update_key_value(message, FIXEDCONF_KEY)
         if isinstance(val_fixed_conf, str):
             method = message.get("method")
-            # control-reply / control-report may echo the requested value as an
-            # ACK and are not reliable for actual motor position. Prefer "report".
+            # control-reply may echo the requested value before the motor moves.
+            # control-report and report carry authoritative encoder positions.
             if method in _FIXEDCONF_OPTIMISTIC_METHODS:
                 _LOGGER.debug(
                     "fixedconf: Ignoring optimistic %s value %s (waiting for device report)",

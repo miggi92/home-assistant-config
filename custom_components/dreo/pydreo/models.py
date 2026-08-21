@@ -361,7 +361,8 @@ SUPPORTED_DEVICES = {
     # data that would allow auto-detection of preset modes for these devices.
     "DR-HPF008S": DreoDeviceDetails(
         device_type=DreoDeviceType.AIR_CIRCULATOR,
-        preset_modes=[("normal", 1), ("auto", 2), ("sleep", 3), ("natural", 4), ("turbo", 5)],
+        # Confirmed from Dreo-app-labeled control reports in issue #275.
+        preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("auto", 4), ("turbo", 5)],
         device_ranges={SPEED_RANGE: (1, 9), VERTICAL_ANGLE_RANGE: (-30, 90), "atm_brightness_range": (1, 3)},
     ),
     "DR-HPF015S": DreoDeviceDetails(
@@ -437,6 +438,11 @@ SUPPORTED_DEVICES = {
         # The device does NOT echo atmcolor back in state, but still accepts ATMCOLOR_KEY write
         # commands for direct colour control.  supports_direct_rgb_color enables the HA colour
         # picker via the atm_color_rgb_write capability path (write-only, no state echo).
+        device_ranges={SPEED_RANGE: (1, 12), "atm_brightness_range": (1, 100), "supports_direct_rgb_color": True},
+    ),
+    "DR-HCF008S": DreoDeviceDetails(
+        device_type=DreoDeviceType.CEILING_FAN,
+        preset_modes=[("normal", 1), ("natural", 2), ("sleep", 3), ("reverse", 4)],
         device_ranges={SPEED_RANGE: (1, 12), "atm_brightness_range": (1, 100), "supports_direct_rgb_color": True},
     ),
     "DR-HCF521S": DreoDeviceDetails(device_type=DreoDeviceType.CEILING_FAN, device_ranges={SPEED_RANGE: (1, 12)}),

@@ -12,13 +12,16 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.25"
+VERSION = "0.5.27"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
 DATA = "data"
 COORDINATOR = "coordinator_mail"
 OVERLAY = ["overlay.png", "vignette.png", "white.png"]
+# The generic delivery camera assembles its animated GIF into the shared image
+# directory, so shipper code that sweeps that directory has to leave it alone.
+GENERIC_DELIVERIES_GIF = "generic_deliveries.gif"
 SERVICE_UPDATE_FILE_PATH = "update_file_path"
 CAMERA = "cameras"
 CONFIG_VER = 20
@@ -163,9 +166,10 @@ AMAZON_DELIVERED_SUBJECT = [
     "Dostarczono:",
     "Geliefert:",
     "Livré",
+    "Livrés",
+    "Livraison",
     "Entregado:",
     "Bezorgd:",
-    "Livraison : Votre",
     "Zugestellt:",
 ]
 AMAZON_SHIPMENT_TRACKING = [
@@ -183,7 +187,7 @@ AMAZON_SHIPMENT_TRACKING = [
 AMAZON_DELIVERING_SUBJECT = [
     "Out for delivery:",
     "In Zustellung:",
-    "En cours de livraison:",
+    "En cours de livraison",
 ]
 AMAZON_SHIPMENT_SUBJECT = [
     "Shipped:",
@@ -191,10 +195,14 @@ AMAZON_SHIPMENT_SUBJECT = [
     "Spedito:",
     "Versandt:",
     "Versendet:",
-    "Expédié:",
+    "Expédié",
     *AMAZON_DELIVERING_SUBJECT,
 ]
-AMAZON_ORDERED_SUBJECT = ["Ordered:", "Pedido efetuado:", "Commandé:"]
+AMAZON_ORDERED_SUBJECT = [
+    "Ordered:",
+    "Pedido efetuado:",
+    "Commandé",
+]
 AMAZON_EMAIL = [
     "order-update@",
     "update-bestelling@",
@@ -236,6 +244,8 @@ AMAZON_TIME_PATTERN = [
     "Entrega:",
     "A chegar:",
     "Arrivée :",
+    "Livraison :",
+    "Arrive aujourd'hui",
     "Chega ",
     "Verwachte bezorgdatum:",
     "Votre date de livraison prévue est :",
@@ -275,9 +285,18 @@ AMAZON_TIME_PATTERN_REGEX = [
     "Arriverà (\\w+ \\d+) - (\\w+ \\d+)",
     "Arriverà (\\w+ \\d+)",
     "Arriverà (\\w+ \\d*)",
-    "Arrivée (\\w+ \\d+) - (\\w+ \\d+)",
-    "Arrivée (\\w+ \\d+)",
-    "Arrivée (\\w+ \\d*)",
+    r"Arrivée\s*(?:prévue\s*)?:?\s*(heute|aujourd'hui|demain)",
+    r"Arrivée\s*(?:prévue\s*)?:?\s*(?:le )?(\d+ \w+)",
+    "Arrivée\\s*(?:prévue\\s*)?:?\\s*(?:le )?(\\w+ \\d+) - (\\w+ \\d+)",
+    r"Arrivée\s*(?:prévue\s*)?:?\s*(?:le )?(\w+ \d+)",
+    r"Arrivée\s*(?:prévue\s*)?:?\s*(?:le )?(\w+ \d*)",
+    r"Arrivée\s*(?:prévue\s*)?:?\s*(?:le )?(\w+)",
+    r"Livraison\s*(?:prévue\s*)?:?\s*(heute|aujourd'hui|demain)",
+    r"Livraison\s*(?:prévue\s*)?:?\s*(?:le )?(\d+ \w+)",
+    "Livraison\\s*(?:prévue\\s*)?:?\\s*(?:le )?(\\w+ \\d+) - (\\w+ \\d+)",
+    r"Livraison\s*(?:prévue\s*)?:?\s*(?:le )?(\w+ \d+)",
+    r"Livraison\s*(?:prévue\s*)?:?\s*(?:le )?(\w+ \d*)",
+    r"Livraison\s*(?:prévue\s*)?:?\s*(?:le )?(\w+)",
     "Chega ((\\w+(-\\w+)?))",
     "Wordt bezorgd op (\\w+ \\d+ \\w+)",
     "Wordt bezorgd op (\\w+ \\d+)",
@@ -292,23 +311,6 @@ AMAZON_EXCEPTION_BODY = "running late"
 AMAZON_EXCEPTION = "amazon_exception"
 AMAZON_EXCEPTION_ORDER = "amazon_exception_order"
 AMAZON_PATTERN = "[0-9]{3}-[0-9]{7}-[0-9]{7}"
-AMAZON_LANGS = [
-    "it_IT",
-    "it_IT.UTF-8",
-    "pl_PL",
-    "pl_PL.UTF-8",
-    "de_DE",
-    "de_DE.UTF-8",
-    "es_ES",
-    "es_ES.UTF-8",
-    "pt_PT",
-    "pt_PT.UTF-8",
-    "pt_BR",
-    "pt_BR.UTF-8",
-    "fr_CA",
-    "fr_CA.UTF-8",
-    "",
-]
 AMAZON_OTP = "amazon_otp"
 AMAZON_OTP_CODE = "amazon_otp_code"
 AMAZON_OTP_REGEX = "(\n)(\\d{6})(\n)"
@@ -332,10 +334,7 @@ SENSOR_DATA = {
         "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
         "subject": ["Delivery Exception"],
     },
-    "usps_packages": {
-        "email": ["auto-reply@usps.com", "auto-reply@tracking.usps.com"],
-        "subject": ["Expected Delivery by"],
-    },
+    "usps_packages": {},
     "usps_pickup": {
         "email": ["auto-reply@usps.com"],
         "subject": ["USPS - Your Package Pickup Request"],
@@ -992,6 +991,7 @@ SENSOR_DATA = {
         "email": ["homedepot@order.homedepot.com", "order.homedepot.com"],
         "subject": [
             "Shipped:",
+            "order shipped!",
             "on its way",
         ],
     },
