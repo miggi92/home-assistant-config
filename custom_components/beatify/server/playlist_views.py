@@ -310,6 +310,40 @@ def _slugify_playlist_name(name: str) -> str:
     return s[:60] or "untitled-playlist"
 
 
+def write_user_playlist(hass: HomeAssistant, playlist: dict[str, Any]) -> Any:
+    """Return an executor job writing a playlist to the ``user/`` subfolder.
+
+    Extracted from ``SavePlaylistView`` (behaviour unchanged) so every
+    user-playlist write follows the same rules — slugged filename,
+    non-clobbering ``-2``/``-3`` suffixes, pretty-printed JSON — no matter
+    which endpoint produced it. Crate Digger's generate and AI-curate endpoints
+    save through this same helper rather than duplicating the logic.
+    Callers ``await`` the returned job and receive the written :class:`Path`.
+    """
+    slug = _slugify_playlist_name(playlist.get("name", ""))
+    playlist_dir = get_playlist_directory(hass)
+    user_dir = playlist_dir / "user"
+
+    def _write() -> Path:
+        user_dir.mkdir(parents=True, exist_ok=True)
+        target = user_dir / f"{slug}.json"
+        # Pick a non-clobbering name if a saved playlist with the same slug
+        # already exists — two playlists with similar names should not
+        # silently overwrite each other.
+        final = target
+        counter = 2
+        while final.exists():
+            final = user_dir / f"{slug}-{counter}.json"
+            counter += 1
+        final.write_text(
+            json.dumps(playlist, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return final
+
+    return hass.async_add_executor_job(_write)
+
+
 class SavePlaylistView(RateLimitMixin, HomeAssistantView):
     """Write a generator-produced playlist into the user-playlist subfolder.
 
@@ -389,29 +423,8 @@ class SavePlaylistView(RateLimitMixin, HomeAssistantView):
                 details={"errors": errors, "rejected_songs": rejected_songs},
             )
 
-        slug = _slugify_playlist_name(playlist.get("name", ""))
-        playlist_dir = get_playlist_directory(self.hass)
-        user_dir = playlist_dir / "user"
-
-        def _write() -> Path:
-            user_dir.mkdir(parents=True, exist_ok=True)
-            target = user_dir / f"{slug}.json"
-            # Pick a non-clobbering name if a saved playlist with the same
-            # slug already exists — two users with similar names should not
-            # silently overwrite each other.
-            final = target
-            counter = 2
-            while final.exists():
-                final = user_dir / f"{slug}-{counter}.json"
-                counter += 1
-            final.write_text(
-                json.dumps(playlist, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-            return final
-
         try:
-            written = await self.hass.async_add_executor_job(_write)
+            written = await write_user_playlist(self.hass, playlist)
         except OSError as err:
             _LOGGER.error("Failed to save user playlist: %s", err)
             return _json_error("Failed to save playlist", 500, code="SAVE_FAILED")

@@ -99,6 +99,12 @@ class RoundManager:
         self.intro_stopped: bool = False
         self._intro_round_start_time: float | None = None
         self._intro_splash_pending: bool = False
+        # Same idea as the intro splash, for TTS: while round-start
+        # announcements are still playing the stamped deadline is only a
+        # placeholder — the song is not audible yet, so the round has not
+        # really begun. start_timer_at_playback() re-stamps it the moment
+        # playback is confirmed.
+        self._deadline_deferred: bool = False
         self._intro_splash_shown: bool = False
         self._intro_splash_deferred_song: dict[str, Any] | None = None
         self._rounds_since_intro: int = 0
@@ -164,6 +170,36 @@ class RoundManager:
         if exc is not None:
             _LOGGER.error("Background metadata fetch failed: %s", exc)
 
+    def defer_deadline(self) -> None:
+        """Mark the stamped deadline as not-yet-started (announcements)."""
+        self._deadline_deferred = True
+
+    def start_timer_at_playback(self, timer_countdown: Any = None) -> None:
+        """Re-stamp the deadline from NOW, because the song is now audible.
+
+        Round-start announcements run between ``initialize_round`` and the
+        first audible note, so a deadline stamped at init hands the players a
+        round that is already partly spent. On a 15s round with a spoken
+        round number and a countdown that leaves under 7 seconds of music.
+
+        This mirrors ``confirm_intro_splash`` exactly (#1699): cancel the
+        placeholder timer, recompute ``deadline`` from the current moment,
+        and re-arm the countdown. Idempotent — calling it without a deferral
+        pending does nothing, so a provider that never announces is
+        unaffected.
+        """
+        if not self._deadline_deferred:
+            return
+        self._deadline_deferred = False
+        self.cancel_timer()
+        now = self._now()
+        self.round_start_time = now
+        self.deadline = int(now * 1000) + int(self.round_duration * 1000)
+        delay = self.round_duration
+        countdown = timer_countdown or self._timer_countdown
+        self._timer_task = asyncio.create_task(countdown(delay))
+        self._timer_task.add_done_callback(_log_timer_task_failure)
+
     def is_deadline_passed(self) -> bool:
         """Return True if the round deadline has passed."""
         # #1699: while an intro splash is still pending, the deadline stamped by
@@ -175,7 +211,7 @@ class RoundManager:
         # (handle_round_timeout gates on is_deadline_passed): otherwise a splash
         # left unconfirmed past round_duration would let a client nudge end_round
         # on a round whose song never even played.
-        if self._intro_splash_pending:
+        if self._intro_splash_pending or self._deadline_deferred:
             return False
         if self.deadline is None:
             return False
@@ -248,7 +284,7 @@ class RoundManager:
         if self._rounds_since_intro >= _INTRO_FORCE_GAP:
             selected = True
         elif self._rounds_since_intro >= _INTRO_MIN_GAP:
-            selected = random.random() < _INTRO_PROBABILITY  # noqa: S311
+            selected = random.random() < _INTRO_PROBABILITY
         else:
             selected = False
 

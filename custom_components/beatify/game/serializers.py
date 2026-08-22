@@ -11,6 +11,7 @@ GameState.get_state() becomes a thin wrapper calling
 from __future__ import annotations
 
 import logging
+import time
 from typing import TYPE_CHECKING, Any
 
 from .playlist import get_playback_uri
@@ -88,7 +89,7 @@ class GameStateSerializer:
             "intro_splash_pending": gs.intro_splash_pending,
         }
 
-        from .state import GamePhase  # noqa: PLC0415
+        from .state import GamePhase
 
         # Phase-specific data
         if gs.phase == GamePhase.LOBBY:
@@ -130,6 +131,11 @@ class GameStateSerializer:
         state["round"] = gs.round
         state["total_rounds"] = gs.total_rounds
         state["deadline"] = gs.deadline
+        # Client clocks skew: a device ~20s off displayed "20s remaining" at
+        # the exact moment the server's time-up fired. Stamp the server clock
+        # so deadline-driven counters can correct for it — the same hazard
+        # already mitigated for the vote window below.
+        state["server_now_ms"] = int(time.time() * 1000)
         # #1662: also expose the server-computed *relative* remaining seconds so
         # clients can anchor their countdown to their OWN clock instead of
         # subtracting a server wall-clock epoch (`deadline`) from a possibly
@@ -160,11 +166,18 @@ class GameStateSerializer:
             # #648: Admin-only song details (year, fun facts) — players ignore this
             state["admin_song"] = {
                 "year": gs.current_song.get("year"),
+                # Crate Digger: the library URI identifies the pool entry so
+                # the host can correct a wrong year straight from the reveal
+                # screen. Admin-only by design — the player payload below
+                # deliberately strips URIs, and only the host may write to
+                # the pool.
+                "uri_ma_library": gs.current_song.get("uri_ma_library"),
                 "fun_fact": gs.current_song.get("fun_fact", ""),
                 "fun_fact_de": gs.current_song.get("fun_fact_de", ""),
                 "fun_fact_es": gs.current_song.get("fun_fact_es", ""),
                 "fun_fact_fr": gs.current_song.get("fun_fact_fr", ""),
                 "fun_fact_nl": gs.current_song.get("fun_fact_nl", ""),
+                "fun_fact_it": gs.current_song.get("fun_fact_it", ""),
             }
         # Leaderboard (Story 5.5)
         state["leaderboard"] = gs.get_leaderboard()
@@ -195,6 +208,12 @@ class GameStateSerializer:
         # Filtered song info during REVEAL — exclude URIs, alt_artists, internal fields
         if gs.current_song:
             state["song"] = {
+                # Crate Digger: a boolean, deliberately NOT the URI. The host
+                # can then offer "fix this song" at reveal (the pool is theirs
+                # to correct), while the payload keeps upstream's rule that
+                # players never receive playable URIs. The correction endpoint
+                # resolves the entry from title+artist server-side.
+                "is_library": bool(gs.current_song.get("uri_ma_library")),
                 "artist": gs.current_song.get("artist", "Unknown"),
                 "title": gs.current_song.get("title", "Unknown"),
                 "year": gs.current_song.get("year"),
@@ -206,6 +225,7 @@ class GameStateSerializer:
                 "fun_fact_es": gs.current_song.get("fun_fact_es", ""),
                 "fun_fact_fr": gs.current_song.get("fun_fact_fr", ""),
                 "fun_fact_nl": gs.current_song.get("fun_fact_nl", ""),
+                "fun_fact_it": gs.current_song.get("fun_fact_it", ""),
             }
         # Include reveal-specific player data (guesses, round_score, missed)
         state["players"] = GameStateSerializer.get_reveal_players_state(gs)
@@ -290,7 +310,7 @@ class GameStateSerializer:
         # Issue #75: Game highlights reel
         state["highlights"] = gs.highlights_tracker.to_dict()
         # Issue #120: Shareable result cards
-        from .share import build_share_data  # noqa: PLC0415
+        from .share import build_share_data
 
         state["share_data"] = build_share_data(gs)
 

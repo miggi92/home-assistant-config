@@ -51,7 +51,23 @@ from custom_components.beatify.server.game_views import (  # noqa: F401
     RematchGameView,
     SetSuddenDeathView,
     StartGameplayView,
+    UpdateLobbyView,
     StartGameView,
+)
+from .library_views import (  # noqa: F401 — re-exported for __init__
+    LibraryPoolStatusView,
+    LibraryPoolBuildView,
+    LibraryPoolExportView,
+    LibraryPoolRefreshView,
+    LibraryPoolBackupView,
+    LibraryRecentSongsView,
+    LibrarySongCorrectView,
+    LibrarySongLookupView,
+    LibraryPoolRestoreView,
+    LibrarySettingsView,
+    LibraryPoolPreviewView,
+    LibraryPlaylistResolveView,
+    LibraryPlaylistGenerateView,
 )
 
 # Re-export playlist views

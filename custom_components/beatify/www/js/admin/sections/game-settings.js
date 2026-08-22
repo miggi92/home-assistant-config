@@ -26,6 +26,11 @@ import { adminState } from '../state.js';
 import { STORAGE_GAME_SETTINGS } from '../constants.js';
 import { normalizeRoundDuration } from '../util.js';
 import { renderPlaylists } from './playlists.js';
+import {
+    setupLibrarySettings,
+    syncLibraryControls,
+    updateLibraryPanelVisibility,
+} from './library.js';
 
 /**
  * #1583: Single-select chip a11y. The chips are native `<button>`s, so role,
@@ -184,6 +189,8 @@ export function setupGameSettings() {
             const provider = this.dataset.provider;
             selectChip('.chip[data-provider]', (c) => c === this);
             adminState.selectedProvider = provider;
+            // Crate Digger: show/hide its settings panel with the chip.
+            updateLibraryPanelVisibility();
             updateGameSettingsSummary();
             saveGameSettings();
             // Re-render playlists to show coverage for selected provider (preserve valid selections)
@@ -192,6 +199,11 @@ export function setupGameSettings() {
             }
         });
     });
+
+    // Crate Digger (ma_library) panel: settings, scan controls, backup and
+    // the live match count. Mounted here so it shares the game-settings
+    // persistence round-trip.
+    setupLibrarySettings(saveGameSettings);
 }
 
 /**
@@ -202,6 +214,14 @@ export async function loadSavedSettings() {
         const saved = localStorage.getItem(STORAGE_GAME_SETTINGS);
         if (saved) {
             const settings = JSON.parse(saved);
+            // Crate Digger settings ride along in the same blob.
+            try {
+                if (typeof settings.libraryYearGate === 'string') adminState.libraryYearGate = settings.libraryYearGate;
+                if (Number.isFinite(settings.libraryScanSize)) adminState.libraryScanSize = settings.libraryScanSize;
+                if (Number.isFinite(settings.libraryPopPercent)) adminState.libraryPopPercent = settings.libraryPopPercent;
+                if (Array.isArray(settings.libraryGenres)) adminState.libraryGenres = settings.libraryGenres;
+                syncLibraryControls();
+            } catch (e) { /* malformed — defaults stand */ }
 
             // Apply language
             if (settings.language) {
@@ -329,6 +349,21 @@ export async function loadSavedSettings() {
  * Save game settings to localStorage
  */
 export function saveGameSettings() {
+    // Apply lobby-mutable settings to an EXISTING game too (server no-ops
+    // when none is active): device, TTS, party lights — otherwise changes
+    // made after room creation only took effect one game later.
+    try {
+        window.BeatifyAuth?.fetch('/beatify/api/game/update-lobby', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                media_player: (adminState.selectedMediaPlayer || {}).entityId || null,
+                tts: window._ttsConfig ? window._ttsConfig() : null,
+                party_lights: window._partyLightsConfig ? window._partyLightsConfig() : null,
+            }),
+        });
+    } catch (e) { /* fire-and-forget */ }
+
     try {
         const settings = {
             language: adminState.selectedLanguage,

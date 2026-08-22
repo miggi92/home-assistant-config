@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import json
 import logging
@@ -21,8 +22,9 @@ from custom_components.beatify.const import (
     DOMAIN,
     PROVIDER_AMAZON_MUSIC,
     PROVIDER_APPLE_MUSIC,
-    PROVIDER_DEFAULT,
     PROVIDER_DEEZER,
+    PROVIDER_DEFAULT,
+    PROVIDER_MA_LIBRARY,
     PROVIDER_SPOTIFY,
     PROVIDER_TIDAL,
     PROVIDER_YOUTUBE_MUSIC,
@@ -75,6 +77,11 @@ def _validate_provider(provider: str) -> str:
         PROVIDER_TIDAL,
         PROVIDER_DEEZER,
         PROVIDER_AMAZON_MUSIC,
+        # Crate Digger. Omitting it here silently coerced the selection to
+        # PROVIDER_DEFAULT, after which the "no playlists" guard fired and
+        # create-game answered 400 with no log line — the same failure mode
+        # this docstring records for Apple Music in #808.
+        PROVIDER_MA_LIBRARY,
     )
     return provider if provider in valid_providers else PROVIDER_DEFAULT
 
@@ -94,7 +101,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         self.hass = hass
         self._init_rate_limits()
 
-    async def post(self, request: web.Request) -> web.Response:  # noqa: PLR0911, PLR0912
+    async def post(self, request: web.Request) -> web.Response:
         """Start a new game."""
         if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
@@ -149,6 +156,14 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         rampup_order_enabled = bool(
             body.get("rampup_order_enabled", False)
         )  # Issue #1726
+        # #1475: 0 or missing means "play every song" — the historic behaviour.
+        # Negative or unparseable values fall back to 0 instead of raising: a
+        # malformed payload must not block a party. The ten-round floor is
+        # applied by PlaylistManager, not here.
+        try:
+            max_rounds = max(0, int(body.get("max_rounds", 0) or 0))
+        except (TypeError, ValueError):
+            max_rounds = 0
         finale_double_enabled = bool(
             body.get("finale_double_enabled", False)
         )  # Issue #1725
@@ -183,6 +198,11 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         # Validate provider (Story 17.6 + #808). See _validate_provider for
         # the cost of forgetting to update this list.
         provider = _validate_provider(provider)
+        # Crate Digger: the raw client block. The stored settings
+        # are merged over it (server-authoritative) inside
+        # _generate_library_songs — the client payload is only a fallback for
+        # keys the Store doesn't have.
+        library_config = body.get("library") or {}
 
         # Validate round_duration if provided (Story 13.1)
         if round_duration is not None:
@@ -199,7 +219,11 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                     "Invalid round duration value", 400, code="INVALID_REQUEST"
                 )
 
-        if not playlist_paths:
+        # Crate Digger GENERATES its playlist from the host's own library at
+        # create time (see the library branch below), so it legitimately
+        # arrives with no playlist paths. Every other provider must select at
+        # least one — a game with no source cannot be played.
+        if not playlist_paths and provider != PROVIDER_MA_LIBRARY:
             return _json_error("No playlists selected", 400, code="INVALID_REQUEST")
 
         if not media_player:
@@ -232,8 +256,31 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "Media player is unavailable", 400, code="INVALID_REQUEST"
             )
 
-        # Load and validate playlists
+        # Load and validate playlists -- or, for the library provider, sample a
+        # fresh playlist from the enriched library pool (no files involved).
         songs: list[dict[str, Any]] = []
+        if provider == PROVIDER_MA_LIBRARY and not playlist_paths:
+            # No playlists picked -> fresh mix sampled from the library pool.
+            # (Saved Crate Digger playlists, when selected, load through the
+            # normal file path below -- their songs carry uri_ma_library.)
+            _LOGGER.info(
+                "Library game: no playlists selected -> generating fresh songs"
+            )
+            songs, err_resp = await _generate_library_songs(self.hass, library_config)
+            if err_resp is not None:
+                return err_resp
+        if provider == PROVIDER_MA_LIBRARY and playlist_paths:
+            import time as _time
+
+            self.hass.data.setdefault(DOMAIN, {})["library_last_generate"] = {
+                "ts": int(_time.time()),
+                "skipped_playlists": len(playlist_paths),
+            }
+            _LOGGER.info(
+                "Library game: %d saved playlist(s) selected -> playing those "
+                "(popularity/genre settings do not apply to saved playlists)",
+                len(playlist_paths),
+            )
         warnings: list[str] = []
         playlist_dir = Path(self.hass.config.path("beatify/playlists"))
 
@@ -402,6 +449,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
             "difficulty_bet_scaling_enabled": difficulty_bet_scaling_enabled,  # Issue #1727
             "sabotage_enabled": sabotage_enabled,  # Issue #1665
             "reveal_auto_advance": reveal_auto_advance,  # #1012
+            "max_rounds": max_rounds,  # #1475
         }
         if round_duration is not None:
             create_kwargs["round_duration"] = round_duration
@@ -419,6 +467,65 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         )
 
         result = game_state.create_game(**create_kwargs)
+
+        # Crate Digger: install the pre-start hook so the songs
+        # are regenerated from the CURRENT settings on the LOBBY -> first
+        # round transition, and the persisted output settings re-applied.
+        # See game/state_lifecycle.py for why this must run from start_round.
+        if provider == PROVIDER_MA_LIBRARY and not playlist_paths:
+
+            async def _regen_library_songs(gs: Any) -> None:
+                fresh_songs, regen_err = await _generate_library_songs(self.hass, {})
+                if regen_err is None and fresh_songs and gs.replace_songs(fresh_songs):
+                    _LOGGER.info(
+                        "Library game: songs regenerated at gameplay start "
+                        "(%d songs, current settings)",
+                        len(fresh_songs),
+                    )
+                # Re-apply the persisted output settings SERVER-SIDE. The
+                # client push proved unreliable on the force-reset path
+                # (localStorage wipe + reload + token reset races); the Store
+                # holds the last-known values and this hook runs on every
+                # start path, so whatever was last saved always wins.
+                from custom_components.beatify.server.library_views import (
+                    async_load_game_output_settings,
+                )
+
+                out = await async_load_game_output_settings(self.hass)
+                if out:
+                    mp = out.get("media_player")
+                    if isinstance(mp, str) and mp and self.hass.states.get(mp):
+                        if gs.media_player != mp:
+                            gs.media_player = mp
+                            # #2143: same release-instead-of-null as the lobby
+                            # switch below. This path runs pre-start, so there
+                            # is usually nothing captured yet — but a force-
+                            # reset can land here mid-game.
+                            gs.release_media_player_service()
+                            _cp = getattr(gs, "_cancel_prewarm", None)
+                            if callable(_cp):
+                                with contextlib.suppress(Exception):
+                                    _cp()
+                            _LOGGER.info("Pre-start: media_player -> %s", mp)
+                    if "tts" in out:
+                        with contextlib.suppress(Exception):
+                            applied = await _apply_tts_config(gs, out["tts"])
+                            _LOGGER.info(
+                                "Pre-start: tts %s",
+                                "configured" if applied else "disabled",
+                            )
+                    if "party_lights" in out:
+                        with contextlib.suppress(Exception):
+                            applied = await _apply_party_lights_config(
+                                gs, out["party_lights"]
+                            )
+                            _LOGGER.info(
+                                "Pre-start: party lights %s",
+                                "configured" if applied else "disabled",
+                            )
+
+            game_state.pre_start_hook = _regen_library_songs
+
         result["warnings"] = warnings
         result["admin_token"] = (
             game_state.admin_token
@@ -430,7 +537,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
             stats_service.record_game_start()
 
         # Set game language (Story 12.4, 16.3)
-        if language in ("en", "de", "es", "fr", "nl"):
+        if language in ("en", "de", "es", "fr", "nl", "it"):
             game_state.language = language
 
         # Issue #331/#517: Configure Party Lights if enabled
@@ -597,7 +704,7 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
             ended_game_id = game_state.game_id
             try:
                 await game_state.end_game()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 # Even if end_game raises, the user is stuck and needs
                 # the response — log and continue rather than 500.
                 _LOGGER.exception("force-reset: end_game raised; continuing anyway")
@@ -607,7 +714,7 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
                 try:
                     await ws_handler.broadcast({"type": "game_ended"})
                     await ws_handler.broadcast_state()
-                except Exception:  # noqa: BLE001
+                except Exception:
                     _LOGGER.exception("force-reset: WS broadcast raised; continuing")
 
         # #2036: drop the persisted setup blob so the reloading client really
@@ -620,6 +727,20 @@ class ForceResetView(RateLimitMixin, HomeAssistantView):
             )
         except OSError:
             _LOGGER.exception("force-reset: clearing the setup blob failed; continuing")
+
+            # Reset must also drop OUR persisted output settings. Upstream 4.2.0
+        # (#2036) made reset installation-wide — it clears the server-side
+        # setup blob so "reset means reset". Our game_output_settings Store is
+        # invisible to that cleanup, so without this the pre-start hook would
+        # faithfully re-apply the PRE-reset device/TTS/lights to the next
+        # game — silently contradicting the reset the user just performed.
+        with contextlib.suppress(Exception):
+            from custom_components.beatify.server.library_views import (
+                async_clear_game_output_settings,
+            )
+
+            await async_clear_game_output_settings(self.hass)
+            _LOGGER.info("Force reset: cleared persisted output settings")
 
         return web.json_response(
             {
@@ -645,7 +766,7 @@ class RematchGameView(HomeAssistantView):
         """Start a rematch with current players."""
         if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
-        from custom_components.beatify.game.state import GamePhase  # noqa: PLC0415
+        from custom_components.beatify.game.state import GamePhase
 
         data = self.hass.data.get(DOMAIN, {})
         game_state = data.get("game")
@@ -679,6 +800,351 @@ class RematchGameView(HomeAssistantView):
         )
 
 
+_LIBRARY_YEAR_GATES = {
+    # UI value -> minimum YearConfidence tier (see library.year_resolver).
+    "strict": 4,  # EXTERNAL_PRIMARY: verified MusicBrainz years only (default)
+    "balanced": 3,  # + EXTERNAL_SECONDARY: Deezer release years
+    "tags_ok": 2,  # + TAG_STUDIO: studio-album tag years (least strict)
+}
+_LIBRARY_SIZE_MIN = 5
+_LIBRARY_SIZE_MAX = 100
+_LIBRARY_SIZE_DEFAULT = 30
+
+
+_RECENT_KEY = "library_recent_uris"
+_RECENT_SONGS_KEY = "library_recent_songs"
+_RECENT_SONGS_CAP = 60
+_RECENT_CAP = 400
+
+
+def _recent_played_uris(hass: HomeAssistant) -> set[str]:
+    return set(hass.data.get(DOMAIN, {}).get(_RECENT_KEY, []))
+
+
+def remember_played_songs(hass: HomeAssistant, songs: list[dict[str, Any]]) -> None:
+    """Record what a game actually played, newest first, for the panel.
+
+    The recency list already tracks URIs to avoid repeats; this keeps the
+    display fields alongside them so the Crate Digger panel can offer "fix
+    this song" for what was just heard, without re-reading the pool.
+    """
+    store = hass.data.setdefault(DOMAIN, {})
+    prev = store.get(_RECENT_SONGS_KEY, [])
+    fresh = [
+        {
+            "uri": s_.get("uri_ma_library"),
+            "title": s_.get("title"),
+            "artist": s_.get("artist"),
+            "year": s_.get("year"),
+        }
+        for s_ in songs
+        if s_.get("uri_ma_library")
+    ]
+    seen: set[str] = set()
+    combined: list[dict[str, Any]] = []
+    for item in fresh + prev:
+        uri = item.get("uri")
+        if uri and uri not in seen:
+            seen.add(uri)
+            combined.append(item)
+    store[_RECENT_SONGS_KEY] = combined[:_RECENT_SONGS_CAP]
+
+
+def _remember_played_uris(hass: HomeAssistant, uris: list[str | None]) -> None:
+    store = hass.data.setdefault(DOMAIN, {})
+    prev = store.get(_RECENT_KEY, [])
+    fresh = [u for u in uris if u]
+    combined = (prev + fresh)[-_RECENT_CAP:]
+    store[_RECENT_KEY] = combined
+
+
+def _parse_library_config(
+    library_config: dict[str, Any],
+) -> tuple[int, int, int, int | None, list[str]]:
+    """Sanitize the library settings from the request body. Pure.
+
+    Returns (size, difficulty_slider, min_confidence, popularity_percent, genres).
+    popularity_percent is 1..100 ("draw from the most-popular P%") or None.
+    """
+    library_config = library_config or {}
+    try:
+        size = int(library_config.get("size", _LIBRARY_SIZE_DEFAULT))
+    except (TypeError, ValueError):
+        size = _LIBRARY_SIZE_DEFAULT
+    size = max(_LIBRARY_SIZE_MIN, min(_LIBRARY_SIZE_MAX, size))
+
+    try:
+        slider = int(library_config.get("difficulty", 50))
+    except (TypeError, ValueError):
+        slider = 50
+    slider = max(0, min(100, slider))
+
+    gate = _LIBRARY_YEAR_GATES.get(
+        str(library_config.get("year_gate", "strict")), _LIBRARY_YEAR_GATES["strict"]
+    )
+
+    pop_percent: int | None = None
+    if library_config.get("popularity_percent") is not None:
+        try:
+            pop_percent = max(1, min(100, int(library_config["popularity_percent"])))
+        except (TypeError, ValueError):
+            pop_percent = None
+
+    genres_raw = library_config.get("genres")
+    genres: list[str] = []
+    if isinstance(genres_raw, list):
+        genres = [str(g).strip() for g in genres_raw if str(g).strip()][:20]
+
+    return size, slider, gate, pop_percent, genres
+
+
+async def _generate_library_songs(
+    hass: HomeAssistant, library_config: dict[str, Any]
+) -> tuple[list[dict[str, Any]], web.Response | None]:
+    """Sample a game's songs from the library pool. Returns (songs, error)."""
+    from custom_components.beatify.library import async_generate_library_playlist
+
+    # SERVER-AUTHORITATIVE settings: the panel persists every change to the
+    # HA Store immediately, so the Store is always current. The client payload
+    # is only a fallback for keys the Store doesn't have — a stale browser, an
+    # unhydrated lobby page, or cached JS can no longer start a game with
+    # silent defaults (observed: a "Rock"-filtered setup generating with
+    # genres=None because the lobby page never mounts the settings panel).
+    from custom_components.beatify.server.library_views import (
+        async_load_library_settings,
+    )
+
+    stored = await async_load_library_settings(hass)
+    effective = dict(library_config or {})
+    effective.update(stored)  # stored wins over client payload
+    size, slider, min_confidence, pop_percent, genres = _parse_library_config(effective)
+    recent = _recent_played_uris(hass)
+    try:
+        playlist = await async_generate_library_playlist(
+            hass,
+            size=size,
+            difficulty_slider=slider,
+            popularity_percent=pop_percent,
+            genres=genres or None,
+            min_confidence=min_confidence,
+            exclude_uris=recent,
+        )
+    except Exception as err:
+        _LOGGER.exception("Library playlist generation failed")
+        return [], _json_error(
+            f"Library playlist generation failed: {err}",
+            500,
+            code="LIBRARY_GENERATION_FAILED",
+        )
+
+    if playlist is None:
+        return [], _json_error(
+            "Your library hasn't been scanned yet. Open Settings and run "
+            "'Scan library' first (this takes a while on the first run).",
+            400,
+            code="LIBRARY_POOL_MISSING",
+        )
+    songs = playlist.get("songs", [])
+    if not songs:
+        return [], _json_error(
+            "No songs in your library have a verified release year yet at this "
+            "strictness. Re-scan with MusicBrainz enabled, or relax the "
+            "year-accuracy setting.",
+            400,
+            code="LIBRARY_POOL_EMPTY",
+        )
+    for song in songs:
+        song["_playlist_source"] = "library"
+    _remember_played_uris(hass, [s.get("uri_ma_library") for s in songs])
+    remember_played_songs(hass, songs)
+    return songs, None
+
+
+# Recently-played URIs across games, so a new library game doesn't recycle the
+# same songs. Small ring buffer in hass.data; capped so it can't grow forever.
+_RECENT_KEY = "library_recent_uris"
+_RECENT_CAP = 400
+
+
+async def _apply_tts_config(game_state: Any, tts_config: Any) -> bool:
+    """Apply a frontend TTS config dict correctly, or disable on falsy.
+
+    configure_tts takes the ENTITY ID as its first positional argument plus
+    unpacked announce_* keywords — passing the raw dict "worked" silently and
+    then crashed speak() at hass.states.get(<dict>) (the tts.py:81 frames).
+    Mirrors the create endpoint's unpacking; single source for update +
+    pre-start paths.
+    """
+    if not (tts_config and isinstance(tts_config, dict) and tts_config.get("enabled")):
+        await game_state.disable_tts()
+        return False
+    entity_id = tts_config.get("entity_id", "")
+    if not entity_id or not isinstance(entity_id, str):
+        await game_state.disable_tts()
+        return False
+    kwargs: dict[str, Any] = {
+        k: v
+        for k, v in tts_config.items()
+        if isinstance(k, str) and k.startswith("announce_") and isinstance(v, bool)
+    }
+    delay = tts_config.get("tts_pre_round_delay")
+    if isinstance(delay, (int, float)):
+        kwargs["tts_pre_round_delay"] = float(delay)
+    await game_state.configure_tts(entity_id, **kwargs)
+    return True
+
+
+async def _apply_party_lights_config(game_state: Any, cfg: Any) -> bool:
+    """Apply a frontend party-lights config dict correctly, or disable.
+
+    configure_party_lights takes (entity_ids, intensity, light_mode,
+    wled_presets) — the raw dict as first arg made Python iterate its KEYS as
+    entity ids ("Party Lights started: 4 lights" = four config keys), then
+    every phase change failed against nonexistent entities.
+    """
+    if not (cfg and isinstance(cfg, dict) and cfg.get("enabled")):
+        await game_state.disable_party_lights()
+        return False
+    entities = cfg.get("entity_ids") or []
+    if not isinstance(entities, list) or not entities:
+        await game_state.disable_party_lights()
+        return False
+    await game_state.configure_party_lights(
+        entities,
+        cfg.get("intensity", "medium"),
+        cfg.get("light_mode", "dynamic"),
+        cfg.get("wled_presets"),
+    )
+    return True
+
+
+class UpdateLobbyView(BeatifyAdminView):
+    """Apply setting changes to an EXISTING lobby (pre-game).
+
+    Rooms freeze their parameters at creation; any control still changeable
+    while a lobby exists therefore lagged one game (confirmed on hardware for
+    the media player: switching output devices only took effect on the NEXT
+    game). Songs are covered by the pre_start_hook; this endpoint covers the
+    device (extensible for further lobby-mutable settings). No-ops with
+    {"updated": false} when there is no lobby-phase game, so the frontend can
+    fire-and-forget on every change without tracking game state.
+    """
+
+    url = "/beatify/api/game/update-lobby"
+    name = "beatify:api:game:update-lobby"
+    requires_auth = False  # auth handled in-handler (Companion bypass, #1131)
+
+    async def post(self, request: web.Request) -> web.Response:
+        if not is_authorized_http(request, self.hass):
+            return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
+        from custom_components.beatify.game.state import GamePhase
+
+        data = self.hass.data.get(DOMAIN, {})
+        game_state = data.get("game")
+        if (
+            not game_state
+            or not game_state.game_id
+            or game_state.phase
+            not in (GamePhase.LOBBY, GamePhase.PLAYING, GamePhase.REVEAL)
+        ):
+            return web.json_response({"updated": False})
+
+        try:
+            body = await request.json()
+        except ValueError:
+            return _json_error("Invalid JSON", 400, code="INVALID_REQUEST")
+
+        updated: list[str] = []
+        media_player = body.get("media_player")
+        if isinstance(media_player, str) and media_player:
+            if not self.hass.states.get(media_player):
+                return _json_error(
+                    "Media player not found", 400, code="INVALID_REQUEST"
+                )
+            ent_reg = er.async_get(self.hass)
+            entity_entry = ent_reg.async_get(media_player)
+            platform = entity_entry.platform if entity_entry else "unknown"
+            capabilities = get_platform_capabilities(platform)
+            if not capabilities.get("supported"):
+                return _json_error(
+                    "Media player platform not supported",
+                    400,
+                    code="INVALID_REQUEST",
+                )
+            game_state.media_player = media_player
+            game_state.platform = platform
+            # The lazily-built MediaPlayerService captures entity/platform at
+            # construction and recycles itself (see create_game's identical
+            # reset + its comment) — without nulling it, playback keeps
+            # routing to the OLD device.
+            #
+            # #2143: released, not nulled. This view permits a switch during
+            # PLAYING and REVEAL, so the outgoing service can already hold the
+            # old speaker's pre-game volume (#1516) and pre-game queue. Nulling
+            # threw both away and left that speaker at party volume with
+            # Beatify's track on it.
+            game_state.release_media_player_service()
+            # Upstream 4.2.0 (#1540) pre-warms the MediaPlayerService during
+            # LOBBY. That task was scheduled at create with the OLD entity; if
+            # it completes AFTER the null above it can reinstate a service
+            # bound to the previous speaker, silently undoing this switch.
+            # Cancel it and re-schedule for the new device using upstream's own
+            # helpers (absent on older bases -> getattr no-ops).
+            cancel_prewarm = getattr(game_state, "_cancel_prewarm", None)
+            if callable(cancel_prewarm):
+                with contextlib.suppress(Exception):
+                    cancel_prewarm()
+            reschedule = getattr(game_state, "schedule_media_player_prewarm", None)
+            if callable(reschedule):
+                with contextlib.suppress(Exception):
+                    reschedule()
+            updated.append("media_player")
+            _LOGGER.info(
+                "Lobby updated: media_player -> %s (platform %s)",
+                media_player,
+                platform,
+            )
+
+        # TTS + party-light configs are also frozen at creation (same class);
+        # apply changes through upstream's own configure_* methods so a
+        # settings tweak affects the CURRENT game, not the next one.
+        if "tts" in body:
+            with contextlib.suppress(Exception):
+                applied = await _apply_tts_config(game_state, body.get("tts"))
+                updated.append("tts")
+                _LOGGER.info(
+                    "Lobby/game updated: tts %s",
+                    "configured" if applied else "disabled",
+                )
+        if "party_lights" in body:
+            with contextlib.suppress(Exception):
+                applied = await _apply_party_lights_config(
+                    game_state, body.get("party_lights")
+                )
+                updated.append("party_lights")
+                _LOGGER.info(
+                    "Lobby/game updated: party lights %s",
+                    "configured" if applied else "disabled",
+                )
+
+        if updated:
+            from custom_components.beatify.server.library_views import (
+                async_save_game_output_settings,
+            )
+
+            patch: dict[str, Any] = {}
+            if "media_player" in updated:
+                patch["media_player"] = body.get("media_player")
+            if "tts" in updated:
+                patch["tts"] = body.get("tts")
+            if "party_lights" in updated:
+                patch["party_lights"] = body.get("party_lights")
+            with contextlib.suppress(Exception):
+                await async_save_game_output_settings(self.hass, patch)
+
+        return web.json_response({"updated": bool(updated), "fields": updated})
+
+
 class StartGameplayView(BeatifyAdminView):
     """Handle start gameplay requests (transition LOBBY -> PLAYING)."""
 
@@ -693,7 +1159,7 @@ class StartGameplayView(BeatifyAdminView):
         """Start gameplay from lobby."""
         if not is_authorized_http(request, self.hass):
             return _json_error("Unauthorized", 401, code="UNAUTHORIZED")
-        from custom_components.beatify.game.state import GamePhase  # noqa: PLC0415
+        from custom_components.beatify.game.state import GamePhase
 
         data = self.hass.data.get(DOMAIN, {})
         game_state = data.get("game")
@@ -803,7 +1269,7 @@ class GameStatusView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         """Get game status."""
-        from custom_components.beatify.server.serializers import (  # noqa: PLC0415
+        from custom_components.beatify.server.serializers import (
             build_game_status_response,
             get_game_state,
         )

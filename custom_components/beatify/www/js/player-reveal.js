@@ -1618,7 +1618,18 @@ export function setupRevealSheets() {
 function _resetReportBtn() {
     var btn = document.getElementById('reveal-report-btn');
     if (!btn) return;
-    btn.textContent = utils.t('reveal.reportBtn') || '🚩 Wrong year?';
+    // The button means three different things depending on who is looking
+    // and where the song came from: fix it (host, own library), flag it for
+    // the host (player, own library), or report it (curated playlists).
+    var ctx = state.lastRevealContext;
+    var isLib = !!(ctx && ctx.song && ctx.song.is_library);
+    if (isLib && state.isAdmin) {
+        btn.textContent = utils.t('reveal.fixYearBtn') || '🎯 Wrong year? Fix it';
+    } else if (isLib) {
+        btn.textContent = utils.t('reveal.flagYearBtn') || '🚩 Wrong year? Tell the host';
+    } else {
+        btn.textContent = utils.t('reveal.reportBtn') || '🚩 Wrong year?';
+    }
     btn.disabled = false;
     _clearReportError();
 }
@@ -1656,6 +1667,45 @@ export function setupRevealReportBtn() {
     btn.addEventListener('click', function() {
         var ctx = state.lastRevealContext;
         if (!ctx || !ctx.song) return;  // nothing to report — leave button idle
+
+        // Crate Digger: the song came from the HOST'S OWN library, so a wrong
+        // year is theirs to fix — reporting it to whoever published a
+        // playlist would reach someone who has never seen this track. Same
+        // button, the answer that actually helps. Host only: it writes to the
+        // pool, and the endpoint is admin-authenticated regardless.
+        // Players on a library song FLAG it for the host (handled server-side
+        // in handle_report_data) rather than filing a public report about a
+        // track only this household owns. The host gets the fix dialog.
+        if (ctx.song.is_library && !state.isAdmin) {
+            if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+                _showReportError();
+                return;
+            }
+            _clearReportError();
+            try {
+                state.ws.send(JSON.stringify({
+                    type: 'report_data',
+                    artist: ctx.song.artist || '',
+                    title: ctx.song.title || '',
+                    year: ctx.song.year || null,
+                }));
+            } catch (e) {
+                _showReportError();
+                return;
+            }
+            btn.textContent = utils.t('reveal.flaggedForHost') || '✓ Flagged for the host';
+            btn.disabled = true;
+            return;
+        }
+        if (ctx.song.is_library && state.isAdmin && window.BeatifyCrateDiggerFix) {
+            window.BeatifyCrateDiggerFix.open({
+                title: ctx.song.title || '',
+                artist: ctx.song.artist || '',
+                year: ctx.song.year || null,
+            });
+            return;
+        }
+
         // #1663: a closed/absent socket previously returned silently. Tell the
         // user instead of pretending nothing happened.
         if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {

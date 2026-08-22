@@ -32,7 +32,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from aiohttp import web
@@ -116,6 +116,39 @@ def _write_report(reports_path: Path, report: dict) -> None:
     )
 
 
+def _flag_library_song(hass: Any, song: dict, reporter: str) -> None:
+    """Record a player's "wrong year" flag against a Crate Digger song.
+
+    Kept in memory beside the recently-played list the panel already reads:
+    a flag is a hint for this session's host, not a durable record, and it
+    must never be able to grow unboundedly from repeated taps.
+    """
+    from custom_components.beatify.const import DOMAIN
+
+    uri = song.get("uri_ma_library")
+    if not uri:
+        return
+    store = hass.data.setdefault(DOMAIN, {})
+    flags = store.setdefault("library_flags", {})
+    entry = flags.setdefault(
+        uri,
+        {
+            "uri": uri,
+            "title": song.get("title"),
+            "artist": song.get("artist"),
+            "count": 0,
+            "reporters": [],
+        },
+    )
+    entry["count"] += 1
+    if reporter and reporter not in entry["reporters"]:
+        entry["reporters"] = (entry["reporters"] + [reporter])[-10:]
+    # Bound the map so a long party cannot accumulate flags without limit.
+    if len(flags) > 200:
+        for key in list(flags)[:-200]:
+            flags.pop(key, None)
+
+
 async def handle_report_data(
     handler: BeatifyWebSocketHandler,
     ws: web.WebSocketResponse,
@@ -139,6 +172,26 @@ async def handle_report_data(
     title = song.get("title", "Unknown")
     year = song.get("year")
     playlist_file = song.get("_playlist_source", "unknown")
+
+    # Crate Digger: the song came from THIS HOST'S own library, so the normal
+    # report path is worse than useless — it would append to the shared
+    # data-quality file and open a GitHub issue about a track the maintainer
+    # has never seen and cannot check. Players are still the ones who notice a
+    # wrong year first, so keep the signal and change its destination: flag it
+    # for the host, who can fix it in their own pool (the correction endpoints
+    # are admin-authenticated, and a guest's phone should not be able to
+    # rewrite someone's library metadata).
+    if song.get("uri_ma_library"):
+        _flag_library_song(handler.hass, song, player.name)
+        _LOGGER.info(
+            "Crate Digger: %s flagged %s — %s (%s) for the host",
+            player.name,
+            artist,
+            title,
+            year,
+        )
+        await ws.send_json({"type": "report_data_ack", "flagged_for_host": True})
+        return
 
     report = {
         "date": datetime.now(timezone.utc).isoformat(),

@@ -335,6 +335,12 @@ class GameState(
         # Services (Epic 4)
         self._playlist_manager: PlaylistManager | None = None
         self._media_player_service: MediaPlayerProtocol | None = None
+        # #2143: what speakers the game has switched away from still owe their
+        # owners — {entity_id: {"volume": …, "queue": …}}. Lives on the game,
+        # not on the service, because the service is exactly what a speaker
+        # switch throws away. `release_media_player_service` fills it,
+        # `_ensure_media_player_service` hands it to the replacement.
+        self._pending_speaker_states: dict[str, dict[str, Any]] = {}
 
         # Callback for round end (Story 4.5)
         self._on_round_end: Callable[[], Awaitable[None]] | None = None
@@ -367,6 +373,8 @@ class GameState(
 
         # Issue #1726: Ramp-up (difficulty-arc) song ordering
         self.rampup_order_enabled: bool = False
+        # #1475: 0 = alle spielbaren Songs (historisches Verhalten).
+        self.max_rounds: int = 0
 
         # Issue #827: Sudden Death mode (last-place player eliminated per round)
         self.sudden_death_mode: bool = False

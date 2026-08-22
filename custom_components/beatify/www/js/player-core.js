@@ -3,6 +3,10 @@
  * WebSocket connection, session management, state routing, reconnect logic, view switching
  */
 
+// Crate Digger correction dialog: inert for players (the reveal button
+// only opens it for the host), but it must be in this bundle because the
+// reveal screen lives here.
+import './admin/sections/library-fix.js';
 import {
     state, showView, showConfirmModal,
     AnimationQueue, AnimationUtils,

@@ -16,6 +16,8 @@
 // the enabler for the deferred setup-section split (step 4b). Reads are
 // `adminState.x`, writes `adminState.x = …`. Pure infra handles (timers,
 // wake-lock, `_homeStartBtnHTML`, `rematchInProgress`) stay as admin.js `let`s.
+import { getLibraryConfig } from './admin/sections/library.js';
+import './admin/sections/library-fix.js';
 import { adminState } from './admin/state.js';
 
 // #1279 step 4b: shared constants (localStorage keys) extracted so both this
@@ -117,6 +119,7 @@ import {
 import {
     renderMediaPlayers,
     handleMediaPlayerSelect,
+    expandMediaPlayersSection,
 } from './admin/sections/media-players.js';
 
 // game-settings.js: chip/toggle wiring (language, timer, difficulty, bonus
@@ -288,6 +291,7 @@ initAdminApi({
     startLobbyPolling: () => startLobbyPolling(),
     stopLobbyPolling: () => stopLobbyPolling(),
     showError: (msg) => showError(msg),
+    showSpeakerSetupError: (msg) => showSpeakerSetupError(msg),
     resetHomeStartButton: () => resetHomeStartButton(),
 });
 // #1048: REVEAL auto-advance countdown on the sticky Next button
@@ -613,7 +617,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const raw = localStorage.getItem(STORAGE_GAME_SETTINGS);
                 const s = raw ? JSON.parse(raw) : {};
                 const pls = Array.isArray(s.selectedPlaylists) ? s.selectedPlaylists : [];
-                const playlistLabel = pls.length === 0 ? 'no playlist'
+                // Crate Digger generates its playlist from the host's own
+                // library at game start, so it never selects one — "no
+                // playlist" would misreport a fully configured setup.
+                // The persisted blob uses `provider`; `selectedProvider` is
+                // only the in-memory name in adminState. Accept both so a
+                // half-migrated blob can't misreport the setup.
+                const isLib = (s.provider || s.selectedProvider) === 'ma_library';
+                const playlistLabel = isLib
+                    ? (window.BeatifyI18n?.t('admin.home.libraryPlaylistLabel') || 'your library')
+                    : pls.length === 0 ? 'no playlist'
                     : pls.length === 1 ? (pls[0].path || pls[0]).split('/').pop().replace('.json', '').replace(/-/g, ' ')
                     : `${pls.length} playlists`;
                 const autoAdv = typeof s.revealAutoAdvance === 'number' ? s.revealAutoAdvance : 0;
@@ -647,7 +660,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const raw = localStorage.getItem(STORAGE_GAME_SETTINGS);
                 const s = raw ? JSON.parse(raw) : {};
                 const hasPlaylist = Array.isArray(s.selectedPlaylists) && s.selectedPlaylists.length > 0;
-                if (hasPlayer && hasPlaylist) return true;
+                // Crate Digger needs no playlist selection — the library IS
+                // the source. Mirrors _is_setup_complete() on the server.
+                if (hasPlayer && (hasPlaylist || (s.provider || s.selectedProvider) === 'ma_library')) return true;
             } catch (e) { /* fall through to server flag */ }
             // #1663: server-side fallback — a configured instance opened on a
             // new device (empty localStorage) still reports as configured.
@@ -1249,6 +1264,23 @@ async function startGame() {
             }
         } catch (e) { /* private mode / malformed — keep default false */ }
 
+        // #1475: round count. Same situation as suddenDeathMode above — the
+        // wizard owns the setting and adminState has no field for it, so read
+        // it from localStorage. 0 means "all songs", which is the behaviour
+        // every game had before this issue, so it is also the fallback for a
+        // missing, malformed or nonsensical value.
+        var maxRounds = 0;
+        try {
+            var _mrRaw = localStorage.getItem(STORAGE_GAME_SETTINGS);
+            if (_mrRaw) {
+                var _mrSettings = JSON.parse(_mrRaw);
+                var _mr = _mrSettings && _mrSettings.maxRounds;
+                if (typeof _mr === 'number' && Number.isFinite(_mr) && _mr > 0) {
+                    maxRounds = Math.floor(_mr);
+                }
+            }
+        } catch (e) { /* private mode / malformed — keep default 0 (all songs) */ }
+
         const response = await BeatifyAuth.fetch('/beatify/api/start-game', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1257,6 +1289,7 @@ async function startGame() {
                 media_player: adminState.selectedMediaPlayer?.entityId,
                 language: adminState.selectedLanguage,
                 round_duration: adminState.selectedDuration,  // Story 13.1
+                max_rounds: maxRounds,  // Issue #1475
                 reveal_auto_advance: adminState.revealAutoAdvance,  // #1012
                 difficulty: adminState.selectedDifficulty,  // Story 14.1
                 provider: adminState.selectedProvider,  // Story 17.2
@@ -1273,7 +1306,8 @@ async function startGame() {
                 difficulty_bet_scaling_enabled: adminState.difficultyBetScalingEnabled,  // Issue #1727
                 sabotage_enabled: adminState.sabotageEnabled,  // Issue #1665
                 party_lights: window._partyLightsConfig ? window._partyLightsConfig() : null,  // Issue #331
-                tts: window._ttsConfig ? window._ttsConfig() : null  // Issue #447
+                tts: window._ttsConfig ? window._ttsConfig() : null,
+                library: (typeof getLibraryConfig === 'function') ? getLibraryConfig() : null,  // Issue #447
             })
         });
 
@@ -1369,6 +1403,23 @@ async function startGameplay() {
     // exist — so Spiel starten did nothing on click.
     const btn = document.getElementById('home-start-game');
     if (btn && btn.disabled) return;
+
+    // Rooms are created at RESET time with the settings of THAT moment; any
+    // TTS/lights/device change made afterwards never reached them (songs
+    // are covered by the server-side pre-start hook, configs are not — the
+    // server has no store of them). Push the CURRENT configs right before
+    // the phase flip, awaited so configure_* lands before announcements.
+    try {
+        await window.BeatifyAuth?.fetch('/beatify/api/game/update-lobby', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                media_player: (adminState.selectedMediaPlayer || {}).entityId || null,
+                tts: window._ttsConfig ? window._ttsConfig() : null,
+                party_lights: window._partyLightsConfig ? window._partyLightsConfig() : null,
+            }),
+        });
+    } catch (e) { /* never block the start on a failed push */ }
 
     let originalHTML = null;
     if (btn) {
@@ -1715,8 +1766,10 @@ function showError(message) {
  * stays in the screen-reader flow and next to the control that failed, unlike
  * the transient toast.
  * @param {string} message
+ * @param {{label: string, onClick: function}} [action] - Optional way out
+ *   rendered as a button in the banner (#2269).
  */
-function showSetupError(message) {
+function showSetupError(message, action) {
     var anchor = document.getElementById('home-start-game');
     if (!anchor) {
         // No start button in view (e.g. mid-game) — fall back to a toast.
@@ -1728,6 +1781,24 @@ function showSetupError(message) {
         id: 'home-start-banner',
         title: (window.BeatifyI18n && BeatifyI18n.t('errors.startNotPossible')) || 'Cannot start',
         type: 'error',
+        action: action,
+    });
+}
+
+/**
+ * Start failed because the speaker is gone (#2269 / #2263).
+ *
+ * This used to be a transient toast: it named the problem, offered nothing, and
+ * disappeared. The speaker list is not on the home card — it sits below the hero
+ * behind a collapsed section header — so the host was left with a message that
+ * had already vanished. Dock it above the Start button that failed and put the
+ * speaker list one tap away.
+ * @param {string} message
+ */
+function showSpeakerSetupError(message) {
+    showSetupError(message, {
+        label: (window.BeatifyI18n && BeatifyI18n.t('admin.selectMediaPlayer')) || 'Select Speaker',
+        onClick: expandMediaPlayersSection,
     });
 }
 
@@ -2635,6 +2706,17 @@ function showAdminPlayingView(data) {
     var adminIsParticipant = adminState.isPlaying
         || adminJoinedAsPlayer
         || (data.players || []).some(function(p) { return p.is_admin; });
+    if (data.song) {
+        data_song_cache = data.song;
+        // The reveal payload flags library songs without carrying a URI, so
+        // the host can correct the year from the spectator view too.
+        if (data.song.is_library) {
+            _renderLibraryFixButton(
+                { uri_ma_library: null, year: data.song.year },
+                document.getElementById('admin-song-year')
+            );
+        }
+    }
     if (data.admin_song && !adminIsParticipant) {
         if (yearEl) {
             if (data.admin_song.year) {
@@ -2642,6 +2724,11 @@ function showAdminPlayingView(data) {
                 yearEl.classList.remove('hidden');
             } else { yearEl.classList.add('hidden'); }
         }
+        // Crate Digger: this song came from the host's OWN library, so a
+        // wrong year is theirs to fix rather than to report to whoever
+        // published a playlist. Offer the correction right where the year is
+        // shown — the moment they notice it, with the song still playing.
+        _renderLibraryFixButton(data.admin_song, yearEl);
         if (factEl) {
             var lang = BeatifyI18n.getLanguage();
             var fact = (lang !== 'en' && data.admin_song['fun_fact_' + lang])
@@ -2658,7 +2745,7 @@ function showAdminPlayingView(data) {
     }
 
     // Countdown timer (big centered, player style)
-    startAdminCountdown(data.deadline);
+    startAdminCountdown(data.deadline, data.server_now_ms);
 
     // Submission tracker (player dot format)
     renderAdminSubmissionDots(data.players);
@@ -2684,7 +2771,51 @@ function showAdminPlayingView(data) {
  */
 // renderAdminSubmissionDots moved to ./admin/sections/render-helpers.js (#1279 step 4)
 
-function startAdminCountdown(deadline) {
+/**
+ * Show a "Fix this song" affordance beside the revealed year for Crate Digger
+ * games. No-op for every other provider (no library URI in the payload).
+ */
+function _renderLibraryFixButton(adminSong, yearEl) {
+    var existing = document.getElementById('admin-song-fix');
+    var uri = adminSong && adminSong.uri_ma_library;
+    var haveName = !!(data_song_cache && data_song_cache.title);
+    if ((!uri && !haveName) || !yearEl || !yearEl.parentNode) {
+        if (existing) existing.remove();
+        return;
+    }
+    var btn = existing;
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'admin-song-fix';
+        btn.className = 'lib-btn lib-btn--ghost admin-song-fix';
+        yearEl.parentNode.insertBefore(btn, yearEl.nextSibling);
+    }
+    btn.textContent = (window.BeatifyI18n && BeatifyI18n.t('admin.library.fixBtn'))
+        || '🎯 Wrong year? Fix it';
+    btn.classList.remove('hidden');
+    btn.onclick = function() {
+        if (window.BeatifyCrateDiggerFix) {
+            window.BeatifyCrateDiggerFix.open({
+                uri: uri || undefined,
+                title: (data_song_cache && data_song_cache.title) || '',
+                artist: (data_song_cache && data_song_cache.artist) || '',
+                year: adminSong.year || null,
+            });
+        }
+    };
+}
+
+// Last revealed song title/artist, so the fix dialog opens pre-filled.
+var data_song_cache = null;
+
+function startAdminCountdown(deadline, serverNowMs) {
+    // Correct for client clock skew: without this, a device clock ~20s off
+    // shows ~20s "remaining" at the exact moment the server (correctly)
+    // declares time-up. Skew is computed once per state receive.
+    var clockSkewMs = (typeof serverNowMs === 'number' && serverNowMs > 0)
+        ? (serverNowMs - Date.now())
+        : 0;
     if (countdownInterval) clearInterval(countdownInterval);
 
     var timerEl = document.getElementById('admin-timer');
@@ -2692,7 +2823,7 @@ function startAdminCountdown(deadline) {
 
     function tick() {
         var now = Date.now();
-        var remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+        var remaining = Math.max(0, Math.ceil((deadline - (now + clockSkewMs)) / 1000));
         timerEl.textContent = remaining;
         // Use player CSS classes for timer states
         timerEl.classList.toggle('timer--warning', remaining <= 10);

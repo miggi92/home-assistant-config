@@ -1,6 +1,6 @@
 {
   "name": "2000s Pop Anthems",
-  "version": "1.16",
+  "version": "1.23",
   "tags": [
     "2000s",
     "pop",
@@ -89,6 +89,15 @@
       "fun_fact_nl": "In de videoclip is te zien hoe Kelly Rowland op een beroemde manier probeert Nelly te sms'en via een Microsoft Excel-spreadsheet.",
       "awards_nl": [
         "Grammy Award – Beste Rap/Zang-samenwerking"
+      ],
+      "awards_it": [
+        "Grammy per la migliore collaborazione rap/cantata"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rap/Gesang-Zusammenarbeit"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Colaboración Rap/Cantada"
       ],
       "isrc": "USUR10200370",
       "uri_apple_music_by_region": {
@@ -181,6 +190,15 @@
       "awards_nl": [
         "Grammy Award – Beste Vrouwelijke Pop Zangprestatie"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale pop femminile"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche Pop-Gesangsdarbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal Pop Femenina"
+      ],
       "isrc": "GBCTA0400231",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1687386491",
@@ -233,6 +251,18 @@
         "Grammy Award – Beste Vrouwelijke R&B Zangprestatie",
         "Grammy Award – Beste R&B-nummer"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale R&B femminile",
+        "Grammy per la migliore canzone R&B"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche R&B-Gesangsdarbietung",
+        "Grammy - Bester R&B-Song"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal R&B Femenina",
+        "Grammy - Mejor Canción R&B"
+      ],
       "isrc": "USIR20500195",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1443208143",
@@ -281,6 +311,15 @@
       "fun_fact_nl": "De Moulin Rouge-versie bevat Christina Aguilera, Lil' Kim, Mýa en Pink — vier van de grootste vrouwelijke artiesten van dat tijdperk die samen optreden.",
       "awards_nl": [
         "Grammy Award – Beste Popsamenwerking met Zang"
+      ],
+      "awards_it": [
+        "Grammy per la migliore collaborazione pop con parti vocali"
+      ],
+      "awards_de": [
+        "Grammy - Beste Pop-Zusammenarbeit mit Gesang"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Colaboración Pop con Voces"
       ],
       "isrc": "USIR10110334",
       "uri_apple_music_by_region": {
@@ -413,6 +452,15 @@
       "fun_fact_nl": "De iconische lach aan het begin van het nummer werd ingesproken door de stemacteur van bassist Murdoc Niccals, en de geanimeerde videoclip won een Grammy voor Beste Videoclip.",
       "awards_nl": [
         "Grammy Award – Beste Popsamenwerking met Zang"
+      ],
+      "awards_it": [
+        "Grammy per la migliore collaborazione pop con parti vocali"
+      ],
+      "awards_de": [
+        "Grammy - Beste Pop-Zusammenarbeit mit Gesang"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Colaboración Pop con Voces"
       ],
       "isrc": "GBAYE1400422",
       "uri_apple_music_by_region": {
@@ -547,6 +595,15 @@
       "awards_nl": [
         "Grammy Award – Beste Hardrockprestatie"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione hard rock"
+      ],
+      "awards_de": [
+        "Grammy - Beste Hard-Rock-Darbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación de Hard Rock"
+      ],
       "isrc": "USWU30200093",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1645901771",
@@ -637,6 +694,15 @@
       "fun_fact_nl": "De videoclip in stripboekthema parodieert meerdere beroemdheden en toont Eminem als een superheld genaamd 'Rap Boy', een persiflage op Robin uit Batman.",
       "awards_nl": [
         "Grammy Award – Beste Muziekvideo (Korte Vorm)"
+      ],
+      "awards_it": [
+        "Grammy per il miglior video musicale (Short Form)"
+      ],
+      "awards_de": [
+        "Grammy - Bestes Musikvideo (Short Form)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Vídeo Musical (Short Form)"
       ],
       "isrc": "USIR10211038",
       "uri_apple_music_by_region": {
@@ -814,6 +880,18 @@
       "awards_nl": [
         "Grammy Award – Lied van het Jaar",
         "Grammy Award – Beste Popprestatie door Duo of Groep"
+      ],
+      "awards_it": [
+        "Grammy per la canzone dell'anno",
+        "Grammy per la migliore interpretazione pop di un duo o gruppo"
+      ],
+      "awards_de": [
+        "Grammy - Song des Jahres",
+        "Grammy - Beste Pop-Darbietung eines Duos oder einer Gruppe"
+      ],
+      "awards_es": [
+        "Grammy - Canción del Año",
+        "Grammy - Mejor Interpretación Pop de Dúo o Grupo"
       ],
       "isrc": "GBAYE1600217",
       "uri_apple_music_by_region": {
@@ -1031,6 +1109,15 @@
       "awards_nl": [
         "ARIA Award – Beste Poprelease"
       ],
+      "awards_it": [
+        "ARIA Award per la migliore pubblicazione pop"
+      ],
+      "awards_de": [
+        "ARIA Award - Beste Pop-Veröffentlichung"
+      ],
+      "awards_es": [
+        "Premio ARIA - Mejor Lanzamiento Pop"
+      ],
       "isrc": "AUEI10800039",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1707435588",
@@ -1121,6 +1208,15 @@
       "fun_fact_nl": "De iconische Bollywood-strijkerssample van het nummer is afkomstig uit 'Tere Mere Beech Mein' uit de Indiase film Ek Duuje Ke Liye uit 1981. Het leverde Britney haar enige Grammy Award op.",
       "awards_nl": [
         "Grammy Award – Beste Dance-opname"
+      ],
+      "awards_it": [
+        "Grammy per la migliore registrazione dance"
+      ],
+      "awards_de": [
+        "Grammy - Beste Dance-Aufnahme"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Grabación Dance"
       ],
       "isrc": "USJI10301005",
       "uri_apple_music_by_region": {
@@ -1216,6 +1312,18 @@
         "Grammy Award – Beste Rapnummer",
         "Grammy Award – Beste Rap/Zang-samenwerking"
       ],
+      "awards_it": [
+        "Grammy per la migliore canzone rap",
+        "Grammy per la migliore collaborazione rap/cantata"
+      ],
+      "awards_de": [
+        "Grammy - Bester Rap-Song",
+        "Grammy - Beste Rap/Gesang-Zusammenarbeit"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Canción de Rap",
+        "Grammy - Mejor Colaboración Rap/Cantada"
+      ],
       "isrc": "USJZ10900031",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440750745",
@@ -1268,6 +1376,18 @@
         "Grammy Award – Beste Vrouwelijke Pop Zangprestatie",
         "Grammy Award – Beste Korte Muziekvideo"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale pop femminile",
+        "Grammy per il miglior video musicale di forma breve"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche Pop-Gesangsdarbietung",
+        "Grammy - Bestes Kurzform-Musikvideo"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal Pop Femenina",
+        "Grammy - Mejor Vídeo Musical de Formato Corto"
+      ],
       "isrc": "USUM70918596",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1688497897",
@@ -1316,6 +1436,15 @@
       "fun_fact_nl": "Timbaland produceerde de track met zware elektronische vervorming, en veel dj's dachten aanvankelijk dat het een nieuwe artiest was in plaats van Justin Timberlake vanwege de dramatische verandering in geluid.",
       "awards_nl": [
         "Grammy Award – Beste Dance-opname"
+      ],
+      "awards_it": [
+        "Grammy per la migliore registrazione dance"
+      ],
+      "awards_de": [
+        "Grammy - Beste Dance-Aufnahme"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Grabación Dance"
       ],
       "isrc": "USJI10600269",
       "uri_apple_music_by_region": {
@@ -1366,6 +1495,15 @@
       "awards_nl": [
         "Grammy Award – Beste Rockprestatie door Duo of Groep met Zang"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione rock di un duo o gruppo con parti vocali"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rock-Darbietung eines Duos oder einer Gruppe mit Gesang"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Rock de Dúo o Grupo con Voz"
+      ],
       "isrc": "USRC10800300",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1441530830",
@@ -1414,6 +1552,15 @@
       "fun_fact_nl": "Chris Martin bedacht de pianoriff diep in de nacht en nam hem bijna niet op omdat hij bedoeld was voor een ander bandproject. Het won de Grammy voor Record of the Year in 2004.",
       "awards_nl": [
         "Grammy Award – Opname van het Jaar"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año"
       ],
       "isrc": "GBAYE1600193",
       "uri_apple_music_by_region": {
@@ -1632,6 +1779,15 @@
       "awards_nl": [
         "Grammy Award – Beste Rap Soloprestatie"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione rap solista"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rap-Solodarbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación de Rap Solista"
+      ],
       "isrc": "USIR10000448",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440866926",
@@ -1765,6 +1921,15 @@
       "awards_nl": [
         "Grammy Award – Beste Dance-opname"
       ],
+      "awards_it": [
+        "Grammy per la migliore registrazione dance"
+      ],
+      "awards_de": [
+        "Grammy - Beste Dance-Aufnahme"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Grabación Dance"
+      ],
       "isrc": "USUM70824409",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1710465533",
@@ -1854,6 +2019,15 @@
       "fun_fact_nl": "Het nummer was oorspronkelijk geschreven voor Britney Spears, die het weigerde. Het stond 10 opeenvolgende weken op nummer 1 in het VK tijdens een van de regenachtigste zomers ooit gemeten.",
       "awards_nl": [
         "Grammy Award – Beste Rap/Zang-samenwerking"
+      ],
+      "awards_it": [
+        "Grammy per la migliore collaborazione rap/cantata"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rap/Gesang-Zusammenarbeit"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Colaboración Rap/Cantada"
       ],
       "isrc": "USUM70736771",
       "uri_apple_music_by_region": {
@@ -1987,6 +2161,15 @@
       "awards_nl": [
         "BRIT Award – Beste Britse Rockact (band)"
       ],
+      "awards_it": [
+        "Brit Award per il miglior artista rock britannico (band)"
+      ],
+      "awards_de": [
+        "BRIT Award - Bester britischer Rock-Act (band)"
+      ],
+      "awards_es": [
+        "Premio BRIT - Mejor Artista de Rock Británico (band)"
+      ],
       "isrc": "GBCEL0300192",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/315844084",
@@ -2035,6 +2218,15 @@
       "fun_fact_nl": "Ironisch genoeg namen The Game en 50 Cent deze samenwerking op vlak voor hun beroemde vete die de G-Unit-rapgroep uiteendreef.",
       "awards_nl": [
         "Grammy-nominatie – Beste Rapprestatie door Duo of Groep"
+      ],
+      "awards_it": [
+        "Candidatura al Grammy per la migliore interpretazione rap di un duo o gruppo"
+      ],
+      "awards_de": [
+        "Grammy-Nominierung - Beste Rap-Darbietung eines Duos oder einer Gruppe"
+      ],
+      "awards_es": [
+        "Nominación al Grammy - Mejor Interpretación de Rap de Dúo o Grupo"
       ],
       "isrc": "USIR10401121",
       "uri_apple_music_by_region": {
@@ -2171,6 +2363,18 @@
         "Grammy Award – Beste Vrouwelijke R&B Zangprestatie",
         "Grammy Award – Beste R&B-nummer"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale R&B femminile",
+        "Grammy per la migliore canzone R&B"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche R&B-Gesangsdarbietung",
+        "Grammy - Bester R&B-Song"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal R&B Femenina",
+        "Grammy - Mejor Canción R&B"
+      ],
       "isrc": "USJAY0300452",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1721921218",
@@ -2254,13 +2458,22 @@
       "fun_fact_de": "André 3000 spielte alle Instrumente selbst. Die Textzeile 'shake it like a Polaroid picture' veranlasste Polaroid zu einer Erklärung, dass Schütteln die Fotos tatsächlich beschädigt.",
       "fun_fact_es": "André 3000 tocó todos los instrumentos él mismo. La letra 'shake it like a Polaroid picture' llevó a Polaroid a emitir un comunicado diciendo que agitar las fotos en realidad las daña.",
       "fun_fact_fr": "André 3000 a joué tous les instruments lui-même. La réplique 'shake it like a Polaroid picture' a poussé Polaroid à publier un communiqué expliquant que secouer les photos les endommage en réalité.",
-      "uri_apple_music": "",
+      "uri_apple_music": "applemusic://track/1032178989",
       "uri_youtube_music": "https://music.youtube.com/watch?v=PWgvGjAhvIw",
       "uri_tidal": "tidal://track/1772295",
       "uri_deezer": "deezer://track/628266",
       "fun_fact_nl": "André 3000 speelde alle instrumenten zelf. De tekst 'shake it like a Polaroid picture' zette Polaroid ertoe aan een verklaring af te geven dat het schudden van foto's ze in feite beschadigt.",
       "awards_nl": [
         "Grammy Award – Beste Urban/Alternatieve Prestatie"
+      ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione urban/alternative"
+      ],
+      "awards_de": [
+        "Grammy - Beste Urban/Alternative-Darbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Urbana/Alternativa"
       ]
     },
     {
@@ -2467,6 +2680,15 @@
       "awards_nl": [
         "Grammy Award – Beste Rapprestatie door Duo of Groep"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione rap di un duo o gruppo"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rap-Darbietung eines Duos oder einer Gruppe"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación de Rap de Dúo o Grupo"
+      ],
       "isrc": "USLF20000357",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1741741469",
@@ -2642,6 +2864,15 @@
       "awards_nl": [
         "Grammy Award – Beste Vrouwelijke R&B Zangprestatie"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale R&B femminile"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche R&B-Gesangsdarbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal R&B Femenina"
+      ],
       "isrc": "USMC10111369",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1691778424",
@@ -2732,6 +2963,15 @@
       "fun_fact_nl": "Het nummer bevat op beroemde wijze een sample van Daft Punk's 'Harder, Better, Faster, Stronger' en de futuristische videoclip was geïnspireerd op de animefilm Akira.",
       "awards_nl": [
         "Grammy Award – Beste Rap Soloprestatie"
+      ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione rap solista"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rap-Solodarbietung"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación de Rap Solista"
       ],
       "isrc": "USUM70741299",
       "uri_apple_music_by_region": {
@@ -3203,6 +3443,18 @@
         "Grammy Award – Opname van het Jaar",
         "Grammy Award – Beste Rockprestatie door Duo of Groep"
       ],
+      "awards_it": [
+        "Grammy per il disco dell'anno",
+        "Grammy per la migliore interpretazione rock di un duo o gruppo"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres",
+        "Grammy - Beste Rock-Darbietung eines Duos oder einer Gruppe"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año",
+        "Grammy - Mejor Interpretación Rock de Dúo o Grupo"
+      ],
       "isrc": "USRC10800301",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1351343570",
@@ -3550,6 +3802,21 @@
         "Grammy Award – Beste Rapnummer",
         "Grammy Award – Beste Rap Soloprestatie"
       ],
+      "awards_it": [
+        "Oscar per la migliore canzone originale",
+        "Grammy per la migliore canzone rap",
+        "Grammy per la migliore interpretazione rap solista"
+      ],
+      "awards_de": [
+        "Oscar - Bester Filmsong",
+        "Grammy - Bester Rap-Song",
+        "Grammy - Beste Rap-Solodarbietung"
+      ],
+      "awards_es": [
+        "Óscar - Mejor Canción Original",
+        "Grammy - Mejor Canción de Rap",
+        "Grammy - Mejor Interpretación de Rap Solista"
+      ],
       "isrc": "USIR10211559",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1444221569",
@@ -3760,13 +4027,13 @@
       "awards_nl": [],
       "isrc": "USDW10110256",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1706919742",
-        "de": "applemusic://track/1706919742",
-        "gb": "applemusic://track/1706919742",
-        "fr": "applemusic://track/1706919742",
-        "es": "applemusic://track/1706919742",
-        "nl": "applemusic://track/1706919742",
-        "it": "applemusic://track/1706919742"
+        "us": "applemusic://track/1450030115",
+        "de": "applemusic://track/1450030115",
+        "gb": "applemusic://track/1450030115",
+        "fr": "applemusic://track/1450030115",
+        "es": "applemusic://track/1450030115",
+        "nl": "applemusic://track/1450030115",
+        "it": "applemusic://track/1450030115"
       }
     },
     {
@@ -4018,6 +4285,18 @@
       "awards_nl": [
         "Grammy Award – Beste Rapnummer",
         "Grammy Award – Beste Rap/Zang-samenwerking"
+      ],
+      "awards_it": [
+        "Grammy per la migliore canzone rap",
+        "Grammy per la migliore collaborazione rap/cantata"
+      ],
+      "awards_de": [
+        "Grammy - Bester Rap-Song",
+        "Grammy - Beste Rap/Gesang-Zusammenarbeit"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Canción de Rap",
+        "Grammy - Mejor Colaboración Rap/Cantada"
       ],
       "isrc": "USJZ10900010",
       "uri_apple_music_by_region": {
@@ -5514,7 +5793,7 @@
       "fun_fact_de": "Das Aerobic-Musikvideo im Stil der 80er-Jahre-Fitnessvideos wurde zu einem der meistgesehenen Clips im frühen Internet und trieb den Song auf Platz 1 in Großbritannien. Es sampelt Steve Winwoods 'Valerie'.",
       "fun_fact_es": "El video musical de aeróbic, inspirado en cintas de ejercicio de los 80, se convirtió en uno de los videos más vistos del internet temprano y ayudó a llevar la canción al #1 en el Reino Unido. Samplea 'Valerie' de Steve Winwood.",
       "fun_fact_fr": "Le clip sur le thème de l'aérobic, inspiré des cassettes de fitness des années 80, est devenu l'une des vidéos les plus regardées du début d'internet et a propulsé le titre en tête des charts britanniques. Il sample 'Valerie' de Steve Winwood.",
-      "uri_apple_music": "",
+      "uri_apple_music": "applemusic://track/1216951257",
       "uri_youtube_music": "https://music.youtube.com/watch?v=lw3iCVeTe30",
       "uri_tidal": "tidal://track/71508889",
       "uri_deezer": "deezer://track/144203048",
@@ -6431,11 +6710,11 @@
       "year": 2002,
       "isrc": null,
       "uri": "spotify:track:2Uy6EhQXAYkXA6MohPgjpV",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/697402070",
       "uri_apple_music_by_region": {},
       "uri_youtube_music": "https://music.youtube.com/watch?v=wU26xVT_vBU",
       "uri_tidal": "tidal://track/124215",
-      "uri_deezer": null,
+      "uri_deezer": "deezer://track/3135553",
       "fun_fact": "A chart hit by Daft Punk (2002).",
       "fun_fact_de": "Ein Chart-Hit von Daft Punk (2002).",
       "fun_fact_es": "Un éxito de Daft Punk (2002).",
@@ -6579,11 +6858,11 @@
       "year": 2000,
       "isrc": null,
       "uri": "spotify:track:0PLGnOgmf8RPgZNkaaSYyM",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/338484852",
       "uri_apple_music_by_region": {},
       "uri_youtube_music": "https://music.youtube.com/watch?v=YZo-cb6GNS0",
       "uri_tidal": "tidal://track/36507114",
-      "uri_deezer": null,
+      "uri_deezer": "deezer://track/4631883",
       "fun_fact": "A chart hit by MadHouse (2000).",
       "fun_fact_de": "Ein Chart-Hit von MadHouse (2000).",
       "fun_fact_es": "Un éxito de MadHouse (2000).",
@@ -6739,34 +7018,6 @@
       "fun_fact_es": "Un éxito de Kylie Minogue (2000).",
       "fun_fact_fr": "Un tube de Kylie Minogue (2000).",
       "fun_fact_nl": "Een chart-hit van Kylie Minogue (2000)."
-    },
-    {
-      "artist": "James Brown",
-      "title": "Get Up I Feel Like Being Like A Sex Machine, Pts. 1 & 2",
-      "year": 2005,
-      "isrc": "USF067025050",
-      "uri": "spotify:track:6hpmTwgNCz81H2bFEREx29",
-      "uri_apple_music": "applemusic://track/1646679726",
-      "uri_apple_music_by_region": {
-        "us": "applemusic://track/1646679726",
-        "de": "applemusic://track/1646679726",
-        "gb": "applemusic://track/1646679726",
-        "fr": "applemusic://track/1646679726",
-        "es": "applemusic://track/1646679726",
-        "nl": "applemusic://track/1452460238",
-        "it": "applemusic://track/1646679726"
-      },
-      "uri_youtube_music": "https://music.youtube.com/watch?v=hY_LBqmyNrk",
-      "uri_tidal": "tidal://track/93614211",
-      "uri_deezer": "deezer://track/548876882",
-      "alt_artists": [
-        "The Original J.B.s"
-      ],
-      "fun_fact": "A chart hit by James Brown (2005).",
-      "fun_fact_de": "Ein Chart-Hit von James Brown (2005).",
-      "fun_fact_es": "Un éxito de James Brown (2005).",
-      "fun_fact_fr": "Un tube de James Brown (2005).",
-      "fun_fact_nl": "Een chart-hit van James Brown (2005)."
     },
     {
       "artist": "Rihanna",
@@ -6930,12 +7181,12 @@
       "uri_apple_music": "applemusic://track/1443760448",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1443760448",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1440772979",
+        "gb": "applemusic://track/1649583878",
+        "fr": "applemusic://track/1440772979",
+        "es": "applemusic://track/1442599564",
+        "nl": "applemusic://track/1452801932",
+        "it": "applemusic://track/1442599564"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=o_ZBzGlYS6g",
       "uri_tidal": "tidal://track/578434",
@@ -6977,11 +7228,11 @@
       "year": 2001,
       "isrc": null,
       "uri": "spotify:track:5W3cjX2J3tjhG8zb6u0qHn",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/697195787",
       "uri_apple_music_by_region": {},
       "uri_youtube_music": "https://music.youtube.com/watch?v=JhulBGMA7G4",
       "uri_tidal": "tidal://track/1550549",
-      "uri_deezer": null,
+      "uri_deezer": "deezer://track/3135556",
       "fun_fact": "A chart hit by Daft Punk (2022).",
       "fun_fact_de": "Ein Chart-Hit von Daft Punk (2022).",
       "fun_fact_es": "Un éxito de Daft Punk (2022).",
@@ -6996,13 +7247,13 @@
       "uri": "spotify:track:6MPTmoLt4IaL1XKRgKER4I",
       "uri_apple_music": null,
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/1468603436",
+        "de": "applemusic://track/1468603436",
+        "gb": "applemusic://track/1468603999",
+        "fr": "applemusic://track/1468603436",
+        "es": "applemusic://track/1468603436",
+        "nl": "applemusic://track/1468603436",
+        "it": "applemusic://track/1468603436"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QWBMCtIllEM",
       "uri_tidal": "tidal://track/111279010",
@@ -7096,13 +7347,13 @@
       "uri": "spotify:track:2QMdxS78DaXP8aS8qJqGzU",
       "uri_apple_music": null,
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/348366650",
+        "de": "applemusic://track/348366650",
+        "gb": "applemusic://track/348366650",
+        "fr": "applemusic://track/348366650",
+        "es": "applemusic://track/348366650",
+        "nl": "applemusic://track/348366650",
+        "it": "applemusic://track/348366498"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=oGDjI40SjrA",
       "uri_tidal": "tidal://track/79783653",
@@ -7146,7 +7397,7 @@
       "uri": "spotify:track:7xXSaVgEvUrV1GCc3oO8HC",
       "uri_apple_music": "applemusic://track/1269627144",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1751829853",
         "de": "applemusic://track/1269627144",
         "gb": "applemusic://track/1269627144",
         "fr": "applemusic://track/1269627144",

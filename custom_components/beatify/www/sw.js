@@ -32,6 +32,7 @@ function swDebug() {
 var PRECACHE_ASSETS = [
     '/beatify/static/css/styles.min.css',
     '/beatify/static/css/dashboard.min.css',
+    '/beatify/static/css/library.min.css',
     '/beatify/static/js/player.bundle.min.js',
     '/beatify/static/js/admin.min.js',
     '/beatify/static/js/dashboard.min.js',

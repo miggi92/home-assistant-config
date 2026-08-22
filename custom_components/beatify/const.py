@@ -233,6 +233,7 @@ URI_PATTERN_APPLE_MUSIC = r"^applemusic://track/\d+$"
 URI_PATTERN_YOUTUBE_MUSIC = r"^https://music\.youtube\.com/watch\?v=[a-zA-Z0-9_-]{11}$"
 URI_PATTERN_TIDAL = r"^tidal://track/\d+$"
 URI_PATTERN_DEEZER = r"^deezer://track/\d+$"
+URI_PATTERN_MA_LIBRARY = r"^[a-z0-9_]+(--[^:]+)?://track/.+$"
 
 # Provider identifiers (Story 17.1)
 PROVIDER_SPOTIFY = "spotify"
@@ -240,5 +241,6 @@ PROVIDER_APPLE_MUSIC = "apple_music"  # Preserved for future use
 PROVIDER_YOUTUBE_MUSIC = "youtube_music"
 PROVIDER_TIDAL = "tidal"
 PROVIDER_DEEZER = "deezer"
+PROVIDER_MA_LIBRARY = "ma_library"
 PROVIDER_AMAZON_MUSIC = "amazon_music"
 PROVIDER_DEFAULT = PROVIDER_SPOTIFY

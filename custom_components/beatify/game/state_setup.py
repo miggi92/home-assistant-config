@@ -125,6 +125,7 @@ class GameSetupMixin:
         comeback_token_enabled: bool = False,
         difficulty_bet_scaling_enabled: bool = False,
         sabotage_enabled: bool = False,
+        max_rounds: int = 0,
     ) -> dict[str, Any]:
         """
         Create a new game session.
@@ -164,7 +165,7 @@ class GameSetupMixin:
             ValueError: If round_duration is outside valid range (10-60)
 
         """
-        from .state import GamePhase  # noqa: PLC0415
+        from .state import GamePhase
 
         # Validate round duration (Story 13.1)
         if not (ROUND_DURATION_MIN <= round_duration <= ROUND_DURATION_MAX):
@@ -195,7 +196,7 @@ class GameSetupMixin:
         # provider). #1726: when ramp-up ordering is opted in, the manager also
         # gets a difficulty-lookup so it can arrange the songs into an arc.
         playlist_manager = self._build_playlist_manager(
-            songs, provider, storefront, rampup_order_enabled
+            songs, provider, storefront, rampup_order_enabled, max_rounds
         )
 
         # #709: if the chosen provider has zero playable songs, fail fast with
@@ -228,8 +229,24 @@ class GameSetupMixin:
         # provider until HA itself restarts. rematch_game() intentionally preserves
         # these values, so this reset stays scoped to create_game.
         self._media_player_service = None
+        # #2143: a NEW game starts owing nothing. Promises to speakers of a
+        # previous game are dropped here on purpose — carrying them across
+        # would restore a stale volume/track at the end of an unrelated game.
+        # (rematch_game does NOT come through here and keeps its promises.)
+        self._pending_speaker_states = {}
+        # Same recycling mechanism as the media service above, same fix.
+        # configure_tts / configure_party_lights are only called when a config
+        # is supplied, so with TTS or lights DISABLED nothing cleared the
+        # previous game's service: a new game announced on the PREVIOUS game's
+        # speaker and drove the previous game's lights (hardware-confirmed).
+        self._tts_service = None
+        self._party_lights = None
         self.join_url = f"{base_url}/beatify/play?game={self.game_id}"
         self.players = {}
+
+        # #1475: gewaehlte Rundenzahl merken (0 = alle). Der Rematch liest sie
+        # aus `preserved` zurueck, damit die Revanche gleich lang ist.
+        self.max_rounds = max_rounds
 
         # Store provider setting (Story 17.2)
         self.provider = provider
@@ -385,7 +402,7 @@ class GameSetupMixin:
 
     async def end_game(self) -> None:
         """End the current game and reset state."""
-        from .state import GamePhase  # noqa: PLC0415
+        from .state import GamePhase
 
         _LOGGER.info("Game ended: %s", self.game_id)
         self.cancel_timer()
@@ -420,10 +437,20 @@ class GameSetupMixin:
         async with self._score_lock:
             # Issue #331: Restore lights before resetting
             await self.disable_party_lights()
+            # #2143: a speaker switch during PLAYING/REVEAL leaves the old
+            # device's promises parked on the game with no service to carry
+            # them out. Build one so the restores below reach every speaker
+            # this game touched, not just the last one.
+            if self._pending_speaker_states and self.media_player:
+                self._ensure_media_player_service()
             # #1516: restore the speaker volume to its pre-game level (the host
             # had to manually reset it after every game otherwise). No-op if
             # Beatify never changed the volume this game.
             await self.restore_player_volume()
+            # #2143: hand back the track the speaker was playing before the
+            # game — paused, at its old position. No-op outside Music
+            # Assistant, or when the speaker was idle at game start.
+            await self.restore_player_queue()
             # Issue #447: Disable TTS
             await self.disable_tts()
             self._reset_game_internals()
@@ -435,7 +462,7 @@ class GameSetupMixin:
 
     def rematch_game(self) -> None:
         """Reset game for rematch, preserving connected players (Issue #108)."""
-        from .state import GamePhase  # noqa: PLC0415
+        from .state import GamePhase
 
         _LOGGER.info("Rematch initiated from game: %s", self.game_id)
         self.cancel_timer()
@@ -463,6 +490,7 @@ class GameSetupMixin:
             "comeback_token_enabled": self.comeback_token_enabled,  # #1724
             "difficulty_bet_scaling_enabled": self.difficulty_bet_scaling_enabled,  # #1727
             "sabotage_enabled": self.sabotage_enabled,  # #1665
+            "max_rounds": self.max_rounds,  # #1475
         }
 
         self._reset_game_internals()
@@ -480,11 +508,15 @@ class GameSetupMixin:
         # HA's country config changed) and re-attach it.
         self.storefront = self._detect_storefront()
         # #1726: rebuild with the same ramp-up choice the host made at create.
+        # #1475: die Rundenzahl gehoert zur Spielkonfiguration, nicht zur
+        # einzelnen Partie. Ohne diese Zeile waere die Revanche wieder ueber
+        # die volle Playlist gelaufen, obwohl der Gastgeber 20 eingestellt hat.
         self._playlist_manager = self._build_playlist_manager(
             preserved["songs"],
             preserved["provider"],
             self.storefront,
             preserved["rampup_order_enabled"],
+            preserved["max_rounds"],
         )
         # #1377: derive total_rounds from the filtered/deduped playable pool
         # (exactly like create_game, state_setup.py), not the raw song list.
@@ -517,12 +549,50 @@ class GameSetupMixin:
             self.game_id,
         )
 
+    def replace_songs(self, songs: list[dict[str, Any]]) -> bool:
+        """Swap the game's song list while still in LOBBY (Crate Digger).
+
+        A room freezes its songs at creation, but the lobby's reset button
+        creates the next room immediately — so a popularity/genre change made
+        afterwards missed its own game and only took effect one game later.
+        The library provider therefore regenerates songs from the CURRENT
+        settings in a pre-start hook and installs them here.
+
+        Rebuilds the manager through ``_build_playlist_manager`` so ramp-up
+        ordering (#1726) and storefront detection behave exactly as they do at
+        create/rematch, and re-derives ``total_rounds`` from the filtered
+        playable pool (#1377) rather than the raw list. Returns False (leaving
+        the existing songs untouched) if the new set yields nothing playable.
+        """
+        from .state import GamePhase
+
+        if self.phase != GamePhase.LOBBY or not songs:
+            return False
+        manager = self._build_playlist_manager(
+            songs,
+            self.provider,
+            self.storefront,
+            bool(getattr(self, "rampup_order_enabled", False)),
+        )
+        if manager.get_total_count() <= 0:
+            _LOGGER.warning(
+                "replace_songs: %d song(s) yielded no playable tracks — "
+                "keeping the existing playlist",
+                len(songs),
+            )
+            return False
+        self.songs = songs
+        self._playlist_manager = manager
+        self.total_rounds = manager.get_total_count()
+        return True
+
     def _build_playlist_manager(
         self,
         songs: list[dict[str, Any]],
         provider: str,
         storefront: str | None,
         rampup_order_enabled: bool,
+        max_rounds: int = 0,
     ) -> PlaylistManager:
         """Construct a :class:`PlaylistManager`, wiring ramp-up ordering (#1726).
 
@@ -535,7 +605,9 @@ class GameSetupMixin:
         from .playlist import SONG_ORDER_RAMPUP  # noqa: PLC0415
 
         if not rampup_order_enabled:
-            return PlaylistManager(songs, provider, storefront=storefront)
+            return PlaylistManager(
+                songs, provider, storefront=storefront, max_rounds=max_rounds
+            )
 
         def _difficulty_lookup(uri: str) -> int | None:
             rating = self.get_song_difficulty(uri)
@@ -547,6 +619,7 @@ class GameSetupMixin:
             storefront=storefront,
             song_order=SONG_ORDER_RAMPUP,
             difficulty_lookup=_difficulty_lookup,
+            max_rounds=max_rounds,
         )
 
     def _detect_storefront(self) -> str | None:

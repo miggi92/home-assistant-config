@@ -76,8 +76,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 
 _LOGGER = logging.getLogger(__name__)
+
+# How long after an announcement's estimated end a non-playing state is still
+# attributed to the interruption rather than to the song ending. Covers MA's
+# resume latency plus the watchdog's kick.
+_ANNOUNCE_RESUME_GRACE = 6.0
 
 
 class RevealAutoAdvanceMixin:
@@ -128,6 +134,34 @@ class RevealAutoAdvanceMixin:
                 pstate,
             )
             return False
+        # An ANNOUNCEMENT is not a song end. TTS interrupts the track, and
+        # devices that don't auto-resume (MA voice satellites) then sit in
+        # 'idle' with the track still loaded — which this poll used to read
+        # as "the song finished". With auto-advance "Off" (= advance at song
+        # end) that silently jumped to the next round a few seconds into
+        # REVEAL, exactly as if the setting had been ignored. Stay on "still
+        # playing" while an announcement is in flight and through the resume
+        # window that follows it; the resume watchdog is kicking the device
+        # during precisely that window.
+        if pstate not in ("playing", "buffering"):
+            busy_fn = getattr(self, "announcement_busy_seconds", None)
+            if callable(busy_fn):
+                try:
+                    if busy_fn() > 0:
+                        _LOGGER.debug(
+                            "song-finished poll: announcement in flight — "
+                            "treating as still playing"
+                        )
+                        return False
+                    until = getattr(self, "_announce_busy_until", 0.0)
+                    if until and (time.monotonic() - until) < _ANNOUNCE_RESUME_GRACE:
+                        _LOGGER.debug(
+                            "song-finished poll: within the post-announcement "
+                            "resume window — treating as still playing"
+                        )
+                        return False
+                except Exception:  # noqa: BLE001
+                    pass
         return pstate not in ("playing", "buffering")
 
     async def _reveal_auto_advance(self, timer_seconds: int) -> None:
@@ -140,7 +174,7 @@ class RevealAutoAdvanceMixin:
         song-end is undetectable. A manual next_round, pause or game-end
         cancels this task; the phase re-check makes a late firing a no-op.
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         poll = 2.0
         # Even in song-end mode, never wait longer than this (songs run
@@ -225,7 +259,7 @@ class RevealAutoAdvanceMixin:
         a pause or game-end cancels this task, and the phase re-check makes
         a late firing a no-op.
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         poll = 2.0
         # Never poll forever if song-end is undetectable (songs run ~3-5 min).

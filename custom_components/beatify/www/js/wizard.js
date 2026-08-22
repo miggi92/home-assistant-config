@@ -10,12 +10,20 @@
  * Pure helpers are also imported by custom_components/beatify/www/js/__tests__/wizard.test.js.
  */
 
+import { mountLibraryPanel } from './admin/sections/library.js';
 import {
     mount as plhMount,
     setSelection as plhSetSelection,
     refresh as plhRefresh,
     getPlaylistByPath as plhGetPlaylistByPath,
 } from './playlist-hub.js';
+import {
+    MIN_ROUNDS,
+    roundCountOptions,
+    clampRoundCount,
+    availableSongs,
+    estimateGameMinutes,
+} from './round-count.js';
 
 const LS_WIZARD_STATE = 'beatify_wizard_state';   // 'step1'|'step2'|'step3'|'step4'|'done'|'dismissed'
 const LS_SELECTED_PLAYER = 'beatify_last_player'; // set by admin.js when a speaker is picked
@@ -235,6 +243,11 @@ const chosenPlaylists = new Set(); // paths — multi-select
 let chosenDifficulty = 'normal';
 let chosenDuration = 45;
 let chosenRevealAutoAdvance = 0; // #1028: REVEAL auto-advance seconds (0 = off, default)
+// #1475: rounds per game. 0 = every song, which is what every game did before
+// this setting existed. `customRoundsOpen` only tracks whether the number field
+// is revealed — the value itself always lives in chosenMaxRounds.
+let chosenMaxRounds = 0;
+let customRoundsOpen = false;
 let chosenLanguage = 'en';
 // Game-mode toggles (defaults match admin.js: artistChallenge on, movieQuiz on, intro off, closestWins off)
 let chosenArtistChallenge = true;
@@ -377,6 +390,39 @@ function _setProgress(step) {
     });
 }
 
+let _wizLibraryInst = null;
+
+function _isLibraryProvider() {
+    return chosenProvider === 'ma_library';
+}
+
+/**
+ * Step 3 has two faces: the Playlist Hub for streaming providers, or the
+ * Crate Digger panel (settings + background scan) for ma_library — which
+ * GENERATES its playlist, so picking curated ones makes no sense there.
+ */
+function _syncStep3Mode() {
+    const hub = document.getElementById('playlist-hub-root');
+    const wrap = document.getElementById('wiz-library-wrap');
+    if (!hub || !wrap) return;
+    const isLib = _isLibraryProvider();
+    hub.classList.toggle('hidden', isLib);
+    wrap.classList.toggle('hidden', !isLib);
+    // Upstream hides the wizard's CTA band on frame 3 because the Playlist
+    // Hub brings its own Back/Continue. Crate Digger has no hub, so without
+    // this flag step 3 has no navigation at all. library.css restores the
+    // band for `body.wiz-lib-step`.
+    document.body.classList.toggle('wiz-lib-step', isLib);
+    if (isLib) {
+        const root = document.getElementById('wiz-library-root');
+        if (root && !_wizLibraryInst) {
+            _wizLibraryInst = mountLibraryPanel(root, { mode: 'wizard', onChanged: _persistGameSettings });
+        } else if (_wizLibraryInst) {
+            _wizLibraryInst.refresh();
+        }
+    }
+}
+
 function _showFrame(n) {
     document.querySelectorAll('.wiz-frame').forEach((frame) => {
         const frameNum = parseInt(frame.dataset.frame, 10);
@@ -384,6 +430,11 @@ function _showFrame(n) {
         else frame.setAttribute('hidden', '');
     });
     currentStep = n;
+    if (n === 3) {
+        _syncStep3Mode();
+    } else {
+        document.body.classList.remove('wiz-lib-step');
+    }
     _setProgress(Math.min(n, TOTAL_STEPS));
     _updateCta();
     // Persist wizard state so refresh / revisit resumes at the right step.
@@ -402,7 +453,7 @@ function _updateCta() {
     // Step 3 hands the entire CTA to the Playlist Hub — hide the legacy
     // wiz-next AND wiz-back so we don't stack chrome. Hub renders its
     // own Back + Continue in a single row.
-    if (currentStep === 3) {
+    if (currentStep === 3 && !_isLibraryProvider()) {
         nextBtn.style.display = 'none';
         backBtn.style.display = 'none';
     } else {
@@ -418,6 +469,11 @@ function _updateCta() {
         // Block Continue unless the picked provider is supported on the picked
         // speaker — prevents #772-style silent failures at playback time.
         nextBtn.disabled = !chosenProvider || !_providerSupported(chosenProvider);
+    } else if (currentStep === 3 && _isLibraryProvider()) {
+        // Crate Digger generates its own playlist — nothing to select, so
+        // Continue is always available.
+        nextBtn.textContent = _t('wizard.continue', 'Continue');
+        nextBtn.disabled = false;
     } else if (currentStep === 3) {
         // Not shown — hub's Continue takes over. Keep the disabled/text
         // logic so if CSS ever un-hides it the behavior is correct.
@@ -545,6 +601,12 @@ const PROVIDERS = [
     { id: 'tidal', label: 'Tidal' },
     { id: 'deezer', label: 'Deezer' },
     { id: 'amazon_music', label: 'Amazon Music' },
+    {
+        id: 'ma_library',
+        label: 'Crate Digger',
+        sub: 'Your personal Music Assistant library',
+        subKey: 'wizard.providerLibrarySub',
+    },
 ];
 
 // Lock icon SVG for dimmed provider chips (#772 UX).
@@ -631,7 +693,16 @@ function _renderProviders() {
         // (these are native <button>s, so role + Enter/Space activation are native).
         const pressed = active && supported ? 'true' : 'false';
         const aria = supported ? `aria-pressed="${pressed}"` : 'aria-pressed="false" aria-disabled="true"';
-        return `<button type="button" class="${classes.join(' ')}" data-provider="${p.id}" ${aria}><span>${p.label}</span>${lock}</button>`;
+        // An optional second line explains a provider whose name alone
+        // doesn't say what it plays — Crate Digger draws from the host's own
+        // Music Assistant library, which new players can't guess.
+        const sub = p.sub
+            ? `<span class="wiz-provider-sub">${_t(p.subKey || '', p.sub)}</span>`
+            : '';
+        const labelHtml = sub
+            ? `<span class="wiz-provider-label"><span>${p.label}</span>${sub}</span>`
+            : `<span>${p.label}</span>`;
+        return `<button type="button" class="${classes.join(' ')}${sub ? ' wiz-provider-chip--stacked' : ''}" data-provider="${p.id}" ${aria}>${labelHtml}${lock}</button>`;
     }).join('');
     list.querySelectorAll('[data-provider]').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -828,6 +899,7 @@ const LANGUAGES = [
     { id: 'es', label: 'Español' },
     { id: 'fr', label: 'Français' },
     { id: 'nl', label: 'Nederlands' },
+    { id: 'it', label: 'Italiano' },
 ];
 
 /**
@@ -1103,6 +1175,93 @@ function _renderDifficulty() {
     }
 }
 
+// #1475: rounds chips + the revealed number field.
+//
+// Not built through _renderChipGroup because two of the chips are not plain
+// values: "All" carries the pool size in its label and "Custom" toggles a field
+// instead of setting the value. Sharing the .wiz-chip markup keeps it visually
+// identical to the timer group above it.
+function _renderRounds() {
+    const el = document.getElementById('wiz-rounds');
+    if (!el) return;
+    const pool = availableSongs(Array.from(chosenPlaylists), (cachedStatus && cachedStatus.playlists) || []);
+    const options = roundCountOptions(pool);
+    const isCustom = customRoundsOpen
+        || (chosenMaxRounds > 0 && !options.some((o) => o.id === chosenMaxRounds));
+
+    el.innerHTML = options
+        .map((opt) => {
+            let label;
+            let isActive;
+            if (opt.kind === 'all') {
+                label = pool > 0
+                    ? `${_t('wizard.step4.roundsAll', 'All')} (${pool})`
+                    : _t('wizard.step4.roundsAll', 'All');
+                isActive = !isCustom && chosenMaxRounds === 0;
+            } else if (opt.kind === 'custom') {
+                label = _t('wizard.step4.roundsCustom', 'Custom');
+                isActive = isCustom;
+            } else {
+                label = String(opt.id);
+                isActive = !isCustom && chosenMaxRounds === opt.id;
+            }
+            return `<button type="button" class="wiz-chip ${isActive ? 'active' : ''}" data-value="${opt.id}">${label}</button>`;
+        })
+        .join('');
+
+    el.querySelectorAll('.wiz-chip').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const raw = btn.dataset.value;
+            if (raw === 'custom') {
+                customRoundsOpen = true;
+                // Seed the field with the current cap so the host edits a
+                // number instead of facing an empty box; "All" seeds MIN.
+                if (chosenMaxRounds === 0) chosenMaxRounds = clampRoundCount(MIN_ROUNDS, pool);
+            } else {
+                customRoundsOpen = false;
+                chosenMaxRounds = clampRoundCount(parseInt(raw, 10), pool);
+            }
+            _renderGameMode();
+        });
+    });
+
+    const field = document.getElementById('wiz-rounds-custom');
+    if (field) {
+        field.classList.toggle('hidden', !isCustom);
+        const input = field.querySelector('input');
+        if (input) {
+            input.min = String(MIN_ROUNDS);
+            if (pool > 0) input.max = String(pool);
+            if (document.activeElement !== input) {
+                input.value = chosenMaxRounds > 0 ? String(chosenMaxRounds) : '';
+            }
+            if (!input.dataset.wired) {
+                input.dataset.wired = '1';
+                // Clamp on blur, not on every keystroke: clamping while typing
+                // turns a half-entered "2" (heading for 25) into 10 and eats
+                // the next digit.
+                input.addEventListener('change', () => {
+                    const p = availableSongs(Array.from(chosenPlaylists), (cachedStatus && cachedStatus.playlists) || []);
+                    chosenMaxRounds = clampRoundCount(input.value, p);
+                    if (chosenMaxRounds === 0) customRoundsOpen = false;
+                    _renderGameMode();
+                });
+            }
+        }
+    }
+
+    const hint = document.getElementById('wiz-rounds-hint');
+    if (hint) {
+        const effective = chosenMaxRounds > 0 ? chosenMaxRounds : pool;
+        const minutes = estimateGameMinutes(effective, chosenDuration);
+        hint.textContent = minutes > 0
+            ? _t('wizard.step4.roundsHint', 'approx. {min} min for {rounds} rounds')
+                .replace('{min}', String(minutes))
+                .replace('{rounds}', String(effective))
+            : '';
+    }
+}
+
 function _renderGameMode() {
     _renderCoreMode();
     _renderDifficulty();
@@ -1110,6 +1269,7 @@ function _renderGameMode() {
         chosenDuration = val;
         _renderGameMode();
     });
+    _renderRounds();
     _renderChipGroup('wiz-autoadvance', AUTO_ADVANCE_OPTIONS, chosenRevealAutoAdvance, (val) => {
         chosenRevealAutoAdvance = parseInt(val, 10) || 0;
         _renderGameMode();
@@ -1519,9 +1679,14 @@ function _renderDoneSummary() {
     const coreModeLabel = chosenTitleArtistMode
         ? _t('wizard.step4.modeTitleArtist', 'Title & Artist')
         : _t('wizard.step4.modeYear', 'Year mode');
+    // #1475: show the cap only when there is one. "All songs" is the default,
+    // and spelling out a default in the summary just makes the line longer.
+    const roundsPart = chosenMaxRounds > 0
+        ? ` · ${chosenMaxRounds} ${_t('wizard.summary.rounds', 'rounds')}`
+        : '';
     const modeSummary = chosenTitleArtistMode
-        ? `${coreModeLabel} · ${chosenDuration}s · ${chosenLanguage.toUpperCase()}`
-        : `${coreModeLabel} · ${chosenDifficulty} · ${chosenDuration}s · ${chosenLanguage.toUpperCase()}`;
+        ? `${coreModeLabel} · ${chosenDuration}s${roundsPart} · ${chosenLanguage.toUpperCase()}`
+        : `${coreModeLabel} · ${chosenDifficulty} · ${chosenDuration}s${roundsPart} · ${chosenLanguage.toUpperCase()}`;
 
     el.innerHTML = `
         <div class="wiz-done-line"><span>${_t('wizard.summary.speaker', 'Speaker')}</span><strong>${speaker}</strong></div>
@@ -1558,6 +1723,7 @@ function _persistGameSettings() {
             difficulty: chosenDifficulty,
             duration: chosenDuration,
             revealAutoAdvance: chosenRevealAutoAdvance,
+            maxRounds: chosenMaxRounds,  // #1475
             language: chosenLanguage,
             artistChallenge: chosenArtistChallenge,
             movieQuiz: chosenMovieQuiz,
@@ -1628,6 +1794,12 @@ export async function show(stepOverride) {
             if (s.provider) chosenProvider = s.provider;
             if (s.difficulty) chosenDifficulty = s.difficulty;
             if (s.duration) chosenDuration = s.duration;
+            // #1475: only a positive number is a cap; anything else stays 0
+            // ("all songs"), so a settings blob written before this release
+            // keeps behaving exactly as it did.
+            if (typeof s.maxRounds === 'number' && Number.isFinite(s.maxRounds) && s.maxRounds > 0) {
+                chosenMaxRounds = Math.floor(s.maxRounds);
+            }
             if (typeof s.revealAutoAdvance === 'number') chosenRevealAutoAdvance = s.revealAutoAdvance;
             if (typeof s.artistChallenge === 'boolean') chosenArtistChallenge = s.artistChallenge;
             if (typeof s.movieQuiz === 'boolean') chosenMovieQuiz = s.movieQuiz;

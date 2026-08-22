@@ -1,6 +1,6 @@
 {
   "name": "100 Summer Anthems ☀️",
-  "version": "1.10",
+  "version": "1.15",
   "tags": [
     "party",
     "classics",
@@ -116,7 +116,8 @@
       "fun_fact_fr": "« Good Vibrations » a coûté plus de 50 000 dollars à produire en 1966 (environ 470 000 dollars aujourd'hui), ce qui en faisait le single le plus cher jamais enregistré à l'époque. Il a été assemblé à partir de sessions dans quatre studios différents.",
       "uri_deezer": "deezer://track/3091992",
       "fun_fact_nl": "Good Vibrations' kostte in 1966 meer dan 50.000 dollar om te produceren (vandaag de dag ongeveer 470.000 dollar), waarmee het de duurste single was die ooit werd opgenomen. Het werd samengesteld uit sessies in vier verschillende studio's.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/1442865074"
     },
     {
       "year": 1985,
@@ -391,13 +392,13 @@
       "awards_nl": [],
       "isrc": "USCA20001654",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1698230404",
-        "de": "applemusic://track/1698230404",
-        "gb": "applemusic://track/1698230404",
-        "fr": "applemusic://track/1698230404",
-        "es": "applemusic://track/1698230404",
-        "nl": "applemusic://track/1698230404",
-        "it": "applemusic://track/1698230404"
+        "us": "applemusic://track/1443101252",
+        "de": "applemusic://track/1443101252",
+        "gb": "applemusic://track/1443101252",
+        "fr": "applemusic://track/1443101252",
+        "es": "applemusic://track/1443101252",
+        "nl": "applemusic://track/1443101252",
+        "it": "applemusic://track/1443101252"
       }
     },
     {
@@ -432,12 +433,12 @@
       "isrc": "GBDL58300056",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/516652008",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1496801184",
+        "gb": "applemusic://track/351524438",
+        "fr": "applemusic://track/1437448803",
+        "es": "applemusic://track/266617377",
+        "nl": "applemusic://track/1437448803",
+        "it": "applemusic://track/1437448803"
       }
     },
     {
@@ -515,7 +516,8 @@
         "es": "applemusic://track/1439527967",
         "nl": "applemusic://track/1439527967",
         "it": "applemusic://track/1439527967"
-      }
+      },
+      "uri_deezer": "deezer://track/143035002"
     },
     {
       "year": 1957,
@@ -976,7 +978,8 @@
       "fun_fact_fr": "« Itchycoo Park » des Small Faces était l'un des premiers singles pop à utiliser le flanging, un effet de studio créé en appuyant un doigt sur une bobine de bande. Le parc du titre fait référence à un vrai parc dans l'East End de Londres.",
       "uri_deezer": "deezer://track/75994742",
       "fun_fact_nl": "Itchycoo Park' van Small Faces was een van de eerste popsingles waarin flanging werd gebruikt, een studio-effect dat wordt gecreëerd door met een vinger tegen een bandspoel te drukken. Het park in de titel verwijst naar een echt park in East End in Londen.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/956517200"
     },
     {
       "year": 1978,
@@ -1252,7 +1255,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/158701754",
         "de": "applemusic://track/158701754",
-        "gb": null,
+        "gb": "applemusic://track/1328745809",
         "fr": "applemusic://track/158701754",
         "es": "applemusic://track/158701754",
         "nl": "applemusic://track/158701754",
@@ -1650,7 +1653,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1815573647",
         "de": "applemusic://track/1815573647",
-        "gb": null,
+        "gb": "applemusic://track/1757584414",
         "fr": "applemusic://track/1815573647",
         "es": "applemusic://track/1815573647",
         "nl": "applemusic://track/1815573647",
@@ -1690,7 +1693,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1308624086",
         "de": "applemusic://track/1308624086",
-        "gb": null,
+        "gb": "applemusic://track/1328637731",
         "fr": "applemusic://track/1308624086",
         "es": "applemusic://track/1308624086",
         "nl": "applemusic://track/1308624086",
@@ -1772,7 +1775,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1154239184",
         "de": "applemusic://track/1164253140",
-        "gb": null,
+        "gb": "applemusic://track/1110121977",
         "fr": "applemusic://track/1154239184",
         "es": "applemusic://track/1154239184",
         "nl": "applemusic://track/1154239184",
@@ -1891,12 +1894,12 @@
       "isrc": "USN018884501",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/31739286",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1512944637",
+        "gb": "applemusic://track/1627798956",
+        "fr": "applemusic://track/1512944637",
+        "es": "applemusic://track/1512944637",
+        "nl": "applemusic://track/1512944637",
+        "it": "applemusic://track/1512944637"
       }
     },
     {
@@ -2454,7 +2457,7 @@
       "awards_nl": [],
       "isrc": "USEE19900869",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1329075086",
         "de": "applemusic://track/1562668239",
         "gb": "applemusic://track/1562668239",
         "fr": "applemusic://track/1562668239",
@@ -3514,7 +3517,8 @@
       "fun_fact_fr": "« Lambada » a fait l'objet de multiples procès car la mélodie a été empruntée sans permission à « Llorando Se Fue » du groupe bolivien Los Kjarkas. Malgré les controverses juridiques, elle est devenue un phénomène mondial, atteignant la première place dans plus de 15 pays et se vendant à plus de 5 millions d'exemplaires.",
       "uri_deezer": "deezer://track/309174",
       "fun_fact_nl": "Lambada' was het onderwerp van meerdere rechtszaken omdat de melodie zonder toestemming was overgenomen van 'Llorando Se Fue' van de Boliviaanse groep Los Kjarkas. Ondanks de juridische controverses werd het een wereldwijd fenomeen, bereikte #1 in meer dan 15 landen en verkocht meer dan 5 miljoen exemplaren.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/1460025553"
     },
     {
       "year": 1993,
@@ -4231,7 +4235,8 @@
         "es": "applemusic://track/82347771",
         "nl": "applemusic://track/82347771",
         "it": "applemusic://track/82347771"
-      }
+      },
+      "uri_youtube_music": "https://music.youtube.com/watch?v=mTUhnIY3oRM"
     },
     {
       "year": 1966,

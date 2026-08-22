@@ -1,6 +1,6 @@
 {
   "name": "ICONIC movie songs 🎬",
-  "version": "0.10",
+  "version": "0.14",
   "tags": [
     "movies",
     "soundtracks",
@@ -151,7 +151,7 @@
       "fun_fact_es": "El dúo culminante de Dirty Dancing (1987) ganó un Óscar y un Grammy.",
       "fun_fact_fr": "Le duo final de Dirty Dancing (1987) a remporté un Oscar et un Grammy.",
       "uri_apple_music": "applemusic://track/254938549",
-      "uri_youtube_music": "https://music.youtube.com/watch?v=E7DU70UTI3Q",
+      "uri_youtube_music": "https://music.youtube.com/watch?v=_zScSltbfGo",
       "uri_tidal": "tidal://track/11337404",
       "uri_deezer": "deezer://track/13128250",
       "fun_fact_nl": "Het slotduet uit Dirty Dancing (1987) won zowel een Oscar als een Grammy.",
@@ -559,12 +559,12 @@
       "isrc": "USCA20600519",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/725785116",
-        "de": null,
+        "de": "applemusic://track/725785116",
         "gb": "applemusic://track/1644388797",
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "fr": "applemusic://track/725785116",
+        "es": "applemusic://track/725785116",
+        "nl": "applemusic://track/725785116",
+        "it": "applemusic://track/725785116"
       },
       "movie": "Back to the Future",
       "movie_choices": [
@@ -599,12 +599,12 @@
       "isrc": "USWD11993792",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1472083402",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1472083402",
+        "gb": "applemusic://track/1472083402",
+        "fr": "applemusic://track/1472083402",
+        "es": "applemusic://track/1472083402",
+        "nl": "applemusic://track/1472083402",
+        "it": "applemusic://track/1472083402"
       },
       "movie": "The Lion King",
       "movie_choices": [
@@ -960,7 +960,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440795596",
         "de": "applemusic://track/1445870931",
-        "gb": null,
+        "gb": "applemusic://track/1440795596",
         "fr": "applemusic://track/1445870931",
         "es": "applemusic://track/1445870931",
         "nl": "applemusic://track/1445870931",
@@ -1279,12 +1279,12 @@
       "isrc": "USWD11366376",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440618281",
-        "de": null,
+        "de": "applemusic://track/1477388275",
         "gb": "applemusic://track/1772699739",
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "fr": "applemusic://track/1477388275",
+        "es": "applemusic://track/1477388275",
+        "nl": "applemusic://track/1477388275",
+        "it": "applemusic://track/1477388275"
       },
       "movie": "Frozen",
       "movie_choices": [
@@ -1440,7 +1440,7 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440661298",
         "de": null,
-        "gb": null,
+        "gb": "applemusic://track/1437517043",
         "fr": null,
         "es": null,
         "nl": null,
@@ -1799,12 +1799,12 @@
       "isrc": "USWD11783639",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1442277221",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1439151612",
+        "gb": "applemusic://track/1439151612",
+        "fr": "applemusic://track/1708455796",
+        "es": "applemusic://track/1439151612",
+        "nl": "applemusic://track/1439151612",
+        "it": "applemusic://track/1708455796"
       },
       "movie": "Coco",
       "movie_choices": [
@@ -1919,12 +1919,12 @@
       "isrc": "USUG11401803",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440859825",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1445304367",
+        "gb": "applemusic://track/1443130507",
+        "fr": "applemusic://track/1443130507",
+        "es": "applemusic://track/1443130507",
+        "nl": "applemusic://track/1443130507",
+        "it": "applemusic://track/1443130507"
       },
       "movie": "The Hunger Games: Mockingjay",
       "movie_choices": [
@@ -2203,8 +2203,8 @@
         "gb": "applemusic://track/1680987071",
         "fr": "applemusic://track/1680987071",
         "es": "applemusic://track/1680987071",
-        "nl": null,
-        "it": null
+        "nl": "applemusic://track/1440769121",
+        "it": "applemusic://track/1440769121"
       },
       "movie": "Mamma Mia!",
       "movie_choices": [
@@ -2271,7 +2271,7 @@
       "fun_fact_es": "El eufórico final de Grease (1978).",
       "fun_fact_fr": "Le final exubérant de Grease (1978).",
       "uri_apple_music": "applemusic://track/1440844889",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=bkWevngKTcw",
       "uri_tidal": "tidal://track/77625043",
       "uri_deezer": "deezer://track/781563242",
       "fun_fact_nl": "De uitbundige finale van Grease (1978).",
@@ -2319,12 +2319,12 @@
       "isrc": "USNLR0700062",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1454446955",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1454446955",
+        "gb": "applemusic://track/1454449556",
+        "fr": "applemusic://track/1454446955",
+        "es": "applemusic://track/1454446955",
+        "nl": "applemusic://track/1454446955",
+        "it": "applemusic://track/1454446955"
       },
       "movie": "Hairspray",
       "movie_choices": [
@@ -2399,12 +2399,12 @@
       "isrc": "USSM11403054",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/880756174",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/880756174",
+        "gb": "applemusic://track/880756174",
+        "fr": "applemusic://track/881910296",
+        "es": "applemusic://track/880756174",
+        "nl": "applemusic://track/881910296",
+        "it": "applemusic://track/880756174"
       },
       "movie": "Walking on Sunshine",
       "movie_choices": [

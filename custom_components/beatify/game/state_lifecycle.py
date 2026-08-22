@@ -92,6 +92,7 @@ inside ``_ensure_media_player_service`` (matching the original).
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 
 from custom_components.beatify.const import (
@@ -123,7 +124,7 @@ class RoundLifecycleMixin:
             (success, error_code) - error_code is None on success
 
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         if self.phase != GamePhase.LOBBY:
             return False, ERR_GAME_ALREADY_STARTED
@@ -182,7 +183,7 @@ class RoundLifecycleMixin:
             True if round started successfully, False otherwise
 
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         # Snapshot the phase BEFORE we contend for the lock. The double-advance
         # bug is specifically: this caller entered while the phase was still
@@ -212,9 +213,27 @@ class RoundLifecycleMixin:
         recurse into *this* method (not the public ``start_round``) so the
         non-reentrant lock is acquired once per logical round-start.
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         MAX_SONG_RETRIES = 3
+
+        # Crate Digger: regenerate the game's songs from the
+        # CURRENT settings on the LOBBY -> first-round transition, and re-apply
+        # the persisted output settings. A room freezes its parameters at
+        # creation, but the lobby's reset button creates the next room
+        # immediately, so anything changed afterwards missed its own game.
+        # This lives here rather than in the REST start view because the
+        # websocket admin handler calls start_round() directly and bypasses
+        # that view entirely — hooking the view fixed one path and left the
+        # other broken. Fires once; a hook failure must never block a game, so
+        # the worst case is the room keeping its creation-time songs.
+        hook = getattr(self, "pre_start_hook", None)
+        if hook is not None and self.phase == GamePhase.LOBBY and _retry_count == 0:
+            self.pre_start_hook = None
+            try:
+                await hook(self)
+            except Exception:  # noqa: BLE001 - a hook must never block a game
+                _LOGGER.warning("Pre-start hook failed", exc_info=True)
 
         # #1358: snapshot the game-identity epoch at entry. start_round parks in
         # long awaits (verify_responsive, play_song — play_song waits a full
@@ -304,6 +323,33 @@ class RoundLifecycleMixin:
                     )
                     await self.pause_game("media_player_error")
                     return False
+
+            # Don't start a song into a speaker that is still announcing.
+            # MA queues announcements per player; starting playback while the
+            # queue drains means play_song's verification window observes the
+            # announcement instead of the expected track, times out after the
+            # full MA timeout, and the round loses its song (reported: songs
+            # skipped ONLY with TTS enabled). Bounded so a bad estimate can
+            # never stall a round.
+            busy = 0.0
+            get_busy = getattr(self, "announcement_busy_seconds", None)
+            if callable(get_busy):
+                with contextlib.suppress(Exception):
+                    busy = min(float(get_busy()), 8.0)
+            # Start slightly BEFORE the estimate expires: MA needs a moment to
+            # resolve and buffer the track anyway, so waiting the full
+            # estimate left an audible 1-2s gap after "…3, 2, 1, go"
+            # (reported). 80% of the estimate overlaps that buffering with the
+            # tail of the announcement without racing it.
+            busy *= 0.8
+            if busy > 0.2:
+                _LOGGER.info(
+                    "Round %s: waiting %.1fs for the speaker to finish announcing "
+                    "before starting playback",
+                    getattr(self, "current_round", "?"),
+                    busy,
+                )
+                await asyncio.sleep(busy)
 
             success = await self._media_player_service.play_song(song)
             if not success:
@@ -432,6 +478,36 @@ class RoundLifecycleMixin:
         extra_ms = 0
         if self._tts_service and self._tts_pre_round_delay > 0:
             extra_ms = int(self._tts_pre_round_delay * 1000)
+        # The round-start announcements fire AFTER this point but the deadline
+        # starts counting now, so a 60s round was reaching the music with ~49s
+        # left (reported). Shift the deadline by the estimated cost of the
+        # announcements that are actually enabled — this is what #1211's
+        # "Timer delay" asks the user to guess, derived automatically instead.
+        # Any user-set Timer delay still applies on top: it stays the manual
+        # override for device overhead we can't see (chimes, attention tones).
+        # Prefer DEFERRING the deadline over estimating the announcement cost:
+        # the estimate is a guess that gets proportionally worse as rounds get
+        # shorter (a 15s round loses most of its music to a spoken round
+        # number plus a countdown) and in languages whose phrases are longer.
+        # Deferral re-stamps the deadline the moment the song is audible,
+        # exactly as upstream already does for intro splashes (#1699). The
+        # estimate stays as the fallback for the deferral path failing.
+        defer = getattr(self._round_manager, "defer_deadline", None)
+        if self._tts_service and callable(defer):
+            with contextlib.suppress(Exception):
+                defer()
+
+        estimator = getattr(self, "estimate_round_start_announcements", None)
+        if callable(estimator):
+            with contextlib.suppress(Exception):
+                announce_s = float(estimator())
+                if announce_s > 0:
+                    extra_ms += int(announce_s * 1000)
+                    _LOGGER.info(
+                        "Round %s: +%.1fs deadline for round-start announcements",
+                        getattr(self, "round", "?"),
+                        announce_s,
+                    )
         self._initialize_round(
             song,
             metadata,
@@ -463,6 +539,188 @@ class RoundLifecycleMixin:
         if self.is_intro_round:
             await self.announce_intro_round()
 
+        # Post-announcement RESUME WATCHDOG: announcements interrupt the
+        # just-started song, and some devices (observed: MA voice satellites)
+        # fail to auto-resume afterwards — the player sits "paused" until a
+        # human presses play. Verify playback shortly after the announcement
+        # chain and press play on the device's behalf if needed.
+        if self._tts_service and self._hass and self.media_player:
+            import asyncio as _asyncio
+
+            # Snapshot the level BEFORE announcements duck/restore it, so the
+            # watchdog below can undo an upward ratchet.
+            _vol_before = None
+            with contextlib.suppress(Exception):
+                _st0 = self._hass.states.get(self.media_player)
+                _v = _st0.attributes.get("volume_level") if _st0 else None
+                if isinstance(_v, (int, float)):
+                    _vol_before = float(_v)
+
+            # The song is (or is about to be) audible: start the round clock
+            # from here rather than from initialize_round, so players get the
+            # full round duration of MUSIC.
+            start_now = getattr(self._round_manager, "start_timer_at_playback", None)
+            if callable(start_now):
+                with contextlib.suppress(Exception):
+                    start_now(self._timer_countdown)
+                    _LOGGER.info(
+                        "Round %s: clock started at playback (%.0fs of music)",
+                        getattr(self, "round", "?"),
+                        float(getattr(self._round_manager, "round_duration", 0) or 0),
+                    )
+                    # Push the new deadline so client counters restart from
+                    # the corrected value instead of continuing to run down
+                    # the placeholder.
+                    with contextlib.suppress(Exception):
+                        self._notify_state_callbacks()
+
+            _LOGGER.info("TTS resume watchdog armed for %s", self.media_player)
+
+            async def _resume_watchdog() -> None:
+                # v0.7.22 — triggers verified on hardware via the narrating
+                # build:
+                # * VA satellites stick in state='idle' after an announcement
+                #   (HA never reports 'paused' even while MA's UI shows the
+                #   paused track) -> sustained idle WITH a loaded title is
+                #   the kick signature.
+                # * 'playing' is healthy, full stop: media_position on MA
+                #   entities is a snapshot+timestamp, not a live counter, so
+                #   the old frozen-position stall heuristic false-positived
+                #   on a perfectly playing ShieldTV. Removed.
+                # v0.7.30 — ANTICIPATE instead of observe. Playback starts
+                # BEFORE the announcements are fired, so every announcement
+                # interrupts the song and the device has to resume. Waiting
+                # for 3 consecutive idle ticks to prove that meant a 3-4s
+                # silence after "…3, 2, 1, go" (reported). We now know how
+                # long the announcements should take, so: wait out that
+                # window, then kick IMMEDIATELY if the speaker isn't playing,
+                # instead of spending three more seconds confirming what we
+                # already expect.
+                kicks = 0
+                idle_streak = 0
+                vol_restored = False
+                lead = 0.0
+                _busy = getattr(self, "announcement_busy_seconds", None)
+                if callable(_busy):
+                    with contextlib.suppress(Exception):
+                        lead = min(float(_busy()), 15.0)
+                if lead > 0:
+                    await _asyncio.sleep(lead + 0.4)
+                    st0 = self._hass.states.get(self.media_player)
+                    if st0 is not None and st0.state in ("idle", "paused"):
+                        kicks += 1
+                        _LOGGER.info(
+                            "Resume watchdog: announcement window over, resuming "
+                            "immediately (state=%s)",
+                            st0.state,
+                        )
+                        with contextlib.suppress(Exception):
+                            await self._hass.services.async_call(
+                                "media_player",
+                                "media_play",
+                                {"entity_id": self.media_player},
+                                blocking=True,
+                            )
+                    elif st0 is not None and st0.state == "playing":
+                        # Device resumed on its own (ShieldTV behaviour) —
+                        # nothing to do, but keep polling as a safety net.
+                        pass
+                for tick in range(20):
+                    await _asyncio.sleep(1.0)
+                    st = self._hass.states.get(self.media_player)
+                    if st is None:
+                        _LOGGER.info("Resume watchdog: entity vanished — exit")
+                        return
+                    title = st.attributes.get("media_title")
+                    _LOGGER.info(
+                        "Resume watchdog[%02d]: state=%s title=%s",
+                        tick,
+                        st.state,
+                        title,
+                    )
+
+                    # Volume ratchet guard. Music Assistant raises the volume
+                    # for an announcement and restores it afterwards; on a
+                    # ShieldTV feeding an AV receiver the restore wrote back a
+                    # HIGHER level each round, so the music grew painfully
+                    # loud within a few rounds. Beatify itself never changes
+                    # volume here, but it is the only component positioned to
+                    # notice — so undo an upward drift once per round, inside
+                    # the announcement window only, leaving the host's own
+                    # volume buttons alone for the rest of the round.
+                    if _vol_before is not None and not vol_restored and tick <= 10:
+                        cur = st.attributes.get("volume_level")
+                        if (
+                            isinstance(cur, (int, float))
+                            and float(cur) > _vol_before + 0.05
+                        ):
+                            vol_restored = True
+                            _LOGGER.warning(
+                                "Volume rose from %.2f to %.2f across the TTS "
+                                "announcement — restoring (announcement "
+                                "duck/restore ratchet)",
+                                _vol_before,
+                                float(cur),
+                            )
+                            with contextlib.suppress(Exception):
+                                await self._hass.services.async_call(
+                                    "media_player",
+                                    "volume_set",
+                                    {
+                                        "entity_id": self.media_player,
+                                        "volume_level": _vol_before,
+                                    },
+                                    blocking=True,
+                                )
+                    if st.state == "idle" and title:
+                        idle_streak += 1
+                    else:
+                        idle_streak = 0
+                    # 2 ticks, not 3: the anticipatory kick above handles the
+                    # normal case, so this fallback should react faster to the
+                    # cases it misses. Satellites flap idle<->playing for
+                    # SINGLE ticks during healthy playback, so 2 consecutive
+                    # remains the floor — and a spurious media_play on a
+                    # playing device is a no-op anyway.
+                    if st.state == "paused" or idle_streak >= 2:
+                        kicks += 1
+                        idle_streak = 0
+                        _LOGGER.warning(
+                            "Media player %s after TTS announcement — "
+                            "resuming playback (kick %d)",
+                            "paused" if st.state == "paused" else "idle-stuck",
+                            kicks,
+                        )
+                        try:
+                            await self._hass.services.async_call(
+                                "media_player",
+                                "media_play",
+                                {"entity_id": self.media_player},
+                                blocking=True,
+                            )
+                        except Exception as err:  # noqa: BLE001
+                            _LOGGER.warning(
+                                "Resume watchdog: media_play failed: %s", err
+                            )
+                            return
+                        if kicks >= 3:
+                            _LOGGER.info("Resume watchdog: 3 kicks — exit")
+                            return
+                    elif st.state == "off":
+                        _LOGGER.info("Resume watchdog: player off — exit")
+                        return
+                _LOGGER.info("Resume watchdog: 20s window elapsed — exit")
+
+            # Retain the task reference: asyncio's loop keeps only WEAK refs,
+            # so an unreferenced task can be garbage-collected before running.
+            prev = getattr(self, "_tts_resume_task", None)
+            if prev is not None and not prev.done():
+                prev.cancel()
+            self._tts_resume_task = _asyncio.create_task(_resume_watchdog())
+            self._tts_resume_task.add_done_callback(
+                lambda _t: setattr(self, "_tts_resume_task", None)
+            )
+
         return True
 
     async def _round_start_aborted(
@@ -493,7 +751,7 @@ class RoundLifecycleMixin:
         already started is stopped so the speaker doesn't keep playing on a
         torn-down game.
         """
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         if self._game_epoch == start_epoch and self.phase not in (
             GamePhase.END,
@@ -524,7 +782,7 @@ class RoundLifecycleMixin:
         """
         # Lazy import: only the concrete class for instantiation; type hints
         # use MediaPlayerProtocol (module-level) to keep the import graph acyclic.
-        from custom_components.beatify.services.media_player import (  # noqa: PLC0415
+        from custom_components.beatify.services.media_player import (
             MediaPlayerService,
         )
 
@@ -534,7 +792,14 @@ class RoundLifecycleMixin:
                 self.media_player,
                 platform=self.platform,
                 provider=self.provider,
+                # #2143: carry the promises made to earlier speakers of this
+                # game into the new service, so a mid-game switch doesn't lose
+                # them. The new service takes ownership — clearing here keeps a
+                # later release/build cycle from restoring the same speaker
+                # twice.
+                inherited_states=self._pending_speaker_states or None,
             )
+            self._pending_speaker_states = {}
             # Connect analytics for error recording (Story 19.1 AC: #2)
             if self._stats_service and hasattr(self._stats_service, "_analytics"):
                 self._media_player_service.set_analytics(self._stats_service._analytics)
@@ -646,7 +911,7 @@ class RoundLifecycleMixin:
         extra_deadline_ms: int = 0,
     ) -> None:
         """Commit all round state. Delegates to RoundManager."""
-        from .state import GamePhase  # noqa: PLC0415 — avoid circular import
+        from .state import GamePhase
 
         self._round_manager.initialize_round(
             song,

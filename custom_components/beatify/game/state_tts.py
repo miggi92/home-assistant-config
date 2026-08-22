@@ -29,7 +29,9 @@ the attributes exist before any announcement fires.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
+import time
 from typing import Any
 
 from . import tts_phrases
@@ -135,7 +137,7 @@ class TtsAnnouncerMixin:
         the most common host expectation (round start + time's up + correct
         answer announced; per-round 3-2-1 countdown opt-in only).
         """
-        from custom_components.beatify.services.tts import TTSService  # noqa: PLC0415
+        from custom_components.beatify.services.tts import TTSService
 
         self._tts_service = TTSService(
             self._hass,
@@ -183,17 +185,141 @@ class TtsAnnouncerMixin:
         """
         return tts_phrases.normalize_language(getattr(self, "language", None))
 
-    async def _tts_announce(self, message: str) -> None:
-        """Speak a TTS announcement (fire-and-forget)."""
-        if self._tts_service:
-            try:
-                task = asyncio.create_task(
-                    self._tts_service.speak(message, language=self._lang())
+    # Rough speech rate used to estimate how long an announcement occupies the
+    # speaker. Beatify never learns when audio actually FINISHES (tts.speak is
+    # called with blocking=False and MA queues announcements internally), so
+    # an estimate is the only signal available without polling the device.
+    _TTS_WORDS_PER_SECOND = 2.6
+    _TTS_OVERHEAD_S = 1.6  # provider round-trip + device chime/attention
+    _TTS_MAX_ESTIMATE_S = 12.0
+
+    @classmethod
+    def _estimate_speech_seconds(cls, message: str) -> float:
+        """Estimate how long `message` will occupy the speaker. Pure."""
+        words = len([w for w in str(message).split() if w])
+        est = cls._TTS_OVERHEAD_S + (words / cls._TTS_WORDS_PER_SECOND)
+        return min(est, cls._TTS_MAX_ESTIMATE_S)
+
+    def estimate_round_start_announcements(self) -> float:
+        """Estimated seconds the ENABLED round-start announcements will take.
+
+        Built from the very phrases ``announce_round_start`` /
+        ``announce_countdown`` would speak, so the round deadline can be
+        shifted by the real announcement cost instead of a hand-tuned
+        "Timer delay" guess (a 60s round was starting its song with 49s left).
+        """
+        if not self._tts_service:
+            return 0.0
+        total = 0.0
+        with contextlib.suppress(Exception):
+            lang = self._lang()
+            if getattr(self, "_tts_announce_round_start", False):
+                total += self._estimate_speech_seconds(
+                    tts_phrases.phrase(
+                        lang,
+                        "round_start",
+                        round=tts_phrases.spoken_number(lang, self.round),
+                    )
                 )
-                self._bg_tasks.add(task)
-                task.add_done_callback(self._bg_tasks.discard)
-            except Exception:  # noqa: BLE001
-                _LOGGER.warning("TTS announcement failed")
+            if getattr(self, "_tts_announce_countdown", False):
+                total += self._estimate_speech_seconds(
+                    tts_phrases.phrase(lang, "countdown")
+                )
+        return total
+
+    def announcement_busy_seconds(self) -> float:
+        """Seconds the speaker is still expected to be announcing (0 = free)."""
+        until = getattr(self, "_announce_busy_until", 0.0)
+        return max(0.0, until - time.monotonic())
+
+    async def _tts_announce(self, message: str) -> None:
+        """Speak a TTS announcement, serialized and staleness-guarded.
+
+        Announcements used to be pure fire-and-forget: every call spawned a
+        task that immediately handed the text to `tts.speak` with
+        blocking=False. Music Assistant then queued them per player, so on a
+        slow device the AUDIO lagged behind the game while the code believed
+        each announcement was done the moment the service call returned. Two
+        user-visible failures came out of that (both reported on voice
+        satellites, both only with TTS enabled):
+
+        * Phrases arrived out of order — the previous round's "time's up"
+          played after the next round had already started, followed by that
+          round's countdown.
+        * Rounds skipped their song. Playback starts while the device is
+          still working through queued announcements, so the play
+          verification window saw the announcement instead of the expected
+          track, timed out, and the song was dropped.
+
+        Fix: announcements queue behind each other using an estimated
+        duration, and an announcement that is no longer relevant when it
+        reaches the front of the queue is DROPPED rather than played late —
+        a "time's up" belonging to a finished round is worse than silence.
+        `announcement_busy_seconds()` lets the round start wait for the
+        speaker instead of racing it.
+        """
+        if not self._tts_service:
+            return
+
+        lock = getattr(self, "_announce_lock", None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._announce_lock = lock
+        # Snapshot the context this announcement belongs to; if the game has
+        # moved on by the time we reach the front of the queue, drop it.
+        # Staleness keys on the ROUND ONLY. Keying on the phase too silently
+        # swallowed every end-of-round announcement (reveal / "nobody got it"
+        # / time's up): those are fired exactly AS the phase changes
+        # PLAYING -> REVEAL, so they were always "stale" by the time they
+        # reached the front of the queue. A phase change within the same
+        # round is normal; only a NEW ROUND makes a pending phrase wrong.
+        round_at_enqueue = getattr(self, "current_round", None)
+
+        # RESERVE the speaker window NOW, at enqueue — not when this phrase
+        # reaches the front of the queue. Everything that asks "is the speaker
+        # still announcing?" runs immediately after the announcements are
+        # fired (the resume watchdog arms, the round deadline is computed, the
+        # song-end poll starts), so a window that only appears once speech
+        # begins reads as zero to all of them. Hardware showed the cost: the
+        # watchdog's anticipatory kick never fired at all, leaving the
+        # observational path (2 idle polls) to do the work.
+        est = self._estimate_speech_seconds(message)
+        now = time.monotonic()
+        start_at = max(now, getattr(self, "_announce_busy_until", 0.0))
+        self._announce_busy_until = start_at + est
+
+        async def _run() -> None:
+            async with lock:
+                delay = start_at - time.monotonic()
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                round_now = getattr(self, "current_round", None)
+                if round_now != round_at_enqueue:
+                    _LOGGER.info(
+                        "TTS: dropping stale announcement (queued in round %s, "
+                        "now round %s): %.40s",
+                        round_at_enqueue,
+                        round_now,
+                        message,
+                    )
+                    # Give the reservation back if nothing queued behind us,
+                    # so a dropped phrase doesn't hold the speaker "busy".
+                    if abs(self._announce_busy_until - (start_at + est)) < 0.01:
+                        self._announce_busy_until = start_at
+                    return
+                try:
+                    await self._tts_service.speak(message, language=self._lang())
+                except Exception:  # noqa: BLE001
+                    _LOGGER.warning("TTS announcement failed")
+                    if abs(self._announce_busy_until - (start_at + est)) < 0.01:
+                        self._announce_busy_until = start_at
+
+        try:
+            task = asyncio.create_task(_run())
+            self._bg_tasks.add(task)
+            task.add_done_callback(self._bg_tasks.discard)
+        except Exception:  # noqa: BLE001
+            _LOGGER.warning("TTS announcement failed")
 
     async def announce_game_start(self) -> None:
         """Announce game start (use case 16)."""

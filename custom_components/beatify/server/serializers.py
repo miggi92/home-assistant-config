@@ -13,6 +13,7 @@ from custom_components.beatify.const import (
     DOMAIN,
     MEDIA_PLAYER_DOCS_URL,
     PLAYLIST_DOCS_URL,
+    PROVIDER_MA_LIBRARY,
 )
 
 if TYPE_CHECKING:
@@ -154,7 +155,13 @@ def build_status_response(
 
 
 def _is_setup_complete(saved_setup: dict[str, Any] | None) -> bool:
-    """True when the persisted setup blob has both a speaker and a playlist."""
+    """True when the persisted setup can actually start a game.
+
+    That normally means a speaker plus at least one playlist. Crate Digger
+    (``ma_library``) GENERATES its playlist from the host's own library at
+    game start, so it never selects one — requiring a playlist there reported
+    "You haven't set up yet" to hosts who had completed the wizard.
+    """
     if not isinstance(saved_setup, dict):
         return False
     if not saved_setup.get("last_player"):
@@ -162,6 +169,13 @@ def _is_setup_complete(saved_setup: dict[str, Any] | None) -> bool:
     settings = saved_setup.get("game_settings")
     if not isinstance(settings, dict):
         return False
+    # The persisted blob writes `provider` (the wizard) — `selectedProvider`
+    # is only the in-memory name on the admin page. Accept either.
+    if PROVIDER_MA_LIBRARY in (
+        settings.get("provider"),
+        settings.get("selectedProvider"),
+    ):
+        return True
     playlists = settings.get("selectedPlaylists")
     return isinstance(playlists, list) and len(playlists) > 0
 

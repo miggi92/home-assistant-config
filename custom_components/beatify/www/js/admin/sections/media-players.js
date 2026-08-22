@@ -161,6 +161,26 @@ export function renderMediaPlayers(players) {
 }
 
 /**
+ * Expand the speaker section and scroll it into view (#2269).
+ *
+ * The inverse of the collapse in renderMediaPlayers above: once a speaker was
+ * picked the section folds away, which is fine until that speaker disappears.
+ * The start-game error banner calls this so "Select Speaker" actually leads
+ * somewhere instead of leaving the host to find a collapsed section below the
+ * home hero on a phone.
+ */
+export function expandMediaPlayersSection() {
+    const section = document.getElementById('media-players');
+    if (!section) return;
+    section.classList.remove('collapsed');
+    const toggle = document.getElementById('media-players-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    if (typeof section.scrollIntoView === 'function') {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+/**
  * Render a single player item with platform badge and capability data attributes
  * @param {Object} player - Player object from backend
  * @returns {string} HTML string
@@ -262,6 +282,17 @@ export function handleMediaPlayerSelect(radio, skipSave = false) {
         supportsDeezer,
         supportsAmazonMusic,
     };
+
+    // Apply the device to an EXISTING lobby immediately (server no-ops when
+    // no lobby-phase game exists). Without this, rooms keep the device they
+    // were created with and a switch only took effect one game later.
+    try {
+        window.BeatifyAuth?.fetch('/beatify/api/game/update-lobby', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ media_player: entityId }),
+        });
+    } catch (e) { /* fire-and-forget */ }
 
     // Update visual selection
     document.querySelectorAll('.media-player-item').forEach(item => {

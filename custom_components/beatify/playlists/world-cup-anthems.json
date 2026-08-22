@@ -1,6 +1,6 @@
 {
   "name": "World Cup Anthems",
-  "version": "1.4",
+  "version": "1.13",
   "tags": [
     "world-cup",
     "fifa",
@@ -21,7 +21,7 @@
       "fun_fact_es": "La primera canción oficial de un Mundial FIFA, grabada para Chile 1962. Se convirtió en un éxito regional del rock and roll.",
       "fun_fact_fr": "La toute première chanson officielle d'une Coupe du monde FIFA, enregistrée pour le Chili 1962. Devenue un tube régional rock'n'roll.",
       "fun_fact_nl": "Het allereerste officiële FIFA-WK-lied, opgenomen voor Chili 1962. Werd een regionale rock-'n'-roll-hit.",
-      "uri": null,
+      "uri": "spotify:track:4GxsXEhvOhmp2M2aAtKMRl",
       "chart_info": {},
       "certifications": [],
       "awards": [],
@@ -31,7 +31,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/962309785",
       "uri_youtube_music": "https://music.youtube.com/watch?v=e_yafwjcf-w",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/41490418",
       "uri_deezer": "deezer://track/3245977",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -56,7 +56,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1439725634",
       "uri_youtube_music": "https://music.youtube.com/watch?v=Phx30LDo1rE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/493949975",
       "uri_deezer": "deezer://track/3141989511",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -87,7 +87,7 @@
       "uri_apple_music_by_region": {}
     },
     {
-      "year": 1974,
+      "year": 1973,
       "artist": "Germany National Football Team",
       "title": "Fußball ist unser Leben",
       "alt_artists": [
@@ -99,7 +99,7 @@
       "fun_fact_es": "La selección de Alemania Occidental grabó este himno antes de ganar el Mundial en casa en 1974.",
       "fun_fact_fr": "L'équipe d'Allemagne de l'Ouest enregistra cet hymne avant de remporter la Coupe du monde 1974 à domicile.",
       "fun_fact_nl": "Het West-Duitse elftal nam dit anthem op en won vervolgens het WK 1974 op eigen bodem.",
-      "uri": null,
+      "uri": "spotify:track:45jKsyqbTncdrq00gMIKUL",
       "chart_info": {},
       "certifications": [],
       "awards": [],
@@ -109,9 +109,9 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1443376595",
       "uri_youtube_music": "https://music.youtube.com/watch?v=HYDN6yq8nm4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/13342489",
       "uri_deezer": "deezer://track/7558171",
-      "isrc": null,
+      "isrc": "DEF067312220",
       "uri_apple_music_by_region": {}
     },
     {
@@ -157,11 +157,11 @@
       "awards_es": [],
       "awards_fr": [],
       "awards_nl": [],
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1673292415",
       "uri_youtube_music": "https://music.youtube.com/watch?v=Xp1HKM1WGXU",
       "uri_tidal": null,
-      "uri_deezer": null,
-      "isrc": null,
+      "uri_deezer": "deezer://track/2160233807",
+      "isrc": "USCGJ2341061",
       "uri_apple_music_by_region": {}
     },
     {
@@ -186,7 +186,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1525407005",
       "uri_youtube_music": "https://music.youtube.com/watch?v=N2ANAqO1TLs",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/150210063",
       "uri_deezer": "deezer://track/1035795002",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -213,7 +213,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1525408545",
       "uri_youtube_music": "https://music.youtube.com/watch?v=kdd65T82ZlI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/150210255",
       "uri_deezer": "deezer://track/1035796702",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -267,7 +267,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/185391878",
       "uri_youtube_music": "https://music.youtube.com/watch?v=tF_ggG5dY5U",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/33833948",
       "uri_deezer": "deezer://track/13111375",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -284,7 +284,7 @@
       "fun_fact_es": "Himno oficial de Francia 98, mezcla de mbalax senegalés y chanson francesa.",
       "fun_fact_fr": "Hymne officiel de France '98, mélange de mbalax sénégalais et de chanson française.",
       "fun_fact_nl": "Officieel anthem van France '98, een mix van Senegalese mbalax en Franse chanson.",
-      "uri": null,
+      "uri": "spotify:track:2echKEeQCNq2AzS8CZZfVl",
       "chart_info": {},
       "certifications": [],
       "awards": [],
@@ -294,8 +294,8 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/359615452",
       "uri_youtube_music": "https://music.youtube.com/watch?v=4fAy7F2wuCk",
-      "uri_tidal": null,
-      "uri_deezer": null,
+      "uri_tidal": "tidal://track/17819979",
+      "uri_deezer": "deezer://track/15209177",
       "isrc": null,
       "uri_apple_music_by_region": {}
     },
@@ -319,7 +319,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1811457658",
       "uri_youtube_music": "https://music.youtube.com/watch?v=aYbwkEX7bko",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/432943122",
       "uri_deezer": "deezer://track/3345558141",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -376,7 +376,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/271424813",
       "uri_youtube_music": "https://music.youtube.com/watch?v=JPZGuwUAVOo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/75257171",
       "uri_deezer": "deezer://track/563270",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -403,7 +403,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/716668990",
       "uri_youtube_music": "https://music.youtube.com/watch?v=LKi4BlO_ls8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2950975",
       "uri_deezer": "deezer://track/2651438972",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -431,7 +431,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/371784883",
       "uri_youtube_music": "https://music.youtube.com/watch?v=pRpeEdMmmQ0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/3863314",
       "uri_deezer": "deezer://track/68473089",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -458,7 +458,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/374246384",
       "uri_youtube_music": "https://music.youtube.com/watch?v=WK0zpXArVvo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/4044191",
       "uri_deezer": "deezer://track/6237416",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -486,7 +486,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/863447277",
       "uri_youtube_music": "https://music.youtube.com/watch?v=TGtWWb9emYI",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/37617779",
       "uri_deezer": "deezer://track/76575944",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -514,7 +514,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/880761320",
       "uri_youtube_music": "https://music.youtube.com/watch?v=GIZCNDTDEi4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/29173798",
       "uri_deezer": "deezer://track/77913076",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -542,7 +542,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1388446741",
       "uri_youtube_music": "https://music.youtube.com/watch?v=kFMZUxX6K6o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/89285249",
       "uri_deezer": "deezer://track/504079942",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -597,7 +597,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1640797372",
       "uri_youtube_music": "https://music.youtube.com/watch?v=e8laLiWolGg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/341429509",
       "uri_deezer": "deezer://track/1874882997",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -625,7 +625,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1655441868",
       "uri_youtube_music": "https://music.youtube.com/watch?v=jEdfjuG0Fx4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/341428967",
       "uri_deezer": "deezer://track/2023640587",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -653,7 +653,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1653032710",
       "uri_youtube_music": "https://music.youtube.com/watch?v=rb0bjyt1OD0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/259859918",
       "uri_deezer": "deezer://track/2010847937",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -681,7 +681,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/6768469976",
       "uri_youtube_music": "https://music.youtube.com/watch?v=fcnDmrtj6Sk",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/523693880",
       "uri_deezer": "deezer://track/4015341011",
       "isrc": null,
       "uri_apple_music_by_region": {}
@@ -709,7 +709,7 @@
       "awards_nl": [],
       "uri_apple_music": "applemusic://track/1884704638",
       "uri_youtube_music": "https://music.youtube.com/watch?v=v3iWqU0ySoE",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/506686850",
       "uri_deezer": "deezer://track/3898098401",
       "isrc": null,
       "uri_apple_music_by_region": {}
