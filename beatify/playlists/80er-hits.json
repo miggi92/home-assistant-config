@@ -1,6 +1,6 @@
 {
   "name": "80s Hits",
-  "version": "2.13",
+  "version": "2.19",
   "tags": [
     "1980s",
     "pop",
@@ -91,7 +91,7 @@
       "awards_nl": [],
       "isrc": "USCA20903078",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1572525083",
         "de": "applemusic://track/693113326",
         "gb": "applemusic://track/693113326",
         "fr": "applemusic://track/693113326",
@@ -132,12 +132,12 @@
       "isrc": "GBUM71029612",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1824266111",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781076401",
+        "gb": "applemusic://track/6781080943",
+        "fr": "applemusic://track/6781076401",
+        "es": "applemusic://track/6781080943",
+        "nl": "applemusic://track/6781076401",
+        "it": "applemusic://track/6781076401"
       }
     },
     {
@@ -249,12 +249,12 @@
       "isrc": "GBUM71029605",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440650719",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781080305",
+        "gb": "applemusic://track/6781027662",
+        "fr": "applemusic://track/6781080305",
+        "es": "applemusic://track/6781027662",
+        "nl": "applemusic://track/6781075748",
+        "it": "applemusic://track/6781076397"
       }
     },
     {
@@ -279,7 +279,8 @@
       "uri_tidal": "tidal://track/234636699",
       "uri_deezer": "deezer://track/1787693427",
       "fun_fact_nl": "Beroemd van de VK nummer 1 plek gehouden door Joe Dolce's 'Shaddap You Face', wordt Vienna vaak aangehaald als het grootste nummer dat nooit de nummer 1 positie in het VK bereikte.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/1630208751"
     },
     {
       "year": 1981,
@@ -339,7 +340,8 @@
       "uri_tidal": "tidal://track/35096249",
       "uri_deezer": "deezer://track/14640464",
       "fun_fact_nl": "Van het album 'Abacab' was dit een van de eerste Genesis-nummers die Phil Collins' popsensibiliteit weerspiegelden in plaats van de progressieve rockwortels van de band.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/1472171998"
     },
     {
       "year": 1981,
@@ -856,12 +858,12 @@
       "isrc": "USGF18200301",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1442963585",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1827526574",
+        "gb": "applemusic://track/1777028455",
+        "fr": "applemusic://track/1827526574",
+        "es": "applemusic://track/1780335642",
+        "nl": "applemusic://track/1827526574",
+        "it": "applemusic://track/1827526574"
       }
     },
     {
@@ -891,12 +893,12 @@
       "isrc": "USUM71918013",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1479631804",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/374486510",
+        "gb": "applemusic://track/374486510",
+        "fr": "applemusic://track/374486510",
+        "es": "applemusic://track/374486510",
+        "nl": "applemusic://track/374486510",
+        "it": "applemusic://track/374486510"
       }
     },
     {
@@ -937,6 +939,18 @@
       "awards_nl": [
         "Grammy Award voor Opname van het Jaar (1984)",
         "Grammy Award voor Beste Mannelijke Rock Zangprestatie (1984)"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1984)",
+        "Grammy per la migliore interpretazione vocale rock maschile (1984)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1984)",
+        "Grammy - Beste männliche Rock-Gesangsdarbietung (1984)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1984)",
+        "Grammy - Mejor Interpretación Vocal Rock Masculina (1984)"
       ],
       "isrc": "USSM18200197",
       "uri_apple_music_by_region": {
@@ -984,6 +998,15 @@
       "fun_fact_nl": "Michael Jackson schreef dit nummer onderweg naar huis, zo verdiept dat hij niet merkte dat zijn auto vlam had gevat. De beroemde baslijn vergde 91 takes om te perfectioneren. Jackson debuteerde de moonwalk tijdens een tv-optreden van dit nummer.",
       "awards_nl": [
         "Grammy Award voor Beste Mannelijke R&B Zangprestatie (1984)"
+      ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale R&B maschile (1984)"
+      ],
+      "awards_de": [
+        "Grammy - Beste männliche R&B-Gesangsdarbietung (1984)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal R&B Masculina (1984)"
       ],
       "isrc": "USSM19902991",
       "uri_apple_music_by_region": {
@@ -1263,6 +1286,15 @@
       "awards_nl": [
         "Grammy Award voor Beste Rockprestatie door Duo of Groep (1983)"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione rock di un duo o gruppo (1983)"
+      ],
+      "awards_de": [
+        "Grammy - Beste Rock-Darbietung eines Duos oder einer Gruppe (1983)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Rock de Dúo o Grupo (1983)"
+      ],
       "isrc": "USVR19300001",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1635636757",
@@ -1461,6 +1493,15 @@
       "fun_fact_nl": "Het nummer werd geschreven over actrice Rosanna Arquette, die een relatie had met Toto-toetsenist Steve Porcaro. Het karakteristieke drumpatroon, het 'Rosanna Shuffle' genaamd, wordt nu wereldwijd onderwezen op muziekscholen.",
       "awards_nl": [
         "Grammy Award voor Opname van het Jaar (1983)"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1983)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1983)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1983)"
       ],
       "isrc": "USSM18200245",
       "uri_apple_music_by_region": {
@@ -2071,6 +2112,18 @@
         "Oscar voor Beste Originele Lied (1984)",
         "Golden Globe voor Beste Originele Lied (1984)"
       ],
+      "awards_it": [
+        "Oscar per la migliore canzone originale (1984)",
+        "Golden Globe per la migliore canzone originale (1984)"
+      ],
+      "awards_de": [
+        "Oscar - Bester Filmsong (1984)",
+        "Golden Globe - Bester Filmsong (1984)"
+      ],
+      "awards_es": [
+        "Óscar - Mejor Canción Original (1984)",
+        "Globo de Oro - Mejor Canción Original (1984)"
+      ],
       "isrc": "USA560661522",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/258276259",
@@ -2482,7 +2535,9 @@
       "uri_deezer": "deezer://track/1090634",
       "fun_fact_nl": "Oorspronkelijk uitgebracht in 1982 en opnieuw opgenomen voor het album 'The Hurting', gaat het nummer over emotionele verwaarlozing in de kindertijd, geïnspireerd door Arthur Janovs primaire therapie.",
       "awards_nl": [],
-      "uri_tidal": "tidal://track/22936962"
+      "uri_tidal": "tidal://track/22936962",
+      "uri_apple_music": "applemusic://track/1440912610",
+      "uri_youtube_music": "https://music.youtube.com/watch?v=BUfcT5OoP-8"
     },
     {
       "year": 1983,
@@ -2506,7 +2561,8 @@
       "uri_tidal": "tidal://track/282489999",
       "uri_deezer": "deezer://track/3803453672",
       "fun_fact_nl": "Ondanks hun naam waren de Thompson Twins eigenlijk een trio en geen tweeling. De naam was ontleend aan de detectives Jansen en Janssen uit de Kuifje-strips.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/1675310468"
     },
     {
       "year": 1983,
@@ -2684,13 +2740,13 @@
       "awards_nl": [],
       "isrc": "GBAJH9900153",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/1528521900",
+        "de": "applemusic://track/1436832239",
+        "gb": "applemusic://track/1436832239",
+        "fr": "applemusic://track/1436832239",
+        "es": "applemusic://track/1436833570",
+        "nl": "applemusic://track/1436832239",
+        "it": "applemusic://track/1436832239"
       }
     },
     {
@@ -3546,6 +3602,15 @@
       "awards_nl": [
         "Grammy Award voor Beste Mannelijke Pop Zangprestatie (1985)"
       ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale pop maschile (1985)"
+      ],
+      "awards_de": [
+        "Grammy - Beste männliche Pop-Gesangsdarbietung (1985)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal Pop Masculina (1985)"
+      ],
       "isrc": "USRH11603951",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1148642452",
@@ -3620,7 +3685,8 @@
         "es": "applemusic://track/1692882667",
         "nl": "applemusic://track/1692882667",
         "it": "applemusic://track/1692882667"
-      }
+      },
+      "uri_youtube_music": "https://music.youtube.com/watch?v=NSRrAYeh5OU"
     },
     {
       "year": 1984,
@@ -3652,12 +3718,12 @@
       "isrc": "GBUM71106175",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440810742",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781027665",
+        "gb": "applemusic://track/6781081110",
+        "fr": "applemusic://track/6781461224",
+        "es": "applemusic://track/6781461224",
+        "nl": "applemusic://track/6781461224",
+        "it": "applemusic://track/6781461224"
       }
     },
     {
@@ -3692,7 +3758,8 @@
         "es": "applemusic://track/1127014316",
         "nl": "applemusic://track/1127014316",
         "it": "applemusic://track/1127014316"
-      }
+      },
+      "uri_youtube_music": "https://music.youtube.com/watch?v=Fe93CLbHjxQ"
     },
     {
       "year": 1984,
@@ -3772,6 +3839,18 @@
         "Oscar voor Beste Originele Lied (1985)",
         "Golden Globe voor Beste Originele Lied (1985)"
       ],
+      "awards_it": [
+        "Oscar per la migliore canzone originale (1985)",
+        "Golden Globe per la migliore canzone originale (1985)"
+      ],
+      "awards_de": [
+        "Oscar - Bester Filmsong (1985)",
+        "Golden Globe - Bester Filmsong (1985)"
+      ],
+      "awards_es": [
+        "Óscar - Mejor Canción Original (1985)",
+        "Globo de Oro - Mejor Canción Original (1985)"
+      ],
       "isrc": "USUMG9900476",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1449299049",
@@ -3809,7 +3888,7 @@
       "awards_nl": [],
       "isrc": "GBAYE8400109",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/696670364",
         "de": "applemusic://track/1724929798",
         "gb": "applemusic://track/1724929798",
         "fr": "applemusic://track/1724929798",
@@ -3842,7 +3921,7 @@
       "awards_nl": [],
       "isrc": "GBAYE9700489",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/696670530",
         "de": "applemusic://track/1510554531",
         "gb": "applemusic://track/1510554531",
         "fr": "applemusic://track/1510554531",
@@ -4032,6 +4111,21 @@
         "Grammy Award voor Opname van het Jaar (1985)",
         "Grammy Award voor Lied van het Jaar (1985)",
         "Grammy Award voor Beste Vrouwelijke Pop Zangprestatie (1985)"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1985)",
+        "Grammy per la canzone dell'anno (1985)",
+        "Grammy per la migliore interpretazione vocale pop femminile (1985)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1985)",
+        "Grammy - Song des Jahres (1985)",
+        "Grammy - Beste weibliche Pop-Gesangsdarbietung (1985)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1985)",
+        "Grammy - Canción del Año (1985)",
+        "Grammy - Mejor Interpretación Vocal Pop Femenina (1985)"
       ],
       "isrc": "USCA28400002",
       "uri_apple_music_by_region": {
@@ -4334,7 +4428,8 @@
       "uri_tidal": "tidal://track/4087636",
       "uri_deezer": "deezer://track/699130",
       "fun_fact_nl": "Heinz Rudolf Kunze schreef deze hartverwarmende ballade die een van de grootste Duitse hits van 1985 werd. Zijn poëtische teksten leverden hem vergelijkingen op met Bob Dylan in Duitstalige landen.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/79280627"
     },
     {
       "year": 1985,
@@ -4504,7 +4599,7 @@
       "awards_nl": [],
       "isrc": "GBAYE1601694",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/726107942",
         "de": "applemusic://track/1755174963",
         "gb": "applemusic://track/1755174963",
         "fr": "applemusic://track/1755174963",
@@ -4790,7 +4885,7 @@
       "awards_nl": [],
       "isrc": "GBCRL0800119",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/294361564",
         "de": "applemusic://track/1802225094",
         "gb": "applemusic://track/1802225094",
         "fr": "applemusic://track/1802225094",
@@ -4964,13 +5059,13 @@
       "awards_nl": [],
       "isrc": "USEE10608884",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/282971472",
+        "de": "applemusic://track/1440932674",
+        "gb": "applemusic://track/1440932674",
+        "fr": "applemusic://track/1443833766",
+        "es": "applemusic://track/1440932674",
+        "nl": "applemusic://track/1452098215",
+        "it": "applemusic://track/1440932674"
       }
     },
     {
@@ -5290,12 +5385,12 @@
       "isrc": "USRHD0900075",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1389132122",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1436488206",
+        "gb": "applemusic://track/1436488206",
+        "fr": "applemusic://track/1763025190",
+        "es": "applemusic://track/1763025190",
+        "nl": "applemusic://track/1528341885",
+        "it": "applemusic://track/1528341885"
       }
     },
     {
@@ -5627,6 +5722,15 @@
       "awards_nl": [
         "Grammy Award voor Album van het Jaar (1987) – Album"
       ],
+      "awards_it": [
+        "Grammy per l'album dell'anno (1987)"
+      ],
+      "awards_de": [
+        "Grammy - Album des Jahres (1987)"
+      ],
+      "awards_es": [
+        "Grammy - Álbum del Año (1987)"
+      ],
       "isrc": "USSM11002255",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1739846276",
@@ -5656,7 +5760,9 @@
       "awards": [],
       "uri_deezer": "deezer://track/540503452",
       "fun_fact_nl": "Oorspronkelijk met Dolly Parton in gedachten voor de vrouwelijke zang, zong Kate Bush uiteindelijk het duet. Het nummer was geïnspireerd op Depressie-era foto's van Dorothea Lange.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/986800861",
+      "uri_youtube_music": "https://music.youtube.com/watch?v=VjEq-r2agqc"
     },
     {
       "year": 1986,
@@ -5685,7 +5791,8 @@
       "uri_tidal": "tidal://track/51771426",
       "uri_deezer": "deezer://track/664178",
       "fun_fact_nl": "Prince schreef dit oorspronkelijk voor de band Mazarati maar vond de demo zo goed dat hij het hield. De sobere productie was revolutionair - alleen drums, gitaar en zang met bijna geen bas of keyboards.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/260336471"
     },
     {
       "year": 1986,
@@ -5717,12 +5824,12 @@
       "isrc": "GBUM71029621",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440783385",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781023986",
+        "gb": "applemusic://track/1797590896",
+        "fr": "applemusic://track/6781081103",
+        "es": "applemusic://track/6781023986",
+        "nl": "applemusic://track/6781023986",
+        "it": "applemusic://track/6781081103"
       }
     },
     {
@@ -5759,6 +5866,15 @@
       "fun_fact_nl": "Steve Winwood werkte samen met Chaka Khan voor achtergrondzang op dit nummer. Het won de Grammy voor Record of the Year in 1987 en markeerde Winwoods succesvolle solocarrière na Traffic.",
       "awards_nl": [
         "Grammy Award voor Opname van het Jaar (1987)"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1987)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1987)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1987)"
       ],
       "isrc": "GBAAN0201051",
       "uri_apple_music_by_region": {
@@ -5798,12 +5914,12 @@
       "isrc": "USSM19802604",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/200007628",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/323489062",
+        "gb": "applemusic://track/270787340",
+        "fr": "applemusic://track/285529684",
+        "es": "applemusic://track/200007628",
+        "nl": "applemusic://track/397587067",
+        "it": "applemusic://track/397587067"
       }
     },
     {
@@ -5971,7 +6087,8 @@
       "uri_tidal": "tidal://track/4841969",
       "uri_deezer": "deezer://track/8146779",
       "fun_fact_nl": "George Michael schreef, produceerde en speelde bijna elk instrument op dit nummer. Het iconische gitaarriff aan het begin was geïnspireerd op Bo Diddley. Het gelijknamige album maakte hem de eerste blanke soloartiest die nummer 1 bereikte op de Amerikaanse R&B-hitparade.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_apple_music": "applemusic://track/282658468"
     },
     {
       "year": 1987,
@@ -6115,7 +6232,7 @@
       "awards_nl": [],
       "isrc": "GBAYE1700799",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1645129014",
         "de": "applemusic://track/1755142580",
         "gb": "applemusic://track/1755142580",
         "fr": "applemusic://track/1755142580",
@@ -6375,12 +6492,12 @@
       "isrc": "USEE18700009",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1836933287",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1452806384",
+        "gb": "applemusic://track/1452806384",
+        "fr": "applemusic://track/1452806384",
+        "es": "applemusic://track/1452806384",
+        "nl": "applemusic://track/1475933574",
+        "it": "applemusic://track/1452806384"
       }
     },
     {
@@ -6418,6 +6535,15 @@
       "fun_fact_nl": "Whitney Houston wilde dit nummer aanvankelijk niet opnemen, omdat ze vond dat het te vrolijk was. Producer Narada Michael Walden overtuigde haar, en het werd haar vierde opeenvolgende nummer 1-hit, waarbij ze een Grammy won voor Best Female Pop Vocal.",
       "awards_nl": [
         "Grammy Award voor Beste Vrouwelijke Pop Zangprestatie (1988)"
+      ],
+      "awards_it": [
+        "Grammy per la migliore interpretazione vocale pop femminile (1988)"
+      ],
+      "awards_de": [
+        "Grammy - Beste weibliche Pop-Gesangsdarbietung (1988)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Interpretación Vocal Pop Femenina (1988)"
       ],
       "isrc": "USAR18700121",
       "uri_apple_music_by_region": {
@@ -6658,9 +6784,18 @@
       "awards_nl": [
         "Golden Globe voor Beste Originele Lied (1989)"
       ],
+      "awards_it": [
+        "Golden Globe per la migliore canzone originale (1989)"
+      ],
+      "awards_de": [
+        "Golden Globe - Bester Filmsong (1989)"
+      ],
+      "awards_es": [
+        "Globo de Oro - Mejor Canción Original (1989)"
+      ],
       "isrc": "USWI19600240",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1148642433",
         "de": "applemusic://track/110687725",
         "gb": "applemusic://track/110687725",
         "fr": "applemusic://track/110687725",
@@ -6836,8 +6971,8 @@
       "awards_nl": [],
       "isrc": "GBAYK8800055",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
+        "us": "applemusic://track/693789044",
+        "de": "applemusic://track/693789044",
         "gb": "applemusic://track/1702790221",
         "fr": "applemusic://track/1702790221",
         "es": "applemusic://track/1702790221",
@@ -7059,12 +7194,12 @@
       "isrc": "QMFME2521079",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1837530994",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/217503142",
+        "gb": "applemusic://track/217503142",
+        "fr": "applemusic://track/217503142",
+        "es": "applemusic://track/217503142",
+        "nl": "applemusic://track/217503142",
+        "it": "applemusic://track/217503142"
       }
     },
     {
@@ -7322,6 +7457,15 @@
       "awards_nl": [
         "Grammy Award voor Opname van het Jaar (1991)"
       ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1991)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1991)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1991)"
+      ],
       "isrc": "USRH11602405",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1148701937",
@@ -7473,12 +7617,12 @@
       "isrc": "USSM18700216",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/429802577",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/185603176",
+        "gb": "applemusic://track/291417924",
+        "fr": "applemusic://track/1692216560",
+        "es": "applemusic://track/193605920",
+        "nl": "applemusic://track/193605920",
+        "it": "applemusic://track/390617130"
       }
     },
     {
@@ -7506,12 +7650,12 @@
       "isrc": "USEE10901457",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1720381137",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1440786034",
+        "gb": "applemusic://track/1440932679",
+        "fr": "applemusic://track/1440786034",
+        "es": "applemusic://track/1440932679",
+        "nl": "applemusic://track/1440932679",
+        "it": "applemusic://track/1440786034"
       }
     },
     {
@@ -7620,12 +7764,12 @@
       "isrc": "USRE19901615",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1543366109",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/284576492",
+        "gb": "applemusic://track/6773112917",
+        "fr": "applemusic://track/6773112801",
+        "es": "applemusic://track/284576492",
+        "nl": "applemusic://track/284576492",
+        "it": "applemusic://track/6773112801"
       }
     },
     {
@@ -7809,7 +7953,7 @@
       "uri": "spotify:track:2Mz7HwloqFNdA6iZeZk5PJ",
       "uri_apple_music": "applemusic://track/1512944833",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/541479235",
         "de": "applemusic://track/1512944833",
         "gb": "applemusic://track/1512944833",
         "fr": "applemusic://track/1519718252",

@@ -1,6 +1,6 @@
 {
   "name": "100 Greatest Rock Songs",
-  "version": "0.8",
+  "version": "0.13",
   "tags": [
     "rock",
     "classic-rock",
@@ -186,6 +186,9 @@
       },
       "awards_fr": [
         "Grammy Hall of Fame (2014)"
+      ],
+      "awards_it": [
+        "Grammy Hall of Fame (2014)"
       ]
     },
     {
@@ -250,8 +253,6 @@
       "awards": [
         "Grammy nomination"
       ],
-      "awards_de": [],
-      "awards_es": [],
       "fun_fact": "Eddie Van Halen wrote Jump's synth riff at home on a four-track recorder. The rest of the band initially resisted releasing a keyboard-led single, worried it strayed too far from their guitar-driven identity.",
       "fun_fact_de": "Eddie Van Halen schrieb das Synthesizer-Riff von Jump zu Hause an einem Vierspur-Rekorder. Der Rest der Band sträubte sich zunächst gegen eine von Keyboards geführte Single, aus Angst, sich zu weit von ihrer gitarrenlastigen Identität zu entfernen.",
       "fun_fact_es": "Eddie Van Halen escribió el riff de sintetizador de Jump en casa con una grabadora de cuatro pistas. El resto de la banda se resistió al principio a lanzar un sencillo liderado por teclados, temiendo alejarse demasiado de su identidad guitarrera.",
@@ -263,6 +264,18 @@
       "fun_fact_nl": "Eddie Van Halen schreef de synthesizerriff van Jump thuis op een vierspoors-recorder. De rest van de band verzette zich aanvankelijk tegen een door keyboards geleide single, uit angst te ver af te wijken van hun gitaargedreven identiteit.",
       "awards_nl": [
         "Grammy-nominatie"
+      ],
+      "awards_it": [
+        "Candidatura al Grammy"
+      ],
+      "awards_de": [
+        "Grammy-Nominierung"
+      ],
+      "awards_es": [
+        "Nominación al Grammy"
+      ],
+      "awards_fr": [
+        "Nomination aux Grammy"
       ],
       "isrc": "USWB11403680",
       "uri_apple_music_by_region": {
@@ -523,6 +536,10 @@
       "awards_fr": [
         "Grammy - Enregistrement de l'année (1978)",
         "Grammy Hall of Fame (2003)"
+      ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1978)",
+        "Grammy Hall of Fame (2003)"
       ]
     },
     {
@@ -604,6 +621,9 @@
         "Grammy Hall of Fame (2009)"
       ],
       "awards_nl": [
+        "Grammy Hall of Fame (2009)"
+      ],
+      "awards_it": [
         "Grammy Hall of Fame (2009)"
       ]
     },
@@ -915,6 +935,9 @@
       "awards_nl": [
         "Grammy Hall of Fame (2017)"
       ],
+      "awards_it": [
+        "Grammy Hall of Fame (2017)"
+      ],
       "isrc": "USGF19942501",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440783625",
@@ -1009,6 +1032,9 @@
       "awards_nl": [
         "Grammy-nominatie – Beste Metalprestatie (1992)"
       ],
+      "awards_it": [
+        "Candidatura al Grammy per la migliore interpretazione metal (1992)"
+      ],
       "isrc": "QMKHM1900001",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1572046436",
@@ -1100,6 +1126,10 @@
         "Grammy Hall of Fame (1998)",
         "Rolling Stone – #2 Beste Nummer Aller Tijden"
       ],
+      "awards_it": [
+        "Grammy Hall of Fame (1998)",
+        "Rolling Stone – n. 2 tra le migliori canzoni di sempre"
+      ],
       "isrc": "USA176510160",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1623247613",
@@ -1151,15 +1181,18 @@
       "awards_nl": [
         "American Music Award (1981)"
       ],
+      "awards_it": [
+        "American Music Award (1981)"
+      ],
       "isrc": "GBUM71029605",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440650719",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781080305",
+        "gb": "applemusic://track/6781027662",
+        "fr": "applemusic://track/6781080305",
+        "es": "applemusic://track/6781027662",
+        "nl": "applemusic://track/6781075748",
+        "it": "applemusic://track/6781076397"
       }
     },
     {
@@ -1193,7 +1226,7 @@
       "awards_nl": [],
       "isrc": "USWB10001877",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1545712784",
         "de": "applemusic://track/1755142248",
         "gb": "applemusic://track/1755142248",
         "fr": "applemusic://track/1755142248",
@@ -1869,8 +1902,6 @@
       "awards": [
         "Grammy Hall of Fame"
       ],
-      "awards_de": [],
-      "awards_es": [],
       "fun_fact": "Smoke on the Water documents a real event: a fire that broke out during a Frank Zappa concert at the Montreux Casino in Switzerland, started by someone firing a flare gun into the ceiling.",
       "fun_fact_de": "Smoke on the Water beschreibt ein reales Ereignis: einen Brand während eines Frank-Zappa-Konzerts im Casino von Montreux in der Schweiz, ausgelöst durch eine ins Dach abgefeuerte Leuchtpistole.",
       "fun_fact_es": "Smoke on the Water relata un hecho real: un incendio que se produjo durante un concierto de Frank Zappa en el Casino de Montreux, en Suiza, provocado por alguien que disparó una bengala hacia el techo.",
@@ -1881,6 +1912,18 @@
       "uri_deezer": "deezer://track/60840057",
       "fun_fact_nl": "Smoke on the Water beschrijft een echte gebeurtenis: een brand die uitbrak tijdens een concert van Frank Zappa in het Casino van Montreux in Zwitserland, veroorzaakt doordat iemand een lichtkogel het plafond in schoot.",
       "awards_nl": [
+        "Grammy Hall of Fame"
+      ],
+      "awards_it": [
+        "Grammy Hall of Fame"
+      ],
+      "awards_de": [
+        "Grammy - Hall of Fame"
+      ],
+      "awards_es": [
+        "Grammy - Salón de la Fama"
+      ],
+      "awards_fr": [
         "Grammy Hall of Fame"
       ],
       "isrc": "GBDXG1200006",
@@ -2296,15 +2339,18 @@
       "awards_nl": [
         "Grammy Hall of Fame (2004)"
       ],
+      "awards_it": [
+        "Grammy Hall of Fame (2004)"
+      ],
       "isrc": "GBUM71029604",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1842449358",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781080302",
+        "gb": "applemusic://track/6781027645",
+        "fr": "applemusic://track/6781027645",
+        "es": "applemusic://track/6781027645",
+        "nl": "applemusic://track/6781027645",
+        "it": "applemusic://track/6781080302"
       }
     },
     {
@@ -2816,15 +2862,18 @@
       "awards_nl": [
         "Grammy Hall of Fame (2009)"
       ],
+      "awards_it": [
+        "Grammy Hall of Fame (2009)"
+      ],
       "isrc": "GBUM71029618",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1834502336",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/6781081101",
+        "gb": "applemusic://track/6781081101",
+        "fr": "applemusic://track/6781081101",
+        "es": "applemusic://track/6781027660",
+        "nl": "applemusic://track/6781081101",
+        "it": "applemusic://track/6781080737"
       }
     },
     {
@@ -3212,6 +3261,9 @@
       },
       "awards_fr": [
         "MTV VMA - Meilleur nouvel artiste (1986)"
+      ],
+      "awards_it": [
+        "MTV VMA per il miglior artista esordiente (1986)"
       ]
     },
     {
@@ -3325,6 +3377,18 @@
       "fun_fact_nl": "“Ace of Spades” van Motörhead verscheen oorspronkelijk in 1980; het jaar is gebaseerd op gecontroleerde opname- en uitgavegegevens.",
       "awards_nl": [
         "Grammy-nominatie"
+      ],
+      "awards_it": [
+        "Candidatura al Grammy"
+      ],
+      "awards_de": [
+        "Grammy-Nominierung"
+      ],
+      "awards_es": [
+        "Nominación al Grammy"
+      ],
+      "awards_fr": [
+        "Nomination aux Grammy"
       ],
       "isrc": "GBAJE8000033",
       "uri_apple_music_by_region": {
@@ -3559,8 +3623,8 @@
       "awards_nl": [],
       "isrc": "GBAYK8800055",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
+        "us": "applemusic://track/693789044",
+        "de": "applemusic://track/693789044",
         "gb": "applemusic://track/1702790221",
         "fr": "applemusic://track/1702790221",
         "es": "applemusic://track/1702790221",
@@ -3788,6 +3852,9 @@
       "awards_nl": [
         "Grammy Hall of Fame (2020)"
       ],
+      "awards_it": [
+        "Grammy Hall of Fame (2020)"
+      ],
       "isrc": "AUAP07900028",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/574044008",
@@ -3837,6 +3904,9 @@
       "uri_deezer": "deezer://track/625643",
       "fun_fact_nl": "Don't Stop Believin' werd het best verkopende digitale nummer van de 20e eeuw na het gebruik ervan in de finale van The Sopranos. Journey's Steve Perry schreef het over zijn eigen dorpse afkomst. Drie decennia na de release beleefde het nummer een enorme revival, waardoor het bij nieuwe generaties fans werd geïntroduceerd.",
       "awards_nl": [
+        "Grammy Hall of Fame (2021)"
+      ],
+      "awards_it": [
         "Grammy Hall of Fame (2021)"
       ],
       "isrc": "USSM18100116",
@@ -3899,15 +3969,15 @@
       "year": 1971,
       "isrc": "USWB19901792",
       "uri": "spotify:track:3BCSIFo2mLFFhSsg0QwpPw",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/301027918",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/301027918",
+        "de": "applemusic://track/301027918",
+        "gb": "applemusic://track/301027918",
+        "fr": "applemusic://track/301027918",
+        "es": "applemusic://track/301027918",
+        "nl": "applemusic://track/301027918",
+        "it": "applemusic://track/301027918"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=mSZXWdKSQNM",
       "uri_tidal": "tidal://track/212211808",
@@ -4035,6 +4105,18 @@
       "uri_tidal": "tidal://track/4085631",
       "fun_fact_nl": "'Back in Black' opent het gelijknamige album van AC/DC, dat na de dood van Bon Scott met Brian Johnson werd opgenomen en aan Scotts nagedachtenis werd opgedragen. Het album verkocht wereldwijd meer dan 50 miljoen exemplaren.",
       "awards_nl": [
+        "Grammy Hall of Fame"
+      ],
+      "awards_it": [
+        "Grammy Hall of Fame"
+      ],
+      "awards_de": [
+        "Grammy - Hall of Fame"
+      ],
+      "awards_es": [
+        "Grammy - Salón de la Fama"
+      ],
+      "awards_fr": [
         "Grammy Hall of Fame"
       ],
       "isrc": "AUAP08000046",
@@ -4776,6 +4858,18 @@
       "awards_nl": [
         "Grammy-nominatie"
       ],
+      "awards_it": [
+        "Candidatura al Grammy"
+      ],
+      "awards_de": [
+        "Grammy-Nominierung"
+      ],
+      "awards_es": [
+        "Nominación al Grammy"
+      ],
+      "awards_fr": [
+        "Nomination aux Grammy"
+      ],
       "isrc": "USSM19200317",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1737564412",
@@ -4824,9 +4918,9 @@
       "year": 2000,
       "isrc": "USGI19900180",
       "uri": "spotify:track:40rvBMQizxkIqnjPdEWY1v",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/310530469",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/310530469",
         "de": "applemusic://track/270959694",
         "gb": "applemusic://track/1225275582",
         "fr": "applemusic://track/270959694",

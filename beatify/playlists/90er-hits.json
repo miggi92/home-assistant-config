@@ -1,6 +1,6 @@
 {
   "name": "90s Hits",
-  "version": "1.19",
+  "version": "1.23",
   "tags": [
     "1990s",
     "pop",
@@ -754,12 +754,12 @@
       "isrc": "USSM10027246",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1695903012",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "de": "applemusic://track/1382314942",
+        "gb": "applemusic://track/1382314942",
+        "fr": "applemusic://track/1440918860",
+        "es": "applemusic://track/1440918860",
+        "nl": "applemusic://track/1440918860",
+        "it": "applemusic://track/1440918860"
       }
     },
     {
@@ -1218,7 +1218,7 @@
       "fun_fact_de": "Sohn von Randy Bachman (Bachman-Turner Overdrive). Dieser One-Hit-Wonder verglich seine Angebetete mit Kleopatra, Jeanne d’Arc und Aphrodite.",
       "fun_fact_es": "Hijo de Randy Bachman (Bachman-Turner Overdrive). Este artista de un solo éxito comparó a su amor platónico con Cleopatra, Juana de Arco y Afrodita.",
       "fun_fact_fr": "Fils de Randy Bachman (Bachman-Turner Overdrive), cet artiste d'un seul tube comparait la femme de ses rêves à Cléopâtre, Jeanne d'Arc et Aphrodite.",
-      "uri_apple_music": "",
+      "uri_apple_music": "applemusic://track/158610105",
       "uri_youtube_music": "https://music.youtube.com/watch?v=_ElORM9O-0U",
       "uri_deezer": "deezer://track/623469",
       "fun_fact_nl": "Zoon van Randy Bachman (Bachman-Turner Overdrive). Deze eenaggers vergeleek zijn crush met Cleopatra, Jeanne d'Arc en Aphrodite.",
@@ -1248,7 +1248,7 @@
       "fun_fact_de": "Geschrieben von Wyclef Jean. Der Titelsong ihres Comeback-Albums zeigte eine reifere, weniger divenhaft Whitney. Der Song handelt von bedingungsloser Liebe.",
       "fun_fact_es": "Escrita por Wyclef Jean. El tema principal de su álbum de regreso mostró una Whitney más madura, menos diva del pop. La canción habla del amor incondicional.",
       "fun_fact_fr": "Écrit par Wyclef Jean, ce titre phare de son album de retour montrait une Whitney plus mature, loin de l'image de pop diva. La chanson parle d'amour inconditionnel.",
-      "uri_apple_music": "",
+      "uri_apple_music": "applemusic://track/251090745",
       "uri_youtube_music": "https://music.youtube.com/watch?v=kxZD0VQvfqU",
       "uri_deezer": "deezer://track/962260",
       "fun_fact_nl": "Geschreven door Wyclef Jean. De titelsong van haar comeback-album toonde een volwassenere, minder popdiva Whitney. Het nummer gaat over onvoorwaardelijke liefde.",
@@ -1441,7 +1441,7 @@
       "uri": "spotify:track:6hTBP6QLwJdxbKyLlLXrGo",
       "uri_apple_music": "applemusic://track/1443097885",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1641990794",
         "de": "applemusic://track/1443097885",
         "gb": "applemusic://track/1443097885",
         "fr": "applemusic://track/1443097885",
@@ -1614,15 +1614,15 @@
       "year": 1999,
       "isrc": "DEH259900010",
       "uri": "spotify:track:6x4tKaOzfNJpEJHySoiJcs",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1322068804",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
+        "us": "applemusic://track/1322068804",
+        "de": "applemusic://track/1322068804",
+        "gb": "applemusic://track/1322068804",
+        "fr": "applemusic://track/1322068804",
+        "es": "applemusic://track/1322068804",
         "nl": "applemusic://track/1656111119",
-        "it": null
+        "it": "applemusic://track/1322068804"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=RUBvqz3ozv8",
       "uri_tidal": "tidal://track/81794041",
@@ -1639,11 +1639,11 @@
       "year": 1983,
       "isrc": null,
       "uri": "spotify:track:0CtkjgZpkgnW7U6WmHsakD",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/256097956",
       "uri_apple_music_by_region": {},
       "uri_youtube_music": "https://music.youtube.com/watch?v=g6nthFTiPiI",
       "uri_tidal": "tidal://track/38036078",
-      "uri_deezer": null,
+      "uri_deezer": "deezer://track/2170703",
       "alt_artists": [
         "Jason Nevins"
       ],
@@ -1815,7 +1815,7 @@
       "uri_apple_music": "applemusic://track/331129387",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/331129387",
-        "de": null,
+        "de": "applemusic://track/355893446",
         "gb": "applemusic://track/331129387",
         "fr": "applemusic://track/331129387",
         "es": "applemusic://track/200008030",
@@ -2369,13 +2369,13 @@
       "uri": "spotify:track:3L9RIFcNF9IDGPRE96EO7N",
       "uri_apple_music": "applemusic://track/880365276",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/880365276",
+        "de": "applemusic://track/1821145079",
+        "gb": "applemusic://track/797196798",
+        "fr": "applemusic://track/1443842946",
+        "es": "applemusic://track/1821145079",
+        "nl": "applemusic://track/1821145079",
+        "it": "applemusic://track/1443842946"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=LL8zTK1Ffu0",
       "uri_tidal": "tidal://track/441956660",
@@ -2487,7 +2487,7 @@
       "year": 1997,
       "isrc": "GBAAA9700049",
       "uri": "spotify:track:5yEPxDjbbzUzyauGtnmVEC",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1443258189",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/6763237471",
         "de": "applemusic://track/6763237471",
@@ -2517,7 +2517,7 @@
       "year": 1997,
       "isrc": "USUR19700175",
       "uri": "spotify:track:1HEBjmt2n8wmQvag4VqczV",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/713773457",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1893192107",
         "de": "applemusic://track/1893192107",
@@ -2547,7 +2547,7 @@
       "year": 1996,
       "isrc": "ITA169500003",
       "uri": "spotify:track:3boi65u59Ex9jbhLXcXwre",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1499501875",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1237756427",
         "de": "applemusic://track/1606222112",
@@ -2637,7 +2637,7 @@
       "year": 1999,
       "isrc": "DEA310001549",
       "uri": "spotify:track:0l3795cAVGOHNdHvooZ25S",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/384919381",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1210811729",
         "de": "applemusic://track/1436144752",
@@ -2667,7 +2667,7 @@
       "year": 1999,
       "isrc": "GBHAD2400076",
       "uri": "spotify:track:4Y8q64VnhD0vFYy9g2WFpi",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1823912862",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1764524416",
         "de": "applemusic://track/1764524416",
@@ -2697,7 +2697,7 @@
       "year": 1997,
       "isrc": "GBAWV9700657",
       "uri": "spotify:track:1arJHhz6TxMV50SNvSmGnV",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1171366701",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1160733023",
         "de": "applemusic://track/1160733023",
@@ -2817,7 +2817,7 @@
       "year": 1997,
       "isrc": "USIR19500279",
       "uri": "spotify:track:7H8zey5My6uNdD2TxeCb9F",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1440845557",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1442266778",
         "de": "applemusic://track/1442266778",
@@ -2877,7 +2877,7 @@
       "year": 1999,
       "isrc": "USIR19902530",
       "uri": "spotify:track:5EYdTPdJD74r9EVZBztqGG",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1704947040",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1821521803",
         "de": "applemusic://track/1821521803",
@@ -2967,7 +2967,7 @@
       "year": 1996,
       "isrc": "DED169600128",
       "uri": "spotify:track:37tzoWY1ubBQKGXiWdO5Qv",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/217353621",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/217353621",
         "de": "applemusic://track/585659458",
@@ -3024,7 +3024,7 @@
       "uri": "spotify:track:6BxLhB782dObX1y4kDJDIU",
       "uri_apple_music": "applemusic://track/1443215632",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1669579328",
         "de": "applemusic://track/1443215632",
         "gb": "applemusic://track/1442391217",
         "fr": "applemusic://track/1443215632",
@@ -3125,11 +3125,11 @@
       "year": 1990,
       "isrc": null,
       "uri": "spotify:track:3lcUQs5nyrjoHpQR9Vo2aA",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1778288336",
       "uri_apple_music_by_region": {},
       "uri_youtube_music": "https://music.youtube.com/watch?v=BlaWhtHmUw4",
-      "uri_tidal": null,
-      "uri_deezer": null,
+      "uri_tidal": "tidal://track/40845268",
+      "uri_deezer": "deezer://track/78304375",
       "fun_fact": "A chart hit by The Adventures Of Stevie V (2013).",
       "fun_fact_de": "Ein Chart-Hit von The Adventures Of Stevie V (2013).",
       "fun_fact_es": "Un éxito de The Adventures Of Stevie V (2013).",
@@ -3169,7 +3169,7 @@
       "uri": "spotify:track:4rkiST7hsHEuU5EMvApemD",
       "uri_apple_music": "applemusic://track/685311338",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1808533367",
         "de": "applemusic://track/685311338",
         "gb": "applemusic://track/685311338",
         "fr": "applemusic://track/685311338",
@@ -3273,7 +3273,7 @@
       "uri": "spotify:track:0qQiqwzddwQmtoGcF3Uzm5",
       "uri_apple_music": "applemusic://track/925643803",
       "uri_apple_music_by_region": {
-        "us": null,
+        "us": "applemusic://track/1014142025",
         "de": "applemusic://track/925643803",
         "gb": "applemusic://track/925643803",
         "fr": "applemusic://track/925643803",

@@ -1,6 +1,6 @@
 {
   "name": "60s Classics 🎸",
-  "version": "1.7",
+  "version": "1.15",
   "source": "https://open.spotify.com/playlist/6rtsNFUv2UK3j78PRVMpSd",
   "tags": [
     "1960s",
@@ -46,7 +46,8 @@
         "es": "applemusic://track/1443134674",
         "nl": "applemusic://track/1443134674",
         "it": "applemusic://track/1443134674"
-      }
+      },
+      "uri_deezer": "deezer://track/3102931"
     },
     {
       "year": 1966,
@@ -85,7 +86,8 @@
         "es": "applemusic://track/1442865074",
         "nl": "applemusic://track/1442865074",
         "it": "applemusic://track/1442865074"
-      }
+      },
+      "uri_deezer": "deezer://track/3091992"
     },
     {
       "year": 1966,
@@ -124,7 +126,8 @@
         "es": "applemusic://track/1373179773",
         "nl": "applemusic://track/1373179773",
         "it": "applemusic://track/1373179773"
-      }
+      },
+      "uri_deezer": "deezer://track/13549172"
     },
     {
       "year": 1961,
@@ -163,7 +166,8 @@
         "es": "applemusic://track/1815497962",
         "nl": "applemusic://track/1815497962",
         "it": "applemusic://track/1815497962"
-      }
+      },
+      "uri_deezer": "deezer://track/73267973"
     },
     {
       "year": 1967,
@@ -202,7 +206,8 @@
         "es": "applemusic://track/1625648637",
         "nl": "applemusic://track/1625648637",
         "it": "applemusic://track/1625648637"
-      }
+      },
+      "uri_deezer": "deezer://track/5093933"
     },
     {
       "year": 1967,
@@ -241,7 +246,8 @@
         "es": "applemusic://track/1192962303",
         "nl": "applemusic://track/1192962303",
         "it": "applemusic://track/1192962303"
-      }
+      },
+      "uri_deezer": "deezer://track/3614129"
     },
     {
       "year": 1967,
@@ -278,7 +284,8 @@
         "es": "applemusic://track/640047587",
         "nl": "applemusic://track/640047587",
         "it": "applemusic://track/640047587"
-      }
+      },
+      "uri_deezer": "deezer://track/709951042"
     },
     {
       "year": 1963,
@@ -315,7 +322,8 @@
         "es": "applemusic://track/1308624096",
         "nl": "applemusic://track/1308624096",
         "it": "applemusic://track/1308624096"
-      }
+      },
+      "uri_deezer": "deezer://track/71581474"
     },
     {
       "year": 1964,
@@ -346,13 +354,14 @@
       "isrc": "USA176460010",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1440781975",
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
-      }
+        "de": "applemusic://track/697238871",
+        "gb": "applemusic://track/726189776",
+        "fr": "applemusic://track/697238871",
+        "es": "applemusic://track/727825262",
+        "nl": "applemusic://track/1542617044",
+        "it": "applemusic://track/697238871"
+      },
+      "uri_deezer": "deezer://track/3155135"
     },
     {
       "year": 1966,
@@ -391,7 +400,8 @@
         "es": "applemusic://track/1576574977",
         "nl": "applemusic://track/1576574977",
         "it": "applemusic://track/1576574977"
-      }
+      },
+      "uri_deezer": "deezer://track/1434159652"
     },
     {
       "year": 1967,
@@ -428,7 +438,8 @@
         "es": "applemusic://track/1469579797",
         "nl": "applemusic://track/1469579797",
         "it": "applemusic://track/1469579797"
-      }
+      },
+      "uri_deezer": "deezer://track/1524486232"
     },
     {
       "year": 1971,
@@ -462,6 +473,18 @@
       "awards_nl": [
         "Grammy Award voor Beste R&B-nummer (1972)"
       ],
+      "awards_it": [
+        "Grammy per la migliore canzone R&B (1972)"
+      ],
+      "awards_de": [
+        "Grammy - Bester R&B-Song (1972)"
+      ],
+      "awards_es": [
+        "Grammy - Mejor Canción R&B (1972)"
+      ],
+      "awards_fr": [
+        "Grammy Award - Meilleure chanson R&B (1972)"
+      ],
       "isrc": "USSM17100268",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/391725482",
@@ -471,7 +494,8 @@
         "es": "applemusic://track/1308611756",
         "nl": "applemusic://track/1308611756",
         "it": "applemusic://track/1308611756"
-      }
+      },
+      "uri_deezer": "deezer://track/2312047"
     },
     {
       "year": 1964,
@@ -505,6 +529,18 @@
       "awards_nl": [
         "Grammy Award voor Beste Rock-'n-Roll-opname (1965)"
       ],
+      "awards_it": [
+        "Grammy per la migliore registrazione rock and roll (1965)"
+      ],
+      "awards_de": [
+        "Grammy Award für beste Rock-and-Roll-Aufnahme (1965)"
+      ],
+      "awards_es": [
+        "Premio Grammy a la Mejor Grabación de Rock and Roll (1965)"
+      ],
+      "awards_fr": [
+        "Grammy Award - Meilleur enregistrement rock and roll (1965)"
+      ],
       "isrc": "FRZ196400510",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1676474357",
@@ -514,7 +550,8 @@
         "es": "applemusic://track/1676474357",
         "nl": "applemusic://track/1676474357",
         "it": "applemusic://track/1676474357"
-      }
+      },
+      "uri_deezer": "deezer://track/431577362"
     },
     {
       "year": 1968,
@@ -553,7 +590,8 @@
         "es": "applemusic://track/6763242221",
         "nl": "applemusic://track/6763242221",
         "it": "applemusic://track/6763242221"
-      }
+      },
+      "uri_deezer": "deezer://track/540202122"
     },
     {
       "year": 1965,
@@ -590,7 +628,8 @@
         "es": "applemusic://track/1443341633",
         "nl": "applemusic://track/1443341633",
         "it": "applemusic://track/1443341633"
-      }
+      },
+      "uri_deezer": "deezer://track/1137255"
     },
     {
       "year": 1969,
@@ -622,6 +661,18 @@
       "awards_nl": [
         "Ivor Novello Award voor Originaliteit (1970)"
       ],
+      "awards_it": [
+        "Ivor Novello Award per l'originalita (1970)"
+      ],
+      "awards_de": [
+        "Ivor Novello Award - Originalität (1970)"
+      ],
+      "awards_es": [
+        "Premio Ivor Novello - Originalidad (1970)"
+      ],
+      "awards_fr": [
+        "Ivor Novello Award - Originalité (1970)"
+      ],
       "isrc": "USJT10900021",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1486377720",
@@ -631,7 +682,8 @@
         "es": "applemusic://track/1486377720",
         "nl": "applemusic://track/1486377720",
         "it": "applemusic://track/1486377720"
-      }
+      },
+      "uri_deezer": "deezer://track/802719212"
     },
     {
       "year": 1964,
@@ -670,7 +722,8 @@
         "es": "applemusic://track/1463665119",
         "nl": "applemusic://track/1463665119",
         "it": "applemusic://track/1463665119"
-      }
+      },
+      "uri_deezer": "deezer://track/2468570"
     },
     {
       "year": 1969,
@@ -707,7 +760,8 @@
         "es": "applemusic://track/1713156666",
         "nl": "applemusic://track/1713156666",
         "it": "applemusic://track/1713156666"
-      }
+      },
+      "uri_deezer": "deezer://track/116348464"
     },
     {
       "year": 1967,
@@ -744,7 +798,8 @@
         "es": "applemusic://track/79087150",
         "nl": "applemusic://track/79087150",
         "it": "applemusic://track/79087150"
-      }
+      },
+      "uri_deezer": "deezer://track/2043943"
     },
     {
       "year": 1970,
@@ -781,7 +836,8 @@
         "es": "applemusic://track/1463658941",
         "nl": "applemusic://track/1463658941",
         "it": "applemusic://track/1463658941"
-      }
+      },
+      "uri_deezer": "deezer://track/13174766"
     },
     {
       "year": 1968,
@@ -815,6 +871,18 @@
       "awards_nl": [
         "Grammy Award voor Opname van het Jaar (1969)"
       ],
+      "awards_it": [
+        "Grammy per il disco dell'anno (1969)"
+      ],
+      "awards_de": [
+        "Grammy - Aufnahme des Jahres (1969)"
+      ],
+      "awards_es": [
+        "Grammy - Grabación del Año (1969)"
+      ],
+      "awards_fr": [
+        "Grammy Award - Enregistrement de l'année (1969)"
+      ],
       "isrc": "USSM16800379",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1463665385",
@@ -824,7 +892,8 @@
         "es": "applemusic://track/1463665385",
         "nl": "applemusic://track/1463665385",
         "it": "applemusic://track/1463665385"
-      }
+      },
+      "uri_deezer": "deezer://track/618610"
     },
     {
       "year": 1965,
@@ -863,7 +932,8 @@
         "es": "applemusic://track/1706561182",
         "nl": "applemusic://track/1706561182",
         "it": "applemusic://track/1706561182"
-      }
+      },
+      "uri_deezer": "deezer://track/7677778"
     },
     {
       "year": 1965,
@@ -902,7 +972,8 @@
         "es": "applemusic://track/1821337433",
         "nl": "applemusic://track/1821337433",
         "it": "applemusic://track/1821337433"
-      }
+      },
+      "uri_deezer": "deezer://track/2321278"
     },
     {
       "year": 1967,
@@ -941,7 +1012,8 @@
         "es": "applemusic://track/348894696",
         "nl": "applemusic://track/348894696",
         "it": "applemusic://track/348894696"
-      }
+      },
+      "uri_deezer": "deezer://track/625869"
     },
     {
       "year": 1971,
@@ -980,7 +1052,8 @@
         "es": "applemusic://track/1886242473",
         "nl": "applemusic://track/1886242473",
         "it": "applemusic://track/1886242473"
-      }
+      },
+      "uri_deezer": "deezer://track/3166505"
     },
     {
       "year": 1964,
@@ -1019,7 +1092,8 @@
         "es": "applemusic://track/1441164417",
         "nl": "applemusic://track/1441164417",
         "it": "applemusic://track/1441164417"
-      }
+      },
+      "uri_deezer": "deezer://track/116348154"
     },
     {
       "year": 1965,
@@ -1058,7 +1132,8 @@
         "es": "applemusic://track/1441164536",
         "nl": "applemusic://track/1441164536",
         "it": "applemusic://track/1441164536"
-      }
+      },
+      "uri_deezer": "deezer://track/116348166"
     },
     {
       "year": 1965,
@@ -1095,7 +1170,8 @@
         "es": "applemusic://track/1441133496",
         "nl": "applemusic://track/1441133496",
         "it": "applemusic://track/1441133496"
-      }
+      },
+      "uri_deezer": "deezer://track/116348164"
     },
     {
       "year": 1967,
@@ -1132,7 +1208,8 @@
         "es": "applemusic://track/1441163777",
         "nl": "applemusic://track/1441163777",
         "it": "applemusic://track/1441163777"
-      }
+      },
+      "uri_deezer": "deezer://track/116348086"
     },
     {
       "year": 1967,
@@ -1171,7 +1248,8 @@
         "es": "applemusic://track/1441133271",
         "nl": "applemusic://track/1441133271",
         "it": "applemusic://track/1441133271"
-      }
+      },
+      "uri_deezer": "deezer://track/116348096"
     },
     {
       "year": 1968,
@@ -1208,7 +1286,8 @@
         "es": "applemusic://track/1441133276",
         "nl": "applemusic://track/1441133276",
         "it": "applemusic://track/1441133276"
-      }
+      },
+      "uri_deezer": "deezer://track/116348106"
     },
     {
       "year": 1968,
@@ -1247,7 +1326,8 @@
         "es": "applemusic://track/1856287169",
         "nl": "applemusic://track/1856287169",
         "it": "applemusic://track/1856287169"
-      }
+      },
+      "uri_deezer": "deezer://track/116348632"
     },
     {
       "year": 1966,
@@ -1284,7 +1364,8 @@
         "es": "applemusic://track/1463652959",
         "nl": "applemusic://track/1463652959",
         "it": "applemusic://track/1463652959"
-      }
+      },
+      "uri_deezer": "deezer://track/71958646"
     },
     {
       "year": 1969,
@@ -1321,7 +1402,8 @@
         "es": "applemusic://track/1568036799",
         "nl": "applemusic://track/1839414248",
         "it": "applemusic://track/1839414248"
-      }
+      },
+      "uri_deezer": "deezer://track/2813004"
     },
     {
       "year": 1969,
@@ -1358,7 +1440,8 @@
         "es": "applemusic://track/1806381586",
         "nl": "applemusic://track/1806381586",
         "it": "applemusic://track/1806381586"
-      }
+      },
+      "uri_deezer": "deezer://track/5250666"
     },
     {
       "year": 1965,
@@ -1384,7 +1467,9 @@
       "uri_youtube_music": "https://music.youtube.com/watch?v=MgJ9K7cPRKk",
       "uri_tidal": "tidal://track/77557764",
       "fun_fact_nl": "Roger Daltrey's stotterende zangstijl was Pete Townshend's poging om een pillen slikkende mod na te bootsen. De BBC verbood het aanvankelijk, omdat ze dachten dat het de spot dreef met mensen met een spraakgebrek.",
-      "awards_nl": []
+      "awards_nl": [],
+      "uri_deezer": "deezer://track/136341550",
+      "uri_apple_music": "applemusic://track/1443238754"
     },
     {
       "year": 1967,
@@ -1423,7 +1508,8 @@
         "es": "applemusic://track/1688024397",
         "nl": "applemusic://track/1688024397",
         "it": "applemusic://track/1688024397"
-      }
+      },
+      "uri_deezer": "deezer://track/427230152"
     },
     {
       "year": 1967,
@@ -1460,7 +1546,8 @@
         "es": "applemusic://track/1535485171",
         "nl": "applemusic://track/1535485171",
         "it": "applemusic://track/1535485171"
-      }
+      },
+      "uri_deezer": "deezer://track/3586842"
     },
     {
       "year": 1966,
@@ -1497,7 +1584,8 @@
         "es": "applemusic://track/192480540",
         "nl": "applemusic://track/192480540",
         "it": "applemusic://track/192480540"
-      }
+      },
+      "uri_deezer": "deezer://track/2468578"
     },
     {
       "year": 1965,
@@ -1534,7 +1622,8 @@
         "es": "applemusic://track/1441164546",
         "nl": "applemusic://track/1441164546",
         "it": "applemusic://track/1441164546"
-      }
+      },
+      "uri_deezer": "deezer://track/116348168"
     },
     {
       "year": 1966,
@@ -1571,7 +1660,8 @@
         "es": "applemusic://track/1440508809",
         "nl": "applemusic://track/1440508809",
         "it": "applemusic://track/1440508809"
-      }
+      },
+      "uri_deezer": "deezer://track/3803445662"
     },
     {
       "year": 1968,
@@ -1603,12 +1693,13 @@
       "uri_apple_music_by_region": {
         "us": "applemusic://track/1439066304",
         "de": "applemusic://track/1439066304",
-        "gb": null,
+        "gb": "applemusic://track/1757584414",
         "fr": "applemusic://track/1439066304",
         "es": "applemusic://track/1439066304",
         "nl": "applemusic://track/1439066304",
         "it": "applemusic://track/1439066304"
-      }
+      },
+      "uri_deezer": "deezer://track/62811114"
     },
     {
       "year": 1966,
@@ -1647,7 +1738,8 @@
         "es": "applemusic://track/1440745782",
         "nl": "applemusic://track/1440745782",
         "it": "applemusic://track/1440745782"
-      }
+      },
+      "uri_deezer": "deezer://track/7818900"
     },
     {
       "year": 1968,
@@ -1684,7 +1776,8 @@
         "es": "applemusic://track/1833249921",
         "nl": "applemusic://track/1833249921",
         "it": "applemusic://track/1833249921"
-      }
+      },
+      "uri_deezer": "deezer://track/3977776"
     },
     {
       "artist": "Small Faces",
@@ -1703,7 +1796,7 @@
         "it": "applemusic://track/1475647117"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=nO9DqvznjrQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/14740985",
       "uri_deezer": "deezer://track/719296102",
       "fun_fact": "A chart hit by Small Faces (1967).",
       "fun_fact_de": "Ein Chart-Hit von Small Faces (1967).",
@@ -1728,7 +1821,7 @@
         "it": "applemusic://track/1737583574"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=TU02G4wnWh0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1276639",
       "uri_deezer": "deezer://track/534508",
       "fun_fact": "A chart hit by Sly & The Family Stone (1969).",
       "fun_fact_de": "Ein Chart-Hit von Sly & The Family Stone (1969).",
@@ -1753,7 +1846,7 @@
         "it": "applemusic://track/1739857095"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=MQOQqn1qH4o",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2944333",
       "uri_deezer": "deezer://track/13186207",
       "fun_fact": "A chart hit by The 5th Dimension (1969).",
       "fun_fact_de": "Ein Chart-Hit von The 5th Dimension (1969).",
@@ -1778,7 +1871,7 @@
         "it": "applemusic://track/1648940328"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=YrxHcSZBU38",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/4102341",
       "uri_deezer": "deezer://track/6435675",
       "fun_fact": "A chart hit by The Spencer Davis Group (2010).",
       "fun_fact_de": "Ein Chart-Hit von The Spencer Davis Group (2010).",
@@ -1803,7 +1896,7 @@
         "it": "applemusic://track/1671222971"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=1Lej7aQDrGM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/57827512",
       "uri_deezer": "deezer://track/120080938",
       "fun_fact": "A chart hit by Little Eva (2013).",
       "fun_fact_de": "Ein Chart-Hit von Little Eva (2013).",
@@ -1828,7 +1921,7 @@
         "it": "applemusic://track/1748016223"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=dBURLdhmmZ8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/28938746",
       "uri_deezer": "deezer://track/474644972",
       "fun_fact": "A chart hit by The Surfaris (2018).",
       "fun_fact_de": "Ein Chart-Hit von The Surfaris (2018).",
@@ -1853,7 +1946,7 @@
         "it": "applemusic://track/420136963"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=q3_KgmgrUm8",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/7320816",
       "uri_deezer": "deezer://track/12809345",
       "fun_fact": "A chart hit by The Crystals (2011).",
       "fun_fact_de": "Ein Chart-Hit von The Crystals (2011).",
@@ -1867,18 +1960,18 @@
       "year": 1965,
       "isrc": "DEXO11960577",
       "uri": "spotify:track:5kLCC1MMxOACV632KrSAS3",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1721242740",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/1721242740",
+        "de": "applemusic://track/1593439249",
+        "gb": "applemusic://track/1593439249",
+        "fr": "applemusic://track/332601711",
+        "es": "applemusic://track/1593439249",
+        "nl": "applemusic://track/1721242740",
+        "it": "applemusic://track/1593439249"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=iCrmoGujhdU",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/41386583",
       "uri_deezer": "deezer://track/639971642",
       "fun_fact": "A chart hit by France Gall (2019).",
       "fun_fact_de": "Ein Chart-Hit von France Gall (2019).",
@@ -1903,7 +1996,7 @@
         "it": "applemusic://track/1533478781"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=FNagYP9LIp4",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1845346",
       "uri_deezer": "deezer://track/13100388",
       "fun_fact": "A chart hit by Aretha Franklin (2011).",
       "fun_fact_de": "Ein Chart-Hit von Aretha Franklin (2011).",
@@ -1917,18 +2010,18 @@
       "year": 1963,
       "isrc": "UKU6H1936000",
       "uri": "spotify:track:3Cbh1EJ6OYAPkkNRuTIz6T",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/1447557732",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/410510208",
+        "de": "applemusic://track/410510208",
+        "gb": "applemusic://track/410510208",
+        "fr": "applemusic://track/410510208",
+        "es": "applemusic://track/410510208",
+        "nl": "applemusic://track/410510208",
+        "it": "applemusic://track/410510208"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=bBgYbw_u230",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/19812732",
       "uri_deezer": "deezer://track/821757832",
       "fun_fact": "A chart hit by Martha Reeves & The Vandellas (2010).",
       "fun_fact_de": "Ein Chart-Hit von Martha Reeves & The Vandellas (2010).",
@@ -1953,7 +2046,7 @@
         "it": "applemusic://track/1794575720"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=SaphQafq3NQ",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1205194",
       "uri_deezer": "deezer://track/137439762",
       "fun_fact": "A chart hit by Arthur Conley (2016).",
       "fun_fact_de": "Ein Chart-Hit von Arthur Conley (2016).",
@@ -1967,18 +2060,18 @@
       "year": 1961,
       "isrc": "GBA7H1265495",
       "uri": "spotify:track:19SxvsX3cFBDExvGaRkyQr",
-      "uri_apple_music": null,
+      "uri_apple_music": "applemusic://track/696083117",
       "uri_apple_music_by_region": {
-        "us": null,
-        "de": null,
-        "gb": null,
-        "fr": null,
-        "es": null,
-        "nl": null,
-        "it": null
+        "us": "applemusic://track/696083117",
+        "de": "applemusic://track/1690283365",
+        "gb": "applemusic://track/1337689457",
+        "fr": "applemusic://track/1401146932",
+        "es": "applemusic://track/1370291147",
+        "nl": "applemusic://track/691821449",
+        "it": "applemusic://track/922010572"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QCbHubvwFs0",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/1501131",
       "uri_deezer": "deezer://track/65049652",
       "fun_fact": "A chart hit by Helen Shapiro (2013).",
       "fun_fact_de": "Ein Chart-Hit von Helen Shapiro (2013).",
@@ -2003,7 +2096,7 @@
         "it": "applemusic://track/1566940247"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=3KFvoDDs0XM",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/64851653",
       "uri_deezer": "deezer://track/78033230",
       "fun_fact": "A chart hit by Roy Orbison (2014).",
       "fun_fact_de": "Ein Chart-Hit von Roy Orbison (2014).",
@@ -2028,7 +2121,7 @@
         "it": "applemusic://track/1341392587"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=QBDem6bffyo",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/7320788",
       "uri_deezer": "deezer://track/12809317",
       "fun_fact": "A chart hit by The Ronettes (2011).",
       "fun_fact_de": "Ein Chart-Hit von The Ronettes (2011).",
@@ -2053,7 +2146,7 @@
         "it": "applemusic://track/1447235033"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=kk8tFtdHqtw",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/77642587",
       "uri_deezer": "deezer://track/1182495",
       "fun_fact": "A chart hit by The Supremes (2007).",
       "fun_fact_de": "Ein Chart-Hit von The Supremes (2007).",
@@ -2070,7 +2163,7 @@
       "uri_apple_music": "applemusic://track/354114080",
       "uri_apple_music_by_region": {
         "us": "applemusic://track/354114080",
-        "de": null,
+        "de": "applemusic://track/351516350",
         "gb": "applemusic://track/354114080",
         "fr": "applemusic://track/354114080",
         "es": "applemusic://track/354114080",
@@ -2078,7 +2171,7 @@
         "it": "applemusic://track/354114080"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=4zkPBwlyd4M",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/346596036",
       "uri_deezer": "deezer://track/5479527",
       "fun_fact": "A chart hit by Bobby Lewis (2009).",
       "fun_fact_de": "Ein Chart-Hit von Bobby Lewis (2009).",
@@ -2103,7 +2196,7 @@
         "it": "applemusic://track/1440760503"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=61jfm219ArA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/123249707",
       "uri_deezer": "deezer://track/16702525",
       "fun_fact": "A chart hit by The Rolling Stones (2005).",
       "fun_fact_de": "Ein Chart-Hit von The Rolling Stones (2005).",
@@ -2128,7 +2221,7 @@
         "it": "applemusic://track/1607178793"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=_NpsUiKBEes",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/64495473",
       "uri_deezer": "deezer://track/24161411",
       "fun_fact": "A chart hit by Lesley Gore (2000).",
       "fun_fact_de": "Ein Chart-Hit von Lesley Gore (2000).",
@@ -2153,7 +2246,7 @@
         "it": "applemusic://track/1647424928"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=rUXa1-oI_ug",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/2848125",
       "uri_deezer": "deezer://track/13176492",
       "fun_fact": "A chart hit by The Edwin Hawkins Singers (2001).",
       "fun_fact_de": "Ein Chart-Hit von The Edwin Hawkins Singers (2001).",
@@ -2178,7 +2271,7 @@
         "it": "applemusic://track/1280531429"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=v8Psvxk9tjA",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/5120008",
       "uri_deezer": "deezer://track/404045132",
       "alt_artists": [
         "Junkie XL"
@@ -2206,7 +2299,7 @@
         "it": "applemusic://track/1577639056"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=UvynvnxZJ3Q",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/77637657",
       "uri_deezer": "deezer://track/4188287",
       "fun_fact": "A 70s classic (1969).",
       "fun_fact_de": "Ein 70er-Klassiker (1969).",
@@ -2231,7 +2324,7 @@
         "it": "applemusic://track/318312890"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=C1VUWDcp5Sg",
-      "uri_tidal": null,
+      "uri_tidal": "tidal://track/12748794",
       "uri_deezer": "deezer://track/13174769",
       "fun_fact": "A 70s classic (1969).",
       "fun_fact_de": "Ein 70er-Klassiker (1969).",
