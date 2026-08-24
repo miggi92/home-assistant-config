@@ -18,29 +18,24 @@ sections:
       - !include ../../cards/nav-bar.yaml
       - type: custom:button-card
         template: handballnet_next_game_card
-        entity: sensor.sg_heuchelberg_f_alle_spiele
+        entity: sensor.sg_heuchelberg_erwachsene_weiblich_alle_spiele
         variables:
-          table_entity: sensor.sg_heuchelberg_f_tabellenplatz
+          table_entity: sensor.sg_heuchelberg_erwachsene_weiblich_tabellenplatz
       - type: custom:button-card
         template: handballnet_next_game_card
-        entity: sensor.tv_1895_flein_m2_alle_spiele
+        entity: sensor.tv_1895_flein_erwachsene_mannlich_alle_spiele
         variables:
-          table_entity: sensor.tv_1895_flein_m2_tabellenplatz
+          table_entity: sensor.tv_1895_flein_erwachsene_mannlich_tabellenplatz
       - type: custom:button-card
         template: handballnet_next_game_card
-        entity: sensor.sg_heuchelberg_wa_alle_spiele
+        entity: sensor.sg_heuchelberg_erwachsene_weiblich_2_alle_spiele
         variables:
-          table_entity: sensor.sg_heuchelberg_wa_tabellenplatz
+          table_entity: sensor.sg_heuchelberg_erwachsene_weiblich_2_tabellenplatz
       - type: custom:button-card
         template: handballnet_next_game_card
-        entity: sensor.sg_heuchelberg_wa_quali_alle_spiele
+        entity: sensor.hsg_lauffen_neipperg_erwachsene_mannlich_alle_spiele
         variables:
-          table_entity: sensor.sg_heuchelberg_wa_quali_tabellenplatz
-      - type: custom:button-card
-        template: handballnet_next_game_card
-        entity: sensor.hsg_lauffen_neipperg_m_alle_spiele
-        variables:
-          table_entity: sensor.hsg_lauffen_neipperg_m_tabellenplatz
+          table_entity: sensor.hsg_lauffen_neipperg_erwachsene_mannlich_tabellenplatz
 
   - type: grid
     cards:
