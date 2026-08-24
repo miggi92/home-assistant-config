@@ -1,5 +1,16 @@
 ---
 # Todays Birds.
+# - alias: Update E-Ink
+#   action: opendisplay.upload_image
+#   data:
+#     rotation: 0
+#     dither_mode: burkes
+#     refresh_mode: full
+#     fit_mode: contain
+#     image:
+#       media_content_id: media-source://ai_task/local/2026-08-17_101034_todays_birds.png
+#       media_content_type: image/png
+#     device_id: dc6d22fea18511f41160667e0eac1088
 alias: todaysBirds
 description: "Generiert eine Collage der heute gehörten Vögel"
 id: 2cafed2b-add1-4d50-bb3c-d73292c17764
