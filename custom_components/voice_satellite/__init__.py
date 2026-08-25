@@ -250,13 +250,18 @@ async def _async_handle_wake_service(call: ServiceCall) -> None:
     """
     hass = call.hass
     entity_ids = call.data["entity_id"]
+    wake_word_slot = call.data.get("wake_word_slot")
+
+    data = {}
+    if wake_word_slot is not None:
+        data["wake_word_slot"] = wake_word_slot
 
     for entity_id in entity_ids:
         entity = _find_entity(hass, entity_id)
         if entity is None:
             _LOGGER.warning("voice_satellite.wake: entity %s not found", entity_id)
             continue
-        entity._push_satellite_event("wake", {})
+        entity._push_satellite_event("wake", data)
 
 
 async def _async_handle_start_timer_service(call: ServiceCall) -> None:
@@ -423,6 +428,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         schema=vol.Schema(
             {
                 vol.Required("entity_id"): cv.entity_ids,
+                vol.Optional("wake_word_slot"): vol.All(
+                    vol.Coerce(int), vol.In([1, 2])
+                ),
             }
         ),
     )

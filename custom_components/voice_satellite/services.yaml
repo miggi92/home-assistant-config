@@ -8,6 +8,21 @@ wake:
     entity:
       integration: voice_satellite
       domain: assist_satellite
+  fields:
+    wake_word_slot:
+      name: Wake word slot
+      description: >-
+        Route the turn as if this wake-word slot had been detected: the
+        slot's pipeline handles STT, the agent, and TTS. Omit to use the
+        default behavior (slot 1's pipeline).
+      example: 2
+      selector:
+        select:
+          options:
+            - label: Wake word 1
+              value: "1"
+            - label: Wake word 2
+              value: "2"
 
 show:
   name: Show
