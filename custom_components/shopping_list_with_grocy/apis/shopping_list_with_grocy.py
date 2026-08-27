@@ -702,7 +702,7 @@ class ShoppingListWithGrocyApi:
         if match1:
             product_name = match1.group(1).strip()
             quantity = int(match1.group(2))
-            LOGGER.error(
+            LOGGER.debug(
                 "Extracted from HA item '%s' (pattern 1): name='%s', qty=%d",
                 item_name,
                 product_name,
@@ -715,7 +715,7 @@ class ShoppingListWithGrocyApi:
         if match2:
             quantity = int(match2.group(1))
             product_name = match2.group(2).strip()
-            LOGGER.error(
+            LOGGER.debug(
                 "Extracted from HA item '%s' (pattern 2): name='%s', qty=%d",
                 item_name,
                 product_name,
@@ -723,7 +723,7 @@ class ShoppingListWithGrocyApi:
             )
             return product_name, quantity
 
-        LOGGER.error(
+        LOGGER.debug(
             "No pattern matched for HA item '%s': name='%s', qty=1",
             item_name,
             item_name,
@@ -847,7 +847,7 @@ class ShoppingListWithGrocyApi:
                 "search_term": search_name,
             }
 
-        LOGGER.error("No matches found for '%s' (including fuzzy search)", search_name)
+        LOGGER.debug("No matches found for '%s' (including fuzzy search)", search_name)
         return {
             "found": False,
             "matches": [],
@@ -1133,6 +1133,13 @@ class ShoppingListWithGrocyApi:
                 final_options[0], product_name, quantity, shopping_list_id
             )
 
+        # An unknown product has only the create option, so no user selection is
+        # possible or needed.
+        if len(final_options) == 1 and final_options[0].get("is_create_option", False):
+            return await self._create_and_add_product(
+                product_name, quantity, shopping_list_id
+            )
+
         # Auto-select if only one non-create option remains
         if len(final_options) == 1 and not final_options[0].get(
             "is_create_option", False
@@ -1183,6 +1190,39 @@ class ShoppingListWithGrocyApi:
                 and self.is_case_only_difference(product_name, final_options[0]["name"])
             )
         )
+
+    async def _create_and_add_product(
+        self, product_name: str, quantity: int, shopping_list_id: int
+    ) -> dict:
+        """Create an unmatched product and add it to the shopping list."""
+        creation_result = await self.create_product_in_grocy(product_name)
+        product_id = creation_result.get("product_id")
+
+        if not creation_result.get("success") or product_id is None:
+            return {
+                "success": False,
+                "reason": "product_creation_failed",
+                "error": "Grocy did not return a product ID after creation",
+            }
+
+        add_result = await self.add_product_to_grocy_shopping_list(
+            product_id, quantity, shopping_list_id
+        )
+        if not add_result:
+            return {
+                "success": False,
+                "reason": "add_created_product_failed",
+                "error": "Failed to add the newly created product to the shopping list",
+            }
+
+        return {
+            "success": True,
+            "reason": "auto_created",
+            "product_name": creation_result.get("product_name", product_name),
+            "product_id": product_id,
+            "quantity": quantity,
+            "original_search": product_name,
+        }
 
     async def _auto_add_product(
         self, product: dict, original_search: str, quantity: int, shopping_list_id: int
