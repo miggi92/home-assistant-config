@@ -215,6 +215,12 @@ mobile:
   show_labels: true
 media_player:
   players:
+    - entity: media_player.pixel9mass
+      show: >
+        [[[
+          return user.name == 'Miguel'
+            && states['media_player.pixel9mass'].state == 'playing';
+        ]]]
     - entity: media_player.milo_tonie_box
     - entity: media_player.miguel_s_ford_sync
     - entity: media_player.spotify_miguel
