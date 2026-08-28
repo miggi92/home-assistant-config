@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import DOMAIN, CONF_SELECTION_CRITERIA
+from .const import CONF_SELECTION_CRITERIA, DOMAIN
 from .coordinator import ShoppingListWithGrocyCoordinator
 from .frontend_translations import async_load_frontend_translations, get_todo_strings
 

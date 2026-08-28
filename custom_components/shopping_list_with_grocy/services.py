@@ -14,6 +14,7 @@ from homeassistant.helpers.issue_registry import async_create_issue, async_delet
 
 from .analysis_const import CONF_ANALYSIS_SETTINGS
 from .const import (
+    CONF_SELECTION_CRITERIA,
     DOMAIN,
     ENTITY_VERSION,
     SERVICE_ADD,
@@ -24,7 +25,6 @@ from .const import (
     SERVICE_REFRESH,
     SERVICE_REMOVE,
     SERVICE_SEARCH,
-    CONF_SELECTION_CRITERIA,
 )
 from .frontend_translations import (
     async_load_frontend_translations,

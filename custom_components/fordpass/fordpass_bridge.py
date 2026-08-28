@@ -126,6 +126,11 @@ _AUTO_FOUR_NULL_ONE_COUNTER: dict = {}
 _sync_lock = threading.Lock()
 _sync_lock_cache = {}
 
+class NonNullDict(dict):
+    def none_null_get(self, key, default=None):
+        val = super().get(key, default)
+        return default if val is None else val
+
 def get_sync_lock_for_user_and_region(user: str, region_key: str, vli:str) -> threading.Lock:
     """Get a cached threading.Lock for the user and region."""
     global _sync_lock_cache
@@ -235,7 +240,7 @@ class ConnectedFordPassVehicle:
         self._data_container = {}
 
         self._vehicle_options_init_complete = False
-        self._cached_vehicles_data = {}
+        self._cached_vehicles_data : dict|list = None
         self._remote_climate_control_supported = None
         self._remote_climate_control_forced = None
         self._cached_rcc_data = {}
@@ -262,26 +267,26 @@ class ConnectedFordPassVehicle:
 
         _LOGGER.info(f"{self.vli}init vehicle object for vin: '{self.vin}' - using token from: '{self.stored_tokens_location}'")
 
-    async def _local_logging(self, response, type, data):
+    async def _local_logging(self, response, a_type, data):
         # for the HA diagnostic function we keep always the latest content of the API in memory
-        if type not in self.api_response_data:
-            self.api_response_data[type] = []
+        if a_type not in self.api_response_data:
+            self.api_response_data[a_type] = []
 
-        data_list = self.api_response_data.get(type)
-        if len(data_list) > (20 if type == "ws" else 5):
+        data_list = self.api_response_data.get(a_type)
+        if len(data_list) > (20 if a_type == "ws" else 5):
             data_list.pop(0)
 
-        req = f"{response.request_info.url}" if response is not None and hasattr(response, "request_info") else ("WEBSOCKET" if type=="ws" else "UNKNOWN")
-        if self.vin in req:
-            req = req.replace(self.vin, "[**REDACTED**]")
+        req_txt = f"{response.request_info.url}" if response is not None and hasattr(response, "request_info") else ("WEBSOCKET" if a_type == "ws" else "UNKNOWN")
+        if self.vin in req_txt:
+            req_txt = req_txt.replace(self.vin, "[**REDACTED**]")
 
         data_list.append({"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                          "request": req,
+                          "request": req_txt,
                           "response": data})
 
         # now to finally the optional logging to the file-system...
         if self._LOCAL_LOGGING:
-            await asyncio.get_running_loop().run_in_executor(None, lambda: self.__dump_data(type, data))
+            await asyncio.get_running_loop().run_in_executor(None, lambda: self.__dump_data(a_type, data))
 
     def __dump_data(self, type:str, data:dict):
         a_datetime = datetime.now(timezone.utc)
@@ -301,7 +306,7 @@ class ConnectedFordPassVehicle:
             _LOGGER.info(f"{self.vli}__dump_data(): Error while writing data to file '{filename}' - {type(e).__name__} - {e}")
 
     def clear_data(self):
-        self._cached_vehicles_data = {}
+        self._cached_vehicles_data = None
         self._cached_rcc_data = {}
         self._data_container = {}
 
@@ -1355,9 +1360,16 @@ class ConnectedFordPassVehicle:
             data[ROOT_VEHICLES] = self._cached_vehicles_data
 
             if not self._vehicle_options_init_complete:
-                if "vehicleProfile" in self._cached_vehicles_data:
-                    for a_vehicle_profile in self._cached_vehicles_data["vehicleProfile"]:
-                        if a_vehicle_profile["VIN"] == self.vin:
+                if isinstance(self._cached_vehicles_data, list):
+                    # after August 2026
+                    for a_veh_obj in self._cached_vehicles_data:
+                        if self.vin == a_veh_obj.get("vin", "vin-unknown"):
+                            tmp_cap = a_veh_obj.get("capabilities", None)
+                            if not tmp_cap:
+                                _LOGGER.debug(f"{self.vli}Skipping vehicle {self.vin} due to missing capabilities")
+                                continue
+
+                            nn_capabilities_obj = NonNullDict(tmp_cap)
 
                             # we must check if the vehicle supports 'remote climate control'...
                             if hasattr(self.coordinator, "_force_REMOTE_CLIMATE_CONTROL") and self.coordinator._force_REMOTE_CLIMATE_CONTROL:
@@ -1365,19 +1377,19 @@ class ConnectedFordPassVehicle:
                                 self._remote_climate_control_forced = True
                             else:
                                 self._remote_climate_control_forced = False
-                                if "remoteClimateControl" in a_vehicle_profile:
-                                    self._remote_climate_control_supported = a_vehicle_profile["remoteClimateControl"]
-                                elif "remoteHeatingCooling" in a_vehicle_profile:
-                                    self._remote_climate_control_supported = a_vehicle_profile["remoteHeatingCooling"]
+                                if "remoteClimateControl" in nn_capabilities_obj:
+                                    self._remote_climate_control_supported = nn_capabilities_obj.none_null_get("remoteClimateControl", "").lower() == "display"
+                                elif "remoteHeatingCooling" in nn_capabilities_obj:
+                                    self._remote_climate_control_supported = nn_capabilities_obj.none_null_get("remoteHeatingCooling", "").lower() == "display"
                                 else:
                                     self._remote_climate_control_supported = False
 
-                            if "showEVBatteryLevel" in a_vehicle_profile:
-                                self._preferred_charge_times_supported = a_vehicle_profile["showEVBatteryLevel"]
+                            if "showEVBatteryLevel" in nn_capabilities_obj:
+                                self._preferred_charge_times_supported = nn_capabilities_obj.none_null_get("showEVBatteryLevel", False)
                                 #self._energy_transfer_status_supported = a_vehicle_profile["showEVBatteryLevel"]
 
                                 # I would like to have a more specific check here...
-                                self._energy_transfer_logs_supported = a_vehicle_profile["showEVBatteryLevel"]
+                                self._energy_transfer_logs_supported = nn_capabilities_obj.none_null_get("showEVBatteryLevel", False)
                             else:
                                 self._preferred_charge_times_supported = False
                                 self._energy_transfer_status_supported = False
@@ -1400,6 +1412,54 @@ class ConnectedFordPassVehicle:
                             # VIN is completed...
                             self._vehicle_options_init_complete = True
                             break
+
+                elif isinstance(self._cached_vehicles_data, dict):
+                    # before August 2026
+                    if "vehicleProfile" in self._cached_vehicles_data:
+                        for a_vehicle_profile in self._cached_vehicles_data["vehicleProfile"]:
+                            if a_vehicle_profile["VIN"] == self.vin:
+
+                                # we must check if the vehicle supports 'remote climate control'...
+                                if hasattr(self.coordinator, "_force_REMOTE_CLIMATE_CONTROL") and self.coordinator._force_REMOTE_CLIMATE_CONTROL:
+                                    self._remote_climate_control_supported = True
+                                    self._remote_climate_control_forced = True
+                                else:
+                                    self._remote_climate_control_forced = False
+                                    if "remoteClimateControl" in a_vehicle_profile:
+                                        self._remote_climate_control_supported = a_vehicle_profile["remoteClimateControl"]
+                                    elif "remoteHeatingCooling" in a_vehicle_profile:
+                                        self._remote_climate_control_supported = a_vehicle_profile["remoteHeatingCooling"]
+                                    else:
+                                        self._remote_climate_control_supported = False
+
+                                if "showEVBatteryLevel" in a_vehicle_profile:
+                                    self._preferred_charge_times_supported = a_vehicle_profile["showEVBatteryLevel"]
+                                    #self._energy_transfer_status_supported = a_vehicle_profile["showEVBatteryLevel"]
+
+                                    # I would like to have a more specific check here...
+                                    self._energy_transfer_logs_supported = a_vehicle_profile["showEVBatteryLevel"]
+                                else:
+                                    self._preferred_charge_times_supported = False
+                                    self._energy_transfer_status_supported = False
+                                    self._energy_transfer_logs_supported = True
+
+                                # tripAndChargeLogs is not present in the 'a_vehicle_profile'
+                                # if "tripAndChargeLogs" in a_vehicle_profile:
+                                #     val = a_vehicle_profile["tripAndChargeLogs"]
+                                #     if (isinstance(val, bool) and val) or val.upper() == "DISPLAY":
+                                #         _LOGGER.warning(f"AAA: {val}")
+                                #         self._energy_transfer_logs_supported = True
+                                #     else:
+                                #         _LOGGER.warning(f"BBB: {val}")
+                                #         self._energy_transfer_logs_supported = False
+                                # else:
+                                #     _LOGGER.warning(f"CCC: {a_vehicle_profile}")
+                                #     self._energy_transfer_logs_supported = False
+
+                                # ok record that we do not read the vehicle profile data again - since the init for this
+                                # VIN is completed...
+                                self._vehicle_options_init_complete = True
+                                break
 
         # only update remote climate data if not present yet
         if self._remote_climate_control_supported:
@@ -1767,13 +1827,30 @@ class ConnectedFordPassVehicle:
                 "countryCode": self.countrycode,
                 "locale": self.locale_code
             }
-            data_veh = {
-                "dashboardRefreshRequest": "All"
-            }
-            response_veh = await self.session.post(
-                f"{FORD_VEHICLE_API}/expdashboard/v1/details/",
+            # before August 2026
+            # data_veh = {
+            #     "dashboardRefreshRequest": "All"
+            # }
+            # response_veh = await self.session.post(
+            #     f"{FORD_VEHICLE_API}/expdashboard/v1/details/",
+            #     headers=headers_veh,
+            #     data=json.dumps(data_veh),
+            #     timeout=self.timeout
+            # )
+
+            # after August 2026 get a single car..
+            # data_veh = {
+            #     "vin": self.vin
+            # }
+            # response_veh = await self.session.post(
+            #     f"{FORD_VEHICLE_API}/fpcpl-user-garage-service/v1/user/garage/vehicle",
+            #     headers=headers_veh,
+            #     data=json.dumps(data_veh),
+            #     timeout=self.timeout
+            # )
+            response_veh = await self.session.get(
+                f"{FORD_VEHICLE_API}/fpcpl-user-garage-service/v1/user/garage",
                 headers=headers_veh,
-                data=json.dumps(data_veh),
                 timeout=self.timeout
             )
             _LOGGER.debug(f"{self.vli}REQUEST: {response_veh.request_info.method} {response_veh.request_info.url}")
@@ -1786,15 +1863,26 @@ class ConnectedFordPassVehicle:
                 await self._local_logging(response_veh, "veh", result_veh)
 
                 # creating our logger id for the vehicle...
-                if "@" in self.vli and result_veh is not None and "userVehicles" in result_veh and "vehicleDetails" in result_veh["userVehicles"]:
-                    self._vehicles = result_veh["userVehicles"]["vehicleDetails"]
-                    self._vehicle_name = {}
-                    if "vehicleProfile" in result_veh:
-                        for a_vehicle in result_veh["vehicleProfile"]:
-                            if "VIN" in a_vehicle and "model" in a_vehicle:
-                                if self.vin == a_vehicle["VIN"]:
-                                    self.vli = f"[{a_vehicle['model']}] "
+                if "@" in self.vli:
+                    if result_veh is not None:
+                        if isinstance(result_veh, list):
+                            # after AUGUST 2026
+                            for a_new_veh_obj in result_veh:
+                                if self.vin == a_new_veh_obj.get("vin"):
+                                    self.vli = f"[{a_new_veh_obj.get('profile', {}).get('model', 'unknown-model')}] "
                                     break
+                        elif isinstance(result_veh, dict):
+                            # before AUGUST 2026
+                            if "userVehicles" in result_veh and "vehicleDetails" in result_veh["userVehicles"]:
+                                #self._vehicles = result_veh["userVehicles"]["vehicleDetails"]
+                                #self._vehicle_name = {}
+                                if "vehicleProfile" in result_veh:
+                                    for a_vehicle in result_veh["vehicleProfile"]:
+                                        if "VIN" in a_vehicle and "model" in a_vehicle:
+                                            if self.vin == a_vehicle["VIN"]:
+                                                self.vli = f"[{a_vehicle['model']}] "
+                                                break
+
                 return result_veh
 
             elif response_veh.status == 401:
@@ -1807,8 +1895,12 @@ class ConnectedFordPassVehicle:
                     await asyncio.sleep(5)
 
                 return None
+            elif response_veh.status == 404:
+                _LOGGER.warning(f"{self.vli}req_vehicles(): status_code: 404? - WFT")
+                # we should use some restored VEH-data ?!
+                return None
             else:
-                _LOGGER.info(f"{self.vli}req_vehicles: status_code: {response_veh.status} - {response_veh.real_url} - Received response: {await response_veh.text()}")
+                _LOGGER.info(f"{self.vli}req_vehicles: status_code: {response_veh.status} - {response_veh.real_url} - Received response: '{await response_veh.text()}'")
                 self._HAS_COM_ERROR = True
                 return None
 

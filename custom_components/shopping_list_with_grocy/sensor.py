@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_registry import async_get
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, ENTITY_VERSION, CONF_ENABLE_PRODUCT_SENSORS
+from .const import CONF_ENABLE_PRODUCT_SENSORS, DOMAIN, ENTITY_VERSION
 
 LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=60)

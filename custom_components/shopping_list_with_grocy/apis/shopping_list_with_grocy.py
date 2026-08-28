@@ -1,8 +1,10 @@
 import asyncio
 import base64
 import logging
+import math
 import re
 import unicodedata
+from collections import deque
 from datetime import date, datetime, timezone
 from difflib import SequenceMatcher
 from urllib.parse import urlencode
@@ -96,6 +98,168 @@ class ShoppingListWithGrocyApi:
             % type(obj).__name__
         )
 
+    def to_purchase_quantity(self, amount, qty_factor) -> int:
+        """Convert a Grocy stock amount into a whole purchase quantity.
+
+        Grocy stores shopping list amounts in the product's stock unit, so a
+        partial pack has to round up: needing 5 bottles still means buying 1 pack.
+        """
+        try:
+            stock_amount = float(amount)
+        except (TypeError, ValueError):
+            return 0
+
+        try:
+            factor = float(qty_factor)
+        except (TypeError, ValueError):
+            factor = 1.0
+
+        if factor <= 0:
+            factor = 1.0
+
+        if stock_amount <= 0:
+            return 0
+
+        return math.ceil(stock_amount / factor)
+
+    def build_qu_conversion_lookup(self, conversions) -> tuple[dict, dict]:
+        """Index Grocy quantity unit conversions by product and by unit pair.
+
+        Returns the product specific conversions keyed by product id, and the
+        default (product independent) conversions keyed by unit pair.
+        """
+        product_specific: dict[int, dict[tuple[int, int], float]] = {}
+        defaults: dict[tuple[int, int], float] = {}
+
+        if not isinstance(conversions, list):
+            return product_specific, defaults
+
+        for conversion in conversions:
+            if not isinstance(conversion, dict):
+                continue
+
+            try:
+                from_qu = int(conversion["from_qu_id"])
+                to_qu = int(conversion["to_qu_id"])
+                factor = float(conversion["factor"])
+            except (KeyError, TypeError, ValueError):
+                continue
+
+            if factor <= 0:
+                continue
+
+            raw_pid = conversion.get("product_id")
+            if raw_pid is None:
+                defaults[(from_qu, to_qu)] = factor
+                continue
+
+            try:
+                product_id = int(raw_pid)
+            except (TypeError, ValueError):
+                continue
+
+            product_specific.setdefault(product_id, {})[(from_qu, to_qu)] = factor
+
+        return product_specific, defaults
+
+    def build_conversion_adjacency(self, edges: dict) -> dict:
+        """Turn a unit pair to factor mapping into an adjacency list."""
+        adjacency: dict[int, list[tuple[int, float]]] = {}
+        for (from_qu, to_qu), factor in edges.items():
+            adjacency.setdefault(from_qu, []).append((to_qu, factor))
+        return adjacency
+
+    def resolve_conversion_factor(
+        self, adjacency: dict, from_qu: int, to_qu: int
+    ) -> float | None:
+        """Find the shortest conversion chain between two quantity units.
+
+        Grocy resolves transitive conversions, so Pack to Box to Bottle has to
+        yield the product of both factors. A breadth first walk gives the same
+        shortest chain Grocy picks, and the visited set prevents cycles.
+        """
+        if from_qu == to_qu:
+            return 1.0
+
+        queue = deque([(from_qu, 1.0)])
+        visited = {from_qu}
+
+        while queue:
+            current, factor = queue.popleft()
+            for neighbour, edge_factor in adjacency.get(current, ()):
+                if neighbour in visited:
+                    continue
+                total = factor * edge_factor
+                if neighbour == to_qu:
+                    return total
+                visited.add(neighbour)
+                queue.append((neighbour, total))
+
+        return None
+
+    def apply_quantity_unit_conversions(self, products, conversions) -> None:
+        """Resolve the purchase to stock factor Grocy 4 removed from the product object.
+
+        Grocy 4.0 dropped the qu_factor_purchase_to_stock product property and
+        migrated existing factors to quantity unit conversions, so the factor has
+        to be rebuilt from the conversions table. A product specific conversion
+        always wins over the default one for the same unit pair.
+        """
+        if not isinstance(products, list):
+            return
+
+        product_specific, defaults = self.build_qu_conversion_lookup(conversions)
+        if not product_specific and not defaults:
+            return
+
+        default_adjacency = self.build_conversion_adjacency(defaults)
+
+        for product in products:
+            if not isinstance(product, dict):
+                continue
+
+            qu_purchase = product.get("qu_id_purchase")
+            qu_stock = product.get("qu_id_stock")
+            if qu_purchase is None or qu_stock is None:
+                continue
+
+            try:
+                product_id = int(product["id"])
+                qu_purchase = int(qu_purchase)
+                qu_stock = int(qu_stock)
+            except (KeyError, TypeError, ValueError):
+                continue
+
+            if qu_purchase == qu_stock:
+                product["qu_factor_purchase_to_stock"] = 1.0
+                continue
+
+            overrides = product_specific.get(product_id)
+            if overrides:
+                edges = dict(defaults)
+                edges.update(overrides)
+                adjacency = self.build_conversion_adjacency(edges)
+            else:
+                adjacency = default_adjacency
+
+            factor = self.resolve_conversion_factor(adjacency, qu_purchase, qu_stock)
+            if factor is None:
+                inverse = self.resolve_conversion_factor(
+                    adjacency, qu_stock, qu_purchase
+                )
+                if inverse:
+                    factor = 1.0 / inverse
+
+            if factor:
+                product["qu_factor_purchase_to_stock"] = float(factor)
+            else:
+                LOGGER.debug(
+                    "No quantity unit conversion found for product %s (%s to %s)",
+                    product_id,
+                    qu_purchase,
+                    qu_stock,
+                )
+
     def build_item_list(self, data) -> list:
         if data is None or "shopping_lists" not in data:
             return []
@@ -130,7 +294,9 @@ class ShoppingListWithGrocyApi:
 
                 if shopping_list_id in shopping_list_map:
                     in_shop_list = str(
-                        round(int(in_shopping_list["amount"]) / qty_factor)
+                        self.to_purchase_quantity(
+                            in_shopping_list.get("amount"), qty_factor
+                        )
                     )
                     shopping_list_map[shopping_list_id]["products"].append(
                         {
@@ -363,15 +529,15 @@ class ShoppingListWithGrocyApi:
                     continue
                 if product_id == int(raw_pid):
                     shopping_list_id = int(in_shopping_list["shopping_list_id"])
-                    in_shop_list = str(
-                        round(int(in_shopping_list["amount"]) / qty_factor)
+                    purchase_qty = self.to_purchase_quantity(
+                        in_shopping_list.get("amount"), qty_factor
                     )
                     shopping_lists[f"list_{shopping_list_id}"] = {
                         "shop_list_id": in_shopping_list["id"],
-                        "qty": int(in_shop_list),
+                        "qty": purchase_qty,
                         "note": in_shopping_list.get("note", ""),
                     }
-                    qty_in_shopping_lists += int(in_shop_list)
+                    qty_in_shopping_lists += purchase_qty
 
             stock_qty = sum(
                 float(stock["amount"])
@@ -1355,6 +1521,7 @@ class ShoppingListWithGrocyApi:
                     "stock",
                     "product_groups",
                     "quantity_units",
+                    "quantity_unit_conversions",
                 ]
 
                 t = self.compute_timeout()
@@ -1376,6 +1543,11 @@ class ShoppingListWithGrocyApi:
                         LOGGER.warning("Fetch %s failed: %s", titles[idx], r)
 
                 self.final_data = dict(zip(titles, results))
+
+                self.apply_quantity_unit_conversions(
+                    self.final_data.get("products"),
+                    self.final_data.get("quantity_unit_conversions"),
+                )
 
                 if self.disable_timeout:
                     self.final_data[
