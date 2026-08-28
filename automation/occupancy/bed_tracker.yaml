@@ -6,19 +6,19 @@ description: "Automatisierung, wenn jemand im Bett erkannt wurde oder alle aufge
 mode: single
 trigger:
   - platform: state
-    entity_id: binary_sensor.bett_tracker
+    entity_id: binary_sensor.schlafzimmerbewegungssensoren
     to:
       - "on"
       - "off"
     for:
-      minutes: 2
+      minutes: 5
 action:
   - choose:
       - conditions:
           - condition: state
-            entity_id: binary_sensor.bett_tracker
+            entity_id: binary_sensor.schlafzimmerbewegungssensoren
             state: "on"
-            alias: "Check if someone is in bed"
+            alias: "Check if someone is in bed or in the room"
         sequence:
           - action: switch.turn_on
             target:
@@ -48,7 +48,7 @@ action:
 
       - conditions:
           - condition: state
-            entity_id: binary_sensor.bett_tracker
+            entity_id: binary_sensor.schlafzimmerbewegungssensoren
             state: "off"
             alias: "Check if everyone is up"
         sequence:
