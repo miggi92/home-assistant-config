@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import random
-import threading
+import tempfile
 import time
 import traceback
 from asyncio import CancelledError
@@ -123,26 +123,21 @@ FORD_COMMAND_MAP: Final ={
 _FOUR_NULL_ONE_COUNTER: dict = {}
 _AUTO_FOUR_NULL_ONE_COUNTER: dict = {}
 
-_sync_lock = threading.Lock()
-_sync_lock_cache = {}
+# our lock to ensure that only a single task/thread will access the token files...
+_async_lock_cache: dict[str, asyncio.Lock] = {}
+def get_async_lock_for_account(user: str, region_key: str) -> asyncio.Lock:
+    """Get a cached async lock that serializes token updates per account."""
+    account_key = f"{user}µ@µ{region_key}"
+    if account_key not in _async_lock_cache:
+        _async_lock_cache[account_key] = asyncio.Lock()
+    return _async_lock_cache[account_key]
+
 
 class NonNullDict(dict):
     def none_null_get(self, key, default=None):
         val = super().get(key, default)
         return default if val is None else val
 
-def get_sync_lock_for_user_and_region(user: str, region_key: str, vli:str) -> threading.Lock:
-    """Get a cached threading.Lock for the user and region."""
-    global _sync_lock_cache
-    a_key = f"{user}µ@µ{region_key}"
-    with _sync_lock:
-        if a_key not in _sync_lock_cache:
-            _LOGGER.debug(f"{vli}Create new threading.Lock for user: {user}, region: {region_key}")
-            _sync_lock_cache[a_key] = threading.Lock()
-        else:
-            pass
-            #_LOGGER.debug(f"{vli}Using cached threading.Lock for user: {user}, region: {region_key}")
-    return _sync_lock_cache[a_key]
 
 class ConnectedFordPassVehicle:
     # Represents a Ford vehicle, with methods for status and issuing commands
@@ -165,7 +160,8 @@ class ConnectedFordPassVehicle:
     _last_ignition_state: str | None = None
     _last_remote_start_state: str | None = None
     _last_ev_connect_state: str | None = None
-    _ws_debounced_full_refresh_task: asyncio.Task | None = None
+    # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
+    # _ws_debounced_full_refresh_task: asyncio.Task | None = None
     _ws_debounced_preferred_charge_times_refresh_task: asyncio.Task | None = None
     _ws_debounced_energy_transfer_logs_refresh_task: asyncio.Task | None = None
     _ws_debounced_update_remote_climate_task: asyncio.Task | None = None
@@ -233,7 +229,6 @@ class ConnectedFordPassVehicle:
             self.stored_tokens_location = tokens_location
 
         self._is_reauth_required = False
-        self.status_updates_allowed = True
 
         self.coordinator = coordinator
         # our main data container that holds all data that have been fetched from the vehicle
@@ -253,12 +248,14 @@ class ConnectedFordPassVehicle:
 
         # websocket connection related variables
         self._ws_debounced_update_task = None
-        self._ws_debounced_full_refresh_task = None
+        # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
+        # self._ws_debounced_full_refresh_task = None
         self._ws_debounced_preferred_charge_times_refresh_task = None
         self._ws_debounced_energy_transfer_logs_refresh_task = None
         self._ws_debounced_update_remote_climate_task = None
         self._ws_in_use_access_token = None
         self.ws_connected = False
+        self.ws_connection_start = 0 # the time.time() when this ws_connection was established...
         self._ws_LAST_UPDATE = 0
         self._ws_LAST_NEW_DATA_NOTIFY = 0
         self._last_ignition_state = INTEGRATION_INIT
@@ -277,7 +274,7 @@ class ConnectedFordPassVehicle:
             data_list.pop(0)
 
         req_txt = f"{response.request_info.url}" if response is not None and hasattr(response, "request_info") else ("WEBSOCKET" if a_type == "ws" else "UNKNOWN")
-        if self.vin in req_txt:
+        if self.vin is not None and len(self.vin) > 0 and self.vin in req_txt:
             req_txt = req_txt.replace(self.vin, "[**REDACTED**]")
 
         data_list.append({"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -441,7 +438,14 @@ class ConnectedFordPassVehicle:
 
     async def __ensure_valid_tokens(self, now_time:float=None):
         # Fetch and refresh a token as needed
-        # with get_sync_lock_for_user_and_region(self.username, self.region_key, self.vli):
+        # make sure that independant running websocket and all other actions
+        # of the integration (that can be triggred at any time) will be joined
+        # when they verify the access_tokens for an account.
+        async with get_async_lock_for_account(self.username, self.region_key):
+            await self.__ensure_valid_tokens_locked(now_time)
+
+    async def __ensure_valid_tokens_locked(self, now_time:float=None):
+        """Fetch and refresh tokens while holding the account token lock."""
 
         #_LOGGER.debug(f"{self.vli}__ensure_valid_tokens()")
         self._HAS_COM_ERROR = False
@@ -599,7 +603,7 @@ class ConnectedFordPassVehicle:
                                 a_msg = msg["message"].lower()
                                 if "invalid" in a_msg or "expired token" in a_msg:
                                     is_invalid_msg = True
-                            if is_invalid_msg or ("errorCode" in msg and msg["errorCode"] == "460"):
+                            if is_invalid_msg or ("errorCode" in msg and str(msg["errorCode"]) == "460"):
                                 _LOGGER.warning(f"{self.vli}_request_token(): status_code: {response.status} - TOKEN HAS BEEN INVALIDATED")
                                 _FOUR_NULL_ONE_COUNTER[self.vin] = MAX_401_RESPONSE_COUNT + 1
                         except BaseException as e:
@@ -786,11 +790,28 @@ class ConnectedFordPassVehicle:
             except OSError as exc:
                 _LOGGER.info(f"{self.vli}__write_token_int(): Error deleting token file: {type(exc).__name__} - {exc}")
         else:
+            temporary_path = None
             try:
-                with open(self.stored_tokens_location, "w", encoding="utf-8") as outfile:
-                    json.dump(token, outfile)
+                directory = os.path.dirname(self.stored_tokens_location)
+                filename = os.path.basename(self.stored_tokens_location)
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=directory, prefix=f".{filename}.", suffix=".tmp", delete=False) as temp_outfile:
+                    temporary_path = temp_outfile.name
+                    json.dump(token, temp_outfile)
+                    temp_outfile.flush()
+                    os.fsync(temp_outfile.fileno())
+
+                os.replace(temporary_path, self.stored_tokens_location)
+                temporary_path = None
             except OSError as exc:
-                _LOGGER.error(f"{self.vli}__write_token_int(): Failed to create directory '{self.stored_tokens_location}': {type(exc).__name__} - {exc}")
+                _LOGGER.error(f"{self.vli}__write_token_int(): Failed to atomically write token file '{self.stored_tokens_location}': {type(exc).__name__} - {exc}")
+            finally:
+                if temporary_path is not None:
+                    try:
+                        os.remove(temporary_path)
+                    except FileNotFoundError:
+                        pass
+                    except OSError as exc:
+                        _LOGGER.warning(f"{self.vli}__write_token_int(): Failed to remove temporary token file '{temporary_path}': {type(exc).__name__} - {exc}")
 
     async def _read_token_from_storage(self):
         """Read saved token from a file"""
@@ -856,7 +877,7 @@ class ConnectedFordPassVehicle:
     # ***********************************************************
 
     # the WebSocket-related handling...
-    async def ws_connect(self, do_inventory_check:bool=False, skipp_init:bool=False):
+    async def ws_connect(self, ready_event:asyncio.Event=None, do_inventory_check_shortly_after_ws_connect:bool=True, skipp_init:bool=False):
         _LOGGER.debug(f"{self.vli}ws_connect() STARTED...")
         self.ws_connected = False
 
@@ -875,11 +896,6 @@ class ConnectedFordPassVehicle:
             if not skipp_init:
                 await self._update_others(self._data_container)
 
-        if do_inventory_check:
-            if not await self.req_vehicles_inventory_check_int():
-                _LOGGER.debug(f"{self.vli}ws_connect(): req_vehicles_inventory_check_int() failed, will not establish WebSocket connection")
-                return None
-
         headers_ws = {
             **defaultHeadersDec2025,
             "Connection": "Upgrade", # this will overwrite the "Keep-Alive" from the defaultHeadersDec2025
@@ -892,10 +908,29 @@ class ConnectedFordPassVehicle:
         }
         web_socket_url = f"{AUTONOMIC_WS_URL}/telemetry/sources/fordpass/vehicles/{self.vin}/ws"
 
+        inventory_task = None
         self._ws_in_use_access_token = self.auto_access_token
         try:
             async with self.session.ws_connect(url=web_socket_url, headers=headers_ws, timeout=self.timeout) as ws:
                 _LOGGER.debug(f"{self.vli}REQUEST: WS_CONNECT {web_socket_url}")
+                # storing the time, when this ws_connection was established... (to avoid too many reconnections when
+                # impatient users using the force_update_data too frequently!
+                self.ws_connection_start = time.time()
+
+                # the FordApp does this everytime after athe ws_connection has been established
+                if do_inventory_check_shortly_after_ws_connect:
+                    async def vehicles_inventory_check():
+                        await asyncio.sleep(0.25)
+                        try:
+                            async with asyncio.timeout(60):
+                                if not await self.req_vehicles_inventory_check_int():
+                                    _LOGGER.info(f"{self.vli}ws_connect(): req_vehicles_inventory_check_int() failed?!")
+                        except TimeoutError:
+                            _LOGGER.info(f"{self.vli}ws_connect(): req_vehicles_inventory_check_int() timeout!")
+
+                    # I guess I must also handle the resultig task somehow... at least I should (must?) cancel it
+                    # when the websocket connection might be restarted, but the request has not completed yet???
+                    inventory_task = asyncio.create_task(vehicles_inventory_check())
 
                 self.ws_connected = True
                 _LOGGER.info(f"{self.vli}connected to websocket: {web_socket_url}")
@@ -971,7 +1006,17 @@ class ConnectedFordPassVehicle:
 
                     # do we need to push new data event to the coordinator?
                     if new_data_arrived:
-                        self._ws_notify_for_new_data()
+                        # Signal that the first message has been processed and set instanly the new data
+                        # to the coordinator...
+                        if ready_event is not None and not ready_event.is_set():
+                            if self.coordinator is not None:
+                                self._ws_LAST_NEW_DATA_NOTIFY = time.time()
+                                self.coordinator.async_set_updated_data(self._data_container)
+                            ready_event.set()
+                        else:
+                            # in any other case we make sure, that we notify the coordinator for the newly
+                            # arrived data...
+                            self._ws_notify_for_new_data()
 
                     if do_housekeeping_checks:
                         # check if we need to update the messages...
@@ -997,6 +1042,18 @@ class ConnectedFordPassVehicle:
         except BaseException as e:
             _LOGGER.error(f"{self.vli}ws_connect(): Error while calling ws_close(): {type(e).__name__} - {e}")
 
+        # if there is a running inventory task, we must cancel it
+        if inventory_task is not None:
+            try:
+                if not inventory_task.done():
+                    inventory_task.cancel()
+                    try:
+                        await inventory_task
+                    except asyncio.CancelledError:
+                        print("Inventory_task successfully cancelled.")
+            except BaseException as e:
+                _LOGGER.error(f"{self.vli}ws_connect(): Error while calling inventory_task: {type(e).__name__} - {e}")
+
         self.ws_connected = False
         return None
 
@@ -1009,59 +1066,74 @@ class ConnectedFordPassVehicle:
             self._LAST_MESSAGES_UPDATE = time.time()
 
         new_metrics = self._ws_update_key(data_obj, ROOT_METRICS, collected_keys)
-        if ROOT_STATES not in data_obj:
+        if ROOT_UPDTIME in data_obj:
             self._ws_update_key(data_obj, ROOT_UPDTIME, collected_keys)
 
-        # check, if the 'ignitionStatus' has changed cause of the data that was received via the websocket...
-        # IF the state goes to 'OFF', we will trigger a complete integration data update
+        # listing for possible state changes...
         if ROOT_METRICS not in data_obj:
-
             # compare 'ignitionStatus' reading with default impl in FordPassDataHandler!
             new_ignition_state = self._data_container.get(ROOT_METRICS, {}).get("ignitionStatus", {}).get("value", INTEGRATION_INIT).upper()
-            #_LOGGER.info(f"{self.vli}ws(): NEW ignition state '{new_ignition_state}' | LAST ignition state: '{self._last_ignition_state}'")
-            if self._last_ignition_state != INTEGRATION_INIT:
-                if "OFF" == new_ignition_state and new_ignition_state != self._last_ignition_state:
-                    if self._ws_debounced_full_refresh_task is not None and not self._ws_debounced_full_refresh_task.done():
-                        self._ws_debounced_full_refresh_task.cancel()
-                    _LOGGER.debug(f"{self.vli}ws(): ignition state changed to 'OFF' -> triggering full data update (will be started in 30sec)")
-                    self._ws_debounced_full_refresh_task = asyncio.create_task(self._ws_debounce_full_data_refresh())
+            new_ev_connect_state = self._data_container.get(ROOT_METRICS, {}).get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
+            new_remote_start_countdown = self._data_container.get(ROOT_METRICS, {}).get("remoteStartCountdownTimer", {}).get("value", -1)
+        else:
+            new_ignition_state = data_obj.get(ROOT_METRICS, {}).get("ignitionStatus", {}).get("value", INTEGRATION_INIT).upper()
+            new_ev_connect_state = data_obj.get(ROOT_METRICS, {}).get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
+            new_remote_start_countdown = data_obj.get(ROOT_METRICS, {}).get("remoteStartCountdownTimer", {}).get("value", -1)
 
-                elif "ON" == new_ignition_state:
-                    # cancel any running the full refresh task if the new state is 'ON'...
-                    if self._ws_debounced_full_refresh_task is not None and not self._ws_debounced_full_refresh_task.done():
-                        _LOGGER.debug(f"{self.vli}ws(): ignition state changed to 'ON' -> canceling any running full refresh task")
-                        self._ws_debounced_full_refresh_task.cancel()
+        if new_ignition_state is not None and new_ignition_state != INTEGRATION_INIT:
+            if self._last_ignition_state != INTEGRATION_INIT:
+                if new_ignition_state != self._last_ignition_state:
+                    _LOGGER.info(f"{self.vli}ws(): NEW ignition state '{new_ignition_state}' | LAST ignition state: '{self._last_ignition_state}'")
+                    if "OFF" == new_ignition_state:
+                        _LOGGER.info(f"{self.vli}ws(): ignition state changed to 'OFF' (just as INFO)")
+                        # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
+                        # if self._ws_debounced_full_refresh_task is not None and not self._ws_debounced_full_refresh_task.done():
+                        #     self._ws_debounced_full_refresh_task.cancel()
+                        # _LOGGER.debug(f"{self.vli}ws(): ignition state changed to 'OFF' -> triggering full data update (will be started in 30sec)")
+                        # self._ws_debounced_full_refresh_task = asyncio.create_task(self._ws_debounce_full_data_refresh())
+
+                    elif "ON" == new_ignition_state:
+                        _LOGGER.info(f"{self.vli}ws(): ignition state changed to 'ON' (just as INFO)")
+                        # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
+                        # # cancel any running the full refresh task if the new state is 'ON'...
+                        # if self._ws_debounced_full_refresh_task is not None and not self._ws_debounced_full_refresh_task.done():
+                        #     _LOGGER.debug(f"{self.vli}ws(): ignition state changed to 'ON' -> canceling any running full refresh task")
+                        #     self._ws_debounced_full_refresh_task.cancel()
 
             self._last_ignition_state = new_ignition_state
 
-            # when a remote start was triggered externally - the integration should update the
-            # update_remote_climate information
-            a_start_val = self._data_container.get(ROOT_METRICS, {}).get("remoteStartCountdownTimer", {}).get("value", 0)
-            new_remote_start_state = REMOTE_START_STATE_ACTIVE if a_start_val > 0 else REMOTE_START_STATE_INACTIVE
+        # when a remote start was triggered externally - the integration should update the
+        # update_remote_climate information
+        if new_remote_start_countdown is not None and new_remote_start_countdown != -1:
+            new_remote_start_state = REMOTE_START_STATE_ACTIVE if new_remote_start_countdown > 0 else REMOTE_START_STATE_INACTIVE
             if self._last_remote_start_state != INTEGRATION_INIT:
-                if REMOTE_START_STATE_ACTIVE == new_remote_start_state and self._last_remote_start_state != new_remote_start_state:
-                    if self._ws_debounced_update_remote_climate_task is not None and not self._ws_debounced_update_remote_climate_task.done():
-                        self._ws_debounced_update_remote_climate_task.cancel()
-                    self._ws_debounced_update_remote_climate_task = asyncio.create_task(self._ws_debounced_update_remote_climate())
+                if self._last_remote_start_state != new_remote_start_state:
+                    _LOGGER.info(f"{self.vli}ws(): NEW remote_start state '{new_remote_start_state}' | LAST remote_start state: '{self._last_remote_start_state}'")
+                    if REMOTE_START_STATE_ACTIVE == new_remote_start_state:
+                        if self._ws_debounced_update_remote_climate_task is not None and not self._ws_debounced_update_remote_climate_task.done():
+                            self._ws_debounced_update_remote_climate_task.cancel()
+                        self._ws_debounced_update_remote_climate_task = asyncio.create_task(self._ws_debounced_update_remote_climate())
 
             self._last_remote_start_state = new_remote_start_state
 
-
-            # listening for EV connect/disconnect state changes...
-            new_ev_connect_state = self._data_container.get(ROOT_METRICS, {}).get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
-            #_LOGGER.info(f"{self.vli}ws(): NEW EV connect state '{new_ev_connect_state}' | LAST EV connect state: '{self._last_ev_connect_state}'")
+        # listening for EV connect/disconnect state changes...
+        #_LOGGER.info(f"{self.vli}ws(): NEW EV connect state '{new_ev_connect_state}' | LAST EV connect state: '{self._last_ev_connect_state}'")
+        if new_ev_connect_state is not None and new_ev_connect_state != INTEGRATION_INIT:
             if self._last_ev_connect_state != INTEGRATION_INIT:
-                if "DISCONNECTED" == new_ev_connect_state and new_ev_connect_state != self._last_ev_connect_state:
-                    if self._ws_debounced_energy_transfer_logs_refresh_task is not None and not self._ws_debounced_energy_transfer_logs_refresh_task.done():
-                        self._ws_debounced_energy_transfer_logs_refresh_task.cancel()
-                    _LOGGER.debug(f"{self.vli}ws(): EV connect state changed to 'DISCONNECTED' -> triggering 'energy_transfer_logs' data update (will be started in 3min)")
-                    self._ws_debounced_energy_transfer_logs_refresh_task = asyncio.create_task(self._ws_debounce_update_energy_transfer_logs())
+                if new_ev_connect_state != self._last_ev_connect_state:
+                    _LOGGER.info(f"{self.vli}ws(): NEW ev_connect state '{new_ev_connect_state}' | LAST ev_connect state: '{self._last_ev_connect_state}'")
+                    if "DISCONNECTED" == new_ev_connect_state:
+                        _LOGGER.debug(f"{self.vli}ws(): EV connect state changed to 'DISCONNECTED' -> triggering 'energy_transfer_logs' data update (will be started in 3min)")
+                        if self._ws_debounced_energy_transfer_logs_refresh_task is not None and not self._ws_debounced_energy_transfer_logs_refresh_task.done():
+                            self._ws_debounced_energy_transfer_logs_refresh_task.cancel()
+                        self._ws_debounced_energy_transfer_logs_refresh_task = asyncio.create_task(self._ws_debounce_update_energy_transfer_logs())
 
-                elif "CONNECTED" == new_ev_connect_state:
-                    pass
+                    elif "CONNECTED" == new_ev_connect_state:
+                        pass
 
             self._last_ev_connect_state = new_ev_connect_state
 
+        # finally, all check have been processed - return if there was any new data...
         return new_metrics or new_states or new_events or new_msg
 
     def _ws_update_key(self, data_obj, a_root_key, collected_keys):
@@ -1266,7 +1338,6 @@ class ConnectedFordPassVehicle:
         self._ws_debounced_update_task = asyncio.create_task(self._ws_debounce_coordinator_update())
 
     async def _ws_debounce_coordinator_update(self):
-        await asyncio.sleep(0.3)
         if self.coordinator is not None:
             elapsed = time.time() - self._ws_LAST_NEW_DATA_NOTIFY
             if elapsed < self.coordinator._ws_data_update_notify_interval_in_seconds:
@@ -1278,28 +1349,29 @@ class ConnectedFordPassVehicle:
                 self._ws_LAST_NEW_DATA_NOTIFY = time.time()
                 self.coordinator.async_set_updated_data(self._data_container)
 
-    async def _ws_debounce_full_data_refresh(self):
-        try:
-            # if the ignition state has changed to 'OFF', we will wait 30 seconds before we trigger the full refresh
-            # this is to ensure that the vehicle has enough time to send all the last data updates - and that the vehicle
-            # will be started again... (in a short while)
-            _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): started")
-            await asyncio.sleep(30)
-            count = 0
-            while not self.status_updates_allowed and count < 11:
-                _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): waiting for status updates to be allowed... retry: {count}")
-                count += 1
-                await asyncio.sleep(random.uniform(2, 30))
-
-            _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): starting the full update now")
-            updated_data = await self.update_all()
-            if updated_data is not None and self.coordinator is not None:
-                self.coordinator.async_set_updated_data(self._data_container)
-
-        except CancelledError:
-            _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): was canceled - all good")
-        except BaseException as ex:
-            _LOGGER.warning(f"{self.vli}_ws_debounce_full_data_refresh(): Error during full data refresh - {type(ex).__name__} - {ex}")
+    # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
+    # async def _ws_debounce_full_data_refresh(self):
+    #     try:
+    #         # if the ignition state has changed to 'OFF', we will wait 30 seconds before we trigger the full refresh
+    #         # this is to ensure that the vehicle has enough time to send all the last data updates - and that the vehicle
+    #         # will be started again... (after a short break/delay)
+    #         _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): started")
+    #         await asyncio.sleep(30)
+    #         count = 0
+    #         while not self.status_updates_allowed and count < 11:
+    #             _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): waiting for status updates to be allowed... retry: {count}")
+    #             count += 1
+    #             await asyncio.sleep(random.uniform(2, 30))
+    #
+    #         _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): starting the full update now")
+    #         updated_data = await self.update_all_manually_this_is_deprecated_and_should_not_be_called()
+    #         if updated_data is not None and self.coordinator is not None:
+    #             self.coordinator.async_set_updated_data(self._data_container)
+    #
+    #     except CancelledError:
+    #         _LOGGER.debug(f"{self.vli}_ws_debounce_full_data_refresh(): was canceled - all good")
+    #     except BaseException as ex:
+    #         _LOGGER.warning(f"{self.vli}_ws_debounce_full_data_refresh(): Error during full data refresh - {type(ex).__name__} - {ex}")
 
     async def _ws_debounced_update_remote_climate(self):
         try:
@@ -1336,10 +1408,14 @@ class ConnectedFordPassVehicle:
             _LOGGER.info(f"{self.vli}ws_check_last_update(): force reconnect...")
             return False
 
+    async def update_users_garage_info(self):
+        _LOGGER.debug(f"{self.vli}call_on_init(): request users garage data...")
+        self._cached_vehicles_data = await self.req_vehicles()
+        return self._cached_vehicles_data
 
     # fetching the main data via classic requests...
-    async def update_all(self):
-        data = await self.req_status()
+    async def update_all_manually_this_is_deprecated_and_should_not_be_called(self):
+        data = await self.req_status_deprecated_to_not_use()
         if data is not None:
             await self._update_others(data)
         return data
@@ -1361,7 +1437,7 @@ class ConnectedFordPassVehicle:
 
             if not self._vehicle_options_init_complete:
                 if isinstance(self._cached_vehicles_data, list):
-                    # after August 2026
+                    # after API-Change FordPassApp 6.20.0
                     for a_veh_obj in self._cached_vehicles_data:
                         if self.vin == a_veh_obj.get("vin", "vin-unknown"):
                             tmp_cap = a_veh_obj.get("capabilities", None)
@@ -1412,54 +1488,6 @@ class ConnectedFordPassVehicle:
                             # VIN is completed...
                             self._vehicle_options_init_complete = True
                             break
-
-                elif isinstance(self._cached_vehicles_data, dict):
-                    # before August 2026
-                    if "vehicleProfile" in self._cached_vehicles_data:
-                        for a_vehicle_profile in self._cached_vehicles_data["vehicleProfile"]:
-                            if a_vehicle_profile["VIN"] == self.vin:
-
-                                # we must check if the vehicle supports 'remote climate control'...
-                                if hasattr(self.coordinator, "_force_REMOTE_CLIMATE_CONTROL") and self.coordinator._force_REMOTE_CLIMATE_CONTROL:
-                                    self._remote_climate_control_supported = True
-                                    self._remote_climate_control_forced = True
-                                else:
-                                    self._remote_climate_control_forced = False
-                                    if "remoteClimateControl" in a_vehicle_profile:
-                                        self._remote_climate_control_supported = a_vehicle_profile["remoteClimateControl"]
-                                    elif "remoteHeatingCooling" in a_vehicle_profile:
-                                        self._remote_climate_control_supported = a_vehicle_profile["remoteHeatingCooling"]
-                                    else:
-                                        self._remote_climate_control_supported = False
-
-                                if "showEVBatteryLevel" in a_vehicle_profile:
-                                    self._preferred_charge_times_supported = a_vehicle_profile["showEVBatteryLevel"]
-                                    #self._energy_transfer_status_supported = a_vehicle_profile["showEVBatteryLevel"]
-
-                                    # I would like to have a more specific check here...
-                                    self._energy_transfer_logs_supported = a_vehicle_profile["showEVBatteryLevel"]
-                                else:
-                                    self._preferred_charge_times_supported = False
-                                    self._energy_transfer_status_supported = False
-                                    self._energy_transfer_logs_supported = True
-
-                                # tripAndChargeLogs is not present in the 'a_vehicle_profile'
-                                # if "tripAndChargeLogs" in a_vehicle_profile:
-                                #     val = a_vehicle_profile["tripAndChargeLogs"]
-                                #     if (isinstance(val, bool) and val) or val.upper() == "DISPLAY":
-                                #         _LOGGER.warning(f"AAA: {val}")
-                                #         self._energy_transfer_logs_supported = True
-                                #     else:
-                                #         _LOGGER.warning(f"BBB: {val}")
-                                #         self._energy_transfer_logs_supported = False
-                                # else:
-                                #     _LOGGER.warning(f"CCC: {a_vehicle_profile}")
-                                #     self._energy_transfer_logs_supported = False
-
-                                # ok record that we do not read the vehicle profile data again - since the init for this
-                                # VIN is completed...
-                                self._vehicle_options_init_complete = True
-                                break
 
         # only update remote climate data if not present yet
         if self._remote_climate_control_supported:
@@ -1590,8 +1618,14 @@ class ConnectedFordPassVehicle:
     # ***********************************************************
     # ***********************************************************
 
-    async def req_status(self, do_as_post=False):
+    # with com.ford.fordpass 6.20.0 there are no request to
+    # https://api.autonomic.ai/v1beta/telemetry/sources/fordpass/vehicles/{vin}?lrdt=01-01-1970 00:00:00
+    # any longer - so we SHOULD REMOVE this... at least don't use it by default
+    async def req_status_deprecated_to_not_use(self, do_as_post=False, show_warning=True):
         """Get Vehicle status from API"""
+        if show_warning:
+            _LOGGER.warning(f"{self.vli}req_status_deprecated_to_not_use() CALLED - the URL might not be available in the future! - Please share this as an issue @ GitHub - TIA", stack_info=True)
+
         global _AUTO_FOUR_NULL_ONE_COUNTER
         try:
             # API-Reference?!
@@ -1827,16 +1861,6 @@ class ConnectedFordPassVehicle:
                 "countryCode": self.countrycode,
                 "locale": self.locale_code
             }
-            # before August 2026
-            # data_veh = {
-            #     "dashboardRefreshRequest": "All"
-            # }
-            # response_veh = await self.session.post(
-            #     f"{FORD_VEHICLE_API}/expdashboard/v1/details/",
-            #     headers=headers_veh,
-            #     data=json.dumps(data_veh),
-            #     timeout=self.timeout
-            # )
 
             # after August 2026 get a single car..
             # data_veh = {
@@ -1848,6 +1872,8 @@ class ConnectedFordPassVehicle:
             #     data=json.dumps(data_veh),
             #     timeout=self.timeout
             # )
+
+            # after API-Change FordPassApp 6.20.0
             response_veh = await self.session.get(
                 f"{FORD_VEHICLE_API}/fpcpl-user-garage-service/v1/user/garage",
                 headers=headers_veh,
@@ -1866,22 +1892,11 @@ class ConnectedFordPassVehicle:
                 if "@" in self.vli:
                     if result_veh is not None:
                         if isinstance(result_veh, list):
-                            # after AUGUST 2026
+                            # after API-Change FordPassApp 6.20.0
                             for a_new_veh_obj in result_veh:
-                                if self.vin == a_new_veh_obj.get("vin"):
+                                if self.vin == a_new_veh_obj.get("vin", "vin-unknown"):
                                     self.vli = f"[{a_new_veh_obj.get('profile', {}).get('model', 'unknown-model')}] "
                                     break
-                        elif isinstance(result_veh, dict):
-                            # before AUGUST 2026
-                            if "userVehicles" in result_veh and "vehicleDetails" in result_veh["userVehicles"]:
-                                #self._vehicles = result_veh["userVehicles"]["vehicleDetails"]
-                                #self._vehicle_name = {}
-                                if "vehicleProfile" in result_veh:
-                                    for a_vehicle in result_veh["vehicleProfile"]:
-                                        if "VIN" in a_vehicle and "model" in a_vehicle:
-                                            if self.vin == a_vehicle["VIN"]:
-                                                self.vli = f"[{a_vehicle['model']}] "
-                                                break
 
                 return result_veh
 
@@ -1938,14 +1953,14 @@ class ConnectedFordPassVehicle:
             if 200 <= response_inv.status <= 205:
                 inventory_data = await response_inv.json()
                 await self._local_logging(response_inv, "inventory_vehicles", inventory_data)
-                _LOGGER.debug(f"{self.vli}req_vehicles_inventory_check_int() FINE")
+                _LOGGER.debug(f"{self.vli}req_vehicles_inventory_check_int() - successful (no clue what to do with this data yet)")
                 return True
             else:
                 _LOGGER.info(f"{self.vli}req_vehicles_inventory_check_int() - inventory pre-check returned {response_inv.status}")
                 return False
 
         except Exception as e:
-            _LOGGER.debug(f"{self.vli}req_vehicles_inventory_check_int() - inventory pre-check failed: {e}")
+            _LOGGER.warning(f"{self.vli}req_vehicles_inventory_check_int() - inventory pre-check failed: {e}")
             return False
 
     async def req_remote_climate(self):
@@ -2304,6 +2319,7 @@ class ConnectedFordPassVehicle:
                                                                properties=None,
                                                                data_version="1.0.1",
                                                                wait_for_state=True)
+
     async def cancel_charge(self):
         # CANCEL_GLOBAL_CHARGE
         # worked till 2026/04/20...
@@ -2756,7 +2772,7 @@ class ConnectedFordPassVehicle:
                 # not used yet - since we do not have a command_id or similar,
                 # see: 'elif command == "setRemoteClimateControl":'
                 #if check_command is not None:
-                #    await self.__wait_for_state(command_id=None, state_command_str=check_command, use_websocket=self.ws_connected)
+                #    await self.__wait_for_state(command_id=None, state_command_str=check_command)
 
                 if return_response_content:
                     return response
@@ -2779,10 +2795,14 @@ class ConnectedFordPassVehicle:
             if self._HAS_COM_ERROR:
                 _LOGGER.debug(f"{self.vli}__request_and_poll_command_autonomic() - COMM ERROR")
                 return False
-            else:
-                _LOGGER.debug(f"{self.vli}__request_and_poll_command_autonomic(): auto_access_token exist? {self.auto_access_token is not None}")
-                if self.auto_access_token is None:
-                    return None
+
+            _LOGGER.debug(f"{self.vli}__request_and_poll_command_autonomic(): auto_access_token exist? {self.auto_access_token is not None}")
+            if self.auto_access_token is None:
+                return None
+
+            if wait_for_state and not self.ws_connected:
+                _LOGGER.info(f"{self.vli}__request_and_poll_command_autonomic(): NO WEBSOCKET CONNECTION, skipping (wait_for_state required) command '{write_command}'")
+                return None
 
             headers = {
                 **apiHeaders,
@@ -2815,9 +2835,8 @@ class ConnectedFordPassVehicle:
             _LOGGER.debug(f"{self.vli}REQUEST: {post_req.request_info.method} {post_req.request_info.url}")
 
             return await self.__request_and_poll_comon(request_response_obj=post_req,
-                                                       state_command_str=write_command,
-                                                       use_websocket=self.ws_connected,
-                                                       wait_for_state=wait_for_state)
+                                                   state_command_str=write_command,
+                                                   wait_for_state=wait_for_state)
 
         except BaseException as e:
             if not await self.__check_for_closed_session(e):
@@ -2834,10 +2853,14 @@ class ConnectedFordPassVehicle:
             if self._HAS_COM_ERROR:
                 _LOGGER.debug(f"{self.vli}__request_and_poll_command_ford() - COMM ERROR")
                 return False
-            else:
-                _LOGGER.debug(f"{self.vli}__request_and_poll_command_ford(): access_token exist? {self.access_token is not None}")
-                if self.access_token is None:
-                    return None
+
+            _LOGGER.debug(f"{self.vli}__request_and_poll_command_ford(): access_token exist? {self.access_token is not None}")
+            if self.access_token is None:
+                return None
+
+            if not self.ws_connected:
+                _LOGGER.info(f"{self.vli}__request_and_poll_command_ford(): NO WEBSOCKET CONNECTION, skipping command_key '{command_key}'")
+                return None
 
             headers = {
                 **apiHeaders,
@@ -2876,8 +2899,7 @@ class ConnectedFordPassVehicle:
             _LOGGER.debug(f"{self.vli}REQUEST: {post_req.request_info.method} {post_req.request_info.url}")
 
             return await self.__request_and_poll_comon(request_response_obj=post_req,
-                                                       state_command_str=command,
-                                                       use_websocket=self.ws_connected)
+                                                       state_command_str=command)
 
         except BaseException as e:
             if not await self.__check_for_closed_session(e):
@@ -2913,8 +2935,7 @@ class ConnectedFordPassVehicle:
     #             timeout=self.timeout
     #         )
     #         return await self.__request_and_poll_comon(request_obj=req_object,
-    #                                              state_command_str=url_command,
-    #                                              use_websocket=self.ws_connected)
+    #                                              state_command_str=url_command)
     #
     #     except BaseException as e:
     #         if not await self.__check_for_closed_session(e):
@@ -2925,8 +2946,8 @@ class ConnectedFordPassVehicle:
     #         self._HAS_COM_ERROR = True
     #         return False
 
-    async def __request_and_poll_comon(self, request_response_obj, state_command_str, use_websocket, wait_for_state:bool=True):
-        _LOGGER.debug(f"{self.vli}__request_and_poll_comon(): Testing command status: {request_response_obj.status} (check by {'WebSocket' if use_websocket else 'polling'})")
+    async def __request_and_poll_comon(self, request_response_obj, state_command_str, wait_for_state:bool=True):
+        _LOGGER.debug(f"{self.vli}__request_and_poll_comon(): Testing command status: {request_response_obj.status}")
 
         if not (200 <= request_response_obj.status <= 205):
             if request_response_obj.status in (401, 402, 403, 404, 405):
@@ -2951,17 +2972,14 @@ class ConnectedFordPassVehicle:
 
         # ok we have our command reference id, now we can/should wait for a positive state change
         if wait_for_state:
-            return await self.__wait_for_state(command_id, state_command_str, use_websocket=use_websocket)
+            return await self.__wait_for_state(command_id, state_command_str)
         else:
             return True
 
-    async def __wait_for_state(self, command_id, state_command_str, use_websocket):
-        # Wait for backend to process command
-        await asyncio.sleep(2)
-
-        # Only set status updates flag when polling
-        if not use_websocket:
-            self.status_updates_allowed = False
+    async def __wait_for_state(self, command_id, state_command_str):
+        # Wait for backend to process command bus since we are now the WebSocket-ONLY implementation,
+        # the wait time should be really short...
+        await asyncio.sleep(0.75)
 
         try:
             i = 0
@@ -2969,11 +2987,10 @@ class ConnectedFordPassVehicle:
                 if i > 0:
                     _LOGGER.debug(f"{self.vli}__wait_for_state(): retry again [count: {i}] waiting for '{state_command_str}' - COMM ERRORS: {self._HAS_COM_ERROR}")
 
-                # Get data based on method
-                if use_websocket:
-                    updated_data = self._data_container
-                else:
-                    updated_data = await self.req_status()
+                # for historical reasons, we keep the 'updated_data' object...
+                # -> in the past we had a switch between websocket and non-websocket implementation
+                # so the states data had different source - but now there is ONLY one!
+                updated_data = self._data_container
 
                 # Check states for command status
                 if updated_data is not None and ROOT_STATES in updated_data:
@@ -3010,8 +3027,6 @@ class ConnectedFordPassVehicle:
 
                                 if to_state in ["SUCCESS", "COMMAND_SUCCEEDED_ON_DEVICE"]:
                                     _LOGGER.debug(f"{self.vli}__wait_for_state(): EXCELLENT! Command succeeded")
-                                    if not use_websocket:
-                                        self.status_updates_allowed = True
                                     return True
 
                                 elif to_state == "COMMAND_FAILED_ON_DEVICE":
@@ -3028,14 +3043,10 @@ class ConnectedFordPassVehicle:
                                         _LOGGER.warning(f"{self.vli}__wait_for_state(): Error during status checking - {type(err).__name__} - {err}")
 
                                     _LOGGER.info(f"{self.vli}__wait_for_state(): Command FAILED ON DEVICE - vehicle rejected the command. Error: {error_context} (code: {error_code})")
-                                    if not use_websocket:
-                                        self.status_updates_allowed = True
                                     return False
 
                                 elif "EXPIRED" == to_state:
                                     _LOGGER.info(f"{self.vli}__wait_for_state(): Command EXPIRED - wait is OVER")
-                                    if not use_websocket:
-                                        self.status_updates_allowed = True
                                     return False
 
                                 elif to_state in ["REQUEST_QUEUED", "RECEIVED_BY_DEVICE"] or "IN_PROGRESS" in to_state or "DELIVERY" in to_state:
@@ -3064,8 +3075,5 @@ class ConnectedFordPassVehicle:
                 _LOGGER.warning(f"{self.vli}__wait_for_state(): Error during status checking - {type(exc).__name__} - {exc}")
             else:
                 _LOGGER.info(f"{self.vli}__wait_for_state(): RuntimeError - Session was closed occurred - but a new Session could be generated")
-
-        if not use_websocket:
-            self.status_updates_allowed = True
 
         return False

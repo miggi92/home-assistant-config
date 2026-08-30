@@ -193,15 +193,13 @@
         }
     },
     "services": {
+        "refresh_status_dont_use": {
+            "name": "Refresh Vehicle Status LEGACY-Implementation [WARNING: HIGH-RISK!] (don't use this if you are not aware of the possible consequences)",
+            "description": "ONLY USE THIS ACTION, WHEN YOU ARE ACCEPT THE RISK, THAT YOUR ACCOUNT MIGHT BE BANNED (temporary) BY FORD/LINCOLN, since this action is using an endpoint no longer in use by Ford.\nDo not claim, that this integration have broken your account, when you did that on purpose!"
+        },
         "refresh_status": {
             "name": "Refresh Vehicle Status",
-            "description": "Poll car for latest status (Takes up to 5mins to update once this function has been run!)",
-            "fields": {
-                "vin": {
-                    "name": "VIN",
-                    "description": "Enter a vin number to only refresh the specified vehicle (Default refreshes all added vehicles)"
-                }
-            }
+            "description": "Poll car for latest status (Takes up to 5mins to update once this function has been run!)"
         },
         "clear_tokens": {
             "name": "Clear Tokens",
@@ -311,11 +309,11 @@
             "fuel":                     {"name": "Fuel"},
             "battery":                  {"name": "Battery (12V)"},
             "oil":                      {"name": "Oil Life"},
-            "tirepressure":             {"name": "Tire Pressure"},
+            "tirepressure":             {"name": "Tire Pressure Monitoring System & Pressures"},
             "gps":                      {"name": "GPS JSON"},
-            "alarm":                    {"name": "Alarm Status"},
-            "ignitionstatus":           {"name": "Status Ignition"},
-            "doorstatus":               {"name": "Status Doors"},
+            "alarm":                    {"name": "Alarm"},
+            "ignitionstatus":           {"name": "Ignition"},
+            "doorstatus":               {"name": "Doors"},
             "windowposition":           {"name": "Window Positions"},
             "lastrefresh":              {"name": "Last Refresh"},
             "elveh":                    {"name": "EV Data"},
@@ -332,10 +330,10 @@
             "deepsleep":                {"name": "Sleep Mode"},
             "firmwareupginprogress":    {"name": "Firmware Update Status"},
             "firmwareupgstatus":        {"name": "Firmware Update Status"},
-            "remotestartstatus":        {"name": "RC (❄|☀): Status Remote Start"},
+            "remotestartstatus":        {"name": "RC Remote Start"},
             "zonelighting":             {"name": "Zone Lighting"},
             "messages":                 {"name": "Messages"},
-            "dieselsystemstatus":       {"name": "Status Diesel System"},
+            "dieselsystemstatus":       {"name": "Diesel System"},
             "exhaustfluidlevel":        {"name": "AdBlue Level"},
             "events":                   {"name": "Events"},
             "metrics":                  {"name": "Metrics"},
@@ -344,22 +342,22 @@
 
             "soc":                      {"name": "State of Charge"},
             "evccstatus":               {"name": "EVCC Status Code"},
-            "seatbelt":                 {"name": "Seat Belt Status"},
+            "seatbelt":                 {"name": "Seat Belts"},
             "deviceconnectivity":       {"name": "Connectivity"},
 
             "yawrate":                  {"name": "Yaw Rate"},
             "acceleration":             {"name": "Acceleration"},
-            "brakepedalstatus":         {"name": "Status Brake Pedal"},
+            "brakepedalstatus":         {"name": "Brake Pedal"},
             "braketorque":              {"name": "Brake Torque"},
             "acceleratorpedalposition": {"name": "Accelerator Pedal Position"},
-            "parkingbrakestatus":       {"name": "Status Parking Brake"},
+            "parkingbrakestatus":       {"name": "Parking Brake"},
             "torqueattransmission":     {"name": "Torque at Transmission"},
-            "wheeltorquestatus":        {"name": "Status Wheel Torque"},
+            "wheeltorquestatus":        {"name": "Wheel Torque"},
             "cabintemperature":         {"name": "Cabin Temperature"},
             "lastenergyconsumed":       {"name": "EV Energy Consumption (last trip)"},
             "energytransferlogentry":   {"name": "EV Last Charging Session"},
             "remotestartcountdown":     {"name": "RC (❄|☀): Remaining Time"},
-            "doorlock":                 {"name": "State Locks"},
+            "doorlock":                 {"name": "Locks"},
 
             "departureschedules":       {"name": "Next scheduled Departure"},
             "otaschedule":              {"name": "Next OTA Update Check"},
