@@ -1,6 +1,0 @@
----
-name: Residents
-platform: group
-services:
-  - service: miguel_telegram
-  - service: telegram_home_group
