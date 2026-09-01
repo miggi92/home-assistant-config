@@ -372,10 +372,6 @@
             "description": "Spook heeft een geest gevonden in je automatiseringen 👻\n\nTerwijl hij rondzweefde, kwam Spook de volgende automatisering tegen:\n\n[{automation}]({edit}) (`{entity_id}`)\n\nDeze automatisering gebruikt de volgende triggers, die geen enkele voor Home Assistant beschikbare integratie kan leveren:\n\n{triggers}\n\nDit gebeurt vaak wanneer de integratie die een trigger levert is verwijderd. Om deze fout te verhelpen, [bewerk je de automatisering]({edit}) en verwijder je het gebruik van deze niet-beschikbare triggers, of zet je de integratie die ze levert terug.\n\nSpook 👻 Je homie.",
             "title": "Onbekende triggers gebruikt in: {automation}"
         },
-        "dead_entities": {
-            "description": "Spook heeft een geest gevonden in je entiteiten 👻\n\nDe integratie {integration} is klaar met opstarten, maar de volgende entiteiten die hij registreerde zijn nooit verschenen, dus ze bestaan niet meer:\n\n{entities}\n\nDit gebeurt meestal wanneer een apparaat of zijn entiteiten aan de bron zijn verwijderd, terwijl hun vermeldingen in het register bleven staan. Om deze fout te verhelpen, verwijder je deze entiteiten uit het entiteitenregister als je ze niet meer nodig hebt.\n\nSpook 👻 Je homie.",
-            "title": "Niet-bestaande entiteiten geregistreerd door: {integration}"
-        },
         "empty_areas": {
             "fix_flow": {
                 "abort": {
@@ -446,7 +442,6 @@
             "title": "Onbekende leden gebruikt in min/max-helper: {helper}"
         },
         "orphaned_statistics": {
-            "description": "Spook heeft een geest gevonden in je recorder 👻\n\nHome Assistant bewaart langetermijnstatistieken voor het volgende, maar er is geen bijbehorende entiteit meer:\n\n{statistics}\n\nDit gebeurt meestal wanneer een sensor is verwijderd terwijl zijn statistieken bewaard bleven. Om deze fout te verhelpen, open je Ontwikkelhulpmiddelen > Statistieken en los je ze daar op, of verwijder je ze met de actie `recorder.clear_statistics`.\n\nSpook 👻 Je homie.",
             "title": "Verweesde langetermijnstatistieken gevonden"
         },
         "person_unknown_device_trackers": {
@@ -477,26 +472,6 @@
         "script_unknown_trigger_references": {
             "description": "Spook heeft een geest gevonden in je scripts 👻\n\nTerwijl hij rondzweefde, kwam Spook het volgende script tegen:\n\n[{script}]({edit}) (`{entity_id}`)\n\nDit script gebruikt de volgende triggers, die geen enkele voor Home Assistant beschikbare integratie kan leveren:\n\n{triggers}\n\nDit gebeurt vaak wanneer de integratie die een trigger levert is verwijderd. Om deze fout te verhelpen, [bewerk je het script]({edit}) en verwijder je het gebruik van deze niet-beschikbare triggers, of zet je de integratie die ze levert terug.\n\nSpook 👻 Je homie.",
             "title": "Onbekende triggers gebruikt in: {script}"
-        },
-        "stale_access_tokens": {
-            "fix_flow": {
-                "abort": {
-                    "issue_ignored": "Spook houdt vanaf nu zijn mond over dit token.",
-                    "manage": "Je beheert langlevende toegangstokens zelf bij [de beveiligingsinstellingen van je profiel](/profile/security)."
-                },
-                "step": {
-                    "init": {
-                        "description": "Het langlevende toegangstoken `{token}` (eigenaar: {owner}) is niet meer gebruikt sinds {last_active}.\n\nTrek het in, of laat het staan en Spook zwijgt er verder over. Als je het intrekt, werkt alles wat dit token nog gebruikt niet meer tot het een nieuw token krijgt.\n\nSpook 👻 Je homie.",
-                        "menu_options": {
-                            "ignore": "Houden, zeg er niets meer over",
-                            "manage": "Ik los het zelf op",
-                            "remove": "Trek dit token in"
-                        },
-                        "title": "Langlevend toegangstoken lijkt vergeten: {token}"
-                    }
-                }
-            },
-            "title": "Langlevend toegangstoken lijkt vergeten: {token}"
         },
         "template_unknown_entity_references": {
             "description": "Spook heeft een geest gevonden in je template-helpers 👻\n\nTerwijl hij rondzweefde, kwam Spook de volgende template-helper tegen:\n\n[{helper}]({edit})\n\nDe configuratie verwijst naar de volgende entiteiten, die Home Assistant niet kent:\n\n{entities}\n\nDit gebeurt vaak wanneer een entiteit is hernoemd of verwijderd. Om deze fout te verhelpen, stel je de template-helper opnieuw in zodat hij naar bestaande entiteiten verwijst.\n\nSpook 👻 Je homie.",

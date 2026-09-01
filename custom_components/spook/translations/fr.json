@@ -352,10 +352,6 @@
                 }
             }
         },
-        "dead_entities": {
-            "title": "Entités inexistantes enregistrées par : {integration}",
-            "description": "Spook a trouvé un fantôme dans vos entités 👻\n\n\n\nL'intégration {integration} à terminée de se configurer, mais les entités qu'elle a enregistré ne sont jamais apparues, alors elle n'existent plus :\n\n\n\n{entities}\n\n\n\n\n\n\n\nCeci arrive habituellement lorsque un appareil ou ses entités sont supprimés à la source mais leurs entrées dans le registre sont restées. Pour corriger cette erreur, supprimez ces entités du registre d'entité si vous en avez plus besoin.\n\n\n\nSpook 👻 Votre pote."
-        },
         "lovelace_missing_resources": {
             "title": "Les ressources du tableau de bord font référence a des fichiers manquants",
             "description": "Spook a trouvé un fantôme dans vos tableaux de bords 👻\n\n\n\nLa ressource de tableau de bord suivante fait référence à des fichiers qui n'existent pas :\n\n\n\n{resources}\n\n\n\n\n\n\n\nCeci arrive souvent lorsqu'une carte personnalisée ou ses fichiers sont supprimés malgré que la configuration de la ressource reste configurée. Pour corriger cette erreur, ouvrez Paramètres > Tableaux de bord > Ressources et retirez ou corrigez ces ressources.\n\n\n\nSpook 👻 Votre pote."
@@ -399,26 +395,6 @@
                     "manage": "Tu peux configurer l'étage dans la [page des Pièces](/config/areas/dashboard)."
                 }
             }
-        },
-        "stale_access_tokens": {
-            "fix_flow": {
-                "step": {
-                    "init": {
-                        "menu_options": {
-                            "ignore": "Garde le et arrête de me le demander",
-                            "manage": "Laisse-moi le corriger",
-                            "remove": "Révoquer ce jeton"
-                        },
-                        "title": "Jeton d'accès longue durée semble oublié : {token}",
-                        "description": "Le jeton d'accès longue durée « {token} » (propriétaire : {owner}) n'à pas été utilisé depuis {last_active}.\n\n\n\nRévoquez-le ou gardez-le and Spook cessera de le signaler. Le révorquer cessera le fonctionnement de ce qui l'utilise jusqu'a ce qu'il en obtienne un nouveau.\n\n\n\nSpook 👻 Votre pote."
-                    }
-                },
-                "abort": {
-                    "issue_ignored": "Spook ne mentionnera plus ce jeton à partir de maintenant.",
-                    "manage": "Vous pouvez gérer le jeton d'accès longue durée vous-même sous [vos paramètres de sécurités](/profile/security)."
-                }
-            },
-            "title": "Jeton d'accès longue durée semble oublié : {token}"
         },
         "unknown_helper_source_references": {
             "fix_flow": {
@@ -523,8 +499,7 @@
             "title": "Dispositifs de suivi inconnus suivis par : {person}"
         },
         "orphaned_statistics": {
-            "title": "Statistiques long terme orpheline trouvée",
-            "description": "Spook a trouvé un fantôme dans votre recorder 👻\n\n\n\nHome Assistant garde ces statistiques longue durée, mais ils ne correspondent à aucune entité qui existe :\n\n\n\n{statistics}\n\n\n\n\n\n\n\nCeci arrive habituellement lorsqu'un capteur est supprimé et que ses statistiques sont conservées. Pour corriger cette erreur, ouvrez Outils de développement > Statistiques et corrigez le problème, ou supprimez les en utilisant l'action `recorder.clear_statistics`.\n\n\n\nSpook 👻 Votre pote."
+            "title": "Statistiques long terme orpheline trouvée"
         },
         "automation_unknown_condition_references": {
             "description": "Spook a trouvé un fantôme dans vos automatisations 👻\n\n\n\nEn flottant dans les parages, Spook est tombé sur l'automatisation suivante :\n\n\n\n[{automation}]({edit}) (`{entity_id}`)\n\n\n\nCette automatisation utilise ces conditions qui ne peuvent être fournies par aucune intégration disponible à Home Assistant :\n\n\n\n{conditions}\n\n\n\n\n\n\n\nIl arrive souvent que l'intégration qui les fournissait ait été supprimée. Pour corriger cette erreur, [modifiez l'automatisation]({edit}) et n'utilisez plus ces conditions ou réinstallez l'intégration qui les fournissait.\n\n\n\nSpook 👻 Votre pote.",
