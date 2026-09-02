@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime, timedelta
 import json
 import os
@@ -58,9 +59,31 @@ from .const import (
     TIME_STR_FORMAT
 )
 
+_UNSAFE_FILE_PART = re.compile(r"[^a-z0-9._-]+")
+
+
+def safe_file_part(value) -> str:
+    """A route or direction id, made safe to put in a file name.
+
+    Both geojson files are named after ids that come out of the datasource,
+    that is to say out of a url the user pasted: an id like ZOP:653 makes a
+    file no Windows share can read, a percent sign has to be escaped in the
+    /local/ url that serves the file, and an id carrying a slash writes into
+    a directory that does not exist and loses the file to an OSError.
+
+    Rather than list the separators a feed may bring, keep letters, digits,
+    dot, dash and underscore, replace every run of the rest with a single
+    underscore and lowercase, so one route always lands on one file.
+    """
+    return re.sub(r"\.\.+", "_", _UNSAFE_FILE_PART.sub("_", str(value).lower()))
+
+
 def due_in_minutes(timestamp):
-    """Get the remaining minutes from now until a given datetime object."""
-    diff = timestamp - dt_util.now().replace(tzinfo=None)
+    """Get the remaining minutes from now until a given (aware, UTC) datetime object."""
+    if timestamp.tzinfo is None:
+        timestamp = dt_util.utc_from_timestamp(timestamp.timestamp())
+    diff = timestamp - dt_util.utcnow()
+    _LOGGER.debug(f"GTFS RT due in minutes, timestamp: %s, now_utc: %s", timestamp, dt_util.utcnow())
     return int(diff.total_seconds() / 60)
 
 def get_gtfs_feed_entities(url: str, headers, label: str):
@@ -171,7 +194,7 @@ def get_next_services(self):
 def get_rt_route_trip_statuses(self):
     ''' Get next rt departure for route (multiple) or trip (single) '''
     # explanatory logic
-    # sources can provide tip_id with or without route, route with or without direction hence a lot of conditions as the resultset has (!) to include the direction
+    # sources can provide trip_id with or without route, route with or without direction hence a lot of conditions as the resultset has (!) to include the direction
     # if route-based info is required, for start/end stops, then one needs to cover also for routes without direction_id and thus trip
     # if response does not provide a direction_id then use trip_id, make directon temporarily nn and when the stop is identified make it equal to the requesting direction
     # in this case the trip still covers the direction
@@ -190,7 +213,11 @@ def get_rt_route_trip_statuses(self):
         _LOGGER.debug("No proper RT feed entities: %s", feed_entities)
         return {}
 
-    _LOGGER.debug("Search departure times for route: %s, trip: %s, type: %s, direction: %s, short_name: %s", self._route_id, self._trip_id, self._rt_group, self._direction, self._trip_short_name)
+    if self._rt_group == "route":
+        _LOGGER.debug("Search departure times for route: %s, trip: %s, type: %s, direction: %s, short_name: %s, trip_list: %s", self._route_id, self._trip_id, self._rt_group, self._direction, self._trip_short_name, self._trip_list)
+    else:
+        _LOGGER.debug("Search departure times for trip: %s, type: %s, short_name: %s", self._trip_id, self._rt_group, self._trip_short_name)
+
     for entity in feed_entities:
 
         if entity.get('trip_update', False):
@@ -228,8 +255,20 @@ def get_rt_route_trip_statuses(self):
                 
             # first part covers start/end and thus multiple RT are possible for the same stop, also, for SIRI route_id do not match so a 'in' is used 
             # the second part covers local stops, i.e. per trip, so only one RT possible for that stop         
-            if (self._rt_group == "route" and (str(direction_id) == str(self._direction) and (route_id == self._route_id or self._route_id in route_id)) or (direction_id == "nn" and trip_id == self._trip_id) or (self._trip_id in trip_id)) or (self._rt_group == "trip" and (trip_id == self._trip_id or self._trip_id in trip_id)) or entity_id == self._trip_short_name:
-                
+            if self._rt_group == "route":
+                # route-mode, between predefined start/stop
+                if direction_id != "nn":
+                    matched = (
+                        str(direction_id) == str(self._direction)
+                        and (route_id == self._route_id or self._route_id in route_id)
+                    )  or trip_id in self._trip_list
+                else:
+                    matched = trip_id == self._trip_id or self._trip_id in trip_id or (trip_id in self._trip_list)
+            else:
+                # trip-mode, for local stops which can have multiple routes
+                matched = trip_id == self._trip_id or entity_id == self._trip_short_name
+
+            if matched:
                 _LOGGER.debug("Entity found params - group: %s, route_id: %s, direction_id: %s, self_trip_id: %s, with rt trip: %s, rt id: %s", self._rt_group, route_id, direction_id, self._trip_id, entity["trip_update"]["trip"], entity_id)
                 
                 for stop in entity["trip_update"]["stop_time_update"]:
@@ -262,12 +301,11 @@ def get_rt_route_trip_statuses(self):
                             departure_times[self._route_id][direction_id][stop_id]["departures"] = []
                             departure_times[self._route_id][direction_id][stop_id]["delays"] = []
                         
-                        # Use stop arrival time;
-                        # fall back on departure time if not available                            
-                        if stop["arrival"]["time"] == 0:
-                            stop_time = stop["departure"]["time"]
-                        else:
-                            stop_time = stop["arrival"]["time"]
+                        # the later of the two 'time' attributes is the one to announce
+                        # e.g. at a terminus/layover where the vehicle stands several
+                        # minutes at its bay
+                        stop_time = max(stop["arrival"]["time"],
+                                        stop["departure"]["time"])
                             
                         if stop["departure"].get("delay",0) >= stop["arrival"].get("delay",0):
                             delay = stop["departure"].get("delay",0)
@@ -275,14 +313,12 @@ def get_rt_route_trip_statuses(self):
                             delay = stop["arrival"].get("delay",0)
                             
                         # Ignore arrival times in the past
-                        
-                        if due_in_minutes(datetime.fromtimestamp(stop_time)) >= 0:
-                            departure_times[self._route_id][direction_id][
-                                stop_id
-                            ]["departures"].append(datetime.utcfromtimestamp(stop_time).replace(tzinfo=dt_util.get_time_zone("UTC")))
-                            _LOGGER.debug("RT stoptime: %s, utcfromtimestamp: %s, format utc: %s", stop_time, datetime.utcfromtimestamp(stop_time), datetime.utcfromtimestamp(stop_time).replace(tzinfo=dt_util.get_time_zone("UTC")))
+                        departure_dt = dt_util.utc_from_timestamp(stop_time)  # aware UTC, epoch is always UTC                       
+                        if due_in_minutes(departure_dt) >= 0:
+                            departure_times[self._route_id][direction_id][stop_id]["departures"].append(departure_dt)
+                            _LOGGER.debug("RT stoptime: %s, in utcfromtimestamp: %s", stop_time, departure_dt)
                         else:
-                            _LOGGER.debug("Not using realtime stop data for old due-in-minutes: %s", due_in_minutes(datetime.fromtimestamp(stop_time)))
+                            _LOGGER.debug("Not using realtime stop data for old due-in-minutes: %s", due_in_minutes(departure_dt))
                             
                         departure_times[self._route_id][direction_id][stop_id]["delays"].append(delay)
 
@@ -315,16 +351,34 @@ def get_rt_vehicle_positions(self):
         if vehicle["trip"]["trip_id"] == self._trip_id: 
             _LOGGER.debug('Adding position for TripId: %s, RouteId: %s, DirectionId: %s, Lat: %s, Lon: %s, crc_trip_id: %s', vehicle["trip"]["trip_id"],vehicle["trip"]["route_id"],vehicle["trip"]["direction_id"],vehicle["position"]["latitude"],vehicle["position"]["longitude"], binascii.crc32((vehicle["trip"]["trip_id"]).encode('utf8')))  
             
-        # add data if in the selected direction
-        if (str(self._route_id) == str(vehicle["trip"]["route_id"]) or str(vehicle["trip"]["trip_id"]) == str(self._trip_id)) and str(self._direction) == str(vehicle["trip"]["direction_id"]):
+        # add data if trip found or if route in the selected direction
+        if ( 
+            str(vehicle["trip"]["trip_id"]) == str(self._trip_id)
+            or 
+            ( str(self._route_id) == str(vehicle["trip"]["route_id"])  and str(self._direction) == str(vehicle["trip"]["direction_id"] ))
+            ):
             _LOGGER.debug("Found vehicle on route with attributes: %s", vehicle)
             _LOGGER.debug("crc : %s", binascii.crc32((vehicle["trip"]["trip_id"]).encode('utf8')))
             geojson_element = {"geometry": {"coordinates":[],"type": "Point"}, "properties": {"id": "", "title": "", "trip_id": "", "route_id": "", "direction_id": "", "vehicle_id": "", "vehicle_label": ""}, "type": "Feature"}
             geojson_element["geometry"]["coordinates"] = []
             geojson_element["geometry"]["coordinates"].append(vehicle["position"]["longitude"])
             geojson_element["geometry"]["coordinates"].append(vehicle["position"]["latitude"])
-            geojson_element["properties"]["id"] = str(self._route_id) + "(" + str(vehicle["trip"]["direction_id"]) + ")" + str(binascii.crc32((vehicle["trip"]["trip_id"]).encode('utf8')))[-3:]
-            geojson_element["properties"]["title"] = str(self._route_id) + "(" + str(vehicle["trip"]["direction_id"]) + ")" + str(binascii.crc32((vehicle["trip"]["trip_id"]).encode('utf8')))[-3:] + "_" + self._icon.split(':')[1]
+            # Altered to use vehicle_id (if existing) to create the unique indicator instead of trip_id
+            # to reduce number of entities created by geojson. 
+            _crc = str(binascii.crc32((vehicle["trip"]["trip_id"]).encode('utf8')))[-3:]
+            _veh = str(vehicle.get("vehicle", {}).get("id", "") or vehicle.get("vehicle", {}).get("label", "")).strip()
+            _dir = str(vehicle["trip"]["direction_id"])
+            try:
+                _line = str(self._data.get("next_departure", {}).get("route_short_name") or "").strip()
+                _dest = self.config_entry.data.get("destination", "").split(": ")[-1].split(" (")[0].split(" - ")[0].strip()
+            except Exception: 
+                _line, _dest = "", ""
+            if _line and _dest:
+                _label = _line + " → " + _dest + " " + (_veh or _crc) + "_" + self._icon.split(':')[1]
+            else:
+                _label = str(self._route_id) + "(" + _dir + ")" + _crc + "_" + self._icon.split(':')[1]
+            geojson_element["properties"]["id"] = str(self._route_id) + "_" + _dir + "_" + (_veh or _crc)
+            geojson_element["properties"]["title"] = _label
             geojson_element["properties"]["trip_id"] = vehicle["trip"]["trip_id"]
             geojson_element["properties"]["route_id"] = str(self._route_id)
             geojson_element["properties"]["direction_id"] = vehicle["trip"]["direction_id"]
@@ -336,7 +390,8 @@ def get_rt_vehicle_positions(self):
     self.geojson = {"features": geojson_body, "type": "FeatureCollection"}
         
     _LOGGER.debug("Vehicle geojson: %s", json.dumps(self.geojson))
-    self._route_dir = str(self._route_id) + "_" + str(self._direction)
+    # named the same way as the route file next to it, see safe_file_part
+    self._route_dir = safe_file_part(self._route_id) + "_" + safe_file_part(self._direction)
     update_geojson(self)
     return geojson_body
     

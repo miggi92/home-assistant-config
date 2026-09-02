@@ -22,6 +22,11 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# The floor the year slider always offers, regardless of what is in the
+# playlist. Songs older than this exist; a playlist containing them widens
+# the range rather than being clipped by it (#2337).
+_SLIDER_DEFAULT_MIN_YEAR = 1950
+
 
 class GameStateSerializer:
     """Builds broadcast-ready dicts from GameState.
@@ -87,6 +92,16 @@ class GameStateSerializer:
             "is_intro_round": gs.is_intro_round,
             "intro_stopped": gs.intro_stopped,
             "intro_splash_pending": gs.intro_splash_pending,
+            # #2337: the bounds the player's year slider must offer. The
+            # markup shipped with max="2025" while 46 songs in the catalogue
+            # carried year 2026 — those rounds could not be answered
+            # correctly by anyone.
+            #
+            # This WIDENS a fixed default, it never narrows to the playlist.
+            # Handing the client the playlist's exact span would tell players
+            # the answer is between 1980 and 1995 before a note has played,
+            # which is a bigger change to the game than the bug being fixed.
+            "year_range": GameStateSerializer._year_range(gs),
         }
 
         from .state import GamePhase
@@ -123,6 +138,25 @@ class GameStateSerializer:
             GameStateSerializer._add_end_state(gs, state)
 
         return state
+
+    @staticmethod
+    def _year_range(gs: GameState) -> dict[str, int]:
+        """Slider bounds: a fixed default, widened to cover the playlist (#2337).
+
+        The upper default follows the clock rather than a literal, for the
+        same reason ``_max_year`` does in the playlist schema (#706): a
+        hardcoded year goes stale every January, quietly, and nobody notices
+        until a song from the new year comes up mid-party.
+        """
+        from datetime import datetime, timezone
+
+        low, high = _SLIDER_DEFAULT_MIN_YEAR, datetime.now(timezone.utc).year
+        pm = getattr(gs, "_playlist_manager", None)
+        span = pm.get_year_span() if pm is not None else None
+        if span is not None:
+            low = min(low, span[0])
+            high = max(high, span[1])
+        return {"min": low, "max": high}
 
     @staticmethod
     def _add_playing_state(gs: GameState, state: dict[str, Any]) -> None:
@@ -375,6 +409,12 @@ class GameStateSerializer:
                 # Issue #827: Sudden Death state
                 "eliminated": p.eliminated,
                 "eliminated_round": p.eliminated_round,
+                # Issue #2324: the player's collected row — every song they
+                # placed inside close_range, oldest first. Sent at REVEAL
+                # because that is where it just grew ("you kept it"), and it
+                # is the phase where the row is on screen. Copied so a client
+                # payload can never alias the live player state.
+                "collection": [dict(entry) for entry in p.collection],
             }
             # Story 20.4: Add artist bonus if challenge is enabled
             if gs.artist_challenge_enabled:

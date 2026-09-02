@@ -49,6 +49,11 @@ class ShoppingListWithGrocyApi:
         self.current_time = datetime.now(timezone.utc)
         self.last_db_changed_time = None
 
+        # Purchase history collaborators, wired by async_setup_entry. They stay
+        # optional so a failure to set them up can never break the sync.
+        self.history = None
+        self.stock_log_source = None
+
         self.bidirectional_sync_enabled = config.get("enable_bidirectional_sync", False)
         self.bidirectional_sync_stopped = False
 
@@ -536,6 +541,11 @@ class ShoppingListWithGrocyApi:
                         "shop_list_id": in_shopping_list["id"],
                         "qty": purchase_qty,
                         "note": in_shopping_list.get("note", ""),
+                        # Ticking a product off a to-do list marks the Grocy
+                        # row as done, it does not delete it. That tick is the
+                        # moment the product was actually bought, so the
+                        # purchase history needs to see it.
+                        "done": int(in_shopping_list.get("done", 0) or 0),
                     }
                     qty_in_shopping_lists += purchase_qty
 
@@ -574,6 +584,7 @@ class ShoppingListWithGrocyApi:
                         f"{shop_list}_qty": details["qty"],
                         f"{shop_list}_shop_list_id": int(details["shop_list_id"]),
                         f"{shop_list}_note": details["note"],
+                        f"{shop_list}_done": details["done"],
                     }
                 )
 
@@ -596,7 +607,37 @@ class ShoppingListWithGrocyApi:
             str(product["product_id"]): product for product in parsed_products
         }
 
+        await self.record_purchase_history(parsed_products_dict)
+
         return parsed_products_dict
+
+    async def record_purchase_history(self, parsed_products: dict) -> None:
+        """Feed the purchase history journal from a fresh product payload.
+
+        The prediction engine needs a history that outlives the recorder, so
+        every fetch advances the shopping list episode state machine and, when
+        due, pulls new purchases from the Grocy stock log.
+
+        Failures are swallowed on purpose: capturing history is a side quest,
+        and it must never take the shopping list sync down with it.
+        """
+        if self.history is None:
+            return
+
+        now = int(self.current_time.timestamp())
+
+        try:
+            await self.history.async_observe(parsed_products)
+        except Exception:
+            LOGGER.debug("Could not record shopping list history", exc_info=True)
+
+        if self.stock_log_source is None:
+            return
+
+        try:
+            await self.stock_log_source.async_sync(now)
+        except Exception:
+            LOGGER.debug("Could not sync the Grocy stock log", exc_info=True)
 
     async def _kick_off_image_fetches(self, data: dict):
         """Schedule image downloads out-of-band, without blocking startup."""

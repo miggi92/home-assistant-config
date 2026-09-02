@@ -142,7 +142,15 @@ ERR_ROUND_EXPIRED = "ROUND_EXPIRED"
 ERR_ALREADY_SUBMITTED = "ALREADY_SUBMITTED"
 ERR_NOT_IN_GAME = "NOT_IN_GAME"
 ERR_MEDIA_PLAYER_UNAVAILABLE = "MEDIA_PLAYER_UNAVAILABLE"
+# #2294: the two create-game rejections a host can actually act on. They used to
+# share INVALID_REQUEST with ten unrelated ones, which the client renders as a
+# single generic sentence — "this request was invalid, check your setup".
+ERR_NO_PLAYLISTS_SELECTED = "NO_PLAYLISTS_SELECTED"
+ERR_NO_PLAYABLE_SONGS = "NO_PLAYABLE_SONGS"
 ERR_INVALID_ACTION = "INVALID_ACTION"
+# #2336: a handler raised. Distinct from INVALID_ACTION, which means "the
+# server understood you and said no" — this one means the server broke.
+ERR_INTERNAL = "INTERNAL_ERROR"
 ERR_GAME_FULL = "GAME_FULL"
 ERR_NO_SONGS_REMAINING = "NO_SONGS_REMAINING"
 ERR_SESSION_NOT_FOUND = "SESSION_NOT_FOUND"  # Story 11.2
@@ -234,6 +242,14 @@ URI_PATTERN_YOUTUBE_MUSIC = r"^https://music\.youtube\.com/watch\?v=[a-zA-Z0-9_-
 URI_PATTERN_TIDAL = r"^tidal://track/\d+$"
 URI_PATTERN_DEEZER = r"^deezer://track/\d+$"
 URI_PATTERN_MA_LIBRARY = r"^[a-z0-9_]+(--[^:]+)?://track/.+$"
+# #2426: sproft/music-assistant-ytmusic registers as `ytmusic_free` and streams
+# YouTube Music without a Premium account. Its track item_id IS the YouTube
+# video id (`_encode_track_id` in the provider returns it unchanged unless a
+# trim window is set), so Beatify derives the URI from the `uri_youtube_music`
+# the catalogue already carries rather than storing a second copy of the same
+# id. `multi_instance` is true for that provider, hence the optional
+# `--<suffix>` on the instance name.
+URI_PATTERN_YTMUSIC_FREE = r"^ytmusic_free(--[^:]+)?://track/[a-zA-Z0-9_-]{11}$"
 
 # Provider identifiers (Story 17.1)
 PROVIDER_SPOTIFY = "spotify"
@@ -243,4 +259,5 @@ PROVIDER_TIDAL = "tidal"
 PROVIDER_DEEZER = "deezer"
 PROVIDER_MA_LIBRARY = "ma_library"
 PROVIDER_AMAZON_MUSIC = "amazon_music"
+PROVIDER_YTMUSIC_FREE = "ytmusic_free"  # #2426, third-party MA provider
 PROVIDER_DEFAULT = PROVIDER_SPOTIFY

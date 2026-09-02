@@ -66,7 +66,146 @@ var lastLeaderboard = [];
  * Update game view with round data
  * @param {Object} data - State data from server
  */
+/**
+ * #2337: widen the year slider to whatever the server says this game needs.
+ *
+ * The markup ships min="1950" max="2025". 46 songs in the catalogue carry
+ * year 2026, and for those rounds the correct answer could not be entered —
+ * the thumb simply stopped short of it. The server now sends the bounds it
+ * needs (a fixed default, widened to cover the playlist, never narrowed to
+ * it) and this pulls the element into line.
+ *
+ * The current value is clamped into the new range, because narrowing can
+ * still happen the other way: a game whose range shrinks between rounds
+ * would otherwise leave the thumb parked outside its own track.
+ */
+/**
+ * #2344: decade marks under the year slider.
+ *
+ * The track carried no landmarks at all — 76 years of blank rail. The cost is
+ * not precision (a thumb-width of travel is about two years, not thirty) but
+ * orientation: there was no way to see where 1985 sits, so the interaction was
+ * drag, read the number, drag again, with twelve seconds on the clock.
+ *
+ * Derived from the live span rather than pinned to percentages, because #2337
+ * made the bounds move: applyYearRange() sets min/max from the playlist in
+ * play, and a mark nailed to a fixed position would drift the moment a
+ * playlist reaches past the default.
+ *
+ * Two details that are easy to get wrong:
+ *
+ * A range thumb's centre travels from thumbWidth/2 to width - thumbWidth/2,
+ * never to the very edge, so positions are laid out inside that inset — a mark
+ * at a true 100% would sit past the furthest year the slider can select.
+ *
+ * And the step widens on long spans. Eight labels on a phone track collide;
+ * the rule below keeps at most eight, which is where a 10px label still has
+ * clear air around it on a ~300px track.
+ */
+var YEAR_SCALE_THUMB_PX = 32;
+var YEAR_SCALE_MAX_MARKS = 8;
+
+export function renderYearScale(lo, hi) {
+    var scale = document.getElementById('year-scale');
+    if (!scale) return;
+
+    scale.textContent = '';
+    if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return;
+
+    // Widen from decades to 20- or 50-year steps rather than letting labels
+    // pile up on a narrow track.
+    var step = 10;
+    while ((hi - lo) / step > YEAR_SCALE_MAX_MARKS) {
+        step = step === 10 ? 20 : step * 2.5;
+    }
+
+    var half = YEAR_SCALE_THUMB_PX / 2;
+    var first = Math.ceil(lo / step) * step;
+
+    var years = [];
+    for (var y = first; y <= hi; y += step) years.push(y);
+
+    // Two digits with an apostrophe: language-neutral, so this needs no
+    // translation, and narrow enough that eight fit on a phone. But a span
+    // crossing a century renders '00 twice — 1900 and 2000 collide — so the
+    // short form is only used while it stays unambiguous.
+    var short = years.map(function (v) { return v % 100; });
+    var ambiguous = short.some(function (v, i) { return short.indexOf(v) !== i; });
+
+    years.forEach(function (year) {
+        var pct = (year - lo) / (hi - lo);
+        var mark = document.createElement('span');
+        mark.textContent = ambiguous
+            ? String(year)
+            : "'" + String(year % 100).padStart(2, '0');
+        mark.style.left = 'calc(' + half + 'px + ' + pct + ' * (100% - ' + YEAR_SCALE_THUMB_PX + 'px))';
+        scale.appendChild(mark);
+    });
+}
+
+export function applyYearRange(range) {
+    var slider = document.getElementById('year-slider');
+    if (!slider || !range) return;
+
+    var lo = parseInt(range.min, 10);
+    var hi = parseInt(range.max, 10);
+    if (!isFinite(lo) || !isFinite(hi) || lo >= hi) return;
+
+    if (parseInt(slider.min, 10) !== lo) slider.min = String(lo);
+    if (parseInt(slider.max, 10) !== hi) slider.max = String(hi);
+
+    var val = parseInt(slider.value, 10);
+    if (!isFinite(val) || val < lo || val > hi) {
+        var clamped = Math.max(lo, Math.min(hi, isFinite(val) ? val : lo));
+        slider.value = String(clamped);
+        var yearDisplay = document.getElementById('selected-year');
+        if (yearDisplay) yearDisplay.textContent = String(clamped);
+    }
+
+    // #2344: the scale is derived from the same span, so it is rebuilt here
+    // and nowhere else — one source for the bounds, one for the marks.
+    renderYearScale(lo, hi);
+}
+
+/**
+ * #2340: bring the local "have I submitted?" state back in line with the
+ * server's.
+ *
+ * After a reload — a locked phone, an evicted tab — `state.currentRoundNumber`
+ * is 0, so the next PLAYING broadcast looks like a new round and
+ * `resetSubmissionState()` runs: `hasSubmitted` goes false, the slider springs
+ * back to its default, the button is live again. The very same frame carries
+ * `players[me].submitted === true`, and nothing was reading it. `findMe()` has
+ * been here all along and `player.submitted` is used for *other* players in
+ * several places; the local player's own state was the gap.
+ *
+ * What that cost: the player saw an active slider on the default year instead
+ * of the 1987 they had entered, assumed their guess was lost, submitted again
+ * — and got ALREADY_SUBMITTED. The route back to the correct state ran through
+ * an error message.
+ *
+ * The year is NOT restored, and that is not an oversight. `guess` travels only
+ * in the REVEAL payload (`get_reveal_players_state`). The PLAYING broadcast
+ * (`get_players_state`) deliberately omits it: one frame goes to everyone, so
+ * shipping each player's guess mid-round would hand the whole room the
+ * answers-in-progress. Locking without the number is the honest half.
+ *
+ * Only fires when the two disagree. updateGameView runs on EVERY state
+ * broadcast — once per submission by anyone in the room — so an unconditional
+ * re-apply would fight the player for the rest of the round.
+ */
+function reconcileOwnSubmission(data) {
+    if (hasSubmitted) return;
+
+    var me = findMe(data && data.players);
+    if (!me || !me.submitted) return;
+
+    handleSubmitAck();
+}
+
 export function updateGameView(data) {
+    applyYearRange(data.year_range);
+    reconcileOwnSubmission(data);
     var currentRound = document.getElementById('current-round');
     var totalRounds = document.getElementById('total-rounds');
     var lastRoundBanner = document.getElementById('last-round-banner');
@@ -780,6 +919,25 @@ export function setupRevealLeaderboardToggle() {
 // ============================================
 
 var hasSubmitted = false;
+
+// #2339: the submit button was disabled on send and only ever re-enabled by
+// handleSubmitAck() or a new round. On a half-open socket — an access-point
+// roam, an iPhone waking up — readyState is still OPEN, send() buffers into
+// nothing, and no ack ever comes. The heartbeat needs up to
+// HEARTBEAT_INTERVAL_MS + HEARTBEAT_TIMEOUT_MS (15s + 40s) to notice, which
+// is longer than a round, and even after reconnecting the button stays dead.
+//
+// Joining got exactly this watchdog in #1663 (startJoinTimeout). Submitting
+// a guess — the most important tap in the game — did not.
+var SUBMIT_ACK_TIMEOUT_MS = 5000;
+var submitAckTimeoutId = null;
+
+function clearSubmitAckTimeout() {
+    if (submitAckTimeoutId) {
+        clearTimeout(submitAckTimeoutId);
+        submitAckTimeoutId = null;
+    }
+}
 var betActive = false;
 var hasStealAvailable = false;
 // #1665: mirrors hasStealAvailable — gates the sabotage button + click handler.
@@ -984,6 +1142,18 @@ export function handleSubmitGuess() {
             year: year,
             bet: betActive || sabotageForcedBet  // #1665: forced bet rides along
         }));
+        // #2339: nothing below re-enables the button, so arm a watchdog.
+        clearSubmitAckTimeout();
+        submitAckTimeoutId = setTimeout(function () {
+            submitAckTimeoutId = null;
+            if (hasSubmitted) return;   // the ack won the race after all
+            var btn = document.getElementById('submit-btn');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('is-loading');
+            }
+            showSubmitError(utils.t('errors.connectionLost'));
+        }, SUBMIT_ACK_TIMEOUT_MS);
     } else {
         showSubmitError(utils.t('errors.connectionLost'));
         submitBtn.disabled = false;
@@ -995,6 +1165,11 @@ export function handleSubmitGuess() {
  * Handle server acknowledgment of submission
  */
 export function handleSubmitAck() {
+    // #2339: a late ack must still land. hasSubmitted is set first so a
+    // watchdog already in flight sees it and does nothing — otherwise a
+    // reply arriving at 5.01s would re-enable a button the ack has just
+    // locked, and the player could submit twice.
+    clearSubmitAckTimeout();
     hasSubmitted = true;
 
     var yearSelector = document.getElementById('year-selector');
@@ -1078,6 +1253,9 @@ export function showSubmitError(message) {
  * Reset submission state for new round
  */
 export function resetSubmissionState() {
+    // #2339: a pending watchdog from the previous round must not fire into
+    // this one and flash an error at a player who has not tapped anything.
+    clearSubmitAckTimeout();
     hasSubmitted = false;
     betActive = false;
 
@@ -1111,9 +1289,16 @@ export function resetSubmissionState() {
     }
 
     if (slider) {
-        slider.value = 1990;
+        // #2337: 1990 is the intended starting point, but it has to land
+        // inside the track. A playlist that starts in 1995 would otherwise
+        // park the thumb before its own minimum.
+        var lo = parseInt(slider.min, 10);
+        var hi = parseInt(slider.max, 10);
+        var start = 1990;
+        if (isFinite(lo) && isFinite(hi)) start = Math.max(lo, Math.min(hi, start));
+        slider.value = start;
         var yearDisplay = document.getElementById('selected-year');
-        if (yearDisplay) yearDisplay.textContent = '1990';
+        if (yearDisplay) yearDisplay.textContent = String(start);
     }
 
     // Re-enable ±1 / ±5 buttons (Issues #662, #851)

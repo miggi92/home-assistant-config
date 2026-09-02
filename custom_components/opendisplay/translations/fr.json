@@ -1,0 +1,477 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "L’appareil est déjà configuré",
+      "already_in_progress": "Un flux de configuration est déjà en cours",
+      "cannot_connect": "Échec de la connexion",
+      "no_devices_found": "Aucun appareil trouvé sur le réseau",
+      "no_mac": "L’appareil découvert n’a pas annoncé d’adresse MAC et ne peut pas être configuré.",
+      "reauth_successful": "La ré-authentification a réussi",
+      "unknown": "Erreur inattendue"
+    },
+    "error": {
+      "cannot_connect": "Échec de la connexion",
+      "invalid_auth": "Authentification invalide",
+      "invalid_key_format": "La clé de chiffrement doit comporter exactement 32 caractères hexadécimaux (0-9, a-f).",
+      "unknown": "Erreur inattendue"
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Configurer {name} ?"
+      },
+      "encryption_key": {
+        "data": {
+          "encryption_key": "Clé de chiffrement"
+        },
+        "data_description": {
+          "encryption_key": "Saisir la clé de chiffrement AES-128 hexadécimale de 32 caractères pour cet appareil."
+        },
+        "description": "{name} nécessite une clé de chiffrement pour se connecter.",
+        "title": "Chiffrement requis"
+      },
+      "reauth_confirm": {
+        "data": {
+          "encryption_key": "Clé de chiffrement"
+        },
+        "data_description": {
+          "encryption_key": "Saisir la clé de chiffrement AES-128 hexadécimale de 32 caractères pour cet appareil."
+        },
+        "description": "L’authentification a échoué pour {name}. Saisir la clé de chiffrement correcte ou laisser vide si le chiffrement a été désactivé sur l’appareil.",
+        "title": "Ré-authentification requise"
+      },
+      "user": {
+        "data": {
+          "address": "Appareil"
+        },
+        "data_description": {
+          "address": "Sélectionner l’appareil Bluetooth à configurer."
+        },
+        "description": "Choisir un appareil à configurer"
+      },
+      "zeroconf_confirm": {
+        "description": "Configurer {name}, découvert via WiFi ?",
+        "title": "Appareil OpenDisplay trouvé"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "name": "Mise à jour en attente"
+      },
+      "wifi": {
+        "name": "WiFi"
+      }
+    },
+    "event": {
+      "button": {
+        "name": "Bouton {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "button_down": "Bouton enfoncé",
+              "button_up": "Bouton relâché"
+            }
+          }
+        }
+      },
+      "touch": {
+        "name": "Toucher {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "touch_down": "Toucher enfoncé",
+              "touch_move": "Toucher déplacé",
+              "touch_up": "Toucher relâché"
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "content": {
+        "name": "Contenu de l’affichage"
+      }
+    },
+    "sensor": {
+      "battery_voltage": {
+        "name": "Tension de la batterie"
+      },
+      "chip_temperature": {
+        "name": "Température du circuit"
+      },
+      "last_seen": {
+        "name": "Dernière détection"
+      },
+      "rssi": {
+        "name": "Puissance du signal (RSSI)"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "authentication_error": {
+      "message": "Échec de l’authentification. Mettre à jour la clé de chiffrement."
+    },
+    "device_not_found": {
+      "message": "Impossible de trouver l’appareil Bluetooth avec l’adresse `{address}`."
+    },
+    "device_sleeping": {
+      "message": "L’appareil `{device_id}` est en veille et ne peut pas être atteint immédiatement. Le réveiller et réessayer."
+    },
+    "device_sleeping_ota": {
+      "message": "L’appareil est en veille et ne peut pas être mis à jour pour le moment. Le réveiller (appuyer sur son bouton ou attendre son prochain check-in programmé) et relancer la mise à jour."
+    },
+    "invalid_device_id": {
+      "message": "L’appareil `{device_id}` n’est pas un appareil OpenDisplay valide."
+    },
+    "invalid_melody": {
+      "message": "Mélodie invalide : {error}"
+    },
+    "media_download_error": {
+      "message": "Échec du téléchargement du média : {error}"
+    },
+    "mime_type_not_applicable": {
+      "message": "Le champ mime_type s’applique uniquement aux enregistrements MIME. Définir record_type sur mime ou omettre mime_type."
+    },
+    "multiple_errors": {
+      "message": "Des erreurs sont survenues pour un ou plusieurs appareils :\n{errors}"
+    },
+    "nfc_content_empty": {
+      "message": "Le contenu NFC ne peut pas être vide."
+    },
+    "nfc_content_too_long": {
+      "message": "Le contenu NFC est trop volumineux ({size} octets). Le maximum est {max} octets."
+    },
+    "nfc_mime_type_invalid": {
+      "message": "Le type MIME `{mime_type}` est invalide. Il doit comporter entre 1 et 255 octets en UTF-8."
+    },
+    "nfc_not_supported": {
+      "message": "L’appareil `{device_id}` n’a pas répondu à l’écriture NFC. Son firmware peut ne pas supporter l’écriture des tags NFC ; essayer de mettre à jour vers le dernier firmware."
+    },
+    "nfc_write_failed": {
+      "message": "Échec de l’écriture du tag NFC : {error}"
+    },
+    "no_buzzers": {
+      "message": "L’appareil `{device_id}` n’a pas de buzzer configuré."
+    },
+    "no_leds": {
+      "message": "L’appareil `{device_id}` n’a pas de LED configurées."
+    },
+    "no_nfc": {
+      "message": "L’appareil `{device_id}` n’a pas de puce NFC configurée."
+    },
+    "no_targets_specified": {
+      "message": "Aucun appareil cible spécifié."
+    },
+    "upload_error": {
+      "message": "Échec du téléversement vers l’affichage : {error}"
+    },
+    "url_not_allowed": {
+      "message": "L’URL `{url}` n’est pas autorisée. L’ajouter à `allowlist_external_urls` dans configuration.yaml."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "blocks_per_ack": "Blocs envoyés par accusé de réception",
+          "max_queue_size": "Nombre maximum de trames en cours de téléversement",
+          "missed_cycles": "Cycles de réveil manqués avant indisponibilité",
+          "probe_before_queue": "Essayer de se connecter avant de mettre en file d’attente",
+          "queue_timeout_hours": "Expiration du contenu en file d’attente (heures)",
+          "sleep_mode": "Gestion du mode veille profonde"
+        },
+        "data_description": {
+          "blocks_per_ack": "Nombre de trames d’image reçues par l’appareil avant qu’il n’envoie un accusé de réception lors d’un téléversement rapide (fenêtre glissante). Des valeurs plus élevées réduisent les allers-retours ; la valeur effective est limitée par l’appareil et le nombre maximum de trames en cours.",
+          "max_queue_size": "Nombre maximum de trames d’image maintenues en cours lors d’un téléversement rapide (fenêtre glissante). Des valeurs plus élevées augmentent le débit sur les liaisons lentes (proxy). Mettre à 1 pour désactiver le transfert rapide et utiliser le téléversement classique une trame à la fois.",
+          "missed_cycles": "Nombre de réveils attendus que l’appareil peut manquer avant que ses entités soient marquées comme indisponibles.",
+          "probe_before_queue": "Avant de mettre une image en file d’attente pour un appareil en veille, effectuer une tentative rapide de connexion au cas où il serait en fait réveillé (publicités manquées, radios toujours actives). Ajoute au maximum quelques secondes lorsque l’appareil est vraiment en veille.",
+          "queue_timeout_hours": "Durée pendant laquelle le contenu en file d’attente pour un appareil en veille attend un réveil avant d’expirer.",
+          "sleep_mode": "Automatique suit la configuration d’alimentation propre à l’appareil (alimentation sur batterie avec veille profonde activée). Forcer activé ou désactivé pour outrepasser."
+        }
+      }
+    }
+  },
+  "selector": {
+    "dither_mode": {
+      "options": {
+        "atkinson": "Atkinson",
+        "burkes": "Burkes",
+        "floyd_steinberg": "Floyd-Steinberg",
+        "jarvis_judice_ninke": "Jarvis, Judice & Ninke",
+        "none": "Aucun",
+        "ordered": "Ordonné",
+        "sierra": "Sierra",
+        "sierra_lite": "Sierra Lite",
+        "stucki": "Stucki"
+      }
+    },
+    "fit_mode": {
+      "options": {
+        "contain": "Contenir",
+        "cover": "Couvrir",
+        "crop": "Rogner",
+        "stretch": "Étendre"
+      }
+    },
+    "nfc_record_type": {
+      "options": {
+        "ha_tag": "Étiquette Home Assistant",
+        "mime": "Données MIME (ex. vCard)",
+        "text": "Texte",
+        "url": "URL"
+      }
+    },
+    "refresh_mode": {
+      "options": {
+        "fast": "Rapide",
+        "full": "Complet",
+        "partial": "Partiel"
+      }
+    },
+    "sleep_mode": {
+      "options": {
+        "auto": "Automatique (suivre l'appareil)",
+        "off": "Forcer désactivé",
+        "on": "Forcer activé"
+      }
+    }
+  },
+  "services": {
+    "activate_buzzer": {
+      "description": "Déclenche un son de buzzer sur un appareil OpenDisplay. Pour les mélodies multi-notes, voir Jouer une mélodie au buzzer.",
+      "fields": {
+        "device_id": {
+          "description": "L'appareil OpenDisplay.",
+          "name": "Appareil"
+        },
+        "duration_ms": {
+          "description": "Durée du son en millisecondes (5-1275).",
+          "name": "Durée"
+        },
+        "frequency_hz": {
+          "description": "Fréquence du son en Hz (0 = silence). Jouée comme la note la plus proche en quart de ton ; les fréquences hors de la plage jouable du buzzer sont transposées par octaves pour s’adapter.",
+          "name": "Fréquence"
+        },
+        "instance": {
+          "description": "Index de l'instance du buzzer (base 0).",
+          "name": "Instance du buzzer"
+        },
+        "repeats": {
+          "description": "Nombre de répétitions du son (1-255).",
+          "name": "Répétitions"
+        }
+      },
+      "name": "Activer le buzzer"
+    },
+    "activate_led": {
+      "description": "Déclenche un motif de clignotement LED sur un appareil OpenDisplay.",
+      "fields": {
+        "brightness": {
+          "description": "Luminosité de la LED (1-16).",
+          "name": "Luminosité"
+        },
+        "color1": {
+          "description": "Couleur de la première étape.",
+          "name": "Couleur 1"
+        },
+        "color2": {
+          "description": "Couleur de la deuxième étape (omettre ou mettre le nombre de clignotements à 0 pour ignorer).",
+          "name": "Couleur 2"
+        },
+        "color3": {
+          "description": "Couleur de la troisième étape (omettre ou mettre le nombre de clignotements à 0 pour ignorer).",
+          "name": "Couleur 3"
+        },
+        "device_id": {
+          "description": "L'appareil OpenDisplay.",
+          "name": "Appareil"
+        },
+        "flash_count1": {
+          "description": "Nombre de clignotements pour la première étape (0 ignore cette étape).",
+          "name": "Nombre de clignotements 1"
+        },
+        "flash_count2": {
+          "description": "Nombre de clignotements pour la deuxième étape (0 ignore cette étape).",
+          "name": "Nombre de clignotements 2"
+        },
+        "flash_count3": {
+          "description": "Nombre de clignotements pour la troisième étape (0 ignore cette étape).",
+          "name": "Nombre de clignotements 3"
+        },
+        "instance": {
+          "description": "Index de l'instance LED (base 0).",
+          "name": "Instance LED"
+        },
+        "inter_delay1": {
+          "description": "Délai après la première étape avant de passer à la suivante.",
+          "name": "Délai étape 1"
+        },
+        "inter_delay2": {
+          "description": "Délai après la deuxième étape avant de passer à la suivante.",
+          "name": "Délai étape 2"
+        },
+        "inter_delay3": {
+          "description": "Délai après la troisième étape avant de répéter.",
+          "name": "Délai étape 3"
+        },
+        "loop_delay1": {
+          "description": "Délai entre les clignotements dans la première étape.",
+          "name": "Délai clignotement 1"
+        },
+        "loop_delay2": {
+          "description": "Délai entre les clignotements dans la deuxième étape.",
+          "name": "Délai clignotement 2"
+        },
+        "loop_delay3": {
+          "description": "Délai entre les clignotements dans la troisième étape.",
+          "name": "Délai clignotement 3"
+        },
+        "repeats": {
+          "description": "Nombre de répétitions du motif complet (0 = infini).",
+          "name": "Répétitions"
+        }
+      },
+      "name": "Activer la LED"
+    },
+    "drawcustom": {
+      "description": "Dessine une image personnalisée sur un ou plusieurs appareils OpenDisplay.",
+      "fields": {
+        "background": {
+          "description": "Couleur de fond.",
+          "name": "Couleur de fond"
+        },
+        "dither": {
+          "description": "Algorithme de tramage pour la conversion de la palette de couleurs.",
+          "name": "Mode de tramage"
+        },
+        "dry-run": {
+          "description": "Générer l'image sans la télécharger sur l'appareil.",
+          "name": "Exécution test"
+        },
+        "measured_palette": {
+          "description": "Utiliser la palette de couleurs mesurée du panneau si disponible. Désactiver pour tramer selon le schéma théorique. Sans effet sur les panneaux sans données mesurées.",
+          "name": "Utiliser la palette mesurée"
+        },
+        "payload": {
+          "description": "Tableau d'éléments de dessin.",
+          "name": "Charge utile"
+        },
+        "refresh_type": {
+          "description": "Mode de rafraîchissement de l'affichage. Partiel met à jour uniquement la zone modifiée sans clignotement ; bascule automatiquement sur un rafraîchissement complet si nécessaire.",
+          "name": "Type de rafraîchissement"
+        },
+        "rotate": {
+          "description": "Rotation horaire en degrés.",
+          "name": "Rotation"
+        }
+      },
+      "name": "Dessiner une image personnalisée"
+    },
+    "play_melody": {
+      "description": "Joue une mélodie multi-notes sur le buzzer d'un appareil OpenDisplay.",
+      "fields": {
+        "default_length": {
+          "description": "Fraction de note (1/2/4/8/16/32) utilisée au tempo actuel pour les notes sans marqueur de durée ; remplace la durée de note par défaut si définie.",
+          "name": "Longueur par défaut"
+        },
+        "default_note_ms": {
+          "description": "Durée en millisecondes pour les notes sans marqueur de durée, lorsque aucune longueur par défaut n’est définie (5-1275).",
+          "name": "Durée de note par défaut"
+        },
+        "device_id": {
+          "description": "L’appareil OpenDisplay.",
+          "name": "Appareil"
+        },
+        "instance": {
+          "description": "Index de l’instance du buzzer (base 0).",
+          "name": "Instance du buzzer"
+        },
+        "notes": {
+          "description": "Mélodie compacte : jetons séparés par des espaces ou des virgules, chacun `pitch[duration]`. La hauteur est un nom de note (`A4`, `C#5`, bémols et quart de ton comme `A4+` autorisés), `R` pour un silence, ou un indice brut 0-255. La durée est optionnelle : `:200` pour millisecondes absolues, ou `/4` (noire), `/4.` (pointée), `/8t` (triolet) pour des fractions de note relatives au tempo ; omise utilise la longueur par défaut ou la durée de note par défaut.",
+          "name": "Notes"
+        },
+        "repeats": {
+          "description": "Nombre de répétitions de la mélodie entière (1-255).",
+          "name": "Répétitions"
+        },
+        "tempo": {
+          "description": "Battements par minute ; n’affecte que les durées en `/fraction` (40-400).",
+          "name": "Tempo"
+        }
+      },
+      "name": "Jouer une mélodie au buzzer"
+    },
+    "upload_image": {
+      "description": "Télécharge une image sur un appareil OpenDisplay.",
+      "fields": {
+        "device_id": {
+          "description": "L'appareil OpenDisplay sur lequel télécharger l'image.",
+          "name": "Appareil"
+        },
+        "dither_mode": {
+          "description": "Algorithme de tramage utilisé pour convertir l'image à la palette de couleurs de l'affichage.",
+          "name": "Mode de tramage"
+        },
+        "fit_mode": {
+          "description": "Mode d'ajustement de l'image aux dimensions de l'affichage.",
+          "name": "Mode d'ajustement"
+        },
+        "image": {
+          "description": "Image à télécharger sur l'affichage. Choisir un média ou fournir une URL directe d'image (l'URL doit être ajoutée à allowlist_external_urls).",
+          "name": "Image"
+        },
+        "measured_palette": {
+          "description": "Utiliser la palette de couleurs mesurée du panneau si disponible. Désactiver pour appliquer un tramage selon le schéma de couleurs théorique. Sans effet sur les panneaux sans données mesurées.",
+          "name": "Utiliser la palette mesurée"
+        },
+        "refresh_mode": {
+          "description": "Mode de rafraîchissement de l'affichage. Le rafraîchissement complet élimine les images fantômes mais est plus lent. Le rafraîchissement rapide n'est pas supporté par tous les écrans. Le rafraîchissement partiel met à jour uniquement la zone modifiée sans clignotement (panneaux N/B avec support partiel ; bascule automatiquement sur un rafraîchissement complet si impossible).",
+          "name": "Mode de rafraîchissement"
+        },
+        "rotation": {
+          "description": "Angle de rotation en degrés, appliqué dans le sens horaire.",
+          "name": "Rotation"
+        },
+        "tone_compression": {
+          "description": "Force de compression de la plage dynamique. Laisser vide pour automatique.",
+          "name": "Compression de tonalité"
+        }
+      },
+      "name": "Téléverser une image",
+      "sections": {
+        "additional_fields": {
+          "name": "Options supplémentaires"
+        }
+      }
+    },
+    "write_nfc": {
+      "description": "Écrire un enregistrement NDEF (URL, texte ou données MIME comme une vCard) sur la puce NFC d'un appareil OpenDisplay.",
+      "fields": {
+        "content": {
+          "description": "Les données à écrire. Pour un enregistrement URL, l'URL ; pour un enregistrement texte, le texte ; pour un enregistrement MIME, les données brutes ; pour une étiquette Home Assistant, l'identifiant de l'étiquette. Limité à 512 octets en UTF-8.",
+          "name": "Contenu"
+        },
+        "device_id": {
+          "description": "L'appareil OpenDisplay.",
+          "name": "Appareil"
+        },
+        "mime_type": {
+          "description": "Le type MIME du contenu. S'applique uniquement aux enregistrements MIME ; par défaut text/vcard.",
+          "name": "Type MIME"
+        },
+        "record_type": {
+          "description": "Le type d'enregistrement NDEF à écrire. L'étiquette Home Assistant écrit une URL d'étiquette Home Assistant ; la lecture avec l'application compagnon déclenche tag_scanned et enregistre automatiquement l'étiquette lors du premier scan.",
+          "name": "Type d'enregistrement"
+        }
+      },
+      "name": "Écrire une étiquette NFC"
+    }
+  }
+}

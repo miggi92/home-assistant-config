@@ -1,0 +1,40 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "default": "mdi:image-sync",
+        "state": {
+          "off": "mdi:image-check"
+        }
+      },
+      "wifi": {
+        "default": "mdi:wifi",
+        "state": {
+          "off": "mdi:wifi-off"
+        }
+      }
+    },
+    "update": {
+      "firmware": {
+        "default": "mdi:chip"
+      }
+    }
+  },
+  "services": {
+    "upload_image": {
+      "service": "mdi:image-move"
+    },
+    "drawcustom": {
+      "service": "mdi:draw"
+    },
+    "activate_led": {
+      "service": "mdi:led-on"
+    },
+    "activate_buzzer": {
+      "service": "mdi:bell-ring"
+    },
+    "write_nfc": {
+      "service": "mdi:nfc-variant"
+    }
+  }
+}

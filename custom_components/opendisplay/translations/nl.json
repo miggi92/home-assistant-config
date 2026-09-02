@@ -1,0 +1,477 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Apparaat is al geconfigureerd",
+      "already_in_progress": "Configuratiestroom is al bezig",
+      "cannot_connect": "Verbinding mislukt",
+      "no_devices_found": "Geen apparaten gevonden op het netwerk",
+      "no_mac": "Het ontdekte apparaat heeft geen MAC-adres geadverteerd en kan niet worden ingesteld.",
+      "reauth_successful": "Her-authenticatie was succesvol",
+      "unknown": "Onverwachte fout"
+    },
+    "error": {
+      "cannot_connect": "Verbinding mislukt",
+      "invalid_auth": "Ongeldige authenticatie",
+      "invalid_key_format": "De encryptiesleutel moet precies 32 hexadecimale tekens bevatten (0-9, a-f).",
+      "unknown": "Onverwachte fout"
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "OpenDisplay {name} instellen?"
+      },
+      "encryption_key": {
+        "data": {
+          "encryption_key": "Encryptiesleutel"
+        },
+        "data_description": {
+          "encryption_key": "Voer de 32-teken hexadecimale AES-128 encryptiesleutel in voor dit apparaat."
+        },
+        "description": "{name} vereist een encryptiesleutel om verbinding te maken.",
+        "title": "Encryptie vereist"
+      },
+      "reauth_confirm": {
+        "data": {
+          "encryption_key": "Encryptiesleutel"
+        },
+        "data_description": {
+          "encryption_key": "Voer de 32-teken hexadecimale AES-128 encryptiesleutel in voor dit apparaat."
+        },
+        "description": "Authenticatie mislukt voor {name}. Voer de juiste encryptiesleutel in, of laat leeg als encryptie op het apparaat is uitgeschakeld.",
+        "title": "Her-authenticatie vereist"
+      },
+      "user": {
+        "data": {
+          "address": "Apparaat"
+        },
+        "data_description": {
+          "address": "Selecteer het Bluetooth-apparaat om in te stellen."
+        },
+        "description": "Kies een apparaat om in te stellen"
+      },
+      "zeroconf_confirm": {
+        "description": "Open {name} instellen, gevonden via WiFi?",
+        "title": "OpenDisplay-apparaat gevonden"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "name": "Update in afwachting"
+      },
+      "wifi": {
+        "name": "WiFi"
+      }
+    },
+    "event": {
+      "button": {
+        "name": "Knop {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "button_down": "Knop ingedrukt",
+              "button_up": "Knop losgelaten"
+            }
+          }
+        }
+      },
+      "touch": {
+        "name": "Aanraking {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "touch_down": "Aanraking gestart",
+              "touch_move": "Aanraking verplaatst",
+              "touch_up": "Aanraking beëindigd"
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "content": {
+        "name": "Display-inhoud"
+      }
+    },
+    "sensor": {
+      "battery_voltage": {
+        "name": "Batterijspanning"
+      },
+      "chip_temperature": {
+        "name": "Chiptemperatuur"
+      },
+      "last_seen": {
+        "name": "Laatst gezien"
+      },
+      "rssi": {
+        "name": "Signaalsterkte (RSSI)"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "authentication_error": {
+      "message": "Authenticatie mislukt. Update de encryptiesleutel."
+    },
+    "device_not_found": {
+      "message": "Bluetooth-apparaat met adres `{address}` niet gevonden."
+    },
+    "device_sleeping": {
+      "message": "Apparaat `{device_id}` slaapt en is niet direct bereikbaar. Wek het en probeer opnieuw."
+    },
+    "device_sleeping_ota": {
+      "message": "Het apparaat slaapt en kan nu niet worden bijgewerkt. Wek het (druk op de knop of wacht op de volgende geplande check-in) en start de update opnieuw."
+    },
+    "invalid_device_id": {
+      "message": "Apparaat `{device_id}` is geen geldig OpenDisplay-apparaat."
+    },
+    "invalid_melody": {
+      "message": "Ongeldige melodie: {error}"
+    },
+    "media_download_error": {
+      "message": "Media downloaden mislukt: {error}"
+    },
+    "mime_type_not_applicable": {
+      "message": "Het veld mime_type is alleen van toepassing op MIME-records. Stel record_type in op mime, of laat mime_type weg."
+    },
+    "multiple_errors": {
+      "message": "Fouten opgetreden voor een of meer apparaten:\n{errors}"
+    },
+    "nfc_content_empty": {
+      "message": "NFC-inhoud mag niet leeg zijn."
+    },
+    "nfc_content_too_long": {
+      "message": "NFC-inhoud is te groot ({size} bytes). Maximaal is {max} bytes."
+    },
+    "nfc_mime_type_invalid": {
+      "message": "MIME-type `{mime_type}` is ongeldig. Het moet 1-255 bytes zijn bij UTF-8 codering."
+    },
+    "nfc_not_supported": {
+      "message": "Apparaat `{device_id}` reageerde niet op het schrijven van NFC. De firmware ondersteunt mogelijk geen NFC-tags schrijven; probeer te updaten naar de nieuwste firmware."
+    },
+    "nfc_write_failed": {
+      "message": "Schrijven van de NFC-tag mislukt: {error}"
+    },
+    "no_buzzers": {
+      "message": "Apparaat `{device_id}` heeft geen buzzer geconfigureerd."
+    },
+    "no_leds": {
+      "message": "Apparaat `{device_id}` heeft geen LEDs geconfigureerd."
+    },
+    "no_nfc": {
+      "message": "Apparaat `{device_id}` heeft geen NFC-chip geconfigureerd."
+    },
+    "no_targets_specified": {
+      "message": "Geen doelapparaten opgegeven."
+    },
+    "upload_error": {
+      "message": "Uploaden naar het display mislukt: {error}"
+    },
+    "url_not_allowed": {
+      "message": "URL `{url}` is niet toegestaan. Voeg deze toe aan `allowlist_external_urls` in configuration.yaml."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "blocks_per_ack": "Blokken verzonden per bevestiging",
+          "max_queue_size": "Maximaal aantal uploadframes in behandeling",
+          "missed_cycles": "Gemiste wake-cycli voordat onbeschikbaar",
+          "probe_before_queue": "Proberen te verbinden vóór in de wachtrij plaatsen",
+          "queue_timeout_hours": "Timeout voor wachtrij-inhoud (uren)",
+          "sleep_mode": "Diepe slaap afhandeling"
+        },
+        "data_description": {
+          "blocks_per_ack": "Aantal beeldframes dat het apparaat ontvangt voordat het één bevestiging stuurt tijdens een snelle (sliding-window) upload. Hogere waarden verminderen rondreizen; de effectieve waarde wordt begrensd door het apparaat en het maximum aantal frames in behandeling.",
+          "max_queue_size": "Maximaal aantal beeldframes dat tegelijk in behandeling wordt gehouden tijdens een snelle (sliding-window) upload. Hogere waarden verhogen de doorvoer op trage (proxy) verbindingen. Instellen op 1 schakelt snelle overdracht uit en gebruikt de klassieke upload één frame per keer.",
+          "missed_cycles": "Hoeveel verwachte wake-ups het apparaat mag missen voordat zijn entiteiten als onbeschikbaar worden gemarkeerd.",
+          "probe_before_queue": "Voor het in de wachtrij plaatsen van een afbeelding voor een slapend apparaat, één snelle verbindingspoging doen voor het geval het toch wakker is (gemiste advertenties, altijd-aan radio's). Voegt maximaal enkele seconden toe als het apparaat echt slaapt.",
+          "queue_timeout_hours": "Hoe lang inhoud in de wachtrij voor een slapend apparaat wacht op een wake voordat het verloopt.",
+          "sleep_mode": "Automatisch volgt de eigen stroomconfiguratie van het apparaat (batterijvoeding met diepe slaap ingeschakeld). Forceren aan of uit om te overschrijven."
+        }
+      }
+    }
+  },
+  "selector": {
+    "dither_mode": {
+      "options": {
+        "atkinson": "Atkinson",
+        "burkes": "Burkes",
+        "floyd_steinberg": "Floyd-Steinberg",
+        "jarvis_judice_ninke": "Jarvis, Judice & Ninke",
+        "none": "Geen",
+        "ordered": "Geordend",
+        "sierra": "Sierra",
+        "sierra_lite": "Sierra Lite",
+        "stucki": "Stucki"
+      }
+    },
+    "fit_mode": {
+      "options": {
+        "contain": "Bevatten",
+        "cover": "Bedekken",
+        "crop": "Bijsnijden",
+        "stretch": "Rekken"
+      }
+    },
+    "nfc_record_type": {
+      "options": {
+        "ha_tag": "Home Assistant-tag",
+        "mime": "MIME-gegevens (bijv. vCard)",
+        "text": "Tekst",
+        "url": "URL"
+      }
+    },
+    "refresh_mode": {
+      "options": {
+        "fast": "Snel",
+        "full": "Volledig",
+        "partial": "Gedeeltelijk"
+      }
+    },
+    "sleep_mode": {
+      "options": {
+        "auto": "Automatisch (volg apparaat)",
+        "off": "Forceer uit",
+        "on": "Forceer aan"
+      }
+    }
+  },
+  "services": {
+    "activate_buzzer": {
+      "description": "Activeert een buzzer-geluid op een OpenDisplay-apparaat. Voor melodieën met meerdere noten, zie Speel buzzer-melodie.",
+      "fields": {
+        "device_id": {
+          "description": "Het OpenDisplay-apparaat.",
+          "name": "Apparaat"
+        },
+        "duration_ms": {
+          "description": "Duur van de toon in milliseconden (5-1275).",
+          "name": "Duur"
+        },
+        "frequency_hz": {
+          "description": "Toonfrequentie in Hz (0 = stilte). Wordt afgespeeld als de dichtstbijzijnde kwarttoon; frequenties buiten het bereik van de buzzer worden met octaven verschoven om te passen.",
+          "name": "Frequentie"
+        },
+        "instance": {
+          "description": "Index van de zoemerinstantie (0-gebaseerd).",
+          "name": "Zoemerinstantie"
+        },
+        "repeats": {
+          "description": "Aantal keren om de toon te herhalen (1-255).",
+          "name": "Herhalingen"
+        }
+      },
+      "name": "Zoemer activeren"
+    },
+    "activate_led": {
+      "description": "Activeert een LED-flits patroon op een OpenDisplay-apparaat.",
+      "fields": {
+        "brightness": {
+          "description": "LED-helderheid (1-16).",
+          "name": "Helderheid"
+        },
+        "color1": {
+          "description": "Kleur van de eerste stap.",
+          "name": "Kleur 1"
+        },
+        "color2": {
+          "description": "Kleur van de tweede stap (weglaten of flitsaantal op 0 zetten om over te slaan).",
+          "name": "Kleur 2"
+        },
+        "color3": {
+          "description": "Kleur van de derde stap (weglaten of flitsaantal op 0 zetten om over te slaan).",
+          "name": "Kleur 3"
+        },
+        "device_id": {
+          "description": "Het OpenDisplay-apparaat.",
+          "name": "Apparaat"
+        },
+        "flash_count1": {
+          "description": "Aantal flitsen voor de eerste stap (0 slaat deze stap over).",
+          "name": "Aantal flitsen 1"
+        },
+        "flash_count2": {
+          "description": "Aantal flitsen voor de tweede stap (0 slaat deze stap over).",
+          "name": "Aantal flitsen 2"
+        },
+        "flash_count3": {
+          "description": "Aantal flitsen voor de derde stap (0 slaat deze stap over).",
+          "name": "Aantal flitsen 3"
+        },
+        "instance": {
+          "description": "Index van de LED-instantie (0-gebaseerd).",
+          "name": "LED-instantie"
+        },
+        "inter_delay1": {
+          "description": "Vertraging na de eerste stap voordat de volgende begint.",
+          "name": "Stapvertraging 1"
+        },
+        "inter_delay2": {
+          "description": "Vertraging na de tweede stap voordat de volgende begint.",
+          "name": "Stapvertraging 2"
+        },
+        "inter_delay3": {
+          "description": "Vertraging na de derde stap voordat het patroon herhaalt.",
+          "name": "Stapvertraging 3"
+        },
+        "loop_delay1": {
+          "description": "Vertraging tussen flitsen in de eerste stap.",
+          "name": "Flitsvertraging 1"
+        },
+        "loop_delay2": {
+          "description": "Vertraging tussen flitsen in de tweede stap.",
+          "name": "Flitsvertraging 2"
+        },
+        "loop_delay3": {
+          "description": "Vertraging tussen flitsen in de derde stap.",
+          "name": "Flitsvertraging 3"
+        },
+        "repeats": {
+          "description": "Aantal keren om het volledige patroon te herhalen (0 = oneindig).",
+          "name": "Herhalingen"
+        }
+      },
+      "name": "LED activeren"
+    },
+    "drawcustom": {
+      "description": "Tekent een aangepaste afbeelding op een of meer OpenDisplay-apparaten.",
+      "fields": {
+        "background": {
+          "description": "Achtergrondkleur.",
+          "name": "Achtergrondkleur"
+        },
+        "dither": {
+          "description": "Dithering-algoritme voor kleurpaletconversie.",
+          "name": "Dither-modus"
+        },
+        "dry-run": {
+          "description": "Afbeelding genereren zonder upload naar het apparaat.",
+          "name": "Droge run"
+        },
+        "measured_palette": {
+          "description": "Gebruik het gemeten kleurenpalet van het paneel indien beschikbaar. Uitschakelen om te dither tegen het theoretische kleurenschema. Geen effect op panelen zonder gemeten data.",
+          "name": "Gemeten palet gebruiken"
+        },
+        "payload": {
+          "description": "Array van tekeningelementen.",
+          "name": "Payload"
+        },
+        "refresh_type": {
+          "description": "Weergave vernieuwingsmodus. Gedeeltelijke updates vernieuwen alleen het gewijzigde gebied zonder te flitsen; valt automatisch terug op volledige verversing indien niet mogelijk.",
+          "name": "Vernieuwingsmodus"
+        },
+        "rotate": {
+          "description": "Draaiing met de klok mee in graden.",
+          "name": "Rotatie"
+        }
+      },
+      "name": "Aangepaste afbeelding tekenen"
+    },
+    "play_melody": {
+      "description": "Speelt een melodie met meerdere noten op de buzzer van een OpenDisplay-apparaat.",
+      "fields": {
+        "default_length": {
+          "description": "Nootfracties (1/2/4/8/16/32) gebruikt bij het huidige tempo voor noten zonder duurmarkering; overschrijft de standaard nootduur wanneer ingesteld.",
+          "name": "Standaard lengte"
+        },
+        "default_note_ms": {
+          "description": "Duur in milliseconden voor noten zonder duurmarkering, wanneer geen standaard lengte is ingesteld (5-1275).",
+          "name": "Standaard nootduur"
+        },
+        "device_id": {
+          "description": "Het OpenDisplay-apparaat.",
+          "name": "Apparaat"
+        },
+        "instance": {
+          "description": "Index van buzzer-instantie (0-gebaseerd).",
+          "name": "Buzzer-instantie"
+        },
+        "notes": {
+          "description": "Compacte melodie: witruimte/komma-gescheiden tokens, elk `toon[duur]`. Toon is een nootnaam (`A4`, `C#5`, mollen en kwarttonen zoals `A4+` toegestaan), `R` voor rust, of een ruwe index 0-255. Duur is optioneel: `:200` voor absolute milliseconden, of `/4` (kwart), `/4.` (punt), `/8t` (drieluik) voor tempo-gerelateerde nootfracties; weggelaten gebruikt de standaard lengte of standaard nootduur.",
+          "name": "Noten"
+        },
+        "repeats": {
+          "description": "Aantal keren om de hele melodie te herhalen (1-255).",
+          "name": "Herhalingen"
+        },
+        "tempo": {
+          "description": "Slagen per minuut; beïnvloedt alleen `/fracties` duur (40-400).",
+          "name": "Tempo"
+        }
+      },
+      "name": "Speel buzzer-melodie"
+    },
+    "upload_image": {
+      "description": "Uploadt een afbeelding naar een OpenDisplay-apparaat.",
+      "fields": {
+        "device_id": {
+          "description": "Het OpenDisplay-apparaat waarnaar de afbeelding wordt geüpload.",
+          "name": "Apparaat"
+        },
+        "dither_mode": {
+          "description": "Het dithering-algoritme voor het converteren van de afbeelding naar het kleurenpalet van het display.",
+          "name": "Dither-modus"
+        },
+        "fit_mode": {
+          "description": "Hoe de afbeelding wordt aangepast aan de afmetingen van het display.",
+          "name": "Aanpassingsmodus"
+        },
+        "image": {
+          "description": "De afbeelding om naar het display te uploaden. Kies een media-item of geef een directe afbeeldings-URL op (de URL moet worden toegevoegd aan allowlist_external_urls).",
+          "name": "Afbeelding"
+        },
+        "measured_palette": {
+          "description": "Gebruik het gemeten kleurenpalet van het paneel indien beschikbaar. Uitschakelen om te dither tegen het theoretische kleurenpalet. Geen effect op panelen zonder gemeten data.",
+          "name": "Gemeten palet gebruiken"
+        },
+        "refresh_mode": {
+          "description": "De verversingsmodus van het display. Volledige verversing verwijdert ghosting maar is trager. Snelle verversing wordt niet door alle displays ondersteund. Gedeeltelijke verversing werkt alleen het veranderde gebied bij zonder te flikkeren (Z/W panelen met gedeeltelijke ondersteuning; valt automatisch terug op volledige verversing als het niet mogelijk is).",
+          "name": "Verversingsmodus"
+        },
+        "rotation": {
+          "description": "De rotatiehoek in graden, met de klok mee toegepast.",
+          "name": "Rotatie"
+        },
+        "tone_compression": {
+          "description": "Sterkte van dynamische bereikcompressie. Leeg laten voor automatisch.",
+          "name": "Tooncompressie"
+        }
+      },
+      "name": "Afbeelding uploaden",
+      "sections": {
+        "additional_fields": {
+          "name": "Aanvullende opties"
+        }
+      }
+    },
+    "write_nfc": {
+      "description": "Schrijft een NDEF-record (URL, tekst of MIME-data zoals een vCard) naar de NFC-chip van een OpenDisplay-apparaat.",
+      "fields": {
+        "content": {
+          "description": "De te schrijven data. Voor een URL-record de URL; voor een tekstrecord de tekst; voor een MIME-record de ruwe data; voor een Home Assistant-tag de tag-id. Beperkt tot 512 bytes bij UTF-8 codering.",
+          "name": "Inhoud"
+        },
+        "device_id": {
+          "description": "Het OpenDisplay-apparaat.",
+          "name": "Apparaat"
+        },
+        "mime_type": {
+          "description": "Het MIME-type van de inhoud. Geldt alleen voor MIME-records; standaard text/vcard.",
+          "name": "MIME-type"
+        },
+        "record_type": {
+          "description": "Het type NDEF-record om te schrijven. Home Assistant-tag schrijft een Home Assistant-tag URL; scannen met de companion app activeert tag_scanned en registreert de tag automatisch bij de eerste scan.",
+          "name": "Recordtype"
+        }
+      },
+      "name": "NFC-tag schrijven"
+    }
+  }
+}

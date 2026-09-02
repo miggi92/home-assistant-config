@@ -28,7 +28,7 @@ from .const import (
     ICON,
     ICONS
 )    
-from .gtfs_helper import get_gtfs, get_next_departure, check_datasource_index, create_trip_geojson, check_extracting, get_local_stops_next_departures
+from .gtfs_helper import get_gtfs, get_next_departure, check_datasource_index, create_trip_geojson, check_extracting, get_local_stops_next_departures, update_route_geojson
 from .gtfs_rt_helper import get_next_services, get_rt_alerts
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,6 +52,9 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
         
         self._pygtfs = ""
         self._data: dict[str, str] = {}
+        # the trip whose stops are already exported, so the geojson is
+        # rewritten when the journey changes and not on every refresh
+        self._route_export_trip = None
 
     async def _async_update_data(self) -> dict[str, str]:
         """Get the latest data from GTFS and GTFS relatime, depending refresh interval"""
@@ -118,14 +121,28 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
                 )
                 self._data["gtfs_updated_at"] = dt_util.utcnow().isoformat()
             except Exception as ex:  # pylint: disable=broad-except
-                _LOGGER.error("Error getting gtfs data from generic helper: %s", ex)
-                return None
-            _LOGGER.debug("GTFS coordinator data from helper: %s", self._data["next_departure"]) 
+                raise UpdateFailed(f"Error in getting gtfs data: {ex}") from ex
+            _LOGGER.debug("GTFS coordinator data from helper: %s", self._data["next_departure"])
+            # The planned side of the map: the journey's ordered stops, written
+            # next to the vehicle positions. It follows the static data, needs
+            # no realtime at all, and only changes with the drawn trip, so it
+            # is keyed on the trip rather than rewritten every refresh.
+            trip_for_export = self._data.get("next_departure", {}).get("trip_id", None)
+            if trip_for_export and trip_for_export != self._route_export_trip:
+                try:
+                    await self.hass.async_add_executor_job(update_route_geojson, self)
+                    self._route_export_trip = trip_for_export
+                except Exception as ex:  # pylint: disable=broad-except
+                    _LOGGER.error("Error writing route geojson: %s", ex)
         
         # collect and return rt attributes
         # STILL REQUIRES A SOLUTION IF CONNECTION TIMING OUT
         if "real_time" in options:
             if options["real_time"]:
+                if not self._data.get("next_departure"):
+                    # when there are no more departures, skip the realtime block
+                    _LOGGER.debug("GTFS RT: no next departure for this entry, skipping realtime update")
+                    return self._data
                 self._get_next_service = {}
                 """Initialize the info object."""
                 self._route_delimiter = None
@@ -148,12 +165,13 @@ class GTFSUpdateCoordinator(DataUpdateCoordinator):
                 if self._route_id == None:
                     _LOGGER.debug("GTFS RT: no route_id in sensor data, using route_id from config_entry")
                     self._route_id = data["route"].split(": ")[0]
-                self._stop_id = self._data["next_departure"]["origin_stop_id"].split(": ")[0]
+                self._stop_id = self._data["next_departure"].get("origin_stop_id","no_origin_stop: no_origin_stop").split(": ")[0]
                 self._stop_sequence = self._data["next_departure"]["origin_stop_sequence"]
                 self._destination_id = data["destination"].split(": ")[0]
                 self._trip_id = self._data.get('next_departure', {}).get('trip_id', None) 
                 self._trip_short_name = self._data.get('next_departure', {}).get('trip_short_name', None) 
                 self._direction = str(self._data.get('next_departure', {}).get('trip_direction_id', data["direction"]))
+                self._trip_list = self._data["next_departure"].get("next_departures_trip_id", [])[:10]
                 self._relative = False
                 try:
                     self._get_rt_alerts = await self.hass.async_add_executor_job(get_rt_alerts, self)
@@ -204,6 +222,7 @@ class GTFSLocalStopUpdateCoordinator(DataUpdateCoordinator):
                 """Initialize the info object."""
                 self._route_delimiter = None
                 self._headers = {}
+                self._rt_group = "trip"
                 self._trip_update_url = options.get("trip_update_url", None)
                 self._vehicle_position_url = options.get("vehicle_position_url", None)
                 self._alerts_url = options.get("alerts_url", None)
@@ -251,6 +270,7 @@ class GTFSLocalStopUpdateCoordinator(DataUpdateCoordinator):
                     get_local_stops_next_departures, self
                 )
         except Exception as ex:
+            _LOGGER.error("Error getting local stops data: %s", ex)
             raise UpdateFailed(f"Error in getting local stops data: {ex}")
         _LOGGER.debug("Data from coordinator: %s", self._data)              
         return self._data

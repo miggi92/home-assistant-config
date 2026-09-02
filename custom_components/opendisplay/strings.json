@@ -1,0 +1,481 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "already_in_progress": "[%key:common::config_flow::abort::already_in_progress%]",
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "no_devices_found": "[%key:common::config_flow::abort::no_devices_found%]",
+      "no_mac": "The discovered device did not advertise a MAC address and cannot be set up.",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "invalid_key_format": "The encryption key must be exactly 32 hexadecimal characters (0-9, a-f).",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "[%key:component::bluetooth::config::step::bluetooth_confirm::description%]"
+      },
+      "zeroconf_confirm": {
+        "description": "Do you want to set up {name}, discovered over WiFi?",
+        "title": "OpenDisplay device found"
+      },
+      "encryption_key": {
+        "data": {
+          "encryption_key": "Encryption key"
+        },
+        "data_description": {
+          "encryption_key": "Enter the 32-character hexadecimal AES-128 encryption key for this device."
+        },
+        "description": "{name} requires an encryption key to connect.",
+        "title": "Encryption required"
+      },
+      "reauth_confirm": {
+        "data": {
+          "encryption_key": "[%key:component::opendisplay::config::step::encryption_key::data::encryption_key%]"
+        },
+        "data_description": {
+          "encryption_key": "[%key:component::opendisplay::config::step::encryption_key::data_description::encryption_key%]"
+        },
+        "description": "Authentication failed for {name}. Enter the correct encryption key, or leave blank if encryption has been disabled on the device.",
+        "title": "Re-authentication required"
+      },
+      "user": {
+        "data": {
+          "address": "[%key:common::config_flow::data::device%]"
+        },
+        "data_description": {
+          "address": "Select the Bluetooth device to set up."
+        },
+        "description": "[%key:component::bluetooth::config::step::user::description%]"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "sleep_mode": "Deep sleep handling",
+          "missed_cycles": "Missed wake cycles before unavailable",
+          "queue_timeout_hours": "Queued content timeout (hours)",
+          "probe_before_queue": "Try connecting before queueing",
+          "blocks_per_ack": "Blocks sent per acknowledgment",
+          "max_queue_size": "Maximum upload frames in flight"
+        },
+        "data_description": {
+          "sleep_mode": "Automatic follows the device's own power configuration (battery power with deep sleep enabled). Force on or off to override.",
+          "missed_cycles": "How many expected wake-ups the device may miss before its entities are marked unavailable.",
+          "queue_timeout_hours": "How long content queued for a sleeping device waits for a wake before it expires.",
+          "probe_before_queue": "Before queueing an image for a sleeping device, make one quick connection attempt in case it is actually awake (missed advertisements, always-on radios). Adds at most a few seconds when the device really is asleep.",
+          "blocks_per_ack": "How many image frames the device receives before it sends one acknowledgment during a fast (sliding-window) upload. Higher values reduce round trips; the effective value is capped by the device and the maximum frames in flight.",
+          "max_queue_size": "Maximum number of image frames kept in flight at once during a fast (sliding-window) upload. Higher values raise throughput on slow (proxy) links. Set to 1 to disable fast transfer and use the classic one-frame-at-a-time upload."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "name": "Update pending"
+      },
+      "wifi": {
+        "name": "WiFi"
+      }
+    },
+    "image": {
+      "content": {
+        "name": "Display content"
+      }
+    },
+    "event": {
+      "button": {
+        "name": "Button {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "button_down": "Button down",
+              "button_up": "Button up"
+            }
+          }
+        }
+      },
+      "touch": {
+        "name": "Touch {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "touch_down": "Touch down",
+              "touch_move": "Touch move",
+              "touch_up": "Touch up"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "chip_temperature": {
+        "name": "Chip temperature"
+      },
+      "battery_voltage": {
+        "name": "Battery voltage"
+      },
+      "rssi": {
+        "name": "Signal strength (RSSI)"
+      },
+      "last_seen": {
+        "name": "Last seen"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "authentication_error": {
+      "message": "Authentication failed. Please update the encryption key."
+    },
+    "config_entry_not_found": {
+      "message": "Config entry not found: `{address}`"
+    },
+    "device_not_found": {
+      "message": "Could not find Bluetooth device with address `{address}`. Reason: {reason}"
+    },
+    "device_sleeping": {
+      "message": "Device `{device_id}` is asleep and cannot be reached immediately. Wake it and try again."
+    },
+    "device_sleeping_ota": {
+      "message": "The device is asleep and cannot be updated right now. Wake it (press its button or wait for its next scheduled check-in) and start the update again."
+    },
+    "invalid_device_id": {
+      "message": "Device `{device_id}` is not a valid OpenDisplay device."
+    },
+    "invalid_melody": {
+      "message": "Invalid melody: {error}"
+    },
+    "media_download_error": {
+      "message": "Failed to download media: {error}"
+    },
+    "mime_type_not_applicable": {
+      "message": "The mime_type field only applies to MIME records. Set record_type to mime, or omit mime_type."
+    },
+    "multiple_errors": {
+      "message": "Errors occurred for one or more devices:\n{errors}"
+    },
+    "nfc_content_empty": {
+      "message": "NFC content cannot be empty."
+    },
+    "nfc_content_too_long": {
+      "message": "NFC content is too large ({size} bytes). The maximum is {max} bytes."
+    },
+    "nfc_mime_type_invalid": {
+      "message": "MIME type `{mime_type}` is invalid. It must be 1-255 bytes when UTF-8 encoded."
+    },
+    "nfc_not_supported": {
+      "message": "Device `{device_id}` did not respond to the NFC write. Its firmware may not support writing NFC tags; try updating to the latest firmware."
+    },
+    "nfc_write_failed": {
+      "message": "Failed to write the NFC tag: {error}"
+    },
+    "no_buzzers": {
+      "message": "Device `{device_id}` has no buzzer configured."
+    },
+    "no_leds": {
+      "message": "Device `{device_id}` has no LEDs configured."
+    },
+    "no_nfc": {
+      "message": "Device `{device_id}` has no NFC chip configured."
+    },
+    "no_targets_specified": {
+      "message": "No target devices specified."
+    },
+    "upload_error": {
+      "message": "Failed to upload to the display: {error}"
+    },
+    "url_not_allowed": {
+      "message": "URL `{url}` is not allowed. Add it to `allowlist_external_urls` in configuration.yaml."
+    }
+  },
+  "selector": {
+    "dither_mode": {
+      "options": {
+        "atkinson": "Atkinson",
+        "burkes": "Burkes",
+        "dizzy": "Dizzy",
+        "floyd_steinberg": "Floyd-Steinberg",
+        "jarvis_judice_ninke": "Jarvis, Judice & Ninke",
+        "none": "None",
+        "ordered": "Ordered",
+        "sierra": "Sierra",
+        "sierra_lite": "Sierra Lite",
+        "stucki": "Stucki"
+      }
+    },
+    "fit_mode": {
+      "options": {
+        "contain": "Contain",
+        "cover": "Cover",
+        "crop": "Crop",
+        "stretch": "Stretch"
+      }
+    },
+    "nfc_record_type": {
+      "options": {
+        "url": "URL",
+        "text": "Text",
+        "mime": "MIME data (e.g. vCard)",
+        "ha_tag": "Home Assistant tag"
+      }
+    },
+    "refresh_mode": {
+      "options": {
+        "fast": "Fast",
+        "full": "Full",
+        "partial": "Partial"
+      }
+    },
+    "sleep_mode": {
+      "options": {
+        "auto": "Automatic (follow device)",
+        "off": "Force off",
+        "on": "Force on"
+      }
+    }
+  },
+  "services": {
+    "upload_image": {
+      "description": "Uploads an image to an OpenDisplay device.",
+      "fields": {
+        "device_id": {
+          "description": "The OpenDisplay device to upload the image to.",
+          "name": "Device"
+        },
+        "dither_mode": {
+          "description": "The dithering algorithm to use for converting the image to the display's color palette.",
+          "name": "Dither mode"
+        },
+        "fit_mode": {
+          "description": "How the image is fitted to the display dimensions.",
+          "name": "Fit mode"
+        },
+        "image": {
+          "description": "The image to upload to the display. Pick a media item, or provide a direct image URL (the URL must be added to allowlist_external_urls).",
+          "name": "Image"
+        },
+        "refresh_mode": {
+          "description": "The display refresh mode. Full refresh clears ghosting but is slower. Fast refresh is not supported on all displays. Partial updates only the changed region without flashing (B/W panels with partial support; falls back to a full refresh automatically when not possible).",
+          "name": "Refresh mode"
+        },
+        "rotation": {
+          "description": "The rotation angle in degrees, applied clockwise.",
+          "name": "Rotation"
+        },
+        "tone_compression": {
+          "description": "Dynamic range compression strength. Leave empty for automatic.",
+          "name": "Tone compression"
+        },
+        "measured_palette": {
+          "description": "Use the panel's measured color palette when available. Turn off to dither against the theoretical color scheme. No effect on panels without measured data.",
+          "name": "Use measured palette"
+        }
+      },
+      "name": "Upload image",
+      "sections": {
+        "additional_fields": {
+          "name": "Additional options"
+        }
+      }
+    },
+    "activate_led": {
+      "name": "Activate LED",
+      "description": "Triggers an LED flash pattern on an OpenDisplay device.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The OpenDisplay device."
+        },
+        "instance": {
+          "name": "LED instance",
+          "description": "LED instance index (0-based)."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "LED brightness (1-16)."
+        },
+        "repeats": {
+          "name": "Repeats",
+          "description": "Number of times to repeat the full pattern (0 = infinite)."
+        },
+        "color1": {
+          "name": "Color 1",
+          "description": "First step color."
+        },
+        "flash_count1": {
+          "name": "Flash count 1",
+          "description": "Number of flashes for the first step (0 skips this step)."
+        },
+        "loop_delay1": {
+          "name": "Flash delay 1",
+          "description": "Delay between flashes in the first step."
+        },
+        "inter_delay1": {
+          "name": "Step delay 1",
+          "description": "Delay after the first step before moving to the next."
+        },
+        "color2": {
+          "name": "Color 2",
+          "description": "Second step color (omit or set flash count to 0 to skip)."
+        },
+        "flash_count2": {
+          "name": "Flash count 2",
+          "description": "Number of flashes for the second step (0 skips this step)."
+        },
+        "loop_delay2": {
+          "name": "Flash delay 2",
+          "description": "Delay between flashes in the second step."
+        },
+        "inter_delay2": {
+          "name": "Step delay 2",
+          "description": "Delay after the second step before moving to the next."
+        },
+        "color3": {
+          "name": "Color 3",
+          "description": "Third step color (omit or set flash count to 0 to skip)."
+        },
+        "flash_count3": {
+          "name": "Flash count 3",
+          "description": "Number of flashes for the third step (0 skips this step)."
+        },
+        "loop_delay3": {
+          "name": "Flash delay 3",
+          "description": "Delay between flashes in the third step."
+        },
+        "inter_delay3": {
+          "name": "Step delay 3",
+          "description": "Delay after the third step before repeating."
+        }
+      }
+    },
+    "activate_buzzer": {
+      "name": "Activate buzzer",
+      "description": "Triggers a buzzer tone on an OpenDisplay device. For multi-note melodies, see Play buzzer melody.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The OpenDisplay device."
+        },
+        "instance": {
+          "name": "Buzzer instance",
+          "description": "Buzzer instance index (0-based)."
+        },
+        "frequency_hz": {
+          "name": "Frequency",
+          "description": "Tone frequency in Hz (0 = silence). Played as the nearest quarter-tone note; frequencies outside the buzzer's playable range are shifted by octaves to fit."
+        },
+        "duration_ms": {
+          "name": "Duration",
+          "description": "Tone duration in milliseconds (5-1275)."
+        },
+        "repeats": {
+          "name": "Repeats",
+          "description": "Number of times to repeat the tone (1-255)."
+        }
+      }
+    },
+    "write_nfc": {
+      "name": "Write NFC tag",
+      "description": "Writes an NDEF record (URL, text, or MIME data such as a vCard) to the NFC chip of an OpenDisplay device.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The OpenDisplay device."
+        },
+        "record_type": {
+          "name": "Record type",
+          "description": "The type of NDEF record to write. Home Assistant tag writes a Home Assistant tag URL; scanning it with the companion app fires tag_scanned and registers the tag automatically on first scan."
+        },
+        "content": {
+          "name": "Content",
+          "description": "The data to write. For a URL record, the URL; for a text record, the text; for a MIME record, the raw data; for a Home Assistant tag, the tag id. Limited to 512 bytes when UTF-8 encoded."
+        },
+        "mime_type": {
+          "name": "MIME type",
+          "description": "The MIME type of the content. Only applies to MIME records; defaults to text/vcard."
+        }
+      }
+    },
+    "play_melody": {
+      "name": "Play buzzer melody",
+      "description": "Plays a multi-note melody on an OpenDisplay device's buzzer.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The OpenDisplay device."
+        },
+        "instance": {
+          "name": "Buzzer instance",
+          "description": "Buzzer instance index (0-based)."
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Compact melody: whitespace/comma-separated tokens, each `pitch[duration]`. Pitch is a note name (`A4`, `C#5`, flats and quarter-tones like `A4+` allowed), `R` for a rest, or a raw index 0-255. Duration is optional: `:200` for absolute milliseconds, or `/4` (quarter), `/4.` (dotted), `/8t` (triplet) for tempo-relative note fractions; omitted uses the default length or default note duration."
+        },
+        "tempo": {
+          "name": "Tempo",
+          "description": "Beats per minute; only affects `/fraction` durations (40-400)."
+        },
+        "repeats": {
+          "name": "Repeats",
+          "description": "Number of times to repeat the whole melody (1-255)."
+        },
+        "default_note_ms": {
+          "name": "Default note duration",
+          "description": "Duration in milliseconds for notes with no duration marker, when no default length is set (5-1275)."
+        },
+        "default_length": {
+          "name": "Default length",
+          "description": "Note fraction (1/2/4/8/16/32) used at the current tempo for notes with no duration marker; overrides the default note duration when set."
+        }
+      }
+    },
+    "drawcustom": {
+      "description": "Draws a custom image on one or more OpenDisplay devices.",
+      "fields": {
+        "payload": {
+          "description": "Array of drawing elements.",
+          "name": "Payload"
+        },
+        "background": {
+          "description": "Background fill color.",
+          "name": "Background color"
+        },
+        "rotate": {
+          "description": "Clockwise rotation in degrees.",
+          "name": "Rotation"
+        },
+        "dither": {
+          "description": "Dithering algorithm for color palette conversion.",
+          "name": "Dither mode"
+        },
+        "refresh_type": {
+          "description": "Display refresh mode. Partial updates only the changed region without flashing; falls back to a full refresh automatically when not possible.",
+          "name": "Refresh type"
+        },
+        "measured_palette": {
+          "description": "Use the panel's measured color palette when available. Turn off to dither against the theoretical color scheme. No effect on panels without measured data.",
+          "name": "Use measured palette"
+        },
+        "dry-run": {
+          "description": "Generate image without uploading to the device.",
+          "name": "Dry run"
+        }
+      },
+      "name": "Draw custom image"
+    }
+  }
+}

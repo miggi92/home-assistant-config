@@ -135,6 +135,56 @@ export function buildRequestRowHtml(request) {
 /**
  * Escape HTML to prevent XSS
  */
+// --- error text (#2294) ----------------------------------------------------
+/**
+ * Split a server error body into a translated headline and a detail line.
+ *
+ * The REST layer answers with `{code, message}` and the client prefers the
+ * `errors.<CODE>` translation over the backend's English — right for the
+ * headline, wrong as the whole message: the create-game path alone returns
+ * twelve different rejections under the single code `INVALID_REQUEST`
+ * ("No playlists selected", "Media player is unavailable", "No valid songs
+ * found in selected playlists", ...). Rendering only the translation tells the
+ * host "this request was invalid, check your setup" and hides which of the
+ * twelve actually fired — with no log line to fall back on, since _json_error
+ * does not log.
+ *
+ * So: translation as the headline, the server's own sentence underneath, and
+ * nothing underneath when it would merely repeat the headline.
+ *
+ * A translation containing an unfilled `{placeholder}` is rejected — it means
+ * the backend is older than the string and did not send the details it wants
+ * (the #1663 PROVIDER_NOT_SUPPORTED case) — and the backend message stands
+ * alone as the headline.
+ *
+ * @param {Object} data - Parsed error body; `code` and `message` are read.
+ * @param {function(string, Object): string} [translate] - i18n lookup, normally
+ *   `BeatifyI18n.t`. It returns the key itself when a string is missing.
+ * @param {string} [fallback='Failed to start game'] - Used when the body
+ *   carries no message and no usable translation.
+ * @returns {{message: string, detail: string}} headline + optional detail.
+ */
+export function errorHeadlineAndDetail(data, translate, fallback) {
+    var body = data || {};
+    var serverMsg = typeof body.message === 'string' ? body.message : '';
+    var result = { message: serverMsg || fallback || 'Failed to start game', detail: '' };
+    if (!body.code || typeof translate !== 'function') return result;
+
+    var key = 'errors.' + String(body.code).toUpperCase();
+    var translated;
+    try {
+        translated = translate(key, body);
+    } catch (err) {
+        return result;  // a throwing i18n must not swallow the server's message
+    }
+    if (!translated || translated === key) return result;
+    if (/\{[a-z_]+\}/i.test(translated)) return result;
+
+    result.message = translated;
+    if (serverMsg && serverMsg !== translated) result.detail = serverMsg;
+    return result;
+}
+
 export function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -440,4 +490,31 @@ export function createRenderCoalescer(render, options) {
         latest = undefined;
     };
     return push;
+}
+
+// --- banner anchoring ------------------------------------------------------
+
+/**
+ * Pick the node a start-failure banner should dock above (#2365).
+ *
+ * `showBanner` inserts its node *before the anchor, inside the anchor's
+ * parent*. Handing it the Start button therefore does not put the banner above
+ * the button — it puts it **into** the button's row. `.home-cta-bar` is a flex
+ * container and `.home-cta-start` claims the free space with `flex: 1`, so the
+ * banner was left at its min-content width and its text wrapped one character
+ * per line. On a phone that is unreadable.
+ *
+ * The intent in the `showBanner` docstring — "docks directly above the primary
+ * action" — is met by anchoring on the *row*, not on the button inside it.
+ *
+ * @param {HTMLElement|null} startButton - the Start button that failed.
+ * @returns {HTMLElement|null} the footer row when there is one, else the button
+ *   itself (a banner in the wrong box still beats no banner), else null.
+ */
+export function bannerAnchorFor(startButton) {
+    if (!startButton) return null;
+    const bar = typeof startButton.closest === 'function'
+        ? startButton.closest('.home-cta-bar')
+        : null;
+    return bar || startButton;
 }

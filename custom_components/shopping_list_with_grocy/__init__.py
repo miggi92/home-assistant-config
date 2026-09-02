@@ -13,6 +13,8 @@ from .apis.shopping_list_with_grocy import ShoppingListWithGrocyApi
 from .const import DOMAIN
 from .coordinator import ShoppingListWithGrocyCoordinator
 from .frontend import async_setup_frontend, async_unload_frontend
+from .history_source import StockLogSource
+from .history_store import PurchaseHistoryStore
 from .schema import configuration_schema
 from .services import (
     async_remove_restart_repair_issue,
@@ -87,6 +89,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     coordinator = ShoppingListWithGrocyCoordinator(hass, session, entry, api)
 
     api.coordinator = coordinator
+
+    # The prediction engine needs a purchase history that outlives the
+    # recorder, so the integration keeps its own journal. A failure here must
+    # not stop the integration: the shopping list sync works without it.
+    history = PurchaseHistoryStore(hass)
+    try:
+        await history.async_load()
+        api.history = history
+        api.stock_log_source = StockLogSource(api, history)
+        hass.data[DOMAIN]["instances"]["history"] = history
+    except Exception:
+        LOGGER.warning(
+            "Could not load the purchase history, capture is disabled",
+            exc_info=True,
+        )
 
     hass.data[DOMAIN]["instances"]["coordinator"] = coordinator
     hass.data[DOMAIN]["instances"]["session"] = session
@@ -334,6 +351,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
 
     if unload_ok:
+        history = hass.data.get(DOMAIN, {}).get("instances", {}).get("history")
+        if history:
+            try:
+                await history.async_shutdown()
+            except Exception:
+                LOGGER.error("Failed to flush the purchase history", exc_info=True)
+
         hass.data.pop(DOMAIN, None)
         async_unload_services(hass)
 

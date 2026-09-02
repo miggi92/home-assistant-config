@@ -178,6 +178,10 @@
     "theYearWas": "Das Jahr war",
     "idleHaltBanner": "Spielpause — in dieser Runde hat niemand mitgespielt. Tippe auf Nächste Runde, um weiterzuspielen.",
     "funFact": "Fun Fact",
+    "collection": {
+      "title": "Deine Sammlung",
+      "count": "{count} behalten"
+    },
     "yourGuess": "Dein Tipp",
     "correctYear": "Richtiges Jahr",
     "accuracy": "Genauigkeit",
@@ -1071,7 +1075,9 @@
     "PROVIDER_NOT_SUPPORTED": "{speaker} kann {provider} nicht abspielen. Wechsle zu einem Music-Assistant-Lautsprecher.",
     "UNSUPPORTED_PLAYER": "{speaker} ist kein unterstützter Lautsprecher-Typ. Nutze Music Assistant.",
     "joinTimeout": "Verbindung fehlgeschlagen. Bitte versuche es erneut.",
-    "INVALID_REQUEST": "Diese Anfrage war ungültig. Prüfe deine Einrichtung und versuche es erneut."
+    "INVALID_REQUEST": "Diese Anfrage war ungültig. Prüfe deine Einrichtung und versuche es erneut.",
+    "NO_PLAYLISTS_SELECTED": "Wähle mindestens eine Playlist aus, bevor du ein Spiel startest.",
+    "NO_PLAYABLE_SONGS": "Keiner der Songs in den gewählten Playlists lässt sich mit diesem Musikdienst abspielen. Versuche eine andere Playlist oder einen anderen Dienst."
   },
   "highlights": {
     "highlight_exact_match": "{player} hat '{song}' genagelt — {year}!",
@@ -1230,7 +1236,8 @@
       "title": "Stimme dein Bibliotheks-Spiel ab",
       "sub": "Der Scan läuft im Hintergrund — du kannst das Setup währenddessen abschließen."
     },
-    "providerLibrarySub": "Deine persönliche Music-Assistant-Bibliothek"
+    "providerLibrarySub": "Deine persönliche Music-Assistant-Bibliothek",
+    "providerYtmusicFreeSub": "Braucht den ytmusic_free-Provider in Music Assistant"
   },
   "onboarding": {
     "stepLabel": "Schritt",

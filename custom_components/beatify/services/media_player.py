@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import hmac
 import logging
+import re
 import secrets
 from asyncio import timeout as async_timeout
 from datetime import datetime, timezone
@@ -136,6 +137,59 @@ MA_QUEUE_RESTORE_POLL = 0.25
 # acceptance is reserved for the post-timeout #345 branch, where it is logged.
 _TITLE_TOKEN_MIN_LEN = 3
 
+# Providers whose missing/failed URI may be retried by asking Music Assistant to
+# resolve the track from name + artist. `ma_library` has done this since the
+# Crate Digger work; `tidal` joins because its URIs can no longer be refreshed —
+# Odesli's public API, the only source they ever came from, was retired on
+# 2026-07-31 and now answers 401.
+_NAME_FALLBACK_PROVIDERS = frozenset({"ma_library", "tidal", "ytmusic_free"})
+
+# Words that mark a *different recording of the same song*. A name search is
+# free to return any of them, which is exactly the risk this fallback carries:
+# measured against ~2000 catalogue tracks with a known Deezer id, a plain
+# "artist title" search returned the wrong edition for 2 % of mainstream tracks
+# but 19 % of EDM ones ("Satisfaction" → "Satisfaction (Uk Radio Edit)",
+# "Scary Monsters and Nice Sprites" → "… (Zedd Remix)").
+#
+# `_titles_plausibly_match` does NOT catch these: it accepts a normalized
+# prefix, and the expected title is always a prefix of its own remix. That
+# leniency is deliberate and load-bearing for #1381 ("Das Modell" vs "The
+# Model"), so it stays — the stricter check below is applied only on the name
+# fallback path, where the extra risk actually lives.
+_EDITION_MARKERS = re.compile(
+    r"\b("
+    r"radio edit|extended|club mix|original mix|dub mix|"
+    r"remix|re-?edit|mixed|karaoke|instrumental|acapella|a cappella|"
+    r"acoustic|unplugged|live|demo|cover|tribute|playback|"
+    r"edit|mix|version"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _edition_markers(text: str) -> set[str]:
+    """Edition words present in a title, lower-cased."""
+    return {m.group(0).lower() for m in _EDITION_MARKERS.finditer(text or "")}
+
+
+def _edition_matches(expected_title: str, played_title: str) -> bool:
+    """False when the played title carries an edition the expected title lacks.
+
+    Deliberately one-directional. A catalogue entry named "Waves - Robin Schulz
+    Radio Edit" may legitimately play back as plain "Waves" (the provider drops
+    the suffix), so markers the *expected* side has are not required on the
+    played side. The reverse is the failure we are guarding against: plain
+    "Burn" must not be satisfied by "Burn (Aybsent Mynded Remix)".
+
+    This matters more for Beatify than it would for a music player. The game
+    asks players to guess the release *year*; a 2014 remix standing in for a
+    1998 original does not merely sound different, it makes the round's correct
+    answer wrong — and nothing on screen reveals that.
+    """
+    if not expected_title or not played_title:
+        return True
+    return not (_edition_markers(played_title) - _edition_markers(expected_title))
+
 
 def _normalize_for_match(text: str) -> str:
     """Lower-case and strip non-alphanumeric to ASCII-ish tokens for matching."""
@@ -234,6 +288,13 @@ _PROVIDER_URI_FIELDS: dict[str, tuple[str, ...]] = {
     # Amazon Music uses Alexa text search — no URI fields; playback via
     # _play_via_alexa() with content_type="AMAZON_MUSIC".
     "amazon_music": (),
+    # #2426: the ytmusic_free URI is DERIVED from uri_youtube_music by
+    # get_song_uri(), so there is no catalogue field to walk. The empty tuple
+    # is deliberate rather than an omission: a missing key would log the
+    # "unknown provider" warning below and imply a mapping bug, while an empty
+    # one says the provider has no stored fields and lets _resolved_uri — which
+    # already holds the derived URI — do the work.
+    "ytmusic_free": (),
 }
 
 
@@ -949,7 +1010,18 @@ class MediaPlayerService:
         self._stopped_for_cascade = False
 
         candidates = self._get_ma_uri_candidates(song)
-        if not candidates:
+        expected_title = song.get("title") or ""
+        expected_artist = song.get("artist") or ""
+
+        # The name fallback below needs both fields; without them there is
+        # nothing to search for and nothing to verify the result against.
+        name_fallback = bool(
+            self._provider in _NAME_FALLBACK_PROVIDERS
+            and expected_title
+            and expected_artist
+        )
+
+        if not candidates and not name_fallback:
             # #1276: surface the provider so a missing-URI miss is debuggable
             # (which provider was selected vs. which fields the song carries).
             _LOGGER.warning(
@@ -961,8 +1033,6 @@ class MediaPlayerService:
             self.last_failure_reason = "unavailable"
             return False
 
-        expected_title = song.get("title") or ""
-        expected_artist = song.get("artist") or ""
         if not expected_title:
             _LOGGER.warning(
                 "MA playback: no expected title — skipping title verification"
@@ -995,13 +1065,19 @@ class MediaPlayerService:
                 self.last_failure_reason = None
                 return True
 
-        # Library provider: the stored URI is normally exact, but the item may
-        # have moved/changed since the pool was built. Before giving up, let MA
-        # resolve by name+artist -- the confirmation machinery in _try_ma_play
-        # (expected-title matching) still guards against a wrong-track match.
-        if self._provider == "ma_library" and expected_title and expected_artist:
+        # Last resort: let MA resolve the track from name + artist.
+        #
+        # `ma_library`: the stored URI is normally exact, but the item may have
+        # moved or changed since the pool was built.
+        # `tidal`: the URI may be absent entirely and can no longer be obtained
+        # — Odesli, the only source Beatify ever had for Tidal ids, retired its
+        # public API on 2026-07-31. This path is a safety net *behind* the
+        # stored URIs, never a replacement for them: the loop above has already
+        # run, so a song that carries a working `uri_tidal` never reaches here.
+        if name_fallback:
             _LOGGER.info(
-                "MA library fallback: resolving by name -- %s - %s",
+                "MA name fallback (%s): resolving by name -- %s - %s",
+                self._provider,
                 expected_artist,
                 expected_title,
             )
@@ -1011,6 +1087,24 @@ class MediaPlayerService:
                 expected_artist,
                 artist_filter=expected_artist,
             ):
+                # A name search can land on a remix, a live take or a karaoke
+                # version of the right song. `_try_ma_play` will happily accept
+                # those (its title gate is a prefix/token check by design), so
+                # the edition is checked here instead.
+                state = self._safe_state()
+                played_title = (
+                    state.attributes.get("media_title", "") if state else ""
+                ) or ""
+                if not _edition_matches(expected_title, played_title):
+                    _LOGGER.warning(
+                        "MA name fallback: rejecting wrong edition — wanted %r, "
+                        "got %r (%s)",
+                        expected_title,
+                        played_title,
+                        expected_artist,
+                    )
+                    self.last_failure_reason = "wrong_track"
+                    return False
                 self.last_failure_reason = None
                 return True
 
@@ -1162,9 +1256,35 @@ class MediaPlayerService:
                 if not position_fresh:
                     return False
 
+                # #2333: the track has to have actually changed. The
+                # docstring above promised this of BOTH paths, and Path 2
+                # honoured it while Path 1 did not — it accepted a substring
+                # match against whatever was playing, including the song from
+                # the previous round still running.
+                #
+                # `position_fresh` above is no help: a track that simply keeps
+                # playing keeps advancing its own position.
+                #
+                # The failure it allowed: round N plays "Stay With Me", round
+                # N+1 draws "Stay" whose URI is missing from the household's
+                # storefront, MA never switches, and `"stay" in "stay with
+                # me"` confirms success within a second. The room then guesses
+                # a song they already heard.
+                #
+                # Substring containment makes that reachable well beyond one
+                # example — covers, "One", "Hurt", remaster suffixes.
+                #
+                # An empty `title_before` (nothing was playing) still passes,
+                # which is the cold-start case and genuinely a change.
+                title_changed = current_title != title_before
+
                 # Path 1: exact-ish title match (substring) — strongest signal,
                 # the only path strong enough to learn a preferred URI field.
-                if expected_lower and expected_lower in current_title.lower():
+                if (
+                    title_changed
+                    and expected_lower
+                    and expected_lower in current_title.lower()
+                ):
                     self._last_confirm_path = 1
                     return True
                 # If no expected title was supplied, position-fresh alone is
@@ -1177,7 +1297,7 @@ class MediaPlayerService:
                 # title is plausibly our track (shared token / prefix) OR the
                 # artist matches. A bare "any different title" no longer
                 # qualifies — that is the prior-queue auto-advance trap.
-                if current_title and current_title != title_before:
+                if current_title and title_changed:
                     if _titles_plausibly_match(
                         expected_title, current_title
                     ) or _artist_matches(expected_artist, current_artist):

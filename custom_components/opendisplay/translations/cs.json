@@ -1,0 +1,477 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Zařízení je již nakonfigurováno",
+      "already_in_progress": "Konfigurační proces již probíhá",
+      "cannot_connect": "Nepodařilo se připojit",
+      "no_devices_found": "Na síti nebyla nalezena žádná zařízení",
+      "no_mac": "Nalezené zařízení neoznamovalo MAC adresu a nelze jej nastavit.",
+      "reauth_successful": "Znovuověření bylo úspěšné",
+      "unknown": "Neočekávaná chyba"
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit",
+      "invalid_auth": "Neplatná autentizace",
+      "invalid_key_format": "Šifrovací klíč musí mít přesně 32 hexadecimálních znaků (0-9, a-f).",
+      "unknown": "Neočekávaná chyba"
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "Nastavit {name}?"
+      },
+      "encryption_key": {
+        "data": {
+          "encryption_key": "Šifrovací klíč"
+        },
+        "data_description": {
+          "encryption_key": "Zadat 32znakový hexadecimální AES-128 šifrovací klíč pro toto zařízení."
+        },
+        "description": "{name} vyžaduje šifrovací klíč pro připojení.",
+        "title": "Vyžadováno šifrování"
+      },
+      "reauth_confirm": {
+        "data": {
+          "encryption_key": "Šifrovací klíč"
+        },
+        "data_description": {
+          "encryption_key": "Zadat 32znakový hexadecimální AES-128 šifrovací klíč pro toto zařízení."
+        },
+        "description": "Autentizace pro {name} selhala. Zadat správný šifrovací klíč, nebo ponechat prázdné, pokud bylo šifrování na zařízení vypnuto.",
+        "title": "Vyžadováno znovuověření"
+      },
+      "user": {
+        "data": {
+          "address": "Zařízení"
+        },
+        "data_description": {
+          "address": "Vybrat Bluetooth zařízení k nastavení."
+        },
+        "description": "Vybrat zařízení k nastavení"
+      },
+      "zeroconf_confirm": {
+        "description": "Nastavit {name} nalezené přes WiFi?",
+        "title": "Nalezeno zařízení OpenDisplay"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "name": "Čeká na aktualizaci"
+      },
+      "wifi": {
+        "name": "WiFi"
+      }
+    },
+    "event": {
+      "button": {
+        "name": "Tlačítko {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "button_down": "Tlačítko stisknuto",
+              "button_up": "Tlačítko uvolněno"
+            }
+          }
+        }
+      },
+      "touch": {
+        "name": "Dotyk {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "touch_down": "Dotyk zahájen",
+              "touch_move": "Pohyb dotyku",
+              "touch_up": "Dotyk ukončen"
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "content": {
+        "name": "Obsah displeje"
+      }
+    },
+    "sensor": {
+      "battery_voltage": {
+        "name": "Napětí baterie"
+      },
+      "chip_temperature": {
+        "name": "Teplota čipu"
+      },
+      "last_seen": {
+        "name": "Naposledy viděno"
+      },
+      "rssi": {
+        "name": "Síla signálu (RSSI)"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "authentication_error": {
+      "message": "Autentizace selhala. Aktualizovat šifrovací klíč."
+    },
+    "device_not_found": {
+      "message": "Bluetooth zařízení s adresou `{address}` nebylo nalezeno."
+    },
+    "device_sleeping": {
+      "message": "Zařízení `{device_id}` je v režimu spánku a nelze jej okamžitě kontaktovat. Probudit a zkusit znovu."
+    },
+    "device_sleeping_ota": {
+      "message": "Zařízení je v režimu spánku a nelze jej nyní aktualizovat. Probudit (stisknout tlačítko nebo počkat na další plánovanou kontrolu) a znovu spustit aktualizaci."
+    },
+    "invalid_device_id": {
+      "message": "Zařízení `{device_id}` není platné OpenDisplay zařízení."
+    },
+    "invalid_melody": {
+      "message": "Neplatná melodie: {error}"
+    },
+    "media_download_error": {
+      "message": "Nepodařilo se stáhnout média: {error}"
+    },
+    "mime_type_not_applicable": {
+      "message": "Pole mime_type platí pouze pro MIME záznamy. Nastavit record_type na mime, nebo mime_type vynechat."
+    },
+    "multiple_errors": {
+      "message": "Došlo k chybám u jednoho nebo více zařízení:\n{errors}"
+    },
+    "nfc_content_empty": {
+      "message": "Obsah NFC nesmí být prázdný."
+    },
+    "nfc_content_too_long": {
+      "message": "Obsah NFC je příliš velký ({size} bajtů). Maximální velikost je {max} bajtů."
+    },
+    "nfc_mime_type_invalid": {
+      "message": "MIME typ `{mime_type}` je neplatný. Musí mít 1-255 bajtů při kódování UTF-8."
+    },
+    "nfc_not_supported": {
+      "message": "Zařízení `{device_id}` neodpovědělo na zápis NFC. Je možné, že jeho firmware nepodporuje zápis NFC tagů; zkusit aktualizovat na nejnovější firmware."
+    },
+    "nfc_write_failed": {
+      "message": "Nepodařilo se zapsat NFC tag: {error}"
+    },
+    "no_buzzers": {
+      "message": "Zařízení `{device_id}` nemá nakonfigurovaný bzučák."
+    },
+    "no_leds": {
+      "message": "Zařízení `{device_id}` nemá nakonfigurované LED diody."
+    },
+    "no_nfc": {
+      "message": "Zařízení `{device_id}` nemá nakonfigurovaný NFC čip."
+    },
+    "no_targets_specified": {
+      "message": "Nebyly specifikovány cílové zařízení."
+    },
+    "upload_error": {
+      "message": "Nepodařilo se nahrát na displej: {error}"
+    },
+    "url_not_allowed": {
+      "message": "URL `{url}` není povolena. Přidejte ji do `allowlist_external_urls` v configuration.yaml."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "blocks_per_ack": "Bloky odeslané na jedno potvrzení",
+          "max_queue_size": "Maximální počet snímků v přenosu",
+          "missed_cycles": "Počet vynechaných probuzení před označením za nedostupné",
+          "probe_before_queue": "Zkusit připojení před zařazením do fronty",
+          "queue_timeout_hours": "Časový limit obsahu ve frontě (hodiny)",
+          "sleep_mode": "Způsob hlubokého spánku"
+        },
+        "data_description": {
+          "blocks_per_ack": "Kolik obrazových snímků zařízení přijme, než pošle jedno potvrzení během rychlého (posuvného) přenosu. Vyšší hodnoty snižují počet zpětných cest; efektivní hodnota je omezena zařízením a maximálním počtem snímků v přenosu.",
+          "max_queue_size": "Maximální počet obrazových snímků současně v přenosu během rychlého (posuvného) uploadu. Vyšší hodnoty zvyšují propustnost na pomalých (proxy) spojích. Nastavit na 1 pro vypnutí rychlého přenosu a použití klasického uploadu po jednom snímku.",
+          "missed_cycles": "Kolik očekávaných probuzení může zařízení vynechat, než jsou jeho entity označeny jako nedostupné.",
+          "probe_before_queue": "Před zařazením obrázku do fronty pro spící zařízení provést rychlý pokus o připojení, pokud je zařízení ve skutečnosti vzhůru (vynechané reklamy, stále zapnuté rádio). Přidává maximálně několik sekund, pokud je zařízení opravdu v režimu spánku.",
+          "queue_timeout_hours": "Jak dlouho obsah ve frontě pro spící zařízení čeká na probuzení, než vyprší.",
+          "sleep_mode": "Automaticky sleduje vlastní napájecí konfiguraci zařízení (bateriové napájení s povoleným hlubokým spánkem). Vynutit zapnutí nebo vypnutí pro přepsání."
+        }
+      }
+    }
+  },
+  "selector": {
+    "dither_mode": {
+      "options": {
+        "atkinson": "Atkinson",
+        "burkes": "Burkes",
+        "floyd_steinberg": "Floyd-Steinberg",
+        "jarvis_judice_ninke": "Jarvis, Judice & Ninke",
+        "none": "Žádný",
+        "ordered": "Řazený",
+        "sierra": "Sierra",
+        "sierra_lite": "Sierra Lite",
+        "stucki": "Stucki"
+      }
+    },
+    "fit_mode": {
+      "options": {
+        "contain": "Obsahovat",
+        "cover": "Zakrytí",
+        "crop": "Oříznout",
+        "stretch": "Roztáhnout"
+      }
+    },
+    "nfc_record_type": {
+      "options": {
+        "ha_tag": "Home Assistant tag",
+        "mime": "MIME data (např. vCard)",
+        "text": "Text",
+        "url": "URL"
+      }
+    },
+    "refresh_mode": {
+      "options": {
+        "fast": "Rychlý",
+        "full": "Úplný",
+        "partial": "Částečný"
+      }
+    },
+    "sleep_mode": {
+      "options": {
+        "auto": "Automatický (následuje zařízení)",
+        "off": "Vynutit vypnutí",
+        "on": "Vynutit zapnutí"
+      }
+    }
+  },
+  "services": {
+    "activate_buzzer": {
+      "description": "Spustí tón bzučáku na zařízení OpenDisplay. Pro melodie s více tóny použít Přehrát melodii bzučáku.",
+      "fields": {
+        "device_id": {
+          "description": "Zařízení OpenDisplay.",
+          "name": "Zařízení"
+        },
+        "duration_ms": {
+          "description": "Doba trvání tónu v milisekundách (5-1275).",
+          "name": "Doba trvání"
+        },
+        "frequency_hz": {
+          "description": "Frekvence tónu v Hz (0 = ticho). Přehrává se jako nejbližší čtvrttón; frekvence mimo rozsah bzučáku jsou posunuty o oktávy, aby se vešly.",
+          "name": "Frekvence"
+        },
+        "instance": {
+          "description": "Index instance bzučáku (od 0).",
+          "name": "Instance bzučáku"
+        },
+        "repeats": {
+          "description": "Počet opakování tónu (1-255).",
+          "name": "Opakování"
+        }
+      },
+      "name": "Aktivovat bzučák"
+    },
+    "activate_led": {
+      "description": "Spustí vzor blikání LED na zařízení OpenDisplay.",
+      "fields": {
+        "brightness": {
+          "description": "Jas LED (1-16).",
+          "name": "Jas"
+        },
+        "color1": {
+          "description": "Barva prvního kroku.",
+          "name": "Barva 1"
+        },
+        "color2": {
+          "description": "Barva druhého kroku (vynechat nebo nastavit počet bliknutí na 0 pro přeskočení).",
+          "name": "Barva 2"
+        },
+        "color3": {
+          "description": "Barva třetího kroku (vynechat nebo nastavit počet bliknutí na 0 pro přeskočení).",
+          "name": "Barva 3"
+        },
+        "device_id": {
+          "description": "Zařízení OpenDisplay.",
+          "name": "Zařízení"
+        },
+        "flash_count1": {
+          "description": "Počet bliknutí v prvním kroku (0 přeskočí tento krok).",
+          "name": "Počet bliknutí 1"
+        },
+        "flash_count2": {
+          "description": "Počet bliknutí ve druhém kroku (0 přeskočí tento krok).",
+          "name": "Počet bliknutí 2"
+        },
+        "flash_count3": {
+          "description": "Počet bliknutí ve třetím kroku (0 přeskočí tento krok).",
+          "name": "Počet bliknutí 3"
+        },
+        "instance": {
+          "description": "Index instance LED (od 0).",
+          "name": "Instance LED"
+        },
+        "inter_delay1": {
+          "description": "Prodleva po prvním kroku před dalším.",
+          "name": "Prodleva kroku 1"
+        },
+        "inter_delay2": {
+          "description": "Prodleva po druhém kroku před dalším.",
+          "name": "Prodleva kroku 2"
+        },
+        "inter_delay3": {
+          "description": "Prodleva po třetím kroku před opakováním.",
+          "name": "Prodleva kroku 3"
+        },
+        "loop_delay1": {
+          "description": "Prodleva mezi bliknutími v prvním kroku.",
+          "name": "Prodleva bliknutí 1"
+        },
+        "loop_delay2": {
+          "description": "Prodleva mezi bliknutími ve druhém kroku.",
+          "name": "Prodleva bliknutí 2"
+        },
+        "loop_delay3": {
+          "description": "Prodleva mezi bliknutími ve třetím kroku.",
+          "name": "Prodleva bliknutí 3"
+        },
+        "repeats": {
+          "description": "Počet opakování celého vzoru (0 = nekonečno).",
+          "name": "Opakování"
+        }
+      },
+      "name": "Aktivovat LED"
+    },
+    "drawcustom": {
+      "description": "Nakreslí vlastní obrázek na jedno nebo více zařízení OpenDisplay.",
+      "fields": {
+        "background": {
+          "description": "Barva pozadí.",
+          "name": "Barva pozadí"
+        },
+        "dither": {
+          "description": "Algoritmus ditheringu pro převod barevné palety.",
+          "name": "Režim ditheringu"
+        },
+        "dry-run": {
+          "description": "Vygenerovat obrázek bez nahrání do zařízení.",
+          "name": "Zkušební běh"
+        },
+        "measured_palette": {
+          "description": "Použít naměřenou barevnou paletu panelu, pokud je dostupná. Vypnout pro dithering proti teoretické paletě. Bez efektu na panelech bez naměřených dat.",
+          "name": "Použít naměřenou paletu"
+        },
+        "payload": {
+          "description": "Pole kreslících prvků.",
+          "name": "Obsah"
+        },
+        "refresh_type": {
+          "description": "Režim obnovy displeje. Částečná aktualizace mění jen změněnou oblast bez blikání; automaticky přepne na úplnou obnovu, pokud není možná.",
+          "name": "Typ obnovy"
+        },
+        "rotate": {
+          "description": "Otočení po směru hodinových ručiček ve stupních.",
+          "name": "Rotace"
+        }
+      },
+      "name": "Nakreslit vlastní obrázek"
+    },
+    "play_melody": {
+      "description": "Přehrává melodii s více tóny na bzučáku zařízení OpenDisplay.",
+      "fields": {
+        "default_length": {
+          "description": "Délka noty jako zlomek (1/2/4/8/16/32) použitá při aktuálním tempu pro noty bez označení délky; přepisuje výchozí délku noty, pokud je nastavena.",
+          "name": "Výchozí délka"
+        },
+        "default_note_ms": {
+          "description": "Délka v milisekundách pro noty bez označení délky, pokud není nastavena výchozí délka (5-1275).",
+          "name": "Výchozí délka noty"
+        },
+        "device_id": {
+          "description": "Zařízení OpenDisplay.",
+          "name": "Zařízení"
+        },
+        "instance": {
+          "description": "Index instance bzučáku (počítáno od 0).",
+          "name": "Instance bzučáku"
+        },
+        "notes": {
+          "description": "Kompaktní melodie: tokeny oddělené mezerami nebo čárkami, každý `pitch[duration]`. Výška tónu je název noty (`A4`, `C#5`, povoleny flaty a čtvrttóny jako `A4+`), `R` pro pauzu, nebo surový index 0-255. Délka je volitelná: `:200` pro absolutní milisekundy, nebo `/4` (čtvrťová), `/4.` (tečkovaná), `/8t` (triplet) pro tempo-relativní délky; pokud chybí, použije se výchozí délka nebo výchozí délka noty.",
+          "name": "Noty"
+        },
+        "repeats": {
+          "description": "Počet opakování celé melodie (1-255).",
+          "name": "Opakování"
+        },
+        "tempo": {
+          "description": "Úderů za minutu; ovlivňuje pouze délky `/fraction` (40-400).",
+          "name": "Tempo"
+        }
+      },
+      "name": "Přehrát melodii bzučáku"
+    },
+    "upload_image": {
+      "description": "Nahraje obrázek do zařízení OpenDisplay.",
+      "fields": {
+        "device_id": {
+          "description": "Zařízení OpenDisplay, do kterého se obrázek nahraje.",
+          "name": "Zařízení"
+        },
+        "dither_mode": {
+          "description": "Algoritmus ditheringu pro převod obrázku na barevnou paletu displeje.",
+          "name": "Režim ditheringu"
+        },
+        "fit_mode": {
+          "description": "Způsob přizpůsobení obrázku rozměrům displeje.",
+          "name": "Režim přizpůsobení"
+        },
+        "image": {
+          "description": "Obrázek k nahrání na displej. Vybrat mediální položku nebo zadat přímou URL obrázku (URL musí být přidána do allowlist_external_urls).",
+          "name": "Obrázek"
+        },
+        "measured_palette": {
+          "description": "Použít naměřenou barevnou paletu panelu, pokud je k dispozici. Vypnout pro dithering podle teoretické barevné schématu. Bez vlivu na panely bez naměřených dat.",
+          "name": "Použít naměřenou paletu"
+        },
+        "refresh_mode": {
+          "description": "Režim obnovy displeje. Plná obnova odstraní duchy, ale je pomalejší. Rychlá obnova není podporována na všech displejích. Částečná aktualizace mění pouze změněnou oblast bez blikání (B/W panely s částečnou podporou; automaticky přepne na plnou obnovu, pokud není možná).",
+          "name": "Režim obnovy"
+        },
+        "rotation": {
+          "description": "Úhel otočení ve stupních, aplikovaný po směru hodinových ručiček.",
+          "name": "Otočení"
+        },
+        "tone_compression": {
+          "description": "Síla komprese dynamického rozsahu. Nechat prázdné pro automatické nastavení.",
+          "name": "Komprese tónu"
+        }
+      },
+      "name": "Nahrát obrázek",
+      "sections": {
+        "additional_fields": {
+          "name": "Další možnosti"
+        }
+      }
+    },
+    "write_nfc": {
+      "description": "Zapíše NDEF záznam (URL, text nebo MIME data jako vCard) do NFC čipu zařízení OpenDisplay.",
+      "fields": {
+        "content": {
+          "description": "Data k zápisu. Pro URL záznam URL; pro textový záznam text; pro MIME záznam surová data; pro Home Assistant tag ID tagu. Omezeno na 512 bajtů při kódování UTF-8.",
+          "name": "Obsah"
+        },
+        "device_id": {
+          "description": "Zařízení OpenDisplay.",
+          "name": "Zařízení"
+        },
+        "mime_type": {
+          "description": "MIME typ obsahu. Platí pouze pro MIME záznamy; výchozí hodnota je text/vcard.",
+          "name": "MIME typ"
+        },
+        "record_type": {
+          "description": "Typ NDEF záznamu k zápisu. Home Assistant tag zapíše URL tagu Home Assistant; jeho naskenování v doprovodné aplikaci spustí tag_scanned a automaticky zaregistruje tag při prvním skenu.",
+          "name": "Typ záznamu"
+        }
+      },
+      "name": "Zapsat NFC tag"
+    }
+  }
+}

@@ -233,6 +233,7 @@ class ConnectedFordPassVehicle:
         self.coordinator = coordinator
         # our main data container that holds all data that have been fetched from the vehicle
         self._data_container = {}
+        self._data_container["vin"] = self.vin
 
         self._vehicle_options_init_complete = False
         self._cached_vehicles_data : dict|list = None
@@ -271,7 +272,7 @@ class ConnectedFordPassVehicle:
             self.api_response_data[a_type] = []
 
         data_list = self.api_response_data.get(a_type)
-        if len(data_list) > (20 if a_type == "ws" else 5):
+        if len(data_list) > (29 if a_type == "ws" else 4):
             data_list.pop(0)
 
         req_txt = f"{response.request_info.url}" if response is not None and hasattr(response, "request_info") else ("WEBSOCKET" if a_type == "ws" else "UNKNOWN")
@@ -307,6 +308,7 @@ class ConnectedFordPassVehicle:
         self._cached_vehicles_data = None
         self._cached_rcc_data = {}
         self._data_container = {}
+        self._data_container["vin"] = self.vin
 
     async def __check_for_closed_session(self, e:BaseException):
         if isinstance(e, RuntimeError) and self.session is not None and self.session.closed:

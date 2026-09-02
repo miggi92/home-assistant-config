@@ -20,6 +20,7 @@ from custom_components.beatify.const import (
     PROVIDER_DEEZER,
     PROVIDER_MA_LIBRARY,
     PROVIDER_SPOTIFY,
+    PROVIDER_YTMUSIC_FREE,
     PROVIDER_TIDAL,
     PROVIDER_YOUTUBE_MUSIC,
     URI_PATTERN_APPLE_MUSIC,
@@ -171,12 +172,29 @@ class PlaylistManager:
         self._max_rounds = max(max_rounds, MIN_ROUNDS) if max_rounds else 0
         if self._max_rounds and len(self._songs) > self._max_rounds:
             self._songs = random.sample(self._songs, self._max_rounds)
+            # #2418: regroup the buckets from the sampled pool. Until this line
+            # existed the cap applied to `self._songs` alone, while
+            # `self._buckets` — assigned above, before the sample — kept every
+            # song of every selected playlist. get_next_song() reads the pool
+            # only in the single-playlist case; the balanced path taken for two
+            # or more playlists reads the buckets, so the cap did nothing there.
+            # Measured before the fix: two playlists of 150 with a cap of 10
+            # served all 300, while get_total_count() went on reporting 10.
+            #
+            # Regrouped rather than trimmed separately, so the pool stays the
+            # single source of truth and the two paths cannot drift apart again.
+            self._buckets = {}
+            for song in self._songs:
+                source = song.get("_playlist_source", "__default__")
+                self._buckets.setdefault(source, []).append(song)
             _LOGGER.info(
                 "Round cap active: %d of %d playable songs will be played (#1475)",
                 self._max_rounds,
                 total_count,
             )
-        self._multi_playlist = len(buckets) > 1
+        # Derived from the buckets that are actually played from — after the
+        # regroup above, not from the pre-cap grouping (#2418).
+        self._multi_playlist = len(self._buckets) > 1
 
         deduped = sum(len(v) for v in buckets.values())
         _LOGGER.info(
@@ -356,6 +374,27 @@ class PlaylistManager:
 
         """
         return len(self._songs)
+
+    def get_year_span(self) -> tuple[int, int] | None:
+        """Earliest and latest ``year`` across this manager's songs (#2337).
+
+        The player's year slider was markup with ``max="2025"`` in it while
+        46 shipped songs carried ``year: 2026`` — the correct answer could
+        not be entered at all. The schema had already learned this lesson:
+        :func:`_max_year` is dynamic precisely so a hardcoded bound cannot
+        silently reject newer songs (#706). The UI kept a static one.
+
+        Returns ``None`` when no song carries a usable year, so the caller
+        keeps its own defaults rather than inventing a range from nothing.
+        """
+        years = [
+            s["year"]
+            for s in self._songs
+            if isinstance(s.get("year"), int) and MIN_YEAR <= s["year"] <= _max_year()
+        ]
+        if not years:
+            return None
+        return min(years), max(years)
 
 
 # Validation constants
@@ -744,6 +783,21 @@ def summarize_rejected_songs(
     return "; ".join(parts)
 
 
+def _ytmusic_free_uri(youtube_music_uri: str | None) -> str | None:
+    """Build a `ytmusic_free://track/<video id>` URI from a YouTube Music link.
+
+    Returns ``None`` when there is no link or the link carries no ``v=``
+    parameter, so a song without YouTube data is simply not playable on this
+    provider rather than producing a malformed URI that fails at the speaker.
+    """
+    if not youtube_music_uri:
+        return None
+    match = re.search(r"[?&]v=([a-zA-Z0-9_-]{11})(?:&|$)", youtube_music_uri)
+    if not match:
+        return None
+    return f"ytmusic_free://track/{match.group(1)}"
+
+
 def get_song_uri(
     song: dict[str, Any],
     provider: str,
@@ -790,6 +844,18 @@ def get_song_uri(
     if provider == PROVIDER_YOUTUBE_MUSIC:
         # For YouTube Music, only use uri_youtube_music
         return song.get("uri_youtube_music") or None
+    if provider == PROVIDER_YTMUSIC_FREE:
+        # #2426: derived, not stored. The third-party `ytmusic_free` provider
+        # keys tracks by the YouTube video id, which is exactly what sits in
+        # `uri_youtube_music` — so the URI is built here instead of adding a
+        # second catalogue field holding a copy of the same id that could then
+        # drift out of step with it.
+        #
+        # Deriving in this one function is enough for the whole stack:
+        # `filter_songs_for_provider` calls it, `PlaylistManager` caches the
+        # result as `_precomputed_uri`, and `_get_ma_uri_candidates` always
+        # tries `_resolved_uri` first — so nothing downstream needs a branch.
+        return _ytmusic_free_uri(song.get("uri_youtube_music"))
     if provider == PROVIDER_TIDAL:
         # For Tidal, only use uri_tidal
         return song.get("uri_tidal") or None

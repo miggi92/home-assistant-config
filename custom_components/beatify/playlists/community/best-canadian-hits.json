@@ -1,6 +1,6 @@
 {
   "name": "Best Canadian Hits: Top 100 🇨🇦",
-  "version": "0.17",
+  "version": "0.18",
   "tags": [
     "canadian",
     "canada",
@@ -597,15 +597,15 @@
       "year": 1987,
       "isrc": "CAW111200070",
       "uri": "spotify:track:13lYKkKAYEVCkGAyrFGZjF",
-      "uri_apple_music": "applemusic://track/1763040701",
+      "uri_apple_music": "applemusic://track/1793772462",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/566993416",
-        "de": "applemusic://track/566993416",
+        "us": "applemusic://track/1793772462",
+        "de": "applemusic://track/1793772462",
         "gb": "applemusic://track/566993416",
-        "fr": "applemusic://track/566993416",
-        "es": "applemusic://track/566993416",
-        "nl": "applemusic://track/566993416",
-        "it": "applemusic://track/566993416"
+        "fr": "applemusic://track/1793772462",
+        "es": "applemusic://track/1793772462",
+        "nl": "applemusic://track/1793772462",
+        "it": "applemusic://track/1793772462"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=hkMaBy6EX0w",
       "uri_tidal": "tidal://track/19905016",
@@ -873,7 +873,7 @@
         "nl": "applemusic://track/6763242221",
         "it": "applemusic://track/6763242221"
       },
-      "uri_youtube_music": "https://music.youtube.com/watch?v=egMWlD3fLJ8",
+      "uri_youtube_music": "https://music.youtube.com/watch?v=igvP806798U",
       "uri_tidal": "tidal://track/77611624",
       "uri_deezer": "deezer://track/540202122",
       "alt_artists": [

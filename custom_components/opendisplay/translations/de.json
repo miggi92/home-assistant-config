@@ -1,0 +1,477 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert",
+      "already_in_progress": "Konfigurationsvorgang läuft bereits",
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "no_devices_found": "Keine Geräte im Netzwerk gefunden",
+      "no_mac": "Das gefundene Gerät hat keine MAC-Adresse gesendet und kann nicht eingerichtet werden.",
+      "reauth_successful": "Re-Authentifizierung war erfolgreich",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_auth": "Ungültige Authentifizierung",
+      "invalid_key_format": "Der Verschlüsselungsschlüssel muss genau 32 hexadezimale Zeichen (0-9, a-f) enthalten.",
+      "unknown": "Unerwarteter Fehler"
+    },
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "{name} einrichten?"
+      },
+      "encryption_key": {
+        "data": {
+          "encryption_key": "Verschlüsselungsschlüssel"
+        },
+        "data_description": {
+          "encryption_key": "Den 32-stelligen hexadezimalen AES-128-Verschlüsselungsschlüssel für dieses Gerät eingeben."
+        },
+        "description": "{name} benötigt einen Verschlüsselungsschlüssel zur Verbindung.",
+        "title": "Verschlüsselung erforderlich"
+      },
+      "reauth_confirm": {
+        "data": {
+          "encryption_key": "Verschlüsselungsschlüssel"
+        },
+        "data_description": {
+          "encryption_key": "Den 32-stelligen hexadezimalen AES-128-Verschlüsselungsschlüssel für dieses Gerät eingeben."
+        },
+        "description": "Authentifizierung für {name} fehlgeschlagen. Den korrekten Verschlüsselungsschlüssel eingeben oder leer lassen, wenn die Verschlüsselung auf dem Gerät deaktiviert wurde.",
+        "title": "Re-Authentifizierung erforderlich"
+      },
+      "user": {
+        "data": {
+          "address": "Gerät"
+        },
+        "data_description": {
+          "address": "Bluetooth-Gerät zur Einrichtung auswählen."
+        },
+        "description": "Gerät zur Einrichtung auswählen"
+      },
+      "zeroconf_confirm": {
+        "description": "OpenDisplay {name} über WiFi einrichten?",
+        "title": "OpenDisplay-Gerät gefunden"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "update_pending": {
+        "name": "Update ausstehend"
+      },
+      "wifi": {
+        "name": "WiFi"
+      }
+    },
+    "event": {
+      "button": {
+        "name": "Taste {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "button_down": "Taste gedrückt",
+              "button_up": "Taste losgelassen"
+            }
+          }
+        }
+      },
+      "touch": {
+        "name": "Berührung {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "touch_down": "Berührung gedrückt",
+              "touch_move": "Berührung bewegt",
+              "touch_up": "Berührung losgelassen"
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "content": {
+        "name": "Anzeigeinhalt"
+      }
+    },
+    "sensor": {
+      "battery_voltage": {
+        "name": "Batteriespannung"
+      },
+      "chip_temperature": {
+        "name": "Chip-Temperatur"
+      },
+      "last_seen": {
+        "name": "Zuletzt gesehen"
+      },
+      "rssi": {
+        "name": "Signalstärke (RSSI)"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "exceptions": {
+    "authentication_error": {
+      "message": "Authentifizierung fehlgeschlagen. Verschlüsselungsschlüssel aktualisieren."
+    },
+    "device_not_found": {
+      "message": "Bluetooth-Gerät mit Adresse `{address}` konnte nicht gefunden werden."
+    },
+    "device_sleeping": {
+      "message": "Gerät `{device_id}` schläft und ist nicht sofort erreichbar. Aufwecken und erneut versuchen."
+    },
+    "device_sleeping_ota": {
+      "message": "Das Gerät schläft und kann derzeit nicht aktualisiert werden. Aufwecken (Taste drücken oder auf nächsten geplanten Check-in warten) und Update erneut starten."
+    },
+    "invalid_device_id": {
+      "message": "Gerät `{device_id}` ist kein gültiges OpenDisplay-Gerät."
+    },
+    "invalid_melody": {
+      "message": "Ungültige Melodie: {error}"
+    },
+    "media_download_error": {
+      "message": "Medien konnten nicht heruntergeladen werden: {error}"
+    },
+    "mime_type_not_applicable": {
+      "message": "Das Feld mime_type gilt nur für MIME-Datensätze. record_type auf mime setzen oder mime_type weglassen."
+    },
+    "multiple_errors": {
+      "message": "Fehler bei einem oder mehreren Geräten:\n{errors}"
+    },
+    "nfc_content_empty": {
+      "message": "NFC-Inhalt darf nicht leer sein."
+    },
+    "nfc_content_too_long": {
+      "message": "NFC-Inhalt ist zu groß ({size} Bytes). Maximal sind {max} Bytes erlaubt."
+    },
+    "nfc_mime_type_invalid": {
+      "message": "MIME-Typ `{mime_type}` ist ungültig. Er muss 1-255 Bytes lang sein, wenn UTF-8-kodiert."
+    },
+    "nfc_not_supported": {
+      "message": "Gerät `{device_id}` hat nicht auf den NFC-Schreibvorgang reagiert. Die Firmware unterstützt möglicherweise kein Schreiben von NFC-Tags; auf die neueste Firmware aktualisieren."
+    },
+    "nfc_write_failed": {
+      "message": "NFC-Tag konnte nicht beschrieben werden: {error}"
+    },
+    "no_buzzers": {
+      "message": "Gerät `{device_id}` hat keinen Summer konfiguriert."
+    },
+    "no_leds": {
+      "message": "Gerät `{device_id}` hat keine LEDs konfiguriert."
+    },
+    "no_nfc": {
+      "message": "Gerät `{device_id}` hat keinen NFC-Chip konfiguriert."
+    },
+    "no_targets_specified": {
+      "message": "Keine Zielgeräte angegeben."
+    },
+    "upload_error": {
+      "message": "Hochladen auf das Display fehlgeschlagen: {error}"
+    },
+    "url_not_allowed": {
+      "message": "URL `{url}` ist nicht erlaubt. In `allowlist_external_urls` in configuration.yaml hinzufügen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "blocks_per_ack": "Blöcke pro Bestätigung gesendet",
+          "max_queue_size": "Maximale Anzahl an Upload-Frames in der Warteschlange",
+          "missed_cycles": "Verpasste Weckzyklen bis zur Markierung als nicht verfügbar",
+          "probe_before_queue": "Vor dem Einreihen Verbindung versuchen",
+          "queue_timeout_hours": "Timeout für wartende Inhalte (Stunden)",
+          "sleep_mode": "Deep-Sleep-Verhalten"
+        },
+        "data_description": {
+          "blocks_per_ack": "Anzahl der Bildframes, die das Gerät empfängt, bevor es während eines schnellen (Sliding-Window) Uploads eine Bestätigung sendet. Höhere Werte reduzieren Rundreisen; der effektive Wert wird vom Gerät und der maximalen Anzahl an Frames in der Übertragung begrenzt.",
+          "max_queue_size": "Maximale Anzahl an Bildframes, die gleichzeitig während eines schnellen (Sliding-Window) Uploads in der Übertragung gehalten werden. Höhere Werte erhöhen den Durchsatz bei langsamen (Proxy-)Verbindungen. Auf 1 setzen, um schnellen Transfer zu deaktivieren und den klassischen Upload mit einem Frame gleichzeitig zu verwenden.",
+          "missed_cycles": "Anzahl erwarteter Weckvorgänge, die das Gerät verpassen darf, bevor seine Entitäten als nicht verfügbar markiert werden.",
+          "probe_before_queue": "Vor dem Einreihen eines Bildes für ein schlafendes Gerät eine schnelle Verbindungsprobe durchführen, falls es tatsächlich wach ist (verpasste Werbungen, immer aktive Radios). Fügt höchstens einige Sekunden hinzu, wenn das Gerät wirklich schläft.",
+          "queue_timeout_hours": "Wie lange wartende Inhalte für ein schlafendes Gerät auf ein Wecken warten, bevor sie verfallen.",
+          "sleep_mode": "Automatisch folgt der eigenen Energieeinstellung des Geräts (Batteriebetrieb mit aktiviertem Deep Sleep). Erzwingen von Ein oder Aus zur Überschreibung."
+        }
+      }
+    }
+  },
+  "selector": {
+    "dither_mode": {
+      "options": {
+        "atkinson": "Atkinson",
+        "burkes": "Burkes",
+        "floyd_steinberg": "Floyd-Steinberg",
+        "jarvis_judice_ninke": "Jarvis, Judice & Ninke",
+        "none": "Keine",
+        "ordered": "Geordnet",
+        "sierra": "Sierra",
+        "sierra_lite": "Sierra Lite",
+        "stucki": "Stucki"
+      }
+    },
+    "fit_mode": {
+      "options": {
+        "contain": "Anpassen",
+        "cover": "Abdecken",
+        "crop": "Zuschneiden",
+        "stretch": "Strecken"
+      }
+    },
+    "nfc_record_type": {
+      "options": {
+        "ha_tag": "Home Assistant-Tag",
+        "mime": "MIME-Daten (z. B. vCard)",
+        "text": "Text",
+        "url": "URL"
+      }
+    },
+    "refresh_mode": {
+      "options": {
+        "fast": "Schnell",
+        "full": "Vollständig",
+        "partial": "Teilweise"
+      }
+    },
+    "sleep_mode": {
+      "options": {
+        "auto": "Automatisch (Gerät folgen)",
+        "off": "Aus (erzwungen)",
+        "on": "An (erzwungen)"
+      }
+    }
+  },
+  "services": {
+    "activate_buzzer": {
+      "description": "Löst einen Summer-Ton auf einem OpenDisplay-Gerät aus. Für Melodien mit mehreren Noten siehe Summer-Melodie abspielen.",
+      "fields": {
+        "device_id": {
+          "description": "Das OpenDisplay-Gerät.",
+          "name": "Gerät"
+        },
+        "duration_ms": {
+          "description": "Tonlänge in Millisekunden (5-1275).",
+          "name": "Dauer"
+        },
+        "frequency_hz": {
+          "description": "Tonfrequenz in Hz (0 = Stille). Wird als nächster Viertelton gespielt; Frequenzen außerhalb des spielbaren Bereichs des Buzzers werden oktaviert angepasst.",
+          "name": "Frequenz"
+        },
+        "instance": {
+          "description": "Index der Summer-Instanz (0-basiert).",
+          "name": "Summer-Instanz"
+        },
+        "repeats": {
+          "description": "Anzahl der Wiederholungen des Tons (1-255).",
+          "name": "Wiederholungen"
+        }
+      },
+      "name": "Summer aktivieren"
+    },
+    "activate_led": {
+      "description": "Löst ein LED-Blinkmuster auf einem OpenDisplay-Gerät aus.",
+      "fields": {
+        "brightness": {
+          "description": "LED-Helligkeit (1-16).",
+          "name": "Helligkeit"
+        },
+        "color1": {
+          "description": "1. Farbe des Blinkmusters.",
+          "name": "Farbe 1"
+        },
+        "color2": {
+          "description": "2. Farbe des Blinkmusters (weglassen oder Blinkvorgänge auf 0 setzen, um sie zu überspringen).",
+          "name": "Farbe 2"
+        },
+        "color3": {
+          "description": "3. Farbe des Blinkmusters (weglassen oder Blinkvorgänge auf 0 setzen, um sie zu überspringen)",
+          "name": "Farbe 3"
+        },
+        "device_id": {
+          "description": "Das OpenDisplay-Gerät.",
+          "name": "Gerät"
+        },
+        "flash_count1": {
+          "description": "Anzahl der Blinkvorgänge mit der 1. Farbe (0 überspringt diese Farbe).",
+          "name": "Blinkvorgänge 1"
+        },
+        "flash_count2": {
+          "description": "Anzahl der Blinkvorgänge mit der 2. Farbe (0 überspringt diese Farbe).",
+          "name": "Blinkvorgänge 2"
+        },
+        "flash_count3": {
+          "description": "Anzahl der Blinkvorgänge mit der 3. Farbe (0 überspringt diese Farbe).",
+          "name": "Blinkvorgänge 3"
+        },
+        "instance": {
+          "description": "Index der LED-Instanz (0-basiert).",
+          "name": "LED-Instanz"
+        },
+        "inter_delay1": {
+          "description": "Wartezeit nach der 1. Farbe bis zum Wechsel zur 2. Farbe.",
+          "name": "Wartezeit 1"
+        },
+        "inter_delay2": {
+          "description": "Wartezeit nach der 2. Farbe bis zum Wechsel zur 3. Farbe.",
+          "name": "Wartezeit 2"
+        },
+        "inter_delay3": {
+          "description": "Wartezeit nach der 3. Farbe vor dem Wiederholen.",
+          "name": "Wartezeit 3"
+        },
+        "loop_delay1": {
+          "description": "Zeit zwischen den Blinkvorgängen der 1. Farbe.",
+          "name": "Blinkabstand 1"
+        },
+        "loop_delay2": {
+          "description": "Zeit zwischen den Blinkvorgängen der 2. Farbe.",
+          "name": "Blinkabstand 1"
+        },
+        "loop_delay3": {
+          "description": "Zeit zwischen den Blinkvorgängen der 3. Farbe.",
+          "name": "Blinkabstand 1"
+        },
+        "repeats": {
+          "description": "Anzahl der Wiederholungen des gesamten Blinkmusters (0 = unendlich).",
+          "name": "Wiederholungen"
+        }
+      },
+      "name": "LED aktivieren"
+    },
+    "drawcustom": {
+      "description": "Zeichnet ein benutzerdefiniertes Bild auf einem oder mehreren OpenDisplay-Geräten.",
+      "fields": {
+        "background": {
+          "description": "Hintergrundfüllfarbe.",
+          "name": "Hintergrundfarbe"
+        },
+        "dither": {
+          "description": "Dithering-Algorithmus für die Farbpalettenkonvertierung.",
+          "name": "Dithering-Modus"
+        },
+        "dry-run": {
+          "description": "Bild erzeugen, ohne es auf das Gerät hochzuladen.",
+          "name": "Testlauf"
+        },
+        "measured_palette": {
+          "description": "Die gemessene Farbpalette des Panels verwenden, wenn verfügbar. Ausschalten, um gegen das theoretische Farbschema zu dithern. Keine Auswirkung auf Panels ohne Messdaten.",
+          "name": "Gemessene Palette verwenden"
+        },
+        "payload": {
+          "description": "Array von Zeichenelementen.",
+          "name": "Nutzlast"
+        },
+        "refresh_type": {
+          "description": "Display-Aktualisierungsmodus. Teilweise Aktualisierung aktualisiert nur den geänderten Bereich ohne Flackern; fällt automatisch auf eine vollständige Aktualisierung zurück, wenn nicht möglich.",
+          "name": "Aktualisierungstyp"
+        },
+        "rotate": {
+          "description": "Drehung im Uhrzeigersinn in Grad.",
+          "name": "Drehung"
+        }
+      },
+      "name": "Benutzerdefiniertes Bild zeichnen"
+    },
+    "play_melody": {
+      "description": "Spielt eine Melodie mit mehreren Noten auf dem Summer eines OpenDisplay-Geräts ab.",
+      "fields": {
+        "default_length": {
+          "description": "Notenlänge (1/2/4/8/16/32) im aktuellen Tempo für Noten ohne Längenzeichen; überschreibt die Standardnotenlänge, wenn gesetzt.",
+          "name": "Standardlänge"
+        },
+        "default_note_ms": {
+          "description": "Dauer in Millisekunden für Noten ohne Längenzeichen, wenn keine Standardlänge gesetzt ist (5-1275).",
+          "name": "Standardnotenlänge"
+        },
+        "device_id": {
+          "description": "Das OpenDisplay-Gerät.",
+          "name": "Gerät"
+        },
+        "instance": {
+          "description": "Index der Summer-Instanz (0-basiert).",
+          "name": "Summer-Instanz"
+        },
+        "notes": {
+          "description": "Kompakte Melodie: durch Leerzeichen oder Komma getrennte Tokens, jeweils `Tonhöhe[Dauer]`. Tonhöhe ist ein Notenname (`A4`, `C#5`, auch Flats und Vierteltöne wie `A4+` erlaubt), `R` für Pause oder ein roher Index 0-255. Dauer ist optional: `:200` für absolute Millisekunden oder `/4` (Viertel), `/4.` (punktiert), `/8t` (Triolen) für tempo-relative Notenlängen; bei Weglassen wird die Standardlänge oder Standardnotenlänge verwendet.",
+          "name": "Noten"
+        },
+        "repeats": {
+          "description": "Anzahl der Wiederholungen der gesamten Melodie (1-255).",
+          "name": "Wiederholungen"
+        },
+        "tempo": {
+          "description": "Schläge pro Minute; wirkt sich nur auf `/fraction`-Dauern aus (40-400).",
+          "name": "Tempo"
+        }
+      },
+      "name": "Summer-Melodie abspielen"
+    },
+    "upload_image": {
+      "description": "Lädt ein Bild auf ein OpenDisplay-Gerät hoch.",
+      "fields": {
+        "device_id": {
+          "description": "Das OpenDisplay-Gerät, auf das das Bild hochgeladen wird.",
+          "name": "Gerät"
+        },
+        "dither_mode": {
+          "description": "Der Dithering-Algorithmus für die Umwandlung des Bildes in die Farbpalette des Displays.",
+          "name": "Dithering-Modus"
+        },
+        "fit_mode": {
+          "description": "Wie das Bild an die Display-Abmessungen angepasst wird.",
+          "name": "Anpassungsmodus"
+        },
+        "image": {
+          "description": "Das Bild, das auf das Display hochgeladen wird. Wähle ein Medienobjekt oder gib eine direkte Bild-URL an (die URL muss zu allowlist_external_urls hinzugefügt werden).",
+          "name": "Bild"
+        },
+        "measured_palette": {
+          "description": "Die gemessene Farbpalette des Panels verwenden, wenn verfügbar. Ausschalten, um gegen das theoretische Farbschema zu dithern. Keine Auswirkung auf Panels ohne gemessene Daten.",
+          "name": "Gemessene Palette verwenden"
+        },
+        "refresh_mode": {
+          "description": "Der Anzeigenerneuerungsmodus. Volle Erneuerung beseitigt Nachbilder, ist aber langsamer. Schnelle Erneuerung wird nicht von allen Displays unterstützt. Teilweise Aktualisierung aktualisiert nur den geänderten Bereich ohne Flackern (B/W-Panels mit Teilunterstützung; fällt automatisch auf volle Erneuerung zurück, wenn nicht möglich).",
+          "name": "Erneuerungsmodus"
+        },
+        "rotation": {
+          "description": "Der Rotationswinkel in Grad, im Uhrzeigersinn angewendet.",
+          "name": "Rotation"
+        },
+        "tone_compression": {
+          "description": "Stärke der Dynamikumfangkompression. Leer lassen für automatische Einstellung.",
+          "name": "Tonkompression"
+        }
+      },
+      "name": "Bild hochladen",
+      "sections": {
+        "additional_fields": {
+          "name": "Zusätzliche Optionen"
+        }
+      }
+    },
+    "write_nfc": {
+      "description": "Schreibt einen NDEF-Datensatz (URL, Text oder MIME-Daten wie vCard) auf den NFC-Chip eines OpenDisplay-Geräts.",
+      "fields": {
+        "content": {
+          "description": "Die zu schreibenden Daten. Für einen URL-Datensatz die URL; für einen Text-Datensatz den Text; für einen MIME-Datensatz die Rohdaten; für einen Home Assistant-Tag die Tag-ID. Auf 512 Bytes bei UTF-8-Codierung begrenzt.",
+          "name": "Inhalt"
+        },
+        "device_id": {
+          "description": "Das OpenDisplay-Gerät.",
+          "name": "Gerät"
+        },
+        "mime_type": {
+          "description": "Der MIME-Typ des Inhalts. Gilt nur für MIME-Datensätze; Standard ist text/vcard.",
+          "name": "MIME-Typ"
+        },
+        "record_type": {
+          "description": "Der Typ des zu schreibenden NDEF-Datensatzes. Home Assistant-Tag schreibt eine Home Assistant-Tag-URL; das Scannen mit der Begleit-App löst tag_scanned aus und registriert den Tag beim ersten Scan automatisch.",
+          "name": "Datensatztyp"
+        }
+      },
+      "name": "NFC-Tag beschreiben"
+    }
+  }
+}

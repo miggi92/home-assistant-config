@@ -1,7 +1,7 @@
 {
   "name": "Sanremo: I Vincitori 🇮🇹",
   "description": "Every winning song of the Sanremo Music Festival, from Nilla Pizzi in 1951 to Sal Da Vinci in 2026. Years verified against the official Albo d'oro. Requested in #2230.",
-  "version": "0.6",
+  "version": "0.9",
   "tags": [
     "italian",
     "sanremo",
@@ -1005,7 +1005,7 @@
       "isrc": "ITC220200001",
       "uri_apple_music": "applemusic://track/1623153240",
       "uri_apple_music_by_region": {},
-      "uri_deezer": "deezer://track/596448882",
+      "uri_deezer": "deezer://track/1745225757",
       "uri_youtube_music": null,
       "uri_tidal": null
     },
@@ -1072,7 +1072,7 @@
       "uri_apple_music": "applemusic://track/1450934916",
       "uri_apple_music_by_region": {},
       "uri_deezer": "deezer://track/2175872",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=vCE6KYMh6yk",
       "uri_tidal": null
     },
     {
@@ -1096,7 +1096,7 @@
         "us": "applemusic://track/1519834045"
       },
       "uri_deezer": "deezer://track/999720362",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=X_dPtwAVF8w",
       "uri_tidal": null
     },
     {
@@ -1122,7 +1122,7 @@
         "it": "applemusic://track/217831136"
       },
       "uri_deezer": "deezer://track/2170433",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=x8RiA5ZRKMs",
       "uri_tidal": null
     },
     {
@@ -1149,7 +1149,7 @@
         "it": "applemusic://track/1444749282"
       },
       "uri_deezer": "deezer://track/594809612",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=MGAHrzJRBnY",
       "uri_tidal": null
     },
     {
@@ -1171,7 +1171,7 @@
       "uri_apple_music": "applemusic://track/305208085",
       "uri_apple_music_by_region": {},
       "uri_deezer": "deezer://track/2913698",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=-msSyWcO8Ys",
       "uri_tidal": null
     },
     {
@@ -1195,7 +1195,7 @@
         "fr": "applemusic://track/712877672"
       },
       "uri_deezer": "deezer://track/5522920",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=9PRT5NSpPCA",
       "uri_tidal": null
     },
     {
@@ -1220,7 +1220,7 @@
         "nl": "applemusic://track/1443141820"
       },
       "uri_deezer": "deezer://track/9968672",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=z8L-84d84yM",
       "uri_tidal": null
     },
     {
@@ -1248,7 +1248,7 @@
         "nl": "applemusic://track/1442358784"
       },
       "uri_deezer": "deezer://track/16607983",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=pMzNxA81qmE",
       "uri_tidal": null
     },
     {
@@ -1274,7 +1274,7 @@
         "it": "applemusic://track/599931269"
       },
       "uri_deezer": "deezer://track/64784607",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=unRjK82bDLw",
       "uri_tidal": null
     },
     {
@@ -1302,7 +1302,7 @@
         "it": "applemusic://track/819907122"
       },
       "uri_deezer": "deezer://track/75373315",
-      "uri_youtube_music": null,
+      "uri_youtube_music": "https://music.youtube.com/watch?v=wPrKYs2iDKQ",
       "uri_tidal": null
     },
     {
