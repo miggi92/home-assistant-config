@@ -1,6 +1,6 @@
 # 🏠 Home Assistant Config
 
-[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.8.3%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.8.3)
+[![Home Assistant Version](https://img.shields.io/badge/HA%20Version-2026.9.0%20-blue?style=for-the-badge)](https://github.com/home-assistant/core/releases/tag/2026.9.0)
 ![Home Assistant CI](https://img.shields.io/github/actions/workflow/status/miggi92/home-assistant-config/home_assistant_ci.yml?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/miggi92/home-assistant-config?style=for-the-badge)
 ![GitHub last commit](https://img.shields.io/github/last-commit/miggi92/home-assistant-config?style=for-the-badge)
@@ -41,12 +41,12 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔡 Eingabe-Auswahlen: 10
 - ☑️ Eingabe-Booleans: 70
 - 📅 Eingabe-Datum/Zeit: 30
-- 🔢 Eingabe-Nummern: 24
+- 🔢 Eingabe-Nummern: 23
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 45
-- 🧩 Entitäten: 4074
+- 🧩 Entitäten: 4073
 - 🎮 Fernbedienungen: 3
-- 📱 Geräte: 11861
+- 📱 Geräte: 11863
 - 📍 Geräte-Tracker: 137
 - 🔌 Integrationen: 204
 - 🗓️ Kalender: 26
