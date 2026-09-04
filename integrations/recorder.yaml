@@ -2,7 +2,7 @@
 # Recorder
 # https://www.home-assistant.io/integrations/recorder/
 recorder:
-  purge_keep_days: 30
+  purge_keep_days: 14
   commit_interval: 30
   exclude:
     domains:
@@ -33,3 +33,8 @@ recorder:
       - sensor.joke
       - sensor.unsplash_pool
       - sensor.phone_line_status
+      - sensor.babyphone_power
+      - sensor.yggdrasil_download_throughput
+      - sensor.yggdrasil_upload_throughput
+      - sensor.yggdrasil_gb_received
+      - sensor.yggdrasil_gb_sent
