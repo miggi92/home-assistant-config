@@ -19,6 +19,7 @@ export var state = {
     hasReactedThisPhase: false,
     currentRoundNumber: 0,
     joinTimeoutId: null,  // #1663: initial-join watchdog timer id
+    joinPending: false,   // #2499: a connect attempt is waiting for its ack
     gameId: new URLSearchParams(window.location.search).get('game'),
     // Connection functions set by core module (avoids circular deps)
     connectWithSession: null,
@@ -79,11 +80,52 @@ export function showView(viewId) {
     }
 
     if (viewId === 'join-view') {
+        // #2506: tapping Join disables the button and relabels it "Joining…",
+        // and only the join-timeout path ever put it back. Leaving a game, a
+        // session takeover, a failed reconnect and an unknown session all
+        // returned here and left a dead grey button reading "Joining…" — the
+        // guest's only way out was to edit a letter of their own name, and even
+        // then the label stayed wrong. Resetting where the view is shown covers
+        // every route into it, including the ones added after this.
+        resetJoinButton();
         setTimeout(function() {
             var nameInput = document.getElementById('name-input');
             if (nameInput) nameInput.focus();
         }, 100);
     }
+}
+
+export var MAX_NAME_LENGTH = 20;
+
+/**
+ * Validate a typed player name. Pure — moved here from player-core (#2506) so
+ * the join view's button state has one owner that can reach it.
+ */
+export function validateName(name) {
+    var trimmed = (name || '').trim();
+    if (!trimmed) {
+        return { valid: false, error: 'Please enter a name' };
+    }
+    if (trimmed.length > MAX_NAME_LENGTH) {
+        return { valid: false, error: 'Name too long (max 20 characters)' };
+    }
+    return { valid: true, name: trimmed };
+}
+
+/**
+ * Put the join button back the way an untouched join view has it: the original
+ * label, and enabled only if the name in the box would pass. The button ships
+ * `disabled` in the markup precisely because an empty box must not be
+ * submittable, so this restores that rule rather than simply enabling it.
+ *
+ * Exported for the #2506 tests.
+ */
+export function resetJoinButton() {
+    var joinBtn = document.getElementById('join-btn');
+    if (!joinBtn) return;
+    joinBtn.textContent = utils.t ? utils.t('join.joinButton') : 'Join Game';
+    var nameInput = document.getElementById('name-input');
+    joinBtn.disabled = !validateName(nameInput ? nameInput.value : '').valid;
 }
 
 // ============================================
@@ -246,14 +288,86 @@ export function showConfirmModal(title, message, confirmText, cancelText) {
 // ============================================
 
 /**
- * Escape HTML to prevent XSS
+ * Escape text for insertion into HTML, in text nodes AND in attribute values.
+ *
+ * This used to route through a detached div (textContent in, innerHTML out).
+ * That encodes & < > and leaves the quote characters alone — correct for a
+ * text node, wrong for an attribute value, where a quote ends the value and
+ * everything after it is read as further attributes. Three call sites put
+ * player names into attributes (data-player, data-name, aria-label), and a
+ * player name is free text: the server checks only its length, and the name
+ * renders on every guest's phone rather than only the author's. (#2505)
+ *
+ * Escaping the five characters directly fixes both contexts at once, needs no
+ * DOM, and cannot drift apart from the second copy in utils.js.
+ *
  * @param {string} text - Text to escape
- * @returns {string} Escaped text
+ * @returns {string} Escaped text, safe in both contexts
  */
 export function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    if (text === null || text === undefined) {
+        return '';
+    }
+    return String(text)
+        .replace(/&/g, '&amp;')   // must come first
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * #2499: does this server error mean the join was refused?
+ *
+ * The four codes below are the ones the server answers a join with when it
+ * will not let the player in. It keeps the socket open, so nothing else marks
+ * the attempt as failed.
+ *
+ * The second argument is what makes the decision correct. ``state.playerName``
+ * looks like the obvious signal and is not: it is set optimistically when the
+ * socket opens, before any acknowledgement, so it is already truthy while the
+ * join is still in flight. ``joinPending`` is raised on the connect attempt and
+ * lowered by join_ack / reconnect_ack, so it is true exactly for the window in
+ * which a rejection can arrive. GAME_ENDED reaches both paths and means
+ * different things in each — a refused join, or a game that has just finished
+ * around a player who is already in it.
+ *
+ * @param {string} code - server error code
+ * @param {boolean} joinPending - a connect attempt is waiting for its ack
+ * @returns {boolean}
+ */
+export var JOIN_REJECTED_CODES = ['NAME_TAKEN', 'NAME_INVALID', 'GAME_FULL', 'GAME_ENDED'];
+
+export function isJoinRejection(code, joinPending) {
+    return Boolean(joinPending) && JOIN_REJECTED_CODES.indexOf(code) !== -1;
+}
+
+/**
+ * The text a refused guest reads (#2532).
+ *
+ * #2511 gave the rejection a home on the join view but passed the server's own
+ * ``message`` straight through, so a German or Spanish guest read "Name taken,
+ * choose another" on an otherwise translated screen. All four codes in
+ * ``JOIN_REJECTED_CODES`` have an ``errors.<CODE>`` entry in every locale — the
+ * lookup simply never happened.
+ *
+ * **Why the second argument and not ``||``.** The tempting form is
+ * ``t('errors.' + code) || serverMessage``, and it can never reach the right
+ * side: ``t`` returns the key itself when the lookup misses, and for a missing
+ * key with no fallback it *generates* one from the key ("Name Taken"). Both are
+ * truthy, so the server message would be dead code and an unknown code would
+ * surface as ``errors.SOMETHING`` on screen. ``t``'s two-argument form is the
+ * only one that actually falls back.
+ *
+ * @param {string} code - server error code, e.g. NAME_TAKEN
+ * @param {string} serverMessage - the server's English text, used as fallback
+ * @param {function} t - translation helper (utils.t)
+ * @returns {string} localized text, the server's message, or a last resort
+ */
+export function joinRejectionMessage(code, serverMessage, t) {
+    var fallback = serverMessage || 'Could not join';
+    if (typeof t !== 'function' || !code) return fallback;
+    return t('errors.' + code, fallback);
 }
 
 /**

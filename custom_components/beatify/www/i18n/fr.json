@@ -68,6 +68,7 @@
     "players": "joueurs"
   },
   "game": {
+    "yearLabel": "Année",
     "introSplashTitle": "Manche Intro !",
     "introSplashDesc": "Arrête la chanson dès que tu la reconnais !",
     "introSplashWaiting": "En attente de l'hôte...",
@@ -317,6 +318,13 @@
     "chartBillboard": "Billboard Hot 100",
     "chartGerman": "Charts allemands",
     "chartUK": "Charts du Royaume-Uni",
+    "chartEurovision": "Eurovision",
+    "pointsShort": "pts",
+    "chartAustria": "Charts autrichiens",
+    "chartSwitzerland": "Charts suisses",
+    "chartItaly": "Charts italiens",
+    "chartFrance": "Charts français",
+    "chartSpain": "Charts espagnols",
     "weeksOnChart": "semaines au classement",
     "weeksShort": "sem",
     "moreAwards": "plus",
@@ -330,6 +338,7 @@
     "flaggedForHost": "✓ Signalé à l'hôte"
   },
   "leaderboard": {
+    "leader": "en tête",
     "title": "Classement",
     "standings": "Positions",
     "finalTitle": "Résultats finaux",
@@ -349,6 +358,7 @@
     "fullRankings": "Classement complet"
   },
   "admin": {
+    "alreadyJoined": "Tu participes déjà en tant que {name}",
     "title": "Beatify Admin",
     "filterAll": "Tous",
     "skipRound": "Passer",
@@ -865,6 +875,9 @@
     "pagination": "Page {current} sur {total}"
   },
   "dashboard": {
+    "nowPlaying": "Lecture en cours",
+    "reveal": "Révélation",
+    "nowRevealing": "Révélation en cours",
     "autoAdvance": "Suite auto",
     "title": "Beatify - Tableau de bord",
     "connecting": "Connexion à la partie...",
@@ -1241,7 +1254,7 @@
   },
   "onboarding": {
     "stepLabel": "Étape",
-    "stepOf": "sur 4",
+    "stepOf": "sur",
     "skip": "Ignorer le tour",
     "skipBtn": "Passer",
     "nextBtn": "Suivant",

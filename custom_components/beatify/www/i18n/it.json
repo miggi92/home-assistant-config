@@ -68,6 +68,7 @@
     "players": "giocatori"
   },
   "game": {
+    "yearLabel": "Anno",
     "introSplashTitle": "Turno introduttivo!",
     "introSplashDesc": "Ferma la canzone appena la riconosci!",
     "introSplashWaiting": "In attesa dell'host...",
@@ -317,6 +318,13 @@
     "chartBillboard": "Billboard Hot 100",
     "chartGerman": "Classifica tedesca",
     "chartUK": "Classifica britannica",
+    "chartEurovision": "Eurovision",
+    "pointsShort": "pt",
+    "chartAustria": "Classifica austriaca",
+    "chartSwitzerland": "Classifica svizzera",
+    "chartItaly": "Classifica italiana",
+    "chartFrance": "Classifica francese",
+    "chartSpain": "Classifica spagnola",
     "weeksOnChart": "settimane in classifica",
     "weeksShort": "sett.",
     "moreAwards": "altri",
@@ -330,6 +338,7 @@
     "flaggedForHost": "✓ Segnalato all'host"
   },
   "leaderboard": {
+    "leader": "in testa",
     "title": "Classifica",
     "standings": "Posizioni",
     "finalTitle": "Risultati finali",
@@ -349,6 +358,7 @@
     "fullRankings": "Classifica completa"
   },
   "admin": {
+    "alreadyJoined": "Sei già in partita come {name}",
     "title": "Amministrazione Beatify",
     "filterAll": "Tutte",
     "skipRound": "Salta",
@@ -865,6 +875,9 @@
     "pagination": "Pagina {current} di {total}"
   },
   "dashboard": {
+    "nowPlaying": "In riproduzione",
+    "reveal": "Rivelazione",
+    "nowRevealing": "Riveliamo",
     "autoAdvance": "Avanzamento automatico",
     "title": "Beatify - Dashboard",
     "connecting": "Connessione alla partita...",
@@ -1241,7 +1254,7 @@
   },
   "onboarding": {
     "stepLabel": "Passo",
-    "stepOf": "di 4",
+    "stepOf": "di",
     "skip": "Salta il tutorial",
     "skipBtn": "Salta",
     "nextBtn": "Avanti",

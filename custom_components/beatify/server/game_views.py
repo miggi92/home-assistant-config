@@ -23,6 +23,7 @@ from custom_components.beatify.const import (
     ERR_MEDIA_PLAYER_UNAVAILABLE,
     ERR_NO_PLAYABLE_SONGS,
     ERR_NO_PLAYLISTS_SELECTED,
+    MIN_PLAYERS,
     PROVIDER_AMAZON_MUSIC,
     PROVIDER_APPLE_MUSIC,
     PROVIDER_DEEZER,
@@ -39,6 +40,7 @@ from custom_components.beatify.game.playlist import (
     async_discover_playlists_detailed,
 )
 from custom_components.beatify.game.state import GamePhase, GameState
+from custom_components.beatify.game.state_setup import NoPlayableSongsError
 from custom_components.beatify.server.ws_handlers._helpers import finalize_and_end
 from custom_components.beatify.server.base import (
     BeatifyAdminView,
@@ -482,7 +484,24 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
             body.get("round_duration"),
         )
 
-        result = game_state.create_game(**create_kwargs)
+        # #2530: create_game validates before it mutates (#1378) and signals a
+        # rejection by raising. Uncaught, that ValueError left aiohttp to answer
+        # with a bare 500 "Server got itself in trouble" — a response carrying no
+        # code at all, which defeats the whole point of #2294 (every create-game
+        # rejection gets its own code so the client can say WHICH one fired) and
+        # sends the i18n lookup in errors.<CODE> looking for nothing.
+        try:
+            result = game_state.create_game(**create_kwargs)
+        except NoPlayableSongsError as err:
+            return _json_error(str(err), 400, code=ERR_NO_PLAYABLE_SONGS)
+        except ValueError as err:
+            # The only other raise in create_game is the round-duration range
+            # check, which the block above already rejects with its own code —
+            # so this arm is a backstop for a future validation, not dead code.
+            # It must not borrow NO_PLAYABLE_SONGS: a wrong code is worse than a
+            # generic one, because the client renders it as a specific sentence.
+            _LOGGER.warning("create_game rejected the request: %s", err)
+            return _json_error(str(err), 400, code="INVALID_REQUEST")
 
         # Crate Digger: install the pre-start hook so the songs
         # are regenerated from the CURRENT settings on the LOBBY -> first
@@ -1211,6 +1230,18 @@ class StartGameplayView(BeatifyAdminView):
 
         if game_state.phase != GamePhase.LOBBY:
             return _json_error("Game already started", 409, code="INVALID_PHASE")
+
+        # #2497: the minimum-player floor. It used to live in
+        # GameState.start_game(), which no production path calls, so a game
+        # could be started alone. Enforced at the two places a *user* starts a
+        # game — here and in the websocket admin handler — rather than inside
+        # start_round(), which runs for every round of every game.
+        if len(game_state.players) < MIN_PLAYERS:
+            return _json_error(
+                f"Need at least {MIN_PLAYERS} players to start",
+                409,
+                code="NOT_ENOUGH_PLAYERS",
+            )
 
         # Issue #827: Sudden Death requires >=3 players. Players join the LOBBY
         # *after* create_game (which clears sessions), so the floor can only be

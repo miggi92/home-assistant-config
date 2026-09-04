@@ -9,8 +9,10 @@ from .constant import (
     HORIZONTAL_OSCILLATION_KEY,
     HORIZONTAL_OSCILLATION_ANGLE_KEY,
     HORIZONTAL_ANGLE_ADJ_KEY,
+    HORIZONTAL_OSCILLATION_ADJ_KEY,
     VERTICAL_OSCILLATION_KEY,
     VERTICAL_OSCILLATION_ANGLE_KEY,
+    VERTICAL_OSCILLATION_ADJ_KEY,
     CRUISECONF_KEY,
     MIN_OSC_ANGLE_DIFFERENCE,
     OSCMODE_KEY,
@@ -27,6 +29,7 @@ from .constant import (
     HWFPON_KEY,
     HWFPANGLE_KEY,
     HBODYCNT_KEY,
+    WINDLEVEL_KEY,
     WINDTYPE_KEY,
     WIND_MODE_KEY,
 )
@@ -47,6 +50,7 @@ _FIXEDCONF_OPTIMISTIC_METHODS = frozenset({"control-reply"})
 # Models that need a longer interval set FIXEDCONF_SETTLE_SECONDS_KEY (float seconds)
 # in SUPPORTED_DEVICES device_ranges (models.py).
 _FIXEDCONF_SETTLE_SECONDS_DEFAULT = 0.0
+_ANGLE_NUDGE_STEP = 5
 
 if TYPE_CHECKING:
     from pydreo import PyDreo
@@ -147,6 +151,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
 
         # Horizontal angle adjustment (simpler angle control, similar to Tower Fan)
         self._horizontal_angle_adj = None
+        self._horizontal_oscillation_adj = None
+        self._vertical_oscillation_adj = None
 
         # Atmosphere (RGB) light support
         self._atm_light_on: bool = None
@@ -165,22 +171,43 @@ class PyDreoAirCirculator(PyDreoFanBase):
         self._follow_me_angle: int = None
         self._people_detected: int = None
 
-    def turn_on_with_preset_mode(self, preset_mode: str) -> None:
-        """Atomically turn on the fan and select a preset mode."""
-        if self._preset_modes is None:
-            raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support modes.")
+    def turn_on_with_settings(self, preset_mode: str = None, fan_speed: int = None) -> None:
+        """Atomically turn on the fan and apply a preset mode and/or a fan speed.
 
-        key = WINDTYPE_KEY if self._wind_type is not None else WIND_MODE_KEY if self._wind_mode is not None else None
-        if key is None:
-            raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support wind type or wind mode keys.")
+        A powered-off circulator restores its remembered mode and speed as soon as
+        it sees ``poweron``, so a mode or speed arriving as a second command is
+        overwritten by that restore (#852, #905). Everything the caller asked for
+        therefore has to ship in the same command as the power-on.
 
-        numeric_value = Helpers.value_from_name(self._preset_modes, preset_mode)
-        if numeric_value is None:
-            raise ValueError(f"Preset mode {preset_mode} is not in the acceptable list: {self.preset_modes}")
+        Raises ``NotImplementedError`` when the device cannot express a requested
+        setting, so callers can fall back to the sequential setters.
+        """
         if self._power_on_key is None:
             raise NotImplementedError("Attempting to turn on a device with an unknown power key.")
 
-        self._send_command_batch({self._power_on_key: True, key: numeric_value})
+        params = {self._power_on_key: True}
+
+        if preset_mode is not None:
+            if self._preset_modes is None:
+                raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support modes.")
+
+            key = WINDTYPE_KEY if self._wind_type is not None else WIND_MODE_KEY if self._wind_mode is not None else None
+            if key is None:
+                raise NotImplementedError("Attempting to set preset_mode on a device that doesn't support wind type or wind mode keys.")
+
+            numeric_value = Helpers.value_from_name(self._preset_modes, preset_mode)
+            if numeric_value is None:
+                raise ValueError(f"Preset mode {preset_mode} is not in the acceptable list: {self.preset_modes}")
+            params[key] = numeric_value
+
+        if fan_speed is not None:
+            if self._speed_range is None:
+                raise NotImplementedError("Attempting to set fan speed on a device that doesn't report a speed range.")
+            if fan_speed < self._speed_range[0] or fan_speed > self._speed_range[1]:
+                raise ValueError(f"fan_speed must be between {self._speed_range[0]} and {self._speed_range[1]}")
+            params[WINDLEVEL_KEY] = fan_speed
+
+        self._send_command_batch(params)
 
     def _uses_hangleadj_for_horizontal(self) -> bool:
         """Check if device uses hangleadj (simpler angle control) instead of hoscangle."""
@@ -189,6 +216,44 @@ class PyDreoAirCirculator(PyDreoFanBase):
     def _has_vertical_osc_angle_disabled(self) -> bool:
         """Check if vertical oscillation angle should be disabled (voscangle is 0 and device uses hangleadj)."""
         return self._horizontal_angle_adj is not None and self._vertical_oscillation_angle == 0
+
+    @property
+    def horizontal_angle_nudge(self) -> bool | None:
+        """Whether horizontal nudge controls are supported."""
+        if self._horizontal_oscillation_adj is None:
+            return None
+        return True
+
+    @property
+    def vertical_angle_nudge(self) -> bool | None:
+        """Whether vertical nudge controls are supported."""
+        if self._vertical_oscillation_adj is None:
+            return None
+        return True
+
+    def nudge_horizontal_left(self) -> None:
+        """Nudge horizontal angle left by one app-style step."""
+        if not self.horizontal_angle_nudge:
+            raise NotImplementedError("Horizontal nudge is not supported.")
+        self._send_command(HORIZONTAL_OSCILLATION_ADJ_KEY, -_ANGLE_NUDGE_STEP)
+
+    def nudge_horizontal_right(self) -> None:
+        """Nudge horizontal angle right by one app-style step."""
+        if not self.horizontal_angle_nudge:
+            raise NotImplementedError("Horizontal nudge is not supported.")
+        self._send_command(HORIZONTAL_OSCILLATION_ADJ_KEY, _ANGLE_NUDGE_STEP)
+
+    def nudge_vertical_up(self) -> None:
+        """Nudge vertical angle up by one app-style step."""
+        if not self.vertical_angle_nudge:
+            raise NotImplementedError("Vertical nudge is not supported.")
+        self._send_command(VERTICAL_OSCILLATION_ADJ_KEY, _ANGLE_NUDGE_STEP)
+
+    def nudge_vertical_down(self) -> None:
+        """Nudge vertical angle down by one app-style step."""
+        if not self.vertical_angle_nudge:
+            raise NotImplementedError("Vertical nudge is not supported.")
+        self._send_command(VERTICAL_OSCILLATION_ADJ_KEY, -_ANGLE_NUDGE_STEP)
 
     @staticmethod
     def parse_swing_angle_range(details: Dict[str, list], direction: str) -> tuple[int, int] | None:
@@ -1161,6 +1226,8 @@ class PyDreoAirCirculator(PyDreoFanBase):
             self._vertical_oscillation_angle = voscangle_val
 
         self._horizontal_angle_adj = self.get_state_update_value(state, HORIZONTAL_ANGLE_ADJ_KEY)
+        self._horizontal_oscillation_adj = self.get_state_update_value(state, HORIZONTAL_OSCILLATION_ADJ_KEY)
+        self._vertical_oscillation_adj = self.get_state_update_value(state, VERTICAL_OSCILLATION_ADJ_KEY)
 
         self._atm_light_on = self.get_state_update_value(state, ATMON_KEY)
         self._atm_brightness = self.get_state_update_value(state, ATMBRI_KEY)
@@ -1238,6 +1305,14 @@ class PyDreoAirCirculator(PyDreoFanBase):
         val_horiz_angle_adj = self.get_server_update_key_value(message, HORIZONTAL_ANGLE_ADJ_KEY)
         if isinstance(val_horiz_angle_adj, int):
             self._horizontal_angle_adj = val_horiz_angle_adj
+
+        val_horiz_osc_adj = self.get_server_update_key_value(message, HORIZONTAL_OSCILLATION_ADJ_KEY)
+        if isinstance(val_horiz_osc_adj, int):
+            self._horizontal_oscillation_adj = val_horiz_osc_adj
+
+        val_vert_osc_adj = self.get_server_update_key_value(message, VERTICAL_OSCILLATION_ADJ_KEY)
+        if isinstance(val_vert_osc_adj, int):
+            self._vertical_oscillation_adj = val_vert_osc_adj
 
         val_atm_on = self.get_server_update_key_value(message, ATMON_KEY)
         if isinstance(val_atm_on, bool):

@@ -1,6 +1,6 @@
 {
   "name": "Deutschrock - Best Of",
-  "version": "0.39",
+  "version": "0.40",
   "tags": [
     "deutschrock",
     "german rock",
@@ -627,7 +627,7 @@
         "nl": "applemusic://track/1500266192",
         "it": "applemusic://track/1500266192"
       },
-      "uri_youtube_music": "https://music.youtube.com/watch?v=7LORRKXTvnA",
+      "uri_youtube_music": null,
       "uri_tidal": "tidal://track/133886894",
       "uri_deezer": "deezer://track/899950322",
       "alt_artists": [],
@@ -1269,13 +1269,13 @@
       "isrc": "DEZ901501941",
       "uri_apple_music": "applemusic://track/1738071871",
       "uri_apple_music_by_region": {
-        "us": "applemusic://track/1738072836",
-        "de": "applemusic://track/1738072836",
-        "gb": "applemusic://track/1738072836",
-        "fr": "applemusic://track/1738072836",
-        "es": "applemusic://track/1738072836",
-        "nl": "applemusic://track/1738072836",
-        "it": "applemusic://track/1738072836"
+        "us": "applemusic://track/1738071871",
+        "de": "applemusic://track/1738071871",
+        "gb": "applemusic://track/1738071871",
+        "fr": "applemusic://track/1738071871",
+        "es": "applemusic://track/1738071871",
+        "nl": "applemusic://track/1738071871",
+        "it": "applemusic://track/1738071871"
       },
       "uri_youtube_music": "https://music.youtube.com/watch?v=uaxTiriqLLE",
       "uri_tidal": "tidal://track/353722894",
@@ -2005,7 +2005,7 @@
         "nl": "applemusic://track/1579051018",
         "it": "applemusic://track/1579051018"
       },
-      "uri_youtube_music": "https://music.youtube.com/watch?v=vfxjYR_Z6qs",
+      "uri_youtube_music": "https://music.youtube.com/watch?v=9-aNYmmNyKI",
       "uri_tidal": "tidal://track/192675499",
       "uri_deezer": "deezer://track/672579152",
       "alt_artists": [],

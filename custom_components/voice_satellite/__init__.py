@@ -1014,6 +1014,8 @@ async def ws_cancel_timer(
         vol.Required("state"): str,
         vol.Optional("volume"): vol.Coerce(float),
         vol.Optional("media_id"): str,
+        vol.Optional("position"): vol.Coerce(float),
+        vol.Optional("duration"): vol.Coerce(float),
     }
 )
 @websocket_api.async_response
@@ -1035,7 +1037,13 @@ async def ws_media_player_event(
         )
         return
 
-    entity.update_playback_state(state, volume=volume, media_id=media_id)
+    entity.update_playback_state(
+        state,
+        volume=volume,
+        media_id=media_id,
+        position=msg.get("position"),
+        duration=msg.get("duration"),
+    )
     connection.send_result(msg["id"], {"success": True})
 
 

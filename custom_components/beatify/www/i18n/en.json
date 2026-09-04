@@ -68,6 +68,7 @@
     "players": "players"
   },
   "game": {
+    "yearLabel": "Year",
     "introSplashTitle": "Intro Round!",
     "introSplashDesc": "Stop the song the moment you recognise it!",
     "introSplashWaiting": "Waiting for host...",
@@ -317,6 +318,13 @@
     "chartBillboard": "Billboard Hot 100",
     "chartGerman": "German Charts",
     "chartUK": "UK Charts",
+    "chartEurovision": "Eurovision",
+    "pointsShort": "pts",
+    "chartAustria": "Austrian Charts",
+    "chartSwitzerland": "Swiss Charts",
+    "chartItaly": "Italian Charts",
+    "chartFrance": "French Charts",
+    "chartSpain": "Spanish Charts",
     "weeksOnChart": "weeks on chart",
     "weeksShort": "wks",
     "moreAwards": "more",
@@ -330,6 +338,7 @@
     "flaggedForHost": "✓ Flagged for the host"
   },
   "leaderboard": {
+    "leader": "leader",
     "title": "Leaderboard",
     "standings": "Standings",
     "finalTitle": "Final Results",
@@ -349,6 +358,7 @@
     "fullRankings": "Full Rankings"
   },
   "admin": {
+    "alreadyJoined": "Already joined as {name}",
     "title": "Beatify Admin",
     "filterAll": "All",
     "skipRound": "Skip",
@@ -865,6 +875,9 @@
     "pagination": "Page {current} of {total}"
   },
   "dashboard": {
+    "nowPlaying": "Now Playing",
+    "reveal": "Reveal",
+    "nowRevealing": "Now revealing",
     "autoAdvance": "Auto-advance",
     "title": "Beatify - Dashboard",
     "connecting": "Connecting to game...",
@@ -1241,7 +1254,7 @@
   },
   "onboarding": {
     "stepLabel": "Step",
-    "stepOf": "of 4",
+    "stepOf": "of",
     "skip": "Skip tour",
     "skipBtn": "Skip",
     "nextBtn": "Next",

@@ -14,7 +14,8 @@ import {
     cleanupVirtualPlayerList,
     setEnergyLevel, triggerConfetti, stopConfetti,
     initQrCollapsible, setupLobbyCollapsible,
-    requestWakeLock, releaseWakeLock
+    requestWakeLock, releaseWakeLock,
+    isJoinRejection, joinRejectionMessage, validateName
 } from './player-utils.js';
 
 import {
@@ -82,7 +83,6 @@ var pushGameRender = createRenderCoalescer(updateGameView);
 
 var MAX_RECONNECT_ATTEMPTS = 7;
 var MAX_RECONNECT_DELAY_MS = 30000;
-var MAX_NAME_LENGTH = 20;
 // #1663: how long a guest may sit on "Joining…" before we surface a retry.
 // The join WS has no server-side ack timeout, so a dead/slow socket would
 // otherwise hang the spinner forever.
@@ -537,6 +537,11 @@ function connectWebSocket(name) {
 
     state.playerName = name;
     storePlayerName(name);
+    // #2499: playerName is set optimistically here, before the server has
+    // acknowledged anything, so it cannot tell a refused join from a mid-game
+    // error. This flag can: it is raised on every connect attempt and lowered
+    // by join_ack / reconnect_ack.
+    state.joinPending = true;
 
     // #1701: stamp the attempt for the foreground-reconnect throttle.
     state.lastConnectStartedAt = Date.now();
@@ -805,6 +810,7 @@ function handleServerMessage(data) {
             clearStoredPlayerName();
         }
     } else if (data.type === 'join_ack') {
+        state.joinPending = false;  // #2499
         // #646: Request wake lock early — not just during PLAYING
         requestWakeLock();
         if (data.session_id) {
@@ -817,6 +823,7 @@ function handleServerMessage(data) {
             // Ignore storage errors
         }
     } else if (data.type === 'reconnect_ack') {
+        state.joinPending = false;  // #2499
         if (data.success && data.name) {
             state.playerName = data.name;
             storePlayerName(data.name);
@@ -834,6 +841,15 @@ function handleServerMessage(data) {
     } else if (data.type === 'error') {
         if (data.code === 'ROUND_EXPIRED' || data.code === 'ALREADY_SUBMITTED') {
             handleSubmitError(data);
+            return;
+        }
+        // #2499: a rejected join, handled before the in-game branches. The
+        // joinPending flag is what distinguishes "the join failed" from
+        // "something went wrong mid-game" — GAME_ENDED reaches both paths and
+        // means different things in each.
+        if (isJoinRejection(data.code, state.joinPending)) {
+            // #2532: look the code up instead of echoing the server's English.
+            failJoin(joinRejectionMessage(data.code, data.message, utils.t));
             return;
         }
         if (data.code === 'GAME_ENDED') {
@@ -1049,16 +1065,31 @@ function showJoinError(message) {
     }
 }
 
-function validateName(name) {
-    var trimmed = (name || '').trim();
-    if (!trimmed) {
-        return { valid: false, error: 'Please enter a name' };
+// #2499: a join the server refused — name taken, name invalid, game full,
+// game over. The socket stays open and the join watchdog has already been
+// cleared (the server did answer), so without this the join button sits
+// disabled on "Joining…" for good and the message lands on the submit button
+// of the hidden game view. The stored name is cleared as well, or a reload
+// re-joins with the same rejected name and hangs on "Connecting to game…".
+// Mirrors handleJoinTimeout() below, which does the same recovery for silence.
+// The predicate lives in player-utils.js so it can be tested on its own.
+function failJoin(message) {
+    clearJoinTimeout();
+    state.joinPending = false;
+    state.intentionalLeave = true;
+    if (state.ws) {
+        try { state.ws.close(); } catch (e) { /* ignore */ }
+        state.ws = null;
     }
-    if (trimmed.length > MAX_NAME_LENGTH) {
-        return { valid: false, error: 'Name too long (max 20 characters)' };
-    }
-    return { valid: true, name: trimmed };
+    clearStoredPlayerName();
+
+    // #2506: the button reset moved into showView('join-view') below, so every
+    // route back to the join view gets it, not just this one.
+    showJoinError(message);
+    showView('join-view');
 }
+
+
 
 function handleJoinClick() {
     var nameInput = document.getElementById('name-input');
@@ -1108,12 +1139,9 @@ function handleJoinTimeout() {
         state.ws = null;
     }
 
-    // Re-enable the join form and surface the retry affordance.
-    var joinBtn = document.getElementById('join-btn');
-    if (joinBtn) {
-        joinBtn.disabled = false;
-        joinBtn.textContent = utils.t('join.joinButton') || 'Join Game';
-    }
+    // Surface the retry affordance. #2506: the button reset that used to sit
+    // here is now done by showView('join-view') for every route, not just this
+    // one — this path was the only one that ever had it.
     showJoinError(utils.t('errors.joinTimeout') || "Couldn't connect. Please try again.");
     showView('join-view');
 }
@@ -1179,6 +1207,71 @@ function setupRetryConnection() {
 // Initialization
 // ============================================
 
+// #2508: resolves once the bootstrap checkGameStatus() below has settled — and
+// therefore once its session-cookie branch has had its chance to open a socket.
+// Declared here rather than at the bootstrap call because the connection
+// decision reads it, and `await null` on an early call is harmless.
+var gameStatusReady = null;
+
+/**
+ * Decide how — or whether — this page load connects.
+ *
+ * #2508: a mid-game reload starts two independent connection paths, and
+ * nothing used to coordinate them. ``checkGameStatus`` finds the session
+ * cookie and opens a socket that sends ``reconnect``; ``initAll`` finds the
+ * stored name and calls ``connectWebSocket``. If the second arrived while the
+ * first was open but still waiting for ``reconnect_ack``, ``state.playerName``
+ * was null, so ``connectWebSocket`` read a live socket under a *different*
+ * name, sent ``leave`` — which removes the player on the server — and rejoined
+ * from scratch. Mid-game that means a fresh player on the room average: reload
+ * in round five holding 300 points, come back at the bottom of the board.
+ *
+ * The fix gives the connection one owner. This runs after the status check has
+ * settled, and stands down entirely if that path already holds a socket.
+ *
+ * Exported for the #2508 tests.
+ */
+export async function resolveInitialConnection() {
+    // checkGameStatus handles its own transport failures and never rejects,
+    // but an unexpected throw must not take the connection decision with it.
+    try { await gameStatusReady; } catch (e) { /* already surfaced as not-found */ }
+
+    // The session path owns the socket. Never open a second one behind it.
+    if (state.ws && (state.ws.readyState === WebSocket.CONNECTING || state.ws.readyState === WebSocket.OPEN)) {
+        return;
+    }
+
+    if (checkAdminStatus() && state.playerName) {
+        // Cookie set by the handoff above (or already by admin.js join_ack) —
+        // prefer connectWithSession so we reconnect as the same player.
+        if (getSessionCookie()) {
+            connectWithSession();
+        } else {
+            connectWebSocket(state.playerName);
+        }
+        return;
+    }
+
+    var storedName = getStoredPlayerName();
+    if (storedName && state.gameId) {
+        debug('[Beatify] Auto-reconnecting as:', storedName);
+        connectWebSocket(storedName);
+        return;
+    }
+
+    if (storedName) {
+        var nameInput = document.getElementById('name-input');
+        var joinBtn = document.getElementById('join-btn');
+        if (nameInput) {
+            nameInput.value = storedName;
+            if (joinBtn) {
+                var result = validateName(storedName);
+                joinBtn.disabled = !result.valid;
+            }
+        }
+    }
+}
+
 async function initAll() {
     // #998: consume any pending HA login redirect (?code=). Normal players
     // never authenticate — requireAuth:false means this only exchanges a
@@ -1237,39 +1330,13 @@ async function initAll() {
         try { sessionStorage.removeItem('beatify_session'); } catch (e) { /* ignore */ }
     }
 
-    if (checkAdminStatus() && state.playerName) {
-        // Cookie set above (or already set by admin.js join_ack) — prefer
-        // connectWithSession so we reconnect as the same player.
-        if (getSessionCookie()) {
-            connectWithSession();
-        } else {
-            connectWebSocket(state.playerName);
-        }
-        return;
-    }
-
-    var storedName = getStoredPlayerName();
-    if (storedName && state.gameId) {
-        debug('[Beatify] Auto-reconnecting as:', storedName);
-        connectWebSocket(storedName);
-        return;
-    }
-
-    if (storedName) {
-        var nameInput = document.getElementById('name-input');
-        var joinBtn = document.getElementById('join-btn');
-        if (nameInput) {
-            nameInput.value = storedName;
-            if (joinBtn) {
-                var result = validateName(storedName);
-                joinBtn.disabled = !result.valid;
-            }
-        }
-    }
+    await resolveInitialConnection();
 }
 
-// Initialize and check game status
-checkGameStatus();
+// Initialize and check game status.
+// #2508: keep the promise. initAll's auto-reconnect waits for it, so the two
+// connection paths this page starts on load can no longer overtake each other.
+gameStatusReady = checkGameStatus();
 
 // Wire refresh/retry buttons
 document.getElementById('refresh-btn')?.addEventListener('click', function() {
