@@ -64,8 +64,8 @@ async def async_setup_entry(
     if config_entry.options.get(OPT_SUPPRESS_HUE_LIGHTS, False):
         dev_registry = get_dev_reg(hass)
         for shc_device in session.device_helper.hue_lights:
-            dev_entry = dev_registry.async_get_device(
-                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            dev_entry = dev_registry.async_get_device_by_identifier(
+                (DOMAIN, shc_device.id), config_entry.entry_id
             )
             if dev_entry is not None:
                 dev_registry.async_update_device(
@@ -77,8 +77,8 @@ async def async_setup_entry(
     if config_entry.options.get(OPT_SUPPRESS_LEDVANCE_LIGHTS, False):
         dev_registry = get_dev_reg(hass)
         for shc_device in session.device_helper.ledvance_lights:
-            dev_entry = dev_registry.async_get_device(
-                identifiers={(DOMAIN, shc_device.id)}, connections=set()
+            dev_entry = dev_registry.async_get_device_by_identifier(
+                (DOMAIN, shc_device.id), config_entry.entry_id
             )
             if dev_entry is not None:
                 dev_registry.async_update_device(
@@ -115,6 +115,7 @@ async def async_setup_entry(
         if room_groups_enabled and len(devices) >= 2:
             entities.append(
                 SHCRoomLightGroup(
+                    hass=hass,
                     devices=devices,
                     room_id=room.id,
                     room_name=room.name,
@@ -468,6 +469,7 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
 
     def __init__(
         self,
+        hass: HomeAssistant,
         devices: list[SHCLight],
         room_id: str,
         room_name: str,
@@ -477,13 +479,27 @@ class SHCRoomLightGroup(LightEntity):  # type: ignore[misc]
         self._devices = devices
         self._entry_id = entry_id
         self._attr_unique_id = f"room_{room_id}_light_group"
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"room_{room_id}_light")},
             name=room_name,
             manufacturer=devices[0].manufacturer,
             model="Room Light Group",
-            via_device=(DOMAIN, devices[0].root_device_id),
         )
+        # boschshcpy may render the hub identifier and a device's
+        # root_device_id differently, so the lookup can miss; link only
+        # when it resolves instead of raising out of setup (matches
+        # ha-core#177711's via_device -> via_device_id migration).
+        if hub := get_dev_reg(hass).async_get_device_by_identifier(
+            (DOMAIN, devices[0].root_device_id), entry_id
+        ):
+            device_info["via_device_id"] = hub.id
+        else:
+            LOGGER.debug(
+                "No hub device found for root_device_id %s (room light group %s)",
+                devices[0].root_device_id,
+                room_id,
+            )
+        self._attr_device_info = device_info
 
     @property
     def is_on(self) -> bool | None:

@@ -13,6 +13,25 @@ Also covers Door/Window Contact II (SWD2/SWD2_PLUS/SWD2_DUAL, hass#245/#342/
 (ShutterContactButtonPressTrigger) with a different field shape, but the
 same UserDefinedState-bridge mechanism.
 
+Light Control II (hass#282) is also covered: eligibility is gated on
+SwitchConfiguration.switch_type == PUSHBUTTON. Originally this bucket also
+excluded has_keypad=True devices, on the assumption that no PUSHBUTTON-
+configured Light Control II ever exposed a live Keypad service in
+practice, and that event.py's has_keypad-gated LightControlButtonEvent
+already covered any that did. #282 comments 5429216118/5429752272
+disproved both halves of that assumption: a real Light Control II unit
+with two physical switches reports has_keypad=True, distinguished only by
+`keyCode` (1 vs 2) -- and LightControlButtonEvent doesn't read keyCode at
+all, so it can't tell the two buttons apart either. The exclusion was
+removed accordingly; has_keypad is no longer consulted here, only
+switch_type == PUSHBUTTON. It uses the same KeypadMicromoduleXTrigger
+family as shading: KeypadMicromoduleLightTrigger, decompile-confirmed to
+share the exact same SimpleButtonPressTriggerConfiguration field shape
+(deviceId/buttonId/buttonEvent) as the already-live-verified shading
+trigger -- only the `@type` differs. Unlike shading, this trigger type is
+NOT YET live-verified to actually discriminate by buttonId at fire time;
+treat as unverified until confirmed on real two-button hardware.
+
 Endpoints undocumented in the official OpenAPI spec; traced via APK
 decompile and confirmed live against a real Controller. See
 bosch-shc-api-docs/best_practice/undocumented-local-endpoints.md #10 for
@@ -21,11 +40,13 @@ the trigger/action JSON shapes this builds.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from functools import partial
 from typing import Any
 
+from boschshcpy import SwitchConfiguration
 from boschshcpy.exceptions import SHCException
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -39,6 +60,9 @@ DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 # Bumped once (#395 follow-up: wrong trigger type shipped first) to force
 # existing bridge entries to be recreated rather than left stale.
 _SCHEMA_VERSION = "v2"
+
+_SHADING_TRIGGER_TYPE = "KeypadMicromoduleShadingTrigger"
+_LIGHT_TRIGGER_TYPE = "KeypadMicromoduleLightTrigger"
 
 # SWD2 has no Keypad service; ShutterContactButtonPressTrigger is its own
 # type, keyed by shutterContactId + buttonPressState (see module docstring).
@@ -58,27 +82,37 @@ _RESET_DELAY_SECONDS = 2
 # (live-confirmed; a longer name gets a bare 400). Automation.name has no such limit.
 _UDS_NAME_MAX_LEN = 30
 _UDS_NAME_SUFFIX = " Btn{}{}"  # shortest unambiguous per-button-per-event suffix
+# Trailing-number names (e.g. "... II 17"/"... II 3") collide once truncated
+# to _UDS_NAME_MAX_LEN; a device.id tag keeps them distinct (hass#282).
+_UDS_DEVICE_TAG_LEN = 6
 
 
-def _uds_name(device_name: str, key_code: int, button_event: str) -> str:
+def _uds_device_tag(device_id: str) -> str:
+    return hashlib.sha1(device_id.encode()).hexdigest()[:_UDS_DEVICE_TAG_LEN]
+
+
+def _uds_name(
+    device_name: str, device_id: str, key_code: int, button_event: str
+) -> str:
     suffix = _UDS_NAME_SUFFIX.format(key_code, _BUTTON_EVENT_SUFFIX[button_event])
-    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+    tag = " " + _uds_device_tag(device_id)
+    prefix_len = _UDS_NAME_MAX_LEN - len(suffix) - len(tag)
+    return device_name[:prefix_len] + tag + suffix
 
 
-def _swd2_uds_name(device_name: str, button_press_state: str) -> str:
+def _swd2_uds_name(device_name: str, device_id: str, button_press_state: str) -> str:
     suffix = " Btn" + _SWD2_BUTTON_STATE_SUFFIX[button_press_state]
-    return device_name[: _UDS_NAME_MAX_LEN - len(suffix)] + suffix
+    tag = " " + _uds_device_tag(device_id)
+    prefix_len = _UDS_NAME_MAX_LEN - len(suffix) - len(tag)
+    return device_name[:prefix_len] + tag + suffix
 
 
-def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
+def _shading_keypad_devices(session: Any, options: Any) -> list[Any]:
     """Shading devices with a Keypad service.
 
     Only the shutter/blinds buckets -- confirmed via a real automation on a
     real device that this device class needs KeypadMicromoduleShadingTrigger,
-    not the generic KeypadButtonPressTrigger. Light Control II is left out
-    for now: it likely needs its own KeypadMicromoduleLightTrigger (a real,
-    distinct type -- confirmed to exist), but its field shape is unverified,
-    and guessing it risks repeating this exact bug for that device class too.
+    not the generic KeypadButtonPressTrigger.
     """
     devices: list[Any] = []
     for bucket in (
@@ -91,6 +125,25 @@ def _keypad_capable_devices(session: Any, options: Any) -> list[Any]:
                 continue
             if getattr(device, "has_keypad", False):
                 devices.append(device)
+    return devices
+
+
+def _light_control_pushbutton_devices(session: Any, options: Any) -> list[Any]:
+    """Light Control II devices configured as a non-switching push-button.
+
+    #282: eligibility is switch_type == PUSHBUTTON regardless of
+    has_keypad -- see module docstring for why the earlier has_keypad
+    exclusion was removed.
+    """
+    devices: list[Any] = []
+    for device in getattr(session.device_helper, "micromodule_light_controls", []):
+        if device_excluded(device, options):
+            continue
+        if (
+            getattr(device, "switch_type", None)
+            == SwitchConfiguration.SwitchType.PUSHBUTTON
+        ):
+            devices.append(device)
     return devices
 
 
@@ -133,10 +186,12 @@ def _build_automation(
     key_code: int,
     button_event: str,
     userdefinedstate_id: str,
+    *,
+    trigger_type: str = _SHADING_TRIGGER_TYPE,
 ) -> dict[str, Any]:
     triggers = [
         {
-            "type": "KeypadMicromoduleShadingTrigger",
+            "type": trigger_type,
             "configuration": json.dumps(
                 {
                     "deviceId": device_id,
@@ -234,9 +289,17 @@ async def async_sync_keypad_bridge(
         entry.data.get(DATA_KEYPAD_BRIDGE_MAP, {})
     )
 
+    keycode_devices: list[tuple[Any, str]] = [
+        (device, _SHADING_TRIGGER_TYPE)
+        for device in _shading_keypad_devices(session, entry.options)
+    ] + [
+        (device, _LIGHT_TRIGGER_TYPE)
+        for device in _light_control_pushbutton_devices(session, entry.options)
+    ]
+
     wanted_keys: set[str] = set()
     if enabled:
-        for device in _keypad_capable_devices(session, entry.options):
+        for device, _trigger_type in keycode_devices:
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     wanted_keys.add(
@@ -276,7 +339,7 @@ async def async_sync_keypad_bridge(
 
     # Create entries that are missing.
     if enabled:
-        for device in _keypad_capable_devices(session, entry.options):
+        for device, trigger_type in keycode_devices:
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
@@ -288,13 +351,16 @@ async def async_sync_keypad_bridge(
                         bridge_map,
                         key,
                         label=label,
-                        uds_name=_uds_name(device.name, key_code, button_event),
+                        uds_name=_uds_name(
+                            device.name, device.id, key_code, button_event
+                        ),
                         build_spec=partial(
                             _build_automation,
                             f"[HA] {label}",
                             device.id,
                             key_code,
                             button_event,
+                            trigger_type=trigger_type,
                         ),
                     )
 
@@ -309,7 +375,7 @@ async def async_sync_keypad_bridge(
                     bridge_map,
                     key,
                     label=label,
-                    uds_name=_swd2_uds_name(device.name, button_press_state),
+                    uds_name=_swd2_uds_name(device.name, device.id, button_press_state),
                     build_spec=partial(
                         _build_swd2_automation,
                         f"[HA] {label}",
