@@ -88,3 +88,54 @@
       group: bird
       icon: mdi:bird
   mode: single
+- id: '1788384097859'
+  alias: 'PhotoPainter: Kantinen-Stillleben anzeigen'
+  description: Generiert per AI Task ein gemaltes Stillleben aller heutigen Kantinen-Gerichte
+    (Aramark-Sensor) auf einem Holztisch, im Hochformat, und lädt es direkt auf den
+    Waveshare PhotoPainter hoch (Rotation 270° für Hochkant-Aufstellung). Bewusst
+    ohne Text im Bild, da KI-Text fehleranfällig ist. Kein Trigger – manuell testen;
+    später Zeit-Trigger werktags morgens ergänzen.
+  triggers: []
+  conditions:
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: sensor.arbeit_miguel_aramark_kantine_heute
+      state:
+      - unknown
+      - unavailable
+  actions:
+  - action: ai_task.generate_image
+    alias: Speiseplan-Stillleben generieren (Hochformat)
+    data:
+      entity_id: ai_task.google_ai_task
+      instructions: 'Male ein appetitliches Stillleben im Stil eines klassischen Ölgemäldes,
+        Hochformat (Seitenverhältnis 3:5, z.B. 480x800 Pixel): Ein rustikaler Holztisch
+        von schräg oben gesehen, reich gedeckt mit allen Gerichten des heutigen Kantinen-Speiseplans
+        – jedes Gericht als eigener angerichteter Teller, Schale oder Schüssel, harmonisch
+        über den Tisch verteilt, die Hauptgerichte im Vordergrund größer, Suppen,
+        Beilagen und Desserts dazwischen. Warmes, stimmungsvolles Licht, kräftige
+        satte Farben, hoher Kontrast, klare Formen – optimiert für ein 6-Farben-E-Ink-Display.
+        Wichtig: KEIN Text, keine Schrift, keine Beschriftungen, keine Preise im Bild.
+        Alle wichtigen Bildelemente zentriert halten, Rand kann beschnitten werden.
+
+
+        Die Gerichte, die auf dem Tisch stehen sollen:
+
+        {{ state_attr(''sensor.arbeit_miguel_aramark_kantine_heute'', ''uebersicht'')
+        }}'
+      task_name: photopainter_speiseplan_collage
+    response_variable: generiertes_bild
+  - action: opendisplay.upload_image
+    alias: Stillleben auf PhotoPainter hochladen
+    data:
+      device_id: dc6d22fea18511f41160667e0eac1088
+      dither_mode: burkes
+      fit_mode: cover
+      image:
+        media_content_id: '{{ generiertes_bild.media_source_id }}'
+        media_content_type: '{{ generiertes_bild.mime_type | default(''image/png'')
+          }}'
+      refresh_mode: full
+      rotation: 270
+  mode: single

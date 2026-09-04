@@ -1,18 +1,7 @@
 ---
 # Todays Birds.
-# - alias: Update E-Ink
-#   action: opendisplay.upload_image
-#   data:
-#     rotation: 0
-#     dither_mode: burkes
-#     refresh_mode: full
-#     fit_mode: contain
-#     image:
-#       media_content_id: media-source://ai_task/local/2026-08-17_101034_todays_birds.png
-#       media_content_type: image/png
-#     device_id: dc6d22fea18511f41160667e0eac1088
 alias: todaysBirds
-description: "Generiert eine Collage der heute gehörten Vögel"
+description: "Generiert eine Collage der heute gehörten Vögel und zeigt sie auf dem PhotoPainter"
 id: 2cafed2b-add1-4d50-bb3c-d73292c17764
 triggers:
   - trigger: state
@@ -40,14 +29,19 @@ actions:
       image_prompt: >-
         {% if bird_count == 0 %}
           A fine art painting in the style of a classic naturalist watercolour
-          illustration. An elegant composition featuring an empty, intricate bird nest
-          resting on a branch. Soft, painterly textures with visible brushstrokes
-          and gentle washes of colour. Hand-painted branches, leaves, and foliage
-          on a softly tinted parchment-like background. Muted, natural tones with warm light.
+          illustration. Vertical portrait composition, aspect ratio 3:5
+          (e.g. 480x800 pixels). An elegant composition featuring an empty,
+          intricate bird nest resting on a branch. Soft, painterly textures
+          with visible brushstrokes and gentle washes of colour. Hand-painted
+          branches, leaves, and foliage on a softly tinted parchment-like
+          background. Muted, natural tones with warm light. Keep all important
+          elements centered, away from the image edges.
           No text, no words, no labels, no watermarks.
         {% else %}
           A fine art painting in the style of a classic naturalist watercolour
           illustration, reminiscent of vintage ornithological field guides.
+          Vertical portrait composition, aspect ratio 3:5 (e.g. 480x800 pixels),
+          like a single upright plate from a field guide.
           An elegant composition featuring these European bird species, each
           rendered with delicate brushwork, true to its real-life appearance:
           {{ todays_birds }}.
@@ -56,10 +50,11 @@ actions:
           ornithological field guide. The labels must spell the names exactly
           as given: {{ todays_birds }}.
           Soft, painterly textures with visible brushstrokes and gentle washes
-          of colour. The birds are arranged harmoniously among hand-painted
-          branches, leaves, and foliage on a softly tinted parchment-like
-          background. Muted, natural tones with warm light. Detailed yet artistic,
-          evoking the work of John James Audubon.
+          of colour. The birds are arranged vertically and harmoniously among
+          hand-painted branches, leaves, and foliage on a softly tinted
+          parchment-like background. Muted, natural tones with warm light.
+          Detailed yet artistic, evoking the work of John James Audubon.
+          Keep all birds and labels centered, away from the image edges.
           No other text besides these labels, no watermarks.
         {% endif %}
   - alias: Generate AI image based on bird count
@@ -72,6 +67,19 @@ actions:
   - alias: Only continue if image was generated
     condition: template
     value_template: "{{ birds.url is defined }}"
+
+  - alias: Update E-Ink PhotoPainter
+    action: opendisplay.upload_image
+    continue_on_error: true
+    data:
+      device_id: dc6d22fea18511f41160667e0eac1088
+      rotation: 270
+      dither_mode: burkes
+      refresh_mode: full
+      fit_mode: cover
+      image:
+        media_content_id: "{{ birds.media_source_id }}"
+        media_content_type: "{{ birds.mime_type | default('image/png') }}"
 
   - alias: Download the generated image file
     action: downloader.download_file
