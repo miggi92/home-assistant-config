@@ -44,11 +44,11 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🔢 Eingabe-Nummern: 23
 - 🖱️ Eingabe-Tasten: 0
 - 📝 Eingabe-Texte: 45
-- 🧩 Entitäten: 4073
+- 🧩 Entitäten: 4075
 - 🎮 Fernbedienungen: 3
-- 📱 Geräte: 11863
+- 📱 Geräte: 12653
 - 📍 Geräte-Tracker: 137
-- 🔌 Integrationen: 204
+- 🔌 Integrationen: 205
 - 🗓️ Kalender: 26
 - 📷 Kameras: 11
 - 🌡️ Klima: 2
@@ -67,7 +67,7 @@ For more information about Home Assistant, visit the [Home Assistant Website](ht
 - 🗣️ Sprache-zu-Text: 4
 - 🧹 Staubsauger: 1
 - 🎬 Szenen: 3
-- 🔘 Tasten: 180
+- 🔘 Tasten: 182
 - 📢 Text-zu-Sprache: 4
 - 🔡 Texte: 48
 - 🚁 Ventilatoren: 4
