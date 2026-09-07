@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from aiohttp import ClientConnectorError
+from grocy.grocy_api_client import SystemConfigDto
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -41,6 +42,20 @@ from .services import async_setup_services, async_unload_services
 __all__ = ["async_migrate_entry"]
 
 _LOGGER = logging.getLogger(__name__)
+
+# --- HOTFIX: Compatibilidad Grocy >= 4.7.0 (USER_USERNAME ausente) ---
+if not getattr(SystemConfigDto, "_patched_grocy_470", False):
+    _orig_system_config_init = SystemConfigDto.__init__
+
+    def _patched_system_config_init(self, *args, **kwargs):
+        if "USER_USERNAME" not in kwargs or kwargs["USER_USERNAME"] is None:
+            kwargs["USER_USERNAME"] = "api"
+        _orig_system_config_init(self, *args, **kwargs)
+
+    SystemConfigDto.__init__ = _patched_system_config_init
+    SystemConfigDto._patched_grocy_470 = True
+    _LOGGER.info("Grocy hotfix: interceptor de SystemConfigDto aplicado correctamente.")
+# ----------------------------------------------------------------------
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
