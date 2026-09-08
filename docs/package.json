@@ -8,7 +8,7 @@
     "@nuxt/content": "3.16.0",
     "@nuxt/eslint": "1.17.0",
     "@nuxt/image": "2.1.0",
-    "@nuxt/ui": "4.11.0",
+    "@nuxt/ui": "4.11.1",
     "better-sqlite3": "^12.5.0",
     "docus": "latest",
     "eslint": "^10.0.0",
