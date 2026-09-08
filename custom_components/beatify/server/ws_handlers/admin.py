@@ -17,12 +17,19 @@ from custom_components.beatify.const import (
     ERR_GAME_NOT_STARTED,
     ERR_INVALID_ACTION,
     ERR_MEDIA_PLAYER_UNAVAILABLE,
+    ERR_NO_PLAYABLE_SONGS,
     ERR_NO_SONGS_REMAINING,
     ERR_NOT_ADMIN,
     ERR_UNAUTHORIZED,
+    HOST_PAUSE_REASON,
+    HOST_PAUSE_REASONS,
+    MAX_REMATCH_PLAYLISTS,
     MIN_PLAYERS,
+    VOID_ROUND_REASONS,
 )
+from custom_components.beatify.game.playlist import async_load_songs_from_paths
 from custom_components.beatify.game.state import GamePhase, GameState
+from custom_components.beatify.game.state_setup import NoPlayableSongsError
 from custom_components.beatify.server.serializers import build_state_message
 from custom_components.beatify.server.ws_handlers._helpers import (
     _is_ha_authenticated,
@@ -57,7 +64,7 @@ async def handle_admin_connect(
         )
         return
 
-    game_state._admin_ws = ws
+    handler.admin_ws = ws
     _LOGGER.info("Admin spectator connected via WebSocket")
 
     await ws.send_json({"type": "admin_connect_ack", "game_id": game_state.game_id})
@@ -75,7 +82,7 @@ async def handle_admin(
     """Handle admin action messages — dispatches to admin sub-handlers."""
     action = data.get("action")
 
-    is_admin_ws = game_state._admin_ws is not None and game_state._admin_ws is ws
+    is_admin_ws = handler.admin_ws is not None and handler.admin_ws is ws
 
     sender = None
     for player in list(game_state.players.values()):
@@ -96,10 +103,12 @@ async def handle_admin(
     admin_handlers = {
         "start_game": admin_start_game,
         "next_round": admin_next_round,
+        "void_round": admin_void_round,  # #2646
         "stop_song": admin_stop_song,
         "set_volume": admin_set_volume,
         "seek_forward": admin_seek_forward,
         "end_game": admin_end_game,
+        "pause_game": admin_pause_game,
         "resume_game": admin_resume_game,
         "dismiss_game": admin_dismiss_game,
         "rematch_game": admin_rematch_game,
@@ -134,11 +143,13 @@ async def admin_start_game(
         )
         return
 
-    # #2497: the minimum-player check used to live in GameState.start_game(),
-    # which no production path calls — so a game could be started with a single
+    # #2497: the minimum-player check used to live in a GameState.start_game()
+    # that no production path called — so a game could be started with a single
     # player. It belongs here rather than inside start_round(): start_round runs
     # for every round of every game, while this is a property of *starting* one,
     # and only here is there a socket to tell the host why nothing happened.
+    # #2717 deleted start_game(), so this and StartGameplayView are now the only
+    # two copies of the floor, one per surface a host can start a game from.
     if len(game_state.players) < MIN_PLAYERS:
         await ws.send_json(
             {
@@ -197,6 +208,48 @@ async def admin_start_game(
         await handler.broadcast_state()
 
 
+async def admin_void_round(
+    handler: BeatifyWebSocketHandler,
+    ws: web.WebSocketResponse,
+    data: dict,
+    game_state: GameState,
+) -> None:
+    """Handle admin void_round action — end the round without scoring it (#2646).
+
+    The second exit from PLAYING. ``next_round`` maps straight to
+    ``end_round()`` and always scores; this one drops the round instead, for the
+    case the host cannot fix: a cover version, or silence out of Music
+    Assistant. See :meth:`GameState.void_round` for what a voided round does and
+    does not touch.
+
+    Only valid while PLAYING — a round that already reached REVEAL has been
+    scored and cannot be un-scored.
+    """
+    if game_state.phase != GamePhase.PLAYING:
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_INVALID_ACTION,
+                "message": "Can only drop a round while it is playing",
+            }
+        )
+        return
+
+    reason = data.get("reason")
+    if reason is not None and reason not in VOID_ROUND_REASONS:
+        # An unknown chip is dropped rather than rejected: the reason is
+        # optional decoration on an action the host already committed to, and
+        # failing the whole drop over it would leave the bad song playing.
+        _LOGGER.warning("Ignoring unknown void_round reason: %s", reason)
+        reason = None
+
+    await game_state.void_round(reason)
+    # void_round already fired the round-end callback; broadcast once more the
+    # way admin_next_round's paused branch does, so a spectator admin socket
+    # that is not the round-end callback's target also sees REVEAL.
+    await handler.broadcast_state()
+
+
 async def admin_next_round(
     handler: BeatifyWebSocketHandler,
     ws: web.WebSocketResponse,
@@ -212,7 +265,7 @@ async def admin_next_round(
         # ends, so accepted near-misses count toward the leaderboard.
         await game_state.resolve_title_artist_if_pending()
         # #1702: a second admin-capable socket (participant WS + spectator
-        # _admin_ws) may have advanced/ended the game while we awaited above.
+        # handler.admin_ws) may have advanced/ended the game while we awaited above.
         # Re-check before driving the round forward; if it already left REVEAL,
         # just re-broadcast the current state.
         if game_state.phase != GamePhase.REVEAL:
@@ -256,7 +309,46 @@ async def admin_stop_song(
     data: dict,
     game_state: GameState,
 ) -> None:
-    """Handle admin stop_song action."""
+    """Handle admin stop_song action.
+
+    #2645: also reachable *out of* a host pause. On the pause screen "Just the
+    music off" sits as the fourth tile under the three pause reasons, each with
+    its consequence spelled out — that juxtaposition is the whole point, since
+    Stop and Pause were previously two buttons in two places and the host had
+    to already know which one they meant. Picking the fourth tile out of a
+    pause means the host did not want a pause at all: leave the pause and
+    silence the song, so the round runs on.
+    """
+    if game_state.phase == GamePhase.PAUSED:
+        # Only a pause the host set may be swapped for a plain stop. A pause
+        # the server owns (dead speaker, empty playlist) is not a mislabelled
+        # Stop, and resuming into it would just re-fail.
+        if game_state.pause_reason not in HOST_PAUSE_REASONS:
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "code": ERR_INVALID_ACTION,
+                    "message": "No song playing",
+                }
+            )
+            return
+        if not await game_state.resume_game():
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "code": ERR_INVALID_ACTION,
+                    "message": "Resume failed — no previous phase to restore",
+                }
+            )
+            return
+        _LOGGER.info("Host swapped a pause for a plain stop")
+        await handler.broadcast_state()
+        if game_state.phase != GamePhase.PLAYING:
+            # The round's deadline elapsed while the pause stood, so the resume
+            # landed in REVEAL. The pause is lifted, which was the larger half
+            # of the intent; there is no round left to silence.
+            return
+
     if game_state.phase != GamePhase.PLAYING:
         await ws.send_json(
             {
@@ -355,11 +447,96 @@ async def admin_end_game(
 
     # #1702: record + end ceremony run once per game (shared claim with the
     # next_round terminal path).
-    await finalize_and_end(handler, game_state)
+    #
+    # #2689: allow_playoff=False, mirroring the REST EndGameView. End is the
+    # host saying "stop now", not a game reaching its natural end, and this WS
+    # path is the one the admin page actually uses. With the finale tiebreaker
+    # armed and a tie for first during REVEAL, the default allow_playoff=True
+    # made maybe_start_finale_playoff freeze every non-leader as a playoff
+    # spectator and start another song — so End visibly continued the game and
+    # only a second tap ended it, with the spectator flags on the end screen.
+    # The finale tiebreaker still fires on the paths it was written for: the
+    # last-round next_round branch and the REVEAL auto-advance.
+    await finalize_and_end(handler, game_state, allow_playoff=False)
     _LOGGER.info(
         "Admin ended game early at round %d - players preserved for rematch",
         game_state.round,
     )
+    await handler.broadcast_state()
+
+
+async def admin_pause_game(
+    handler: BeatifyWebSocketHandler,
+    ws: web.WebSocketResponse,
+    data: dict,
+    game_state: GameState,
+) -> None:
+    """Handle admin pause_game action — the host's own pause (#2645).
+
+    ``GameState.pause_game(reason)`` has existed for a long time, but every
+    caller was server-side; the host's only "pause" was locking their phone,
+    which trips ``admin_disconnected``, or Stop, which leaves the clock running
+    and marks the room as missing the round.
+
+    The tap pauses **immediately**. ``reason`` only names the announcement the
+    room reads, and a host who tapped Pause without picking one has still
+    paused — the screens then simply say "Pause". The same action arriving
+    while already paused re-labels the announcement without leaving the pause,
+    which is why the pizza can turn into "back in a minute" halfway through.
+    """
+    reason = data.get("reason") or HOST_PAUSE_REASON
+    if reason not in HOST_PAUSE_REASONS:
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_INVALID_ACTION,
+                "message": f"Unknown pause reason: {reason}",
+            }
+        )
+        return
+
+    if game_state.phase == GamePhase.PAUSED:
+        # Re-labelling an existing host pause. A pause the server owns keeps
+        # its reason: "Pizza is here" must never be able to cover a speaker
+        # that stopped answering — the room would wait for a host who is
+        # waiting for a speaker.
+        if game_state.pause_reason not in HOST_PAUSE_REASONS:
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "code": ERR_INVALID_ACTION,
+                    "message": "This pause was not set by the host",
+                }
+            )
+            return
+        if game_state.pause_reason == reason:
+            return
+        game_state.pause_reason = reason
+        _LOGGER.info("Host pause re-labelled: %s", reason)
+        await handler.broadcast_state()
+        return
+
+    if game_state.phase not in (GamePhase.PLAYING, GamePhase.REVEAL):
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_INVALID_ACTION,
+                "message": "No round to pause",
+            }
+        )
+        return
+
+    if not await game_state.pause_game(reason):
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_INVALID_ACTION,
+                "message": "Could not pause the game",
+            }
+        )
+        return
+
+    _LOGGER.info("Host paused the game: %s", reason)
     await handler.broadcast_state()
 
 
@@ -426,6 +603,47 @@ async def admin_dismiss_game(
     await handler.cleanup_game_tasks()
 
 
+async def _resolve_rematch_playlists(
+    handler: BeatifyWebSocketHandler,
+    ws: web.WebSocketResponse,
+    data: dict,
+) -> tuple[list[dict] | None, list[str] | None]:
+    """Turn a rematch's ``playlists`` field into songs (#2648).
+
+    Returns ``(songs, paths)``. ``(None, None)`` means the caller asked for the
+    historic same-playlist rematch and nothing should change. ``(None, paths)``
+    means the request named playlists that produced no usable song — the error
+    has already been sent on ``ws`` and the caller must return.
+    """
+    raw = data.get("playlists")
+    if raw is None:
+        return None, None
+    if not isinstance(raw, list) or not all(isinstance(p, str) for p in raw) or not raw:
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_INVALID_ACTION,
+                "message": "playlists must be a non-empty list of paths",
+            }
+        )
+        return None, []
+
+    paths = [p for p in raw][:MAX_REMATCH_PLAYLISTS]
+    songs, warnings = await async_load_songs_from_paths(handler.hass, paths)
+    if warnings:
+        _LOGGER.debug("Rematch playlist swap warnings: %s", warnings[:5])
+    if not songs:
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_NO_PLAYABLE_SONGS,
+                "message": "No valid songs found in the selected playlist(s)",
+            }
+        )
+        return None, paths
+    return songs, paths
+
+
 async def admin_rematch_game(
     handler: BeatifyWebSocketHandler,
     ws: web.WebSocketResponse,
@@ -443,27 +661,73 @@ async def admin_rematch_game(
         )
         return
 
-    # #1703: cancel any pending admin-disconnect pause task before the rematch.
+    # #2648: the end screen sends the playlist the room just shouted for. No
+    # `playlists` key at all is the historic rematch — same music, untouched.
+    # Everything below this block runs identically either way, which is the
+    # point: swapping the songs must not become a second lifecycle.
+    swap_songs, swap_paths = await _resolve_rematch_playlists(handler, ws, data)
+    if swap_paths is not None and swap_songs is None:
+        return  # the error was already sent; the finished game stands
+
+    player_count = len(game_state.players)
+    # #2706: remember the spectator socket before rematch_game() runs — its
+    # reset callback (clear_admin_socket) nulls handler.admin_ws.
+    previous_admin_ws = handler.admin_ws
+    # #2706: decide on the socket identity BEFORE the rebuild, while the player
+    # records are guaranteed intact.
+    sender_is_participant = game_state.get_player_by_ws(ws) is not None
+    try:
+        game_state.rematch_game(songs=swap_songs, playlists=swap_paths)
+    except NoPlayableSongsError as err:
+        # rematch_game validates before it mutates, so the finished game is
+        # still intact here — the host keeps the end screen and can pick again.
+        await ws.send_json(
+            {
+                "type": "error",
+                "code": ERR_NO_PLAYABLE_SONGS,
+                "message": str(err),
+            }
+        )
+        return
+
+    # #1703: cancel any pending admin-disconnect pause task for the rematch.
     # rematch_game() preserves player records (admin may still be marked
     # disconnected), so a leftover grace timer would otherwise fire and pause
     # the brand-new LOBBY. cleanup_game_tasks previously ran only on dismiss.
+    # #2648: it sits after the rebuild rather than before it now. rematch_game
+    # is synchronous, so no timer can fire between the two lines — but a
+    # rejected playlist swap returns above, and that path must not leave the
+    # still-running game with its grace timer cancelled.
     await handler.cleanup_game_tasks()
 
-    player_count = len(game_state.players)
-    game_state.rematch_game()
     # Issue #841 Phase 3: announce the rematch (use case 20). TTS survives
     # rematch_game() — only end_game() tears the service down.
     await game_state.announce_rematch()
     _LOGGER.info("Rematch started with %d players", player_count)
 
-    game_state._admin_ws = ws
-    await ws.send_json(
-        {
-            "type": "admin_token_update",
-            "admin_token": game_state.admin_token,
-            "game_id": game_state.game_id,
-        }
-    )
+    # #2706: this action is reachable from EITHER admin-capable socket, and
+    # www/js/player-end.js sends it over the host's PARTICIPANT socket. Handing
+    # that phone the admin slot gave it the unredacted broadcast (answers,
+    # admin_song) for the whole rematch — exactly what _send_state_to forbids —
+    # while the admin page, which only sends admin_connect once on open, was
+    # left with the redacted copy and blank reveal fields. Only a genuine
+    # spectator socket may claim the slot; a phone-initiated rematch restores
+    # the spectator socket rematch_game() just cleared, if it is still open.
+    if not sender_is_participant:
+        handler.admin_ws = ws
+    elif previous_admin_ws is not None and not previous_admin_ws.closed:
+        handler.admin_ws = previous_admin_ws
+
+    # The new admin_token belongs to whoever holds the admin slot; the
+    # requesting socket gets it too, since it asked for the rematch.
+    token_msg = {
+        "type": "admin_token_update",
+        "admin_token": game_state.admin_token,
+        "game_id": game_state.game_id,
+    }
+    await ws.send_json(token_msg)
+    if handler.admin_ws is not None and handler.admin_ws is not ws:
+        await handler.admin_ws.send_json(token_msg)
     await handler.broadcast({"type": "rematch_started"})
     await handler.broadcast_state()
 

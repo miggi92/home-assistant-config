@@ -14,15 +14,20 @@
  * imports `renderPlaylists` from here; admin.js imports the loadStatus-driven
  * renderers + the validation helpers.
  *
- * `clearPlaylistFilters` is referenced from inline `onclick="..."` in the
- * HTML this module generates, so admin.js re-exports it on `window` (the shim
- * lives there alongside the other admin window globals).
+ * #2637: the two "clear the filters" buttons this module renders used to carry
+ * an inline `onclick="clearPlaylistFilters()"`, which only resolved because
+ * admin.js re-published this module's own export on `window`. The round trip
+ * through the page global is gone: the buttons are marked
+ * `data-action="clear-filters"` and wired with an event listener right after
+ * each render, so the section owns its own clicks and no longer needs its
+ * importer to hold anything for it.
  */
 
 import { adminState } from '../state.js';
 import { STORAGE_GAME_SETTINGS, TAG_CATEGORIES } from '../constants.js';
 import { seasonalSuggestionHtml, wireSeasonalSuggestion } from './seasonal-suggestion.js';
 import { tr } from '../util.js';
+import { providerCountForPlaylist } from '../provider-counts.js';
 
 // BeatifyUtils is a classic global script loaded before admin.min.js (module,
 // deferred), so this is safe at module init. Mirrors the admin.js pattern.
@@ -38,26 +43,11 @@ const utils = window.BeatifyUtils || {};
  * checkbox dataset. Extracting it lets the selection be restored straight from
  * `adminState.playlistData` (the real data store) without that DOM round-trip.
  *
- * Behaviour is identical to the old inline block (spotify falls back to the
- * raw song_count for legacy playlists; amazon_music uses Alexa text-search so
- * every song is playable; unknown providers get the full song_count).
- *
- * @param {object} playlist  a playlist entry from adminState.playlistData
- * @param {string} provider  adminState.selectedProvider
- * @returns {number}
+ * #2713 moved the body to `admin/provider-counts.js` so the mixer can call it
+ * without pulling this module's `window.BeatifyUtils` lookup into a test
+ * runner; it is re-exported here because that is where callers import it from.
  */
-export function providerCountForPlaylist(playlist, provider) {
-    const songCount = playlist.song_count || 0;
-    switch (provider) {
-        case 'spotify':       return playlist.spotify_count || songCount;
-        case 'apple_music':   return playlist.apple_music_count || 0;
-        case 'youtube_music': return playlist.youtube_music_count || 0;
-        case 'tidal':         return playlist.tidal_count || 0;
-        case 'deezer':        return playlist.deezer_count || 0;
-        case 'amazon_music':  return playlist.amazon_music_count || songCount;
-        default:              return songCount;
-    }
-}
+export { providerCountForPlaylist };
 
 /**
  * #1590: restore `adminState.selectedPlaylists` from the in-memory data store
@@ -171,9 +161,10 @@ export function renderPlaylists(playlists, playlistDir, preserveSelection = fals
         container.innerHTML = `
             <div class="empty-state">
                 <p>${tr('admin.noPlaylistsMatchFilter', 'No playlists match the selected filter.')}</p>
-                <button type="button" class="btn btn-secondary" onclick="clearPlaylistFilters()">${tr('admin.clearFilters', 'Clear Filters')}</button>
+                <button type="button" class="btn btn-secondary" data-action="clear-filters">${tr('admin.clearFilters', 'Clear Filters')}</button>
             </div>
         `;
+        wireClearFilterButtons(container);
         return;
     }
 
@@ -390,7 +381,7 @@ export function renderPlaylistFilterBar(playlists) {
         html += `
             <div class="filter-summary">
                 <span class="filter-summary-text">Showing: ${activeFiltersList.join(' • ')}</span>
-                <button type="button" class="filter-clear" onclick="clearPlaylistFilters()">Clear</button>
+                <button type="button" class="filter-clear" data-action="clear-filters">Clear</button>
             </div>
         `;
     }
@@ -404,6 +395,7 @@ export function renderPlaylistFilterBar(playlists) {
             handleFilterDropdownChange(this.dataset.category, this.value);
         });
     });
+    wireClearFilterButtons(filterBar);
 }
 
 /**
@@ -427,6 +419,21 @@ export function handleFilterDropdownChange(category, value) {
 export function updateActiveFilterTags() {
     const selectedTags = Object.values(adminState.activeFilters).filter(v => v);
     adminState.activeFilterTags = selectedTags.length > 0 ? selectedTags : ['all'];
+}
+
+/**
+ * Wire every `data-action="clear-filters"` button inside `root` (#2637).
+ *
+ * Called after each innerHTML write that can emit one. Re-rendering replaces
+ * the nodes, so the listeners go with them and there is nothing to detach.
+ *
+ * @param {ParentNode|null} root - container that was just re-rendered
+ */
+function wireClearFilterButtons(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    root.querySelectorAll('[data-action="clear-filters"]').forEach((btn) => {
+        btn.addEventListener('click', () => clearPlaylistFilters());
+    });
 }
 
 /**

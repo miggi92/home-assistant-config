@@ -57,9 +57,9 @@ from .entity import async_remove_stale_entity, device_excluded
 
 DATA_KEYPAD_BRIDGE_MAP = "keypad_bridge_map"
 
-# Bumped once (#395 follow-up: wrong trigger type shipped first) to force
-# existing bridge entries to be recreated rather than left stale.
-_SCHEMA_VERSION = "v2"
+# Bumped on #395/#385/#282 to force existing bridge entries (now also
+# storing device_id/attr_name) to be recreated rather than left stale.
+_SCHEMA_VERSION = "v3"
 
 _SHADING_TRIGGER_TYPE = "KeypadMicromoduleShadingTrigger"
 _LIGHT_TRIGGER_TYPE = "KeypadMicromoduleLightTrigger"
@@ -239,12 +239,16 @@ async def _create_bridge_entry(
     *,
     label: str,
     uds_name: str,
+    device_id: str,
+    attr_name: str,
     build_spec: Callable[[str], dict[str, Any]],
 ) -> None:
     """Create one UserDefinedState + Automation pair, recording it on success.
 
     Rolls back the just-created state if the automation create fails, so a
-    partial failure doesn't leak an orphaned, untracked state.
+    partial failure doesn't leak an orphaned, untracked state. `device_id`/
+    `attr_name` (#282) let switch.py group the resulting entity under its
+    real source device with a readable name, instead of the SHC hub.
     """
     try:
         userdefinedstate = await session.async_create_userdefinedstate(uds_name)
@@ -270,7 +274,23 @@ async def _create_bridge_entry(
     bridge_map[key] = {
         "userdefinedstate_id": userdefinedstate.id,
         "automation_id": automation.id,
+        "device_id": device_id,
+        "attr_name": attr_name,
     }
+
+
+def _bridge_entry_exists(session: Any, entry_ids: dict[str, str]) -> bool:
+    """True if the SHC still has both objects a bridge_map entry claims exist.
+
+    #282: bridge_map is otherwise trusted forever once written, so a
+    UserDefinedState/Automation removed out-of-band (Bosch app, controller
+    restore, factory reset) leaves a permanent phantom entry that blocks
+    recreation. Both collections are already loaded in session memory, so
+    this costs no extra API call.
+    """
+    return entry_ids["userdefinedstate_id"] in {
+        state.id for state in session.userdefinedstates
+    } and entry_ids["automation_id"] in {rule.id for rule in session.automation_rules}
 
 
 async def async_sync_keypad_bridge(
@@ -278,11 +298,12 @@ async def async_sync_keypad_bridge(
 ) -> None:
     """Create or tear down the keypad-bridge SHC objects to match `enabled`.
 
-    Idempotent: only creates what's missing for currently-eligible devices,
-    and removes entries for devices no longer eligible (excluded, or the
-    feature turned off) using the ids persisted in `entry.data`. Best-effort
-    on delete -- a manually-removed SHC object shouldn't block cleanup of
-    the rest of the map.
+    Idempotent: only creates what's missing for currently-eligible devices
+    -- including a bridge_map entry whose SHC objects were deleted out-of-
+    band (#282, see _bridge_entry_exists) -- and removes entries for devices
+    no longer eligible (excluded, or the feature turned off) using the ids
+    persisted in `entry.data`. Best-effort on delete -- a manually-removed
+    SHC object shouldn't block cleanup of the rest of the map.
     """
     session = entry.runtime_data.session
     bridge_map: dict[str, dict[str, str]] = dict(
@@ -296,6 +317,17 @@ async def async_sync_keypad_bridge(
         (device, _LIGHT_TRIGGER_TYPE)
         for device in _light_control_pushbutton_devices(session, entry.options)
     ]
+    swd2_devices = _swd2_button_devices(session, entry.options)
+
+    # #282: every non-error path here was previously silent, indistinguishable in a debug log.
+    LOGGER.debug(
+        "Keypad bridge sync: enabled=%s, eligible_keycode_devices=%s, "
+        "eligible_swd2_devices=%s, existing_bridge_entries=%d",
+        enabled,
+        [device.id for device, _trigger_type in keycode_devices],
+        [device.id for device in swd2_devices],
+        len(bridge_map),
+    )
 
     wanted_keys: set[str] = set()
     if enabled:
@@ -305,7 +337,7 @@ async def async_sync_keypad_bridge(
                     wanted_keys.add(
                         f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
                     )
-        for device in _swd2_button_devices(session, entry.options):
+        for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 wanted_keys.add(
                     f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
@@ -343,9 +375,12 @@ async def async_sync_keypad_bridge(
             for key_code in _KEY_CODES:
                 for button_event in _BUTTON_EVENTS:
                     key = f"{device.id}_{key_code}_{button_event}_{_SCHEMA_VERSION}"
-                    if key in bridge_map:
+                    if key in bridge_map and _bridge_entry_exists(
+                        session, bridge_map[key]
+                    ):
                         continue
                     label = f"{device.name} Button {key_code} {button_event}"
+                    press = "Short" if button_event == "PRESS_SHORT" else "Long"
                     await _create_bridge_entry(
                         session,
                         bridge_map,
@@ -354,6 +389,8 @@ async def async_sync_keypad_bridge(
                         uds_name=_uds_name(
                             device.name, device.id, key_code, button_event
                         ),
+                        device_id=device.id,
+                        attr_name=f"Button {key_code} {press}",
                         build_spec=partial(
                             _build_automation,
                             f"[HA] {label}",
@@ -364,18 +401,21 @@ async def async_sync_keypad_bridge(
                         ),
                     )
 
-        for device in _swd2_button_devices(session, entry.options):
+        for device in swd2_devices:
             for button_press_state in _SWD2_BUTTON_STATES:
                 key = f"{device.id}_swd2_{button_press_state}_{_SCHEMA_VERSION}"
-                if key in bridge_map:
+                if key in bridge_map and _bridge_entry_exists(session, bridge_map[key]):
                     continue
                 label = f"{device.name} Button {button_press_state}"
+                press = "Short" if button_press_state == "ON_SHORT_PRESS" else "Long"
                 await _create_bridge_entry(
                     session,
                     bridge_map,
                     key,
                     label=label,
                     uds_name=_swd2_uds_name(device.name, device.id, button_press_state),
+                    device_id=device.id,
+                    attr_name=f"Button {press}",
                     build_spec=partial(
                         _build_swd2_automation,
                         f"[HA] {label}",

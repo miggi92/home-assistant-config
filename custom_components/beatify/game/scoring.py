@@ -34,6 +34,8 @@ from custom_components.beatify.const import (
     MIN_ROUNDS_FOR_COMEBACK,
     MIN_STREAK_FOR_AWARD,
     MIN_SUBMISSIONS_FOR_SPEED,
+    POINTS_EXACT,
+    POINTS_WRONG,
     STEAL_UNLOCK_STREAK,
     STREAK_MILESTONES,
 )
@@ -45,9 +47,9 @@ from custom_components.beatify.game.text_match import (
     STATUS_NEAR_MISS,
 )
 
-# Points awarded
-POINTS_EXACT = 10
-POINTS_WRONG = 0
+# Points awarded. Re-exported from const.py (#2625) so the whole year-guess
+# payout — the two flat tiers and the per-difficulty bands — is defined in one
+# file. Callers keep importing them from here.
 
 # #1722: the speed bonus holds at its maximum for an initial grace window so a
 # player isn't punished for actually listening to the song before committing to
@@ -468,7 +470,9 @@ def _score_intro_round(
         if p is not player
         # #1748: an eliminated player (Sudden Death) is out of the game and must
         # not occupy a slot in the intro speed ranking that survivors compete for.
-        and not p.eliminated
+        # #2578: dasselbe gilt fuer einen Zuschauer im Finale-Stechen — er
+        # spielt die Runde nicht mit, ist aber nicht ausgeschieden.
+        and not p.out_of_play
         and _intro_qualified(
             p,
             cutoff=cutoff,
@@ -736,10 +740,11 @@ class ScoringService:
         # #1748: an eliminated player (Sudden Death) must not enter the
         # closest-distance calculation — a stale-client submission from someone
         # already OUT could otherwise become "closest" and zero every survivor.
+        # #2578: gilt genauso fuer Zuschauer im Finale-Stechen.
         submitted = [
             p
             for p in players
-            if p.submitted and p.current_guess is not None and not p.eliminated
+            if p.submitted and p.current_guess is not None and not p.out_of_play
         ]
         if not submitted:
             return

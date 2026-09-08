@@ -8,6 +8,7 @@ import {
     initVirtualPlayerList, setVirtualPlayerListItems,
     createModalFocusTrap
 } from './player-utils.js';
+import { showToast } from './notify.js';
 
 var utils = window.BeatifyUtils || {};
 
@@ -27,7 +28,6 @@ var previousPlayers = [];
  */
 export function renderPlayerList(players) {
     var listEl = document.getElementById('player-list');
-    var countEl = document.getElementById('player-count');
     var countBadgeEl = document.getElementById('player-count-badge');
     var playersSummaryEl = document.getElementById('players-summary');
     var playersEmptyEl = document.getElementById('players-empty');
@@ -37,12 +37,6 @@ export function renderPlayerList(players) {
     }
 
     var count = players.length;
-
-    if (countEl) {
-        countEl.textContent = count === 1
-            ? utils.t('lobby.playerJoined')
-            : utils.t('lobby.playersJoined', { count: count });
-    }
 
     if (countBadgeEl) {
         countBadgeEl.textContent = count;
@@ -143,6 +137,24 @@ export function renderPlayerList(players) {
     }, 2000);
 
     previousPlayers = players.slice();
+}
+
+// ============================================
+// Lobby brief (#2647)
+// ============================================
+
+/**
+ * The one sentence that says what game this is, on the guest's phone.
+ *
+ * Same builder, same words, same colours as the TV (`dashboard.js`) — the
+ * wording lives in `utils.js` precisely so the two surfaces cannot drift into
+ * telling the room two different things about the same game.
+ *
+ * @param {Object} data - LOBBY state payload
+ */
+export function renderLobbyBriefLine(data) {
+    if (!utils.renderLobbyBrief) return;
+    utils.renderLobbyBrief(document.getElementById('lobby-brief'), data);
 }
 
 // ============================================
@@ -463,6 +475,46 @@ export function setupAdminControls() {
             action: 'start_game'
         }));
     });
+}
+
+/**
+ * Surface a failed game start in the lobby (#2551).
+ *
+ * A start that the server refuses — no media player, no playable songs, no
+ * playlist — used to be routed to the in-game submit-error handler, which
+ * wrote the message onto the HIDDEN #submit-btn. On screen the Start button
+ * simply sat on "Starting…" forever with no explanation.
+ *
+ * Returns true when the error belonged to the lobby and has been handled.
+ */
+export function handleStartFailure(data) {
+    var lobby = document.getElementById('lobby-view');
+    if (!lobby || lobby.classList.contains('hidden')) return false;
+
+    var startBtn = document.getElementById('start-game-btn');
+    if (!startBtn) return false;
+
+    // The click handler flattened the button to a text node, so rebuild the
+    // icon + label it ships with rather than leaving a bare string.
+    startBtn.disabled = false;
+    startBtn.textContent = '';
+    var icon = document.createElement('span');
+    icon.className = 'btn-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '🎉';
+    var label = document.createElement('span');
+    label.setAttribute('data-i18n', 'lobby.startGame');
+    label.textContent = utils.t('lobby.startGame', 'Start Game');
+    startBtn.appendChild(icon);
+    startBtn.appendChild(label);
+
+    var code = data && data.code;
+    var message = code ? utils.t('errors.' + code) : null;
+    if (!message || message === 'errors.' + code) {
+        message = (data && data.message) || utils.t('errors.startNotPossible');
+    }
+    showToast(message);
+    return true;
 }
 
 // ============================================

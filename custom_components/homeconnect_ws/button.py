@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from homeassistant.components.button import ButtonEntity
 
 from .entity import HCEntity
-from .helpers import create_entities
+from .helpers import create_entities, error_decorator
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -27,12 +27,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up button platform."""
     entities = create_entities(
-        {"abort_button": HCAbortButton, "start_button": HCStartButton}, config_entry.runtime_data
+        {"button": HCButton, "start_button": HCStartButton}, config_entry.runtime_data
     )
     async_add_entites(entities)
 
 
-class HCAbortButton(HCEntity, ButtonEntity):
+class HCButton(HCEntity, ButtonEntity):
     """Abort Button Entity."""
 
     _entity: Command
@@ -48,5 +48,12 @@ class HCStartButton(HCEntity, ButtonEntity):
     _entity: ActiveProgram
     entity_description: HCButtonEntityDescription
 
+    @property
+    def available(self) -> bool:
+        available = super().available
+        available &= self._runtime_data.appliance.selected_program is not None
+        return available
+
+    @error_decorator
     async def async_press(self) -> None:
-        await self._appliance.selected_program.start()
+        await self._runtime_data.appliance.selected_program.start()

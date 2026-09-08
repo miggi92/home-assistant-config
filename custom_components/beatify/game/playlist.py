@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import random
 import re
 from collections.abc import Callable
@@ -17,18 +18,12 @@ from custom_components.beatify.const import (
     PROVIDER_AMAZON_MUSIC,
     PROVIDER_APPLE_MUSIC,
     PROVIDER_DEFAULT,
-    PROVIDER_DEEZER,
-    PROVIDER_MA_LIBRARY,
-    PROVIDER_SPOTIFY,
     PROVIDER_YTMUSIC_FREE,
-    PROVIDER_TIDAL,
-    PROVIDER_YOUTUBE_MUSIC,
-    URI_PATTERN_APPLE_MUSIC,
-    URI_PATTERN_DEEZER,
-    URI_PATTERN_MA_LIBRARY,
-    URI_PATTERN_SPOTIFY,
-    URI_PATTERN_TIDAL,
-    URI_PATTERN_YOUTUBE_MUSIC,
+)
+from custom_components.beatify.providers import (
+    PROVIDERS,
+    catalogue_uri_fields,
+    get_provider,
 )
 
 if TYPE_CHECKING:
@@ -36,22 +31,12 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_URI_FIELDS = [
-    ("uri", URI_PATTERN_SPOTIFY, "spotify:track:{22-char-id}"),
-    ("uri_spotify", URI_PATTERN_SPOTIFY, "spotify:track:{22-char-id}"),
-    ("uri_apple_music", URI_PATTERN_APPLE_MUSIC, "applemusic://track/id"),
-    (
-        "uri_youtube_music",
-        URI_PATTERN_YOUTUBE_MUSIC,
-        "https://music.youtube.com/watch?v=...",
-    ),
-    ("uri_tidal", URI_PATTERN_TIDAL, "tidal://track/{id}"),
-    ("uri_deezer", URI_PATTERN_DEEZER, "deezer://track/{id}"),
-    # Crate Digger: Music Assistant library URIs. Permissive by
-    # design — the provider prefix varies per MA instance/provider
-    # (library://track/123, plex--<id>://track/<key>, jellyfin--…).
-    ("uri_ma_library", URI_PATTERN_MA_LIBRARY, "library://track/{id}"),
-]
+# Every playlist field that may hold a track URI, with the pattern it must
+# match and the wording an author sees when it does not. Derived from the
+# provider registry (#2713) so a new provider's catalogue field is validated by
+# the same commit that introduces it — a field missing here was never an error,
+# it just meant a malformed URI passed validation and failed at the speaker.
+_URI_FIELDS = [(f.name, f.pattern, f.example) for f in catalogue_uri_fields()]
 
 
 # Song ordering modes (#1726).
@@ -170,8 +155,18 @@ class PlaylistManager:
         #   a plain ``[:n]`` would serve only the first playlist of a
         #   multi-playlist selection. Sampling keeps the mix.
         self._max_rounds = max(max_rounds, MIN_ROUNDS) if max_rounds else 0
+        # #2547: the songs the cap drops are kept aside rather than discarded.
+        # A capped game ends with get_remaining_count() == 0 by construction, so
+        # the finale tiebreaker (#1725) — which only arms while unplayed songs
+        # remain — could never fire in the actual last round, the one case it
+        # was written for. reserve_songs_for_playoff() hands them back one at a
+        # time, so the cap still governs normal play.
+        self._reserve_songs: list[dict[str, Any]] = []
         if self._max_rounds and len(self._songs) > self._max_rounds:
-            self._songs = random.sample(self._songs, self._max_rounds)
+            sampled = random.sample(self._songs, self._max_rounds)
+            sampled_ids = {id(song) for song in sampled}
+            self._reserve_songs = [s for s in self._songs if id(s) not in sampled_ids]
+            self._songs = sampled
             # #2418: regroup the buckets from the sampled pool. Until this line
             # existed the cap applied to `self._songs` alone, while
             # `self._buckets` — assigned above, before the sample — kept every
@@ -362,6 +357,34 @@ class PlaylistManager:
         # subtraction can go negative. Clamp at 0.
         return max(0, len(self._songs) - len(self._played_uris))
 
+    def reserve_songs_for_playoff(self, count: int = 1) -> int:
+        """Move up to ``count`` capped-out songs back into the playable pool.
+
+        Returns the number of songs actually released (0 when the round cap was
+        never applied, or the reserve is spent).
+
+        The finale tiebreaker (#1725) arms only while unplayed songs remain.
+        With a round cap the pool is sampled down to exactly ``max_rounds``, so
+        after the last round nothing remains and the tiebreaker was unreachable
+        in the situation it exists for — a tie at the end of a normal game
+        (#2547). Rather than lifting the cap and letting normal play run long,
+        the dropped songs stay in reserve and a playoff draws from them.
+        """
+        if count <= 0 or not self._reserve_songs:
+            return 0
+        released = self._reserve_songs[:count]
+        self._reserve_songs = self._reserve_songs[count:]
+        self._songs.extend(released)
+        for song in released:
+            source = song.get("_playlist_source", "__default__")
+            self._buckets.setdefault(source, []).append(song)
+        self._multi_playlist = len(self._buckets) > 1
+        _LOGGER.info(
+            "Finale tiebreaker: released %d reserved song(s) for a playoff round",
+            len(released),
+        )
+        return len(released)
+
     def has_playable_songs(self) -> bool:
         """True if this manager has any songs for its provider (#709)."""
         return len(self._songs) > 0
@@ -539,6 +562,97 @@ def _prune_relocated_playlists(
     return removed
 
 
+def _copy_bundled_playlists_sync(
+    bundled_dir: Path, dest_dir: Path
+) -> tuple[list[tuple[str, str]], list[Path]]:
+    """Copy/refresh every bundled playlist into ``dest_dir``, in ONE executor job.
+
+    #2572: this used to be a loop on the event loop that awaited a separate
+    executor round-trip per playlist, and each round-trip parsed both JSON
+    documents in full just to read the ``version`` field. With 66 bundled
+    playlists at 13.7 MB that is 66 hops and ~110 ms of parsing on every setup,
+    growing with the catalogue. ``_discover_playlists_sync`` further down
+    already had the right shape: one job for the whole walk, plus a stat-based
+    signature that skips the parse when nothing changed. This does the same.
+
+    The stat shortcut is deliberately conservative. A destination counts as
+    current only when it has **exactly** the byte size of the bundled file and
+    was written no earlier than it — which is what :func:`_copy_playlist_file`
+    leaves behind, and what an untouched install looks like at every restart
+    after the first. Anything else (a release that re-installed the bundle, a
+    file the user edited, a truncated copy) fails the check and falls through
+    to the version comparison, so no update can be missed by it.
+
+    Returns ``(log_records, playlist_files)``. Log records are finished
+    ``(level, message)`` pairs the caller emits on the event loop: only the
+    handful of playlists that actually changed produce one, so nothing is
+    formatted for the up-to-date case.
+    """
+    log: list[tuple[str, str]] = []
+    playlist_files = list(bundled_dir.glob("**/*.json"))
+
+    for playlist_file in playlist_files:
+        # Preserve relative path (e.g. community/greatest-metal-songs.json)
+        rel = playlist_file.relative_to(bundled_dir)
+        dest_file = dest_dir / rel
+        try:
+            src_stat = playlist_file.stat()
+            try:
+                dst_stat: os.stat_result | None = dest_file.stat()
+            except FileNotFoundError:
+                dst_stat = None
+
+            if dst_stat is None:
+                # New playlist — copy it. The bundled document is parsed only
+                # here, on the path that writes something anyway.
+                _copy_playlist_file(playlist_file, dest_file)
+                bundled_ver = _get_playlist_version(dest_file)
+                log.append(
+                    (
+                        "info",
+                        f"Copied bundled playlist {playlist_file.name} (v{bundled_ver})",
+                    )
+                )
+                continue
+
+            if (
+                dst_stat.st_size == src_stat.st_size
+                and dst_stat.st_mtime_ns >= src_stat.st_mtime_ns
+            ):
+                # Byte-identical copy written after the bundled file: the common
+                # case at every restart, and it costs two stats instead of two
+                # full JSON parses.
+                continue
+
+            bundled_ver = _get_playlist_version(playlist_file)
+            existing_ver = _get_playlist_version(dest_file)
+            if _compare_versions(bundled_ver, existing_ver) > 0:
+                _copy_playlist_file(playlist_file, dest_file)
+                log.append(
+                    (
+                        "info",
+                        f"Updated playlist {playlist_file.name}: "
+                        f"v{existing_ver} -> v{bundled_ver}",
+                    )
+                )
+        except OSError as err:
+            log.append(
+                ("warning", f"Failed to process playlist {playlist_file.name}: {err}")
+            )
+
+    return log, playlist_files
+
+
+def _copy_playlist_file(src: Path, dst: Path) -> None:
+    """Copy file contents, creating parent dirs (runs in executor).
+
+    #1402 B3: folds the previously-on-event-loop ``mkdir`` in here.
+    """
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    content = src.read_text(encoding="utf-8")
+    dst.write_text(content, encoding="utf-8")
+
+
 async def _copy_bundled_playlists(dest_dir: Path) -> None:
     """Copy bundled playlists to destination, updating if bundled version is newer."""
     # Bundled playlists are in custom_components/beatify/playlists/
@@ -546,68 +660,17 @@ async def _copy_bundled_playlists(dest_dir: Path) -> None:
 
     loop = asyncio.get_running_loop()
 
-    # #1402 B3: `exists()` is a blocking syscall — run it (and the glob) in the
+    # #1402 B3: `exists()` is a blocking syscall — run it (and the walk) in the
     # executor instead of on the event loop.
     if not await loop.run_in_executor(None, bundled_dir.exists):
         return
 
-    def _copy_file(src: Path, dst: Path) -> None:
-        """Copy file contents, creating parent dirs (runs in executor).
-
-        #1402 B3: folds the previously-on-event-loop ``mkdir`` in here.
-        """
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        content = src.read_text(encoding="utf-8")
-        dst.write_text(content, encoding="utf-8")
-
-    def _get_versions(src: Path, dst: Path) -> tuple[str, str, bool]:
-        """Get versions from both files + whether dst exists (runs in executor).
-
-        #1402 B3: returns ``dst_exists`` so the caller reuses this single stat
-        instead of re-running a blocking ``dst.exists()`` on the event loop.
-        """
-        bundled_ver = _get_playlist_version(src)
-        dst_exists = dst.exists()
-        existing_ver = _get_playlist_version(dst) if dst_exists else "0.0"
-        return bundled_ver, existing_ver, dst_exists
-
-    # Offload blocking glob to executor to avoid scandir in event loop (#516)
-    playlist_files = await loop.run_in_executor(
-        None, lambda: list(bundled_dir.glob("**/*.json"))
+    # #2572: walk + stat + copy in a single hop instead of one per playlist.
+    log, playlist_files = await loop.run_in_executor(
+        None, _copy_bundled_playlists_sync, bundled_dir, dest_dir
     )
-    for playlist_file in playlist_files:
-        # Preserve relative path (e.g. community/greatest-metal-songs.json)
-        rel = playlist_file.relative_to(bundled_dir)
-        dest_file = dest_dir / rel
-        try:
-            # Get versions (+ existence, reused below — _copy_file makes the dir)
-            bundled_ver, existing_ver, dest_exists = await loop.run_in_executor(
-                None, _get_versions, playlist_file, dest_file
-            )
-
-            if not dest_exists:
-                # New playlist - copy it
-                await loop.run_in_executor(None, _copy_file, playlist_file, dest_file)
-                _LOGGER.info(
-                    "Copied bundled playlist %s (v%s)", playlist_file.name, bundled_ver
-                )
-            elif _compare_versions(bundled_ver, existing_ver) > 0:
-                # Bundled version is newer - update
-                await loop.run_in_executor(None, _copy_file, playlist_file, dest_file)
-                _LOGGER.info(
-                    "Updated playlist %s: v%s -> v%s",
-                    playlist_file.name,
-                    existing_ver,
-                    bundled_ver,
-                )
-            else:
-                _LOGGER.debug(
-                    "Playlist %s is up to date (v%s)", playlist_file.name, existing_ver
-                )
-        except OSError as err:
-            _LOGGER.warning(
-                "Failed to process playlist %s: %s", playlist_file.name, err
-            )
+    for level, message in log:
+        getattr(_LOGGER, level)(message)
 
     # #1864: every current playlist is on disk now, so anything left at a former
     # path is a stranded duplicate. Runs after the copy loop precisely so the
@@ -798,6 +861,77 @@ def _ytmusic_free_uri(youtube_music_uri: str | None) -> str | None:
     return f"ytmusic_free://track/{match.group(1)}"
 
 
+def _resolve_apple_music(song: dict[str, Any], storefront: str | None) -> str | None:
+    """Apple Music: storefront-aware resolution (#808 follow-up).
+
+    Beatify's playlists historically stored a single Apple Music URI per song
+    (typically a US-storefront track ID); for users on other storefronts (DE,
+    GB, FR, ...) some subset isn't in their regional catalog. The
+    ``uri_apple_music_by_region`` map (populated by
+    ``scripts/fetch_apple_music_regions.py``) gives per-region track IDs, or an
+    explicit None for confirmed-unavailable — which is why an explicit key wins
+    even when its value is None: the caller then skips the song silently
+    instead of asking MA for a track that is not there.
+    """
+    if storefront:
+        regional = song.get("uri_apple_music_by_region") or {}
+        if storefront in regional:
+            # Explicit per-region answer (URI string OR None).
+            return regional[storefront]
+    # No storefront, or no per-region data: fall back to legacy field.
+    return song.get("uri_apple_music") or None
+
+
+def _resolve_ytmusic_free(song: dict[str, Any], _storefront: str | None) -> str | None:
+    """ytmusic_free: derived, not stored (#2426).
+
+    The third-party ``ytmusic_free`` provider keys tracks by the YouTube video
+    id, which is exactly what sits in ``uri_youtube_music`` — so the URI is
+    built here instead of adding a second catalogue field holding a copy of the
+    same id that could then drift out of step with it.
+
+    Deriving in this one function is enough for the whole stack:
+    ``filter_songs_for_provider`` calls it, ``PlaylistManager`` caches the
+    result as ``_precomputed_uri``, and ``_get_ma_uri_candidates`` always tries
+    ``_resolved_uri`` first — so nothing downstream needs a branch.
+    """
+    return _ytmusic_free_uri(song.get("uri_youtube_music"))
+
+
+def _resolve_amazon_music(song: dict[str, Any], _storefront: str | None) -> str | None:
+    """Amazon Music: a synthetic identity, because there is no track URI.
+
+    Alexa is asked for the song in words, so nothing per-track exists to
+    return. We still must return a *distinct* value per song, because
+    ``PlaylistManager`` uses it both as the dedup key (``__init__``) and as the
+    played-tracking key (``mark_played``). Returning a single constant for
+    every song collapsed the whole playlist to one playable track and ended
+    every Alexa game after round 1 (#1361). ``_resolved_uri`` is only ever
+    consumed for Alexa text search (artist+title), never as a real media URI,
+    so this synthetic key is purely internal.
+    """
+    artist = (song.get("artist") or "").strip().casefold()
+    title = (song.get("title") or "").strip().casefold()
+    if artist or title:
+        return f"amazon:{artist}|{title}"
+    # No metadata at all — fall back to the song's id so it stays distinct.
+    song_id = song.get("id")
+    if song_id is not None:
+        return f"amazon:id:{song_id}"
+    return None
+
+
+#: Providers whose URI is not simply "the first stored field that has a value".
+#: A provider absent here is resolved from its ``playback_uri_fields``; one
+#: present here says so with a function instead of an ``if`` in a chain that
+#: used to grow by one branch per provider (#2713).
+_SPECIAL_RESOLVERS: dict[str, Callable[[dict[str, Any], str | None], str | None]] = {
+    PROVIDER_APPLE_MUSIC: _resolve_apple_music,
+    PROVIDER_YTMUSIC_FREE: _resolve_ytmusic_free,
+    PROVIDER_AMAZON_MUSIC: _resolve_amazon_music,
+}
+
+
 def get_song_uri(
     song: dict[str, Any],
     provider: str,
@@ -808,7 +942,7 @@ def get_song_uri(
 
     Args:
         song: Song dictionary with uri fields
-        provider: Provider identifier (PROVIDER_SPOTIFY, PROVIDER_APPLE_MUSIC, or PROVIDER_YOUTUBE_MUSIC)
+        provider: Provider identifier (a key of ``providers.PROVIDERS_BY_ID``)
         storefront: For Apple Music, the user's regional storefront code
             (e.g. "us", "de", "gb"). Used to resolve per-region track IDs
             from ``uri_apple_music_by_region`` when present (#808 follow-up).
@@ -823,72 +957,21 @@ def get_song_uri(
         skip the song silently without ever calling MA.
 
     """
-    if provider == PROVIDER_SPOTIFY:
-        # For Spotify, prefer uri_spotify, fall back to legacy uri field
-        return song.get("uri_spotify") or song.get("uri") or None
-    if provider == PROVIDER_APPLE_MUSIC:
-        # #808 follow-up: storefront-aware resolution. Beatify's playlists
-        # historically stored a single Apple Music URI per song (typically
-        # a US-storefront track ID); for users on other storefronts (DE,
-        # GB, FR, ...) some subset isn't in their regional catalog. The
-        # `uri_apple_music_by_region` map (populated by
-        # `scripts/fetch_apple_music_regions.py`) gives per-region track
-        # IDs (or explicit None for confirmed-unavailable).
-        if storefront:
-            regional = song.get("uri_apple_music_by_region") or {}
-            if storefront in regional:
-                # Explicit per-region answer (URI string OR None).
-                return regional[storefront]
-        # No storefront, or no per-region data: fall back to legacy field.
-        return song.get("uri_apple_music") or None
-    if provider == PROVIDER_YOUTUBE_MUSIC:
-        # For YouTube Music, only use uri_youtube_music
-        return song.get("uri_youtube_music") or None
-    if provider == PROVIDER_YTMUSIC_FREE:
-        # #2426: derived, not stored. The third-party `ytmusic_free` provider
-        # keys tracks by the YouTube video id, which is exactly what sits in
-        # `uri_youtube_music` — so the URI is built here instead of adding a
-        # second catalogue field holding a copy of the same id that could then
-        # drift out of step with it.
-        #
-        # Deriving in this one function is enough for the whole stack:
-        # `filter_songs_for_provider` calls it, `PlaylistManager` caches the
-        # result as `_precomputed_uri`, and `_get_ma_uri_candidates` always
-        # tries `_resolved_uri` first — so nothing downstream needs a branch.
-        return _ytmusic_free_uri(song.get("uri_youtube_music"))
-    if provider == PROVIDER_TIDAL:
-        # For Tidal, only use uri_tidal
-        return song.get("uri_tidal") or None
-    if provider == PROVIDER_DEEZER:
-        # For Deezer, only use uri_deezer
-        return song.get("uri_deezer") or None
-    if provider == PROVIDER_MA_LIBRARY:
-        # Crate Digger: the URI comes from the user's own Music
-        # Assistant library, resolved during the library scan. Playback falls
-        # back to an artist+title lookup in MA when a stored URI no longer
-        # resolves (library rebuilds change item ids), so a missing URI here
-        # is not fatal — see services/media_player.py.
-        return song.get("uri_ma_library") or None
-    if provider == PROVIDER_AMAZON_MUSIC:
-        # Amazon Music uses Alexa text search — there is no real per-track URI.
-        # We still must return a *distinct* identity per song, because the
-        # PlaylistManager uses this value both as the dedup key (__init__) and
-        # as the played-tracking key (mark_played). Returning a single constant
-        # for every song collapsed the whole playlist to one playable track and
-        # ended every Alexa game after round 1 (#1361). Derive a stable key from
-        # the song's artist+title so each track survives dedup and is tracked
-        # independently. `_resolved_uri` is only ever consumed for Alexa
-        # text-search (artist+title), never as a real media URI, so this
-        # synthetic key is purely internal.
-        artist = (song.get("artist") or "").strip().casefold()
-        title = (song.get("title") or "").strip().casefold()
-        if artist or title:
-            return f"amazon:{artist}|{title}"
-        # No metadata at all — fall back to the song's id so it stays distinct.
-        song_id = song.get("id")
-        if song_id is not None:
-            return f"amazon:id:{song_id}"
+    spec = get_provider(provider)
+    if spec is None:
         return None
+
+    special = _SPECIAL_RESOLVERS.get(provider)
+    if special is not None:
+        return special(song, storefront)
+
+    # The ordinary case: the first stored field that has a value. Spotify's
+    # explicit `uri_spotify` outranks the legacy `uri`; every other provider
+    # has a single field.
+    for field in spec.playback_uri_fields:
+        value = song.get(field)
+        if value:
+            return value
     return None
 
 
@@ -948,8 +1031,81 @@ def filter_songs_for_provider(
     return (filtered, skipped)
 
 
+def count_songs_per_provider(songs: list[dict[str, Any]]) -> dict[str, int]:
+    """``{"<provider>_count": n}`` — how many songs each provider can play.
+
+    A song counts when any of that provider's catalogue URI fields holds a
+    value matching its pattern (#708); Spotify's legacy ``uri`` counts as well
+    as ``uri_spotify``, which falls out of the registry rather than out of a
+    special case here. Alexa text search plays anything, so Amazon Music counts
+    every song. Providers that keep no catalogue coverage — Crate Digger reads
+    the host's own library, ytmusic_free derives its URI — report no count at
+    all, which is what the admin already expects.
+
+    Derived from the registry (#2713): a new provider gets its count in the
+    same commit it is declared, instead of a coverage number that silently
+    stays at zero.
+    """
+    counts: dict[str, int] = {}
+    for provider in PROVIDERS:
+        if not provider.counted:
+            continue
+        if provider.counts_every_song:
+            counts[provider.count_key] = len(songs)
+            continue
+        counts[provider.count_key] = sum(
+            1
+            for song in songs
+            if any(
+                isinstance(song.get(f.name), str) and re.match(f.pattern, song[f.name])
+                for f in provider.catalogue_uris
+            )
+        )
+    return counts
+
+
 # hass.data[DOMAIN] key holding the memoised discovery result (#1704).
 _DISCOVERY_CACHE_KEY = "_playlist_discovery_cache"
+
+# --- Transient smart-mix files (#1538 / #1547, excluded here since #2639) ----
+# The Smart Playlist Mixer writes one throwaway document per game start to
+# ``<playlist dir>/mix/__mix__-<uuid>.json`` and unlinks stale ones an hour
+# later. It is an implementation detail of a single start-game call, never
+# catalogue content — which is why the mixer itself already refuses to re-mix
+# one.
+#
+# #2639: it must therefore stay out of discovery altogether. Fingerprinting it
+# meant every mix write AND every cleanup unlink changed the signature, so the
+# start-game call that follows milliseconds later — the one that exists to reuse
+# the cached parse (#1766) — plus the 3 s lobby poll re-read, re-parsed and
+# re-validated the entire catalogue (66 files / 13 MB / 8.4k songs) while the
+# host was already looking at a spinner. Skipping these files keeps the
+# signature made of catalogue content only: a real add / edit / delete still
+# changes it and still invalidates, a mix no longer does. Skipping them from the
+# walk (rather than from the fingerprint alone) also keeps the transient
+# document out of the hub playlist list, where it used to appear as a
+# ``source: "bundled"`` playlist until cleanup.
+#
+# These constants live here, not in ``server/mix_views.py``, because that module
+# imports from this one — the reverse direction would be an import cycle.
+TRANSIENT_MIX_PREFIX = "__mix__"
+TRANSIENT_MIX_SUBDIR = "mix"
+
+
+def is_transient_mix(path: str | Path) -> bool:
+    """True if ``path`` points at a transient smart-mix file.
+
+    Matches on the ``mix/`` parent dir OR a ``__mix__``-prefixed filename so
+    EVERY uniquely-named transient mix (``__mix__-<uuid>.json``) is recognised,
+    not just the legacy fixed ``__mix__.json`` (#1547).
+    """
+    if not path:
+        return False
+    p = Path(path)
+    return p.parent.name == TRANSIENT_MIX_SUBDIR or p.name.startswith(
+        TRANSIENT_MIX_PREFIX
+    )
+
 
 # Signature entry per playlist file: (absolute path, mtime_ns, size). The whole
 # tuple of these — sorted, over every *.json under the playlist dir — is the
@@ -983,7 +1139,11 @@ def _discover_playlists_sync(
         return [], {}, empty_sig
 
     # Offload blocking glob to executor to avoid scandir in event loop (#516).
-    json_files = sorted(playlist_dir.glob("**/*.json"))
+    # Transient smart-mix files are skipped here so neither the signature nor
+    # the parsed result ever sees them (#2639, see ``is_transient_mix``).
+    json_files = sorted(
+        f for f in playlist_dir.glob("**/*.json") if not is_transient_mix(f)
+    )
 
     sig_parts: list[tuple[str, int, int]] = []
     for f in json_files:
@@ -1014,36 +1174,7 @@ def _discover_playlists_sync(
 
             # Count songs per provider (Story 17.1), validating URI patterns (#708).
             songs = data.get("songs", [])
-
-            def _count(field: str, pattern: str, songs: list = songs) -> int:
-                n = 0
-                for s in songs:
-                    v = s.get(field)
-                    if isinstance(v, str) and v and re.match(pattern, v):
-                        n += 1
-                return n
-
-            spotify_count = sum(
-                1
-                for s in songs
-                if (
-                    (
-                        isinstance(s.get("uri_spotify"), str)
-                        and re.match(URI_PATTERN_SPOTIFY, s["uri_spotify"])
-                    )
-                    or (
-                        isinstance(s.get("uri"), str)
-                        and re.match(URI_PATTERN_SPOTIFY, s["uri"])
-                    )
-                )
-            )
-            apple_music_count = _count("uri_apple_music", URI_PATTERN_APPLE_MUSIC)
-            youtube_music_count = _count("uri_youtube_music", URI_PATTERN_YOUTUBE_MUSIC)
-            tidal_count = _count("uri_tidal", URI_PATTERN_TIDAL)
-            deezer_count = _count("uri_deezer", URI_PATTERN_DEEZER)
-            # Amazon Music uses Alexa text search — every song in the playlist is
-            # playable, so the count always equals the total song count.
-            amazon_music_count = len(songs)
+            provider_counts = count_songs_per_provider(songs)
 
             # #716: skip playlists with no songs entirely — they only confuse the UI.
             if not is_valid and len(songs) == 0:
@@ -1069,12 +1200,7 @@ def _discover_playlists_sync(
                     "version": data.get("version"),
                     "tags": data.get("tags", []),  # Issue #70: Tag-based filtering
                     "song_count": len(songs),
-                    "spotify_count": spotify_count,
-                    "apple_music_count": apple_music_count,
-                    "youtube_music_count": youtube_music_count,
-                    "tidal_count": tidal_count,
-                    "deezer_count": deezer_count,
-                    "amazon_music_count": amazon_music_count,
+                    **provider_counts,
                     "is_valid": is_valid,
                     "errors": errors,
                     # #1576: structured per-song rejections so the playlist
@@ -1106,12 +1232,7 @@ def _discover_playlists_sync(
                     "version": None,
                     "tags": [],  # Issue #70
                     "song_count": 0,
-                    "spotify_count": 0,
-                    "apple_music_count": 0,
-                    "youtube_music_count": 0,
-                    "tidal_count": 0,
-                    "deezer_count": 0,
-                    "amazon_music_count": 0,
+                    **count_songs_per_provider([]),
                     "is_valid": False,
                     "errors": [f"Invalid JSON: {e}"],
                     "rejected_songs": [],
@@ -1170,43 +1291,189 @@ async def async_discover_playlists(hass: HomeAssistant) -> list[dict]:
     return metas
 
 
-async def async_load_and_validate_playlist(
-    path: str | Path,
-) -> tuple[dict | None, list[str]]:
-    """Load and validate a playlist file."""
-    path = Path(path)
+# Every field a song may carry a playable URI in, as the create-game loader has
+# always checked it. Kept as a literal list rather than derived from the
+# provider registry: this is the historic gate for "is this song usable at
+# all", and widening it here would quietly change which songs a game gets.
+_SONG_URI_FIELDS = (
+    "uri",
+    "uri_spotify",
+    "uri_youtube_music",
+    "uri_tidal",
+    "uri_deezer",
+    "uri_apple_music",
+)
 
-    loop = asyncio.get_running_loop()
 
-    # #1402 B3: `exists()` is a blocking syscall — run it in the executor.
-    if not await loop.run_in_executor(None, path.exists):
-        return (None, [f"File not found: {path}"])
+async def async_load_songs_from_paths(
+    hass: HomeAssistant, playlist_paths: list[str]
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Load the songs of ``playlist_paths`` (relative to the playlist dir).
 
-    def _read_file(p: Path) -> str:
-        """Read file contents (runs in executor)."""
-        return p.read_text(encoding="utf-8")
+    #2648: the create-game view grew this loader; the rematch needs the same
+    one now, because a rematch may arrive with a different playlist. A second
+    copy of a path-traversal guard is not defence, it is a copy that goes
+    stale — so the loop lives here and both callers share it.
 
+    Each returned song is tagged with ``_playlist_source`` (the relative path
+    the caller sent), exactly as the game has always tagged them. Returns
+    ``(songs, warnings)``; the warnings name every path or song that was
+    skipped, and the caller decides whether an empty song list is an error.
+    """
+    playlist_dir = get_playlist_directory(hass)
+    warnings: list[str] = []
+    songs: list[dict[str, Any]] = []
+
+    # #1766: discovery already read + parsed every playlist file (memoised and
+    # off-loop). Reuse that parse instead of re-reading each ~600-song document
+    # on the event loop at this latency-sensitive moment.
+    _metas, songs_by_path = await async_discover_playlists_detailed(hass)
+
+    for playlist_path in playlist_paths:
+        try:
+            full_path = playlist_dir / playlist_path
+            # Security: prevent path traversal attacks.
+            try:
+                if not full_path.resolve().is_relative_to(playlist_dir.resolve()):
+                    warnings.append(f"Invalid playlist path: {playlist_path}")
+                    continue
+            except ValueError:
+                warnings.append(f"Invalid playlist path: {playlist_path}")
+                continue
+
+            playlist_songs = songs_by_path.get(str(full_path))
+            if playlist_songs is None:
+                # Cache miss (added since the last discovery walk) — fall back
+                # to the executor read + parse so the loop stays unblocked.
+                resolved = full_path.resolve()
+                if not resolved.exists():
+                    warnings.append(f"Playlist not found: {playlist_path}")
+                    continue
+                file_content = await hass.async_add_executor_job(
+                    _read_playlist_text, resolved
+                )
+                playlist_songs = json.loads(file_content).get("songs", [])
+
+            for song in playlist_songs:
+                has_uri = any(song.get(k) for k in _SONG_URI_FIELDS)
+                if "year" in song and has_uri:
+                    tagged = dict(song)
+                    tagged["_playlist_source"] = playlist_path
+                    songs.append(tagged)
+                else:
+                    warnings.append(
+                        f"Invalid song in {playlist_path}: missing year or uri"
+                    )
+
+        except (OSError, ValueError) as err:
+            warnings.append(f"Failed to load {playlist_path}: {err}")
+
+    return songs, warnings
+
+
+def _read_playlist_text(path: Path) -> str:
+    """Read a playlist file (blocking; callers hand this to the executor)."""
+    return path.read_text(encoding="utf-8")
+
+
+#: How many named tiles the end screen offers before the "search all" tile
+#: (#2648). Six tiles fit a phone in two rows; the sixth is always search, so
+#: five of them name a playlist.
+NEXT_PLAYLIST_TILE_COUNT = 5
+
+
+def playlist_rel_path(playlist_dir: Path, meta: dict[str, Any]) -> str:
+    """Return a discovery meta's path relative to the playlist directory.
+
+    Discovery reports absolute paths; every client-facing API — the wizard, the
+    create-game body, ``GameState.playlists`` — speaks the relative one. Falls
+    back to the filename when the meta somehow sits outside the directory,
+    which keeps a malformed entry out of the picker rather than crashing it.
+    """
     try:
-        content = await loop.run_in_executor(None, _read_file, path)
-        data = json.loads(content)
-    except json.JSONDecodeError as e:
-        return (None, [f"Invalid JSON: {e}"])
+        return str(Path(meta["path"]).relative_to(playlist_dir))
+    except (KeyError, ValueError):
+        return str(meta.get("filename", ""))
 
-    rejected_songs: list[dict[str, Any]] = []
-    is_valid, errors = validate_playlist(data, rejected_songs=rejected_songs)
 
-    if is_valid:
-        return (data, [])
+def build_next_playlist_tiles(
+    playlists: list[dict[str, Any]],
+    playlist_dir: Path,
+    current_paths: list[str],
+    recent_stems: list[str],
+    limit: int = NEXT_PLAYLIST_TILE_COUNT,
+) -> list[dict[str, Any]]:
+    """Pick the playlists the end screen offers as tiles (#2648).
 
-    # #1576: a host loading a flawed playlist used to get zero feedback on
-    # which tracks dropped (per-song problems were DEBUG-only). Log a concise
-    # INFO summary naming the offending songs + reasons so it is visible in
-    # the HA log without flipping the integration to DEBUG.
-    if rejected_songs:
-        _LOGGER.info(
-            "Playlist %s: %d song(s) failed validation: %s",
-            path.name,
-            len(rejected_songs),
-            summarize_rejected_songs(rejected_songs),
-        )
-    return (None, errors)
+    The rule is mechanical, in three passes, so the same room always sees the
+    same grid:
+
+    1. **The one just played** comes first and is marked ``current``. A game
+       built from several playlists collapses into a single tile that re-plays
+       the whole selection — that is what "again" means for such a game.
+    2. **Most recently played, newest first**, from the local analytics game
+       log (``recent_stems`` — file stems, which is what a GameRecord stores).
+       This is the answer to "what does this household actually put on".
+    3. **The catalogue, in discovery order**, to fill whatever the first two
+       passes left empty. A fresh install has no history at all, and a grid of
+       two tiles next to a search box is worse than a full one.
+
+    Playlists that discovery found unusable (no playable songs) never make it
+    into a tile — offering one is offering a dead end.
+    """
+    by_rel: dict[str, dict[str, Any]] = {}
+    by_stem: dict[str, dict[str, Any]] = {}
+    for meta in playlists:
+        if not meta.get("song_count"):
+            continue
+        rel = playlist_rel_path(playlist_dir, meta)
+        if not rel:
+            continue
+        by_rel[rel] = meta
+        by_stem.setdefault(Path(rel).stem, meta)
+
+    tiles: list[dict[str, Any]] = []
+    used: set[str] = set()
+
+    def tile(paths: list[str], reason: str) -> dict[str, Any]:
+        metas = [by_rel[p] for p in paths]
+        return {
+            "paths": paths,
+            "name": str(metas[0].get("name") or Path(paths[0]).stem),
+            "extra": len(paths) - 1,
+            "song_count": sum(int(m.get("song_count") or 0) for m in metas),
+            "reason": reason,
+        }
+
+    playable_current = [p for p in current_paths if p in by_rel]
+    if playable_current:
+        tiles.append(tile(playable_current, "current"))
+        used.update(playable_current)
+
+    for stem in recent_stems:
+        if len(tiles) >= limit:
+            break
+        recent_meta = by_stem.get(stem)
+        if recent_meta is None:
+            continue
+        rel = playlist_rel_path(playlist_dir, recent_meta)
+        if rel in used:
+            continue
+        used.add(rel)
+        tiles.append(tile([rel], "recent"))
+
+    for rel in by_rel:
+        if len(tiles) >= limit:
+            break
+        if rel in used:
+            continue
+        used.add(rel)
+        tiles.append(tile([rel], "catalog"))
+
+    return tiles
+
+
+# #2583: `async_load_and_validate_playlist` ended this file. It read,
+# parsed and validated a playlist in one call, but all three production
+# paths call `validate_playlist()` on an already-parsed document instead,
+# and no caller for it exists anywhere in the history available here.

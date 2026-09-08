@@ -11,11 +11,22 @@ a reference to) the following subsystems:
 * ``RoundManager`` — round number, timer/deadline, intro mode, metadata
 * ``HighlightsTracker`` — game highlights reel (exact matches, streaks, …)
 
-It **references** (does not own, receives via setter):
+It **references** (does not own, receives from outside):
 
 * ``StatsService`` — historical game statistics and song difficulty
-* ``MediaPlayerService`` — lazy-created on first round via Home Assistant
-* ``PartyLightsService`` — optional party-lights integration
+* media player — built on first round from the injected factory (#2638)
+* party lights — optional, built from the injected factory (#2638)
+* TTS announcer — optional, built from the injected factory (#2638)
+
+#2638: GameState does not import ``services.*`` and does not know Home
+Assistant exists when it builds these — nor, since #2710, when it drives them:
+the post-announcement resume watchdog was the last place the game logic read
+``hass.states`` and called a ``media_player`` service itself. It is handed a
+``GameOutputFactories`` bundle (game/protocols.py) at construction; the
+composition root fills it with HA-backed factories, a test fills it with fakes
+or leaves it empty. The admin spectator WebSocket used to live here too — it is
+an aiohttp socket the server opens and closes, so it now lives on
+``BeatifyWebSocketHandler``.
 
 Serialization is handled by ``GameStateSerializer`` (game/serializers.py)
 which builds broadcast-ready dicts from GameState without GameState
@@ -50,7 +61,11 @@ from .round_manager import RoundManager
 from .scoring import (
     ScoringService,
 )
-from .protocols import MediaPlayerProtocol, PartyLightsProtocol
+from .protocols import (
+    GameOutputFactories,
+    MediaPlayerProtocol,
+    PartyLightsProtocol,
+)
 from .state_auto_advance import RevealAutoAdvanceMixin
 from .state_challenge import ChallengeMixin
 from .state_leaderboard import LeaderboardMixin
@@ -71,7 +86,6 @@ from .types import RoundAnalytics, _get_decade_label
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-    from aiohttp import web
     from homeassistant.core import HomeAssistant
 
     from custom_components.beatify.services.stats import StatsService
@@ -108,10 +122,10 @@ class GamePhase(Enum):
 # checked — a resume legitimately restores PAUSED→PLAYING / PAUSED→REVEAL.
 #
 # Edges (source → allowed targets):
-#   * LOBBY and END are valid targets from ANY phase — ``start_game`` /
+#   * LOBBY and END are valid targets from ANY phase — create_game /
 #     rematch / reset re-initialise to LOBBY from anywhere, and
 #     ``advance_to_end`` is a documented universal terminal.
-#   * LOBBY   → PLAYING            (start_game)
+#   * LOBBY   → PLAYING            (first round via ``_initialize_round``)
 #   * PLAYING → REVEAL, PAUSED     (reveal / pause)
 #   * REVEAL  → PLAYING, PAUSED    (next-round commit / pause)
 # Same-phase forward writes (LOBBY→LOBBY re-init, PLAYING→PLAYING next round)
@@ -201,8 +215,8 @@ class GameState(
     :class:`~custom_components.beatify.game.state_serialization.StateSerializationMixin`.
 
     The round-lifecycle / round-start subsystem (Issue #1271 next-increment
-    extraction, stacked on the state-serialization cut — the LOBBY→PLAYING
-    start gate (``start_game``) plus the full ``start_round`` orchestration
+    extraction, stacked on the state-serialization cut — the full
+    ``start_round`` orchestration
     (song selection, playback dispatch, metadata build, round-state commit) and
     its setup helpers (``_ensure_media_player_service``, ``_prepare_intro_round``,
     ``_build_round_metadata``, ``_initialize_round``); the round-*end* /
@@ -268,15 +282,25 @@ class GameState(
     :class:`~custom_components.beatify.game.state_round_delegation.RoundManagerDelegationMixin`.
     """
 
-    def __init__(self, time_fn: Callable[[], float] | None = None) -> None:
+    def __init__(
+        self,
+        time_fn: Callable[[], float] | None = None,
+        *,
+        service_factories: GameOutputFactories | None = None,
+    ) -> None:
         """
         Initialize game state.
 
         Args:
             time_fn: Optional time function for testing. Defaults to time.time.
+            service_factories: How to build the media player / party lights /
+                TTS services (#2638). Omitted = none of them are wired, which is
+                how the game logic is constructed without Home Assistant.
 
         """
         self._now = time_fn or time.time
+        # #2638: the only route from the domain to a concrete output service.
+        self._service_factories = service_factories or GameOutputFactories()
         self._hass: HomeAssistant | None = None
         self.game_id: str | None = None
         self.admin_token: str | None = None  # Issue #386: REST admin auth
@@ -312,6 +336,10 @@ class GameState(
         self.reveal_started_at: int | None = None
         # Issue #331: Party Lights service
         self._party_lights: PartyLightsProtocol | None = None
+        # #2649: the last party-lights configuration, kept across a disable so
+        # the host can switch them back on from their phone. None until the
+        # lights are configured at all.
+        self.party_lights_config: dict[str, Any] | None = None
         # Issue #447 / #1271: TTS announcement subsystem state lives in
         # TtsAnnouncerMixin; initialize it here so the attributes exist before
         # any announcement fires.
@@ -390,6 +418,10 @@ class GameState(
         # Issue #1724: Comeback Token — opt-in catch-up steal for trailing
         # players after the halfway round.
         self.comeback_token_enabled: bool = False
+        # #2721: names granted a Comeback Token in the round that just ended.
+        # Transient — recomputed by _maybe_grant_comeback_tokens() at the end
+        # of every round, and empty in all but the halfway one.
+        self.comeback_granted_this_round: list[str] = []
 
         # Issue #1727: Difficulty-aware bet scaling — the won-bet payout scales
         # with difficulty (easy 2x / normal 3x / hard 5x) instead of a flat 3x,
@@ -399,9 +431,6 @@ class GameState(
         # Issue #1665: Sabotage powerup — one token per player per game, spent on
         # an opponent who is still guessing. Opt-in; default off = no tokens.
         self.sabotage_enabled: bool = False
-
-        # Issue #477: Admin spectator WebSocket (host without being a player)
-        self._admin_ws: web.WebSocketResponse | None = None
 
         # Issue #42: Metadata update callback
         self._on_metadata_update: Callable[[dict[str, Any]], Awaitable[None]] | None = (
@@ -416,6 +445,11 @@ class GameState(
 
         # Issue #441: Observer callbacks for HA entity updates
         self._state_callbacks: list[Callable[[], None]] = []
+
+        # #2638: observers notified when a game is torn down or rebuilt
+        # (``_reset_game_internals``). The server uses this to drop its admin
+        # spectator socket at exactly the moment GameState used to null it.
+        self._reset_callbacks: list[Callable[[], None]] = []
 
     def _apply_config(self, config: GameStateConfig) -> None:
         """Apply a GameStateConfig to self, setting all config-managed fields."""
@@ -440,6 +474,19 @@ class GameState(
     def _notify_state_callbacks(self) -> None:
         """Notify all registered state observers (Issue #441)."""
         for cb in self._state_callbacks:
+            cb()
+
+    def register_reset_callback(self, cb: Callable[[], None]) -> None:
+        """Register a callback invoked on every game teardown/rebuild (#2638).
+
+        Fired from ``_reset_game_internals`` — i.e. by ``end_game()`` and
+        ``rematch_game()``, at the one point both share.
+        """
+        self._reset_callbacks.append(cb)
+
+    def _notify_reset_callbacks(self) -> None:
+        """Notify all registered reset observers (#2638)."""
+        for cb in self._reset_callbacks:
             cb()
 
     def async_shutdown(self) -> None:
@@ -653,12 +700,13 @@ class GameState(
             self._challenge_manager if self.title_artist_mode else None
         )
         for player in self.players.values():
-            # #1748: an eliminated player (Sudden Death) is out of the game — do
-            # not accumulate any further score for them. Their frozen totals must
-            # stand, so skip the per-player scoring pass entirely. (The intro
-            # speed-rank pool in _score_intro_round independently excludes
-            # eliminated players so survivors' ranks are unaffected.)
-            if player.eliminated:
+            # #1748 / #2612: an eliminated player or a finale-playoff spectator
+            # is out of the round — do not accumulate any further score for
+            # them. Their frozen totals must stand, so skip the per-player
+            # scoring pass entirely. (The intro speed-rank pool in
+            # _score_intro_round independently excludes out-of-play players so
+            # survivors' ranks are unaffected.)
+            if player.out_of_play:
                 continue
             try:
                 ScoringService.score_player_round(
@@ -876,12 +924,139 @@ class GameState(
             )
 
     # ------------------------------------------------------------------
+    # Dropping a round without scoring it (Issue #2646)
+    # ------------------------------------------------------------------
+
+    async def void_round(self, reason: str | None = None) -> bool:
+        """End the current round WITHOUT scoring it. Issue #2646.
+
+        The host's escape hatch for a round the song ruined — a cover version,
+        or twenty seconds of silence out of Music Assistant. ``end_round`` is the
+        only other way out of PLAYING and it always scores: everyone who did not
+        answer is marked as having missed, their streaks reset
+        (``game/scoring.py``), and in Sudden Death one of them is eliminated
+        (:meth:`_apply_sudden_death_elimination`) — a player knocked out of the
+        game by a broken recording.
+
+        A voided round costs nobody anything and pays nobody anything:
+
+        * **No points, for anyone.** Players who already answered lose their
+          guess along with everybody else. Half-scoring a round whose *data* is
+          the thing in doubt would credit an accuracy nobody can vouch for, and
+          it would make the card on the host's phone ("No points, no broken
+          streaks, nobody is eliminated") a lie for three of the eight people in
+          the room.
+        * **No streak is touched.** ``reset_round()`` clears the per-round
+          fields (guess, bet, bonuses) and deliberately leaves ``score``,
+          ``streak`` and the #1666 shield alone, so a run survives the round.
+        * **Nobody is eliminated**, because the elimination pass never runs.
+
+        The round number does **not** rewind: a voided round 5 is followed by
+        round 6, and the game still ends after ``total_rounds`` rounds — one of
+        which scored nothing. ``total_rounds`` is the size of the playable song
+        pool (#2647), so there is no spare song to hand out as a replacement,
+        and rewinding the counter would let a playlist full of covers loop
+        forever while ``last_round`` quietly lied about where the game was.
+
+        Playback is stopped: the reason the host reached for this is that the
+        thing coming out of the speaker is wrong.
+
+        Args:
+            reason: Optional reason chip the host picked (see
+                ``VOID_ROUND_REASONS``). Recorded, never acted on — where such
+                reports should go is not decided, so nothing in the UI promises
+                that anyone will read them.
+
+        Returns:
+            True if the round was voided, False if the phase had already moved
+            on (timer fired, a second admin socket got there first).
+
+        """
+        async with self._score_lock:
+            return await self._void_round_unlocked(reason)
+
+    async def _void_round_unlocked(self, reason: str | None) -> bool:
+        """Inner :meth:`void_round`. Caller MUST hold ``_score_lock``."""
+        # Same guard as _end_round_unlocked: the round timer may have expired
+        # and scored the round while the host was reading the card.
+        if self.phase != GamePhase.PLAYING:
+            _LOGGER.debug("void_round skipped — phase already %s", self.phase.value)
+            return False
+
+        self.cancel_timer()
+        self._round_manager._cancel_intro_timer()
+
+        song = self.current_song or {}
+        self.round_voided = True
+        self.void_reason = reason
+        self.voided_rounds.append(
+            {
+                "round": self.round,
+                "title": song.get("title", ""),
+                "artist": song.get("artist", ""),
+                "uri": song.get("uri_ma_library", ""),
+                "reason": reason,
+                "at": self._now(),
+            }
+        )
+        _LOGGER.info(
+            "Round %d voided by host (reason=%s, song=%s — %s): not scored, "
+            "no streaks broken, no elimination",
+            self.round,
+            reason or "none given",
+            song.get("artist", "?"),
+            song.get("title", "?"),
+        )
+
+        # Drop this round's guesses. Score, streak and the #1666 shield are not
+        # touched by reset_round, which is exactly the promise the card made.
+        for player in self.players.values():
+            player.reset_round()
+
+        # The song is the problem — stop it rather than let it play out under
+        # the reveal card.
+        await self.stop_media()
+
+        # Straight to REVEAL, without the scoring pass, the elimination, the
+        # round-stats recording or the reveal announcement: there is no result
+        # to announce, and _announce_reveal would read the scores we just
+        # cleared. Story 18.9 reaction reset mirrors _transition_to_reveal.
+        self._player_registry._reactions_this_phase = set()
+        self._set_phase(GamePhase.REVEAL)
+        await self._lights_set_phase(GamePhase.REVEAL)
+
+        # No auto-advance is armed. A voided round means the host is already
+        # holding the phone — they tap Next when the room has caught up — and
+        # arming the #1012 song-end advance would wait on a song we just
+        # stopped. This is the same "hold on REVEAL" state the zero-guess
+        # idle-halt path (#1012 follow-up) leaves the game in.
+        self._cancel_auto_advance()
+
+        if self._on_round_end:
+            try:
+                await self._on_round_end()
+            except Exception:  # noqa: BLE001 — a broadcast error must not strand REVEAL
+                _LOGGER.error(
+                    "Round_end callback raised while voiding round %d",
+                    self.round,
+                    exc_info=True,
+                )
+        return True
+
+    # ------------------------------------------------------------------
     # Sudden Death mode (Issue #827)
     # ------------------------------------------------------------------
 
     def non_eliminated_players(self) -> list[PlayerSession]:
-        """Players still in the game (not yet eliminated). Issue #827."""
-        return [p for p in self.players.values() if not p.eliminated]
+        """Spieler, die gerade mitspielen. Issue #827.
+
+        #2578: prueft ``out_of_play`` statt ``eliminated``, damit ein Zuschauer
+        im Finale-Stechen genauso ausgenommen ist — er soll weder als
+        Sudden-Death-Kandidat gelten noch einen Comeback-Token bekommen. Der
+        Unterschied zwischen beiden Zustaenden zaehlt fuer die **Anzeige**, nicht
+        fuer die Frage, wer diese Runde mitspielt.
+        """
+        return [p for p in self.players.values() if not p.out_of_play]
 
     def _title_artist_scoring_deferred(self) -> bool:
         """Whether this round's scoring is deferred past the vote window (#1180).
@@ -946,6 +1121,82 @@ class GameState(
             (player.submission_time is None, player.submission_time or 0.0),
         )
 
+    def _sudden_death_candidates(self) -> list[PlayerSession]:
+        """Players this round's elimination may pick from (empty = nobody goes).
+
+        Extracted from :meth:`_apply_sudden_death_elimination` for #2646 so the
+        "who would go out if I ended the round now" preview asks the same
+        question the elimination itself asks, instead of a second copy of the
+        rules that can drift away from it.
+
+        Empty when Sudden Death is off, in round 1 (never eliminates), with one
+        survivor left (the auto-end guard in ``start_round`` carries that game to
+        END instead), or when every survivor is a mid-round joiner still inside
+        their #1752 grace round.
+        """
+        if not self.sudden_death_mode or self.round < 2:
+            return []
+        survivors = self.non_eliminated_players()
+        if len(survivors) <= 1:
+            return []
+        # #1752: a mid-round joiner never played the round they joined (missed →
+        # round_score 0, submission_time None), which would make them prime
+        # elimination fodder in a round they never saw. Grant one grace round by
+        # excluding them from this round's candidate pool.
+        return [p for p in survivors if p.joined_round != self.round]
+
+    def _predicted_elimination(self) -> str | None:
+        """Who Sudden Death would cut if the round ended right now (#2646).
+
+        Answerable **without running the scoring pass** in exactly the case the
+        issue is about — a round ended while somebody has not answered — because
+        of two properties of the real selection:
+
+        1. Every round delta is >= 0 (a lost bet zeroes the score, it never goes
+           negative), and a non-submitter's delta is exactly 0. So as soon as one
+           candidate has not submitted, the minimum is 0 and every non-submitter
+           is in ``tied_for_last``.
+        2. ``_sudden_death_order_key`` ranks a non-submitter strictly above any
+           submitter — no ``years_off``, no ``base_score``, no
+           ``submission_time`` — and ``max`` therefore never reaches past them.
+           All non-submitters tie on the whole key, so ``max`` keeps the first,
+           which is what this returns.
+
+        When everybody has answered the answer really does depend on the scoring
+        pass, so this returns ``None`` and the host's card falls back to naming
+        the consequence without naming the player.
+        """
+        for player in self._sudden_death_candidates():
+            if not player.submitted:
+                return player.name
+        return None
+
+    def preview_round_end(self) -> dict[str, Any]:
+        """What scoring this round right now would cost (#2646).
+
+        The numbers behind the host's "End round N" card. Every figure is about
+        the players who have **not** answered — they are the ones a premature
+        round end punishes, and their fate is decided before the scoring pass
+        runs, so this needs no dry run of it.
+        """
+        active = [p for p in self.players.values() if not p.out_of_play]
+        missing = [p for p in active if not p.submitted]
+        return {
+            "round": self.round,
+            "player_count": len(active),
+            "submitted_count": len(active) - len(missing),
+            # Non-submitters score nothing and are marked as having missed.
+            "counting_wrong": len(missing),
+            # #1666: a held shield absorbs the miss, so that streak survives.
+            "streaks_breaking": sum(
+                1 for p in missing if p.streak > 0 and not p.streak_shield
+            ),
+            # None = "we cannot name them without scoring"; the card then says
+            # what happens without saying to whom.
+            "eliminated": self._predicted_elimination(),
+            "elimination_possible": bool(self._sudden_death_candidates()),
+        }
+
     def _apply_sudden_death_elimination(self) -> list[str]:
         """Eliminate the lowest round-delta survivor. Issue #827.
 
@@ -963,20 +1214,7 @@ class GameState(
         the normal path, or ``_finalize_title_artist_window`` for the deferred
         title/artist near-miss path — #1747).
         """
-        if not self.sudden_death_mode or self.round < 2:
-            return []
-
-        survivors = self.non_eliminated_players()
-        # Never eliminate the last player standing — the auto-end guard in
-        # start_round carries a 1-survivor game to END instead.
-        if len(survivors) <= 1:
-            return []
-
-        # #1752: a mid-round joiner never played the round they joined (missed →
-        # round_score 0, submission_time None), which would make them prime
-        # elimination fodder in a round they never saw. Grant one grace round by
-        # excluding them from this round's candidate pool.
-        candidates = [p for p in survivors if p.joined_round != self.round]
+        candidates = self._sudden_death_candidates()
         if not candidates:
             return []
 
@@ -1043,6 +1281,12 @@ class GameState(
         happens). Caller holds ``_score_lock`` (same contract as
         :meth:`_apply_sudden_death_elimination`).
         """
+        # #2721: cleared first, on every call. The grant is a one-round event
+        # and this method runs at the end of every round — a value left over
+        # from the halfway round would make the reveal replay the halftime
+        # moment in rounds 6, 7, 8 and so on.
+        self.comeback_granted_this_round = []
+
         if not self.comeback_token_enabled:
             return []
         if self.total_rounds < 2:
@@ -1072,6 +1316,13 @@ class GameState(
                 player.comeback_token_granted = True
                 granted.append(player.name)
 
+        # #2721: the grant is an *event*, and until now it left no trace in
+        # the payload — the clients only ever saw the resulting steal, which
+        # looks exactly like a streak unlock. Recording the names here is what
+        # lets the reveal say why the token appeared, on the phone and on the
+        # TV. Set unconditionally so a later round clears the previous value.
+        self.comeback_granted_this_round = list(granted)
+
         if granted:
             _LOGGER.info(
                 "Comeback Token: granted a catch-up steal to %s after round %d "
@@ -1098,6 +1349,24 @@ class GameState(
     # ------------------------------------------------------------------
     # Finale sudden-death tiebreaker (Issue #1725)
     # ------------------------------------------------------------------
+
+    def _release_playoff_song(self) -> bool:
+        """Free one capped-out song so a playoff can be played (#2547).
+
+        With a round cap the playable pool is sampled down to exactly
+        ``max_rounds`` (#1475), so a game that runs to its last round ends with
+        ``songs_remaining == 0`` by construction. The tiebreaker guard below
+        then declined every tie at the end of a normal game — the one situation
+        it was written for. The songs the cap dropped are kept in reserve and
+        released one per playoff round, so the cap still governs normal play.
+
+        Returns ``True`` when a song was released and the playoff may proceed.
+        """
+        manager = getattr(self, "_playlist_manager", None)
+        release = getattr(manager, "reserve_songs_for_playoff", None)
+        if not callable(release):
+            return False
+        return release(1) > 0
 
     async def maybe_start_finale_playoff(self) -> bool:
         """Arm + start a finale tiebreaker playoff round, if one is warranted.
@@ -1143,21 +1412,31 @@ class GameState(
                 FINALE_PLAYOFF_MAX_ROUNDS,
             )
             return False
-        if self.songs_remaining < 1:
+        if self.songs_remaining < 1 and not self._release_playoff_song():
             return False
         winners, _top = self.compute_winners()
         if len(winners) <= 1:
             return False
 
         # Arm the playoff: freeze everyone who is NOT tied for first out of the
-        # game (reusing the Sudden-Death `eliminated` flag so scoring skips them
-        # and the leaderboard renders them below the cut-line). Leave
-        # `eliminated_round` unset so they are not mislabelled as a Sudden-Death
-        # "eliminated this round" cut.
+        # round, so scoring skips them.
+        #
+        # #2578: das lief bis hierher ueber dasselbe `eliminated`, das Sudden
+        # Death benutzt — bequem fuer den Scoring-Skip, falsch fuer alles andere.
+        # Bei acht Spielern und zwei im Stechen zeigte der Fernseher **sechs
+        # Totenkoepfe**, obwohl niemand ausgeschieden war; das Leaderboard
+        # sortierte sie unter die Schnittlinie, und `_superlative_last_one_standing`
+        # zaehlte sie als Ausgeschiedene, sodass der Sieger „Last One Standing"
+        # mit der falschen Zahl bekam.
+        #
+        # `playoff_spectator` traegt jetzt die Bedeutung „zaehlt diese Runde
+        # nicht", `eliminated` bleibt „ist raus". Wer schon vor dem Stechen
+        # ausgeschieden war, behaelt `eliminated` — beide Zustaende koennen
+        # gleichzeitig gelten.
         winner_names = {w.name for w in winners}
         for player in self.players.values():
-            if player.name not in winner_names and not player.eliminated:
-                player.eliminated = True
+            if player.name not in winner_names:
+                player.playoff_spectator = True
         self._finale_playoff_rounds += 1
         self._finale_playoff_active = True
         _LOGGER.info(

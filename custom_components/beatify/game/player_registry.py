@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +16,7 @@ from ..const import (
     MAX_NAME_LENGTH,
     MAX_PLAYERS,
     MIN_NAME_LENGTH,
+    REACTION_THROTTLE_SECONDS,
 )
 
 if TYPE_CHECKING:
@@ -54,7 +56,12 @@ class PlayerRegistry:
         # clearing this map invalidates session-based reconnect while leaving
         # the players themselves intact (Story 11.6 leftover-session semantics).
         self._sessions: dict[str, str] = {}
-        self._reactions_this_phase: set[str] = set()
+        # #2562: player name → ``self._now()`` of that player's last accepted
+        # reaction. Replaces the former ``_reactions_this_phase`` set (one
+        # reaction per player per REVEAL phase): reactions now also happen
+        # during PLAYING, where a per-phase budget of one is far too little.
+        # Bounded by MAX_PLAYERS; entries are dropped in remove_player/reset.
+        self._last_reaction_at: dict[str, float] = {}
 
     @property
     def players(self) -> dict[str, PlayerSession]:
@@ -87,11 +94,7 @@ class PlayerRegistry:
         self._players.clear()
         self._name_index.clear()
         self._sessions.clear()
-        self._reactions_this_phase.clear()
-
-    def reset_reactions(self) -> None:
-        """Clear reaction tracking for a new reveal phase."""
-        self._reactions_this_phase.clear()
+        self._last_reaction_at.clear()
 
     def add_player(
         self,
@@ -165,7 +168,7 @@ class PlayerRegistry:
                 return False, ERR_UNAUTHORIZED
             if not existing_player.connected:
                 existing_player.ws = ws
-                existing_player.connected = True
+                existing_player.set_connected(True, now=self._now())
                 _LOGGER.info(
                     "name-based reconnect fallback (deprecated) for %s",
                     existing_player.name,
@@ -180,7 +183,7 @@ class PlayerRegistry:
                     existing_player.name,
                 )
                 existing_player.ws = ws
-                existing_player.connected = True
+                existing_player.set_connected(True, now=self._now())
                 return True, None
             return False, ERR_NAME_TAKEN
 
@@ -249,17 +252,45 @@ class PlayerRegistry:
                 return player
         return None
 
-    def record_reaction(self, player_name: str, emoji: str) -> bool:
+    def reaction_retry_after(self, player_name: str) -> float:
+        """Seconds this player must still wait before reacting again (#2562).
+
+        ``0.0`` means a reaction would be accepted right now. The handler sends
+        this back to the phone that was throttled so the cooldown bar shows the
+        real remaining time instead of the client guessing at it — a tap that
+        vanishes without a trace reads as a broken button.
         """
-        Record a player reaction. Rate limited to 1 per player per reveal phase.
+        last = self._last_reaction_at.get(player_name)
+        if last is None:
+            return 0.0
+        remaining = REACTION_THROTTLE_SECONDS - (self._now() - last)
+        return remaining if remaining > 0 else 0.0
+
+    def record_reaction(self, player_name: str, emoji: str) -> bool:
+        """Record a player reaction, throttled to one per REACTION_THROTTLE_SECONDS.
+
+        #2562: the old rule was one reaction per player per REVEAL phase. That
+        budget cannot survive reactions during PLAYING — a 45-second round with
+        a single allowed tap is barely different from no reactions at all — and
+        removing it outright leaves no brake, so a time-based throttle takes its
+        place. The interval is REACTION_THROTTLE_SECONDS in const.py.
+
+        The throttle is deliberately the ONLY brake: it is no longer reset on a
+        phase change. Resetting at REVEAL entry would lift the brake at the one
+        moment the whole room reacts at once, which is precisely the burst it
+        exists to smooth.
+
+        Args:
+            player_name: Display name of the reacting player.
+            emoji: The emoji sent (not stored; the throttle is per player).
 
         Returns:
-            True if reaction was recorded, False if rate limited
+            True if the reaction was recorded, False if it was throttled.
 
         """
-        if player_name in self._reactions_this_phase:
+        if self.reaction_retry_after(player_name) > 0:
             return False
-        self._reactions_this_phase.add(player_name)
+        self._last_reaction_at[player_name] = self._now()
         return True
 
     def remove_player(self, name: str) -> None:
@@ -270,6 +301,9 @@ class PlayerRegistry:
             return
         self._sessions.pop(player.session_id, None)
         self._name_index.pop(player.name.lower(), None)
+        # #2562: drop the throttle stamp with the player, so the name can be
+        # re-used by a fresh join without inheriting somebody else's cooldown.
+        self._last_reaction_at.pop(player.name, None)
         del self._players[player_id]
         _LOGGER.info("Player removed: %s", player.name)
 
@@ -279,16 +313,47 @@ class PlayerRegistry:
         self._sessions.clear()
         _LOGGER.info("Cleared %d player sessions", session_count)
 
-    def _sabotage_freeze_remaining(self, player: PlayerSession) -> int:
+    def sabotage_freeze_remaining(self, player: PlayerSession) -> int:
         """Whole seconds left on this player's sabotage freeze (#1665).
 
         0 when no freeze is riding on them or it has already lapsed. Server-computed
         (mirrors ``seconds_remaining``) so the client counts down against its own
         clock rather than subtracting a server epoch from a skewed ``Date.now()``.
+
+        #2700: this is the ONLY duration the phone ever sees — ``player-game.js``
+        locks the submit button for exactly this many seconds instead of keeping
+        its own copy of ``SABOTAGE_FREEZE_SECONDS``. Rounded UP rather than to
+        nearest, because the enforcement in
+        ``server/ws_handlers/guessing.py`` is a strict ``now < freeze_until``:
+        rounding 2.6s down to 2 would unlock the button while the server still
+        answers ERR_FROZEN, which is the exact symptom #2700 is about. Late by
+        under a second is harmless; early is the bug.
         """
         if player.sabotage_freeze_until is None:
             return 0
-        return max(0, round(player.sabotage_freeze_until - self._now()))
+        return max(0, math.ceil(player.sabotage_freeze_until - self._now()))
+
+    def away_seconds(self, player: PlayerSession) -> int | None:
+        """Whole seconds this player has been away, or None (#2718).
+
+        None means "no duration to show": either they are connected, or they
+        are away but carry no stamp (a record that predates ``set_connected``).
+        The host's lobby then renders the row without a number instead of
+        inventing a zero — a wrong duration is worse than a missing one,
+        because the whole point of the number is that the host acts on it.
+
+        Server-computed for the same reason ``sabotage_freeze_remaining``
+        above is: the client must not subtract a server epoch from its own
+        possibly-skewed ``Date.now()``. It also makes the value survive a host
+        reload — it is a function of server state alone, so re-fetching
+        ``/beatify/api/status`` after F5 returns the *grown* duration, not a
+        fresh zero.
+
+        Rounded DOWN: "4 min" should mean at least four minutes have passed.
+        """
+        if player.connected or player.disconnected_at is None:
+            return None
+        return max(0, int(self._now() - player.disconnected_at))
 
     def get_players_state(self) -> list[dict[str, Any]]:
         """Get player list for state broadcast."""
@@ -299,6 +364,9 @@ class PlayerRegistry:
                 "player_id": p.player_id,
                 "score": p.score,
                 "connected": p.connected,
+                # #2718: how long they have been gone, so the host's lobby can
+                # tell the bathroom from the front door. None while connected.
+                "away_seconds": self.away_seconds(p),
                 "streak": p.streak,
                 "is_admin": p.is_admin,
                 "submitted": p.submitted,
@@ -315,7 +383,7 @@ class PlayerRegistry:
                 "sabotaged_by": p.sabotaged_by,
                 "sabotage_effect": p.sabotage_effect,
                 "sabotage_forced_bet": p.sabotage_forced_bet,
-                "sabotage_freeze_remaining": self._sabotage_freeze_remaining(p),
+                "sabotage_freeze_remaining": self.sabotage_freeze_remaining(p),
                 "onboarded": p.onboarded,
                 # Issue #827: Sudden Death — eliminated players render the
                 # spectator view and a skull badge on leaderboards.
@@ -333,8 +401,11 @@ class PlayerRegistry:
         for the whole room — #928. Eliminated players (#827) never submit, so
         they are excluded from the all-submitted (early reveal) check.
         """
+        # #2578: `out_of_play` deckt Ausgeschiedene UND Zuschauer im
+        # Finale-Stechen ab — beide geben nicht ab und duerfen die
+        # Alle-haben-abgegeben-Pruefung nicht blockieren.
         active_players = [
-            p for p in self.players.values() if p.is_active and not p.eliminated
+            p for p in self.players.values() if p.is_active and not p.out_of_play
         ]
         if not active_players:
             return False

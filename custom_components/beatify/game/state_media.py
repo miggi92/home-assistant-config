@@ -18,7 +18,9 @@ at runtime:
 * ``self._media_player_service`` — :class:`MediaPlayerProtocol` instance (or
   ``None`` before the first round), the transport all playback flows through.
 * ``self._party_lights`` — :class:`PartyLightsProtocol` instance (or ``None``).
-* ``self._hass`` — Home Assistant instance (to construct the lights service).
+* ``self._service_factories`` — the #2638 injection bundle; its ``party_lights``
+  factory builds the service ``configure_party_lights`` installs. The mixin no
+  longer touches ``self._hass`` at all.
 * ``self._bg_tasks`` — set of fire-and-forget background tasks.
 * ``self.volume_level`` — current game volume, clamped 0.0–1.0.
 
@@ -30,6 +32,7 @@ no cyclic imports.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -135,10 +138,16 @@ class MediaControlMixin:
         light_mode: str = "dynamic",
         wled_presets: dict[str, int] | None = None,
     ) -> None:
-        """Configure and start Party Lights for the game."""
-        # Lazy import: only the concrete class for instantiation; type hints
-        # use PartyLightsProtocol (module-level) to keep the import graph acyclic.
-        from custom_components.beatify.services.lights import PartyLightsService  # noqa: PLC0415
+        """Configure and start Party Lights for the game.
+
+        #2638: the concrete service is built by the injected ``party_lights``
+        factory. With no factory wired (a game-logic unit test) this is a
+        silent no-op and the game runs without lights.
+        """
+        factory = self._service_factories.party_lights
+        if factory is None:
+            _LOGGER.debug("No party-lights factory wired — party lights unavailable")
+            return
 
         # #1402 B2: a reconfigure (admin changes intensity / mode / entities
         # mid-game via admin_set_party_lights) previously replaced the active
@@ -153,7 +162,7 @@ class MediaControlMixin:
             self._party_lights.snapshot_saved_states() if self._party_lights else None
         )
 
-        self._party_lights = PartyLightsService(self._hass)
+        self._party_lights = factory()
         await self._party_lights.start(
             entity_ids,
             intensity,
@@ -161,9 +170,24 @@ class MediaControlMixin:
             wled_presets,
             inherited_states=inherited_states,
         )
+        # #2649: remember what was configured. Turning the lights off drops the
+        # service (and with it the entity list), so without this the host could
+        # switch them off from their phone and had no way to switch them back
+        # on — the setup section is hidden during play.
+        self.party_lights_config = {
+            "entity_ids": list(entity_ids),
+            "intensity": intensity,
+            "light_mode": light_mode,
+            "wled_presets": dict(wled_presets) if wled_presets else None,
+        }
 
     async def disable_party_lights(self) -> None:
-        """Stop Party Lights and restore original light states."""
+        """Stop Party Lights and restore original light states.
+
+        #2649: ``party_lights_config`` is deliberately NOT cleared. Switching
+        the lights off at 10pm is a moment, not a decision to unconfigure them
+        — and the phone needs the entity list to switch them back on.
+        """
         if self._party_lights:
             await self._party_lights.stop()
             self._party_lights = None
@@ -185,6 +209,24 @@ class MediaControlMixin:
                 task.add_done_callback(self._bg_tasks.discard)
             except Exception:  # noqa: BLE001
                 _LOGGER.warning("Party Lights flash failed")
+
+    def current_volume(self) -> float:
+        """The speaker's volume right now, 0.0-1.0 (#2557).
+
+        The host's phone used to assume 0.5 because no volume ever reached the
+        client: ``volume_changed`` is only sent back in reply to the host's own
+        tap, and the state payload carried nothing. So the first press of
+        up/down was made blind, and the at-the-limit guard was checking an
+        invented number.
+
+        Reads through to the media player when one is attached, so the value
+        follows changes made outside Beatify (the speaker's own app, another HA
+        automation) rather than only the taps we made ourselves.
+        """
+        if self._media_player_service:
+            with contextlib.suppress(Exception):
+                self.volume_level = self._media_player_service.get_volume()
+        return self.volume_level
 
     def adjust_volume(self, direction: str) -> float:
         """

@@ -10,7 +10,10 @@ GameState.get_state() becomes a thin wrapper calling
 
 from __future__ import annotations
 
+import contextlib
+import datetime
 import logging
+import re
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -28,12 +31,111 @@ _LOGGER = logging.getLogger(__name__)
 _SLIDER_DEFAULT_MIN_YEAR = 1950
 
 
+def year_range(gs: GameState) -> dict[str, int]:
+    """Which years a player may offer: a fixed default, widened to cover the
+    playlist (#2337).
+
+    The upper default follows the clock rather than a literal, for the same
+    reason ``_max_year`` does in the playlist schema (#706): a hardcoded year
+    goes stale every January, quietly, and nobody notices until a song from the
+    new year comes up mid-party.
+
+    **This is deliberately module-level and public.** It answers one question —
+    which years are valid in this game — and that question is asked twice: once
+    to draw the slider, once to accept the guess. While the answers lived apart,
+    the slider reached down to the oldest song in the playlist and the handler
+    kept rejecting anything below ``YEAR_MIN``; a player could set the correct
+    year and have the guess thrown away (#2623).
+    """
+    from datetime import datetime, timezone
+
+    low, high = _SLIDER_DEFAULT_MIN_YEAR, datetime.now(timezone.utc).year
+    pm = getattr(gs, "_playlist_manager", None)
+    span = pm.get_year_span() if pm is not None else None
+    if span is not None:
+        low = min(low, span[0])
+        high = max(high, span[1])
+    return {"min": low, "max": high}
+
+
+def _party_lights_state(gs: GameState) -> dict[str, Any] | None:
+    """#2649: the party-lights block, or None when lights were never set up.
+
+    `configured` and `active` are two different facts and the phone needs both:
+    after the host switches the lights off, `disable_party_lights()` drops the
+    service (so `active` is False) but the configuration survives — which is
+    what makes switching them back on possible at all.
+    """
+    cfg = gs.party_lights_config
+    if not cfg:
+        return None
+    return {
+        "configured": True,
+        # `_party_lights` is dropped by disable_party_lights(), so its presence
+        # *is* the on/off state.
+        "active": gs._party_lights is not None,
+        "intensity": cfg.get("intensity", "medium"),
+        "entity_ids": list(cfg.get("entity_ids", [])),
+    }
+
+
 class GameStateSerializer:
     """Builds broadcast-ready dicts from GameState.
 
     All methods are static — the serializer is stateless and receives
     the GameState instance as an explicit argument.
     """
+
+    # #2588: Jahreszahlen im Fun Fact, die der Antwort widersprechen.
+    _JAHR = re.compile(r"\b(19[3-9]\d|20[0-2]\d)\b")
+
+    @staticmethod
+    def _cover_original_year(song: dict[str, Any]) -> int | None:
+        """Das Jahr, das der Fun Fact nennt und das nicht die Antwort ist.
+
+        Gibt ``None`` zurueck, wenn der Eintrag kein Cover ist oder kein
+        abweichendes Jahr im Text steht — dann braucht es keinen Hinweis.
+
+        **Nur fuer Cover** (``alt_artists`` gesetzt): eine Jahreszahl im Fun Fact
+        eines Originals ist meist ein historischer Bezug und kein Widerspruch —
+        Jamalas „1944" handelt von einer Deportation. Ueber alle 66 Playlists
+        gemessen nennen 1110 von 8403 Eintraegen eine abweichende Jahreszahl,
+        aber nur 740 tragen ``alt_artists``; die Cover-Bedingung ist der
+        Unterschied zwischen einem Hinweis und einem Rauschen.
+
+        Durchsucht **alle** Sprachfassungen: welche der Spieler liest, weiss der
+        Server nicht, und eine Uebersetzung kann die Zahl tragen, wo das Original
+        sie umschreibt.
+
+        Von mehreren abweichenden Jahren gewinnt das **frueheste** — ein Cover
+        ist juenger als sein Original, also ist die kleinere Zahl die, die den
+        Widerspruch erzeugt.
+        """
+        if not song.get("alt_artists"):
+            return None
+        jahr = song.get("year")
+        if not isinstance(jahr, int):
+            return None
+        text = " ".join(
+            str(song.get(k) or "")
+            for k in (
+                "fun_fact",
+                "fun_fact_de",
+                "fun_fact_es",
+                "fun_fact_fr",
+                "fun_fact_nl",
+                "fun_fact_it",
+            )
+        )
+        if not text.strip():
+            return None
+        heute = datetime.date.today().year
+        gefunden = {
+            int(m)
+            for m in GameStateSerializer._JAHR.findall(text)
+            if int(m) != jahr and int(m) <= heute
+        }
+        return min(gefunden) if gefunden else None
 
     @staticmethod
     def serialize(gs: GameState) -> dict[str, Any] | None:
@@ -62,6 +164,13 @@ class GameStateSerializer:
             # took log archaeology to spot. Emitted in all phases: the lobby
             # needs it before the first round exists.
             "round_duration": gs.round_duration,
+            # #2647: how many rounds this game has. Known from create_game on
+            # (it is the size of the filtered playable pool), but it used to be
+            # emitted only in PLAYING — so the lobby, the one screen whose whole
+            # job is telling the room what it is about to play, fell back to a
+            # hardcoded "10 rounds" in dashboard.js. A number nobody had chosen
+            # and that was wrong for most playlists.
+            "total_rounds": gs.total_rounds,
             # Issue #23: Intro mode (available in all phases)
             "intro_mode_enabled": gs.intro_mode_enabled,
             # Issue #442: Closest Wins mode
@@ -80,6 +189,11 @@ class GameStateSerializer:
                 gs.difficulty,
                 scaling_enabled=gs.difficulty_bet_scaling_enabled,
             ),
+            # #2649: what the party lights are doing right now. In the base
+            # block on purpose — the host's line is rendered in PLAYING *and*
+            # REVEAL, and a field that only appears in one of the two would
+            # make the line blink out every time the answer comes up.
+            "party_lights": _party_lights_state(gs),
             # Issue #827: Sudden Death mode (drives wizard chip, player view,
             # leaderboard cut-line, admin live toggle)
             "sudden_death_mode": gs.sudden_death_mode,
@@ -118,6 +232,13 @@ class GameStateSerializer:
 
         elif gs.phase == GamePhase.PAUSED:
             state["pause_reason"] = gs.pause_reason
+            # #2645: which phase the pause interrupted. The host's pause screen
+            # offers "Just the music off" as a fourth tile next to the pause
+            # reasons — that swap only means anything for a round that is still
+            # running, so the tile is rendered off a fact rather than a guess.
+            state["paused_from"] = (
+                gs._previous_phase.value if gs._previous_phase else None
+            )
             # #805: surface human-readable error detail so the admin sees
             # *why* the game paused instead of staring at a blank "⏸ Paused"
             # label. Empty string for non-error pauses (admin disconnect etc).
@@ -141,29 +262,15 @@ class GameStateSerializer:
 
     @staticmethod
     def _year_range(gs: GameState) -> dict[str, int]:
-        """Slider bounds: a fixed default, widened to cover the playlist (#2337).
-
-        The upper default follows the clock rather than a literal, for the
-        same reason ``_max_year`` does in the playlist schema (#706): a
-        hardcoded year goes stale every January, quietly, and nobody notices
-        until a song from the new year comes up mid-party.
-        """
-        from datetime import datetime, timezone
-
-        low, high = _SLIDER_DEFAULT_MIN_YEAR, datetime.now(timezone.utc).year
-        pm = getattr(gs, "_playlist_manager", None)
-        span = pm.get_year_span() if pm is not None else None
-        if span is not None:
-            low = min(low, span[0])
-            high = max(high, span[1])
-        return {"min": low, "max": high}
+        """Slider bounds for the state payload. See :func:`year_range`."""
+        return year_range(gs)
 
     @staticmethod
     def _add_playing_state(gs: GameState, state: dict[str, Any]) -> None:
         """Populate PLAYING-phase fields."""
         state["join_url"] = gs.join_url
         state["round"] = gs.round
-        state["total_rounds"] = gs.total_rounds
+        # total_rounds is in the base payload since #2647 — every phase gets it.
         state["deadline"] = gs.deadline
         # Client clocks skew: a device ~20s off displayed "20s remaining" at
         # the exact moment the server's time-up fired. Stamp the server clock
@@ -180,6 +287,12 @@ class GameStateSerializer:
             state["seconds_remaining"] = max(0, round(gs.deadline / 1000 - gs._now()))
         state["last_round"] = gs.last_round
         state["songs_remaining"] = gs.songs_remaining
+        # #2557: the host's volume buttons had no idea what the speaker was set
+        # to — volume_changed only comes back in reply to their own tap, so the
+        # first press was blind and the at-the-limit guard checked an assumed
+        # 0.5. Not secret: every client gets it, only the host renders it.
+        with contextlib.suppress(Exception):
+            state["volume_level"] = gs.current_volume()
         # Issue #1725: Finale ×2 is live this round (last round + opt-in) — drives
         # the "Finale ×2" finish banner. Playoff flag lets the client badge a
         # tiebreaker round.
@@ -188,6 +301,15 @@ class GameStateSerializer:
         # Submission tracking (Story 4.4)
         state["submitted_count"] = sum(1 for p in gs.players.values() if p.submitted)
         state["all_submitted"] = gs.all_submitted()
+        # #2646: what scoring the round RIGHT NOW would cost — how many players
+        # count as wrong, how many streaks break, and who Sudden Death would cut.
+        # The host's card names those consequences before they happen, which is
+        # the whole point of the issue; carrying them on the broadcast means the
+        # card opens with real numbers instead of waiting on a round trip.
+        #
+        # Admin-only by convention, like `admin_song` above: every client gets
+        # the field, only the host renders it.
+        state["admin_round_end_preview"] = gs.preview_round_end()
         # Song info WITHOUT year during PLAYING (hidden until reveal)
         if gs.current_song:
             state["song"] = {
@@ -212,6 +334,9 @@ class GameStateSerializer:
                 "fun_fact_fr": gs.current_song.get("fun_fact_fr", ""),
                 "fun_fact_nl": gs.current_song.get("fun_fact_nl", ""),
                 "fun_fact_it": gs.current_song.get("fun_fact_it", ""),
+                "cover_original_year": GameStateSerializer._cover_original_year(
+                    gs.current_song
+                ),
             }
         # Leaderboard (Story 5.5)
         state["leaderboard"] = gs.get_leaderboard()
@@ -235,12 +360,30 @@ class GameStateSerializer:
         state["round"] = gs.round
         state["total_rounds"] = gs.total_rounds
         state["last_round"] = gs.last_round
+        # #2646: the host dropped this round instead of scoring it. Every screen
+        # branches on this — without it the TV would show a normal reveal with a
+        # year and a leaderboard that did not move, which reads as a scoring bug
+        # rather than as a deliberate call. `void_reason` is the optional chip
+        # the host picked; it is shown to nobody but recorded (see void_round).
+        state["round_voided"] = gs.round_voided
+        state["void_reason"] = gs.void_reason
         # Issue #1725: mirror the PLAYING-phase finale flags so the reveal card
         # can keep the "Finale ×2" / playoff badge visible.
         state["finale_double_active"] = gs.finale_double_enabled and gs.last_round
         state["finale_playoff_active"] = gs._finale_playoff_active
         # Filtered song info during REVEAL — exclude URIs, alt_artists, internal fields
         if gs.current_song:
+            # #2588: der Fun Fact eines Covers nennt oft das Jahr des Originals —
+            # direkt neben der Antwort, mit dem Melde-Knopf daneben. So entstand
+            # #2587: „Randy Newman schrieb den Song 1972" stand neben der
+            # richtigen Antwort 1986, und der Spieler meldete einen Fehler, der
+            # keiner war.
+            #
+            # Variante D aus dem Design-Entwurf: der Hinweis erscheint **nur bei
+            # echtem Widerspruch**, nicht bei jedem der 740 Cover-Eintraege — und
+            # er nennt die Zahl, um die es geht, statt um sie herumzureden. Die
+            # Erkennung laeuft hier und nicht im Client, weil `alt_artists`
+            # bewusst nicht im Reveal-Payload steht (eine Zeile tiefer).
             state["song"] = {
                 # Crate Digger: a boolean, deliberately NOT the URI. The host
                 # can then offer "fix this song" at reveal (the pool is theirs
@@ -263,6 +406,13 @@ class GameStateSerializer:
             }
         # Include reveal-specific player data (guesses, round_score, missed)
         state["players"] = GameStateSerializer.get_reveal_players_state(gs)
+        # #2721: names that just received a Comeback Token. REVEAL only, and
+        # only in the reveal it happened in. The field itself survives into the
+        # next PLAYING phase (it is cleared at the *end* of a round), so
+        # emitting it here rather than in the shared block is what keeps the
+        # halftime moment from lingering over round 6.
+        if gs.comeback_granted_this_round:
+            state["comeback_granted_this_round"] = list(gs.comeback_granted_this_round)
         # Issue #827: Sudden Death — names eliminated *this* round drive the
         # TV "OUT" takeover + the admin elimination highlight card.
         if gs.sudden_death_mode:
@@ -409,6 +559,11 @@ class GameStateSerializer:
                 # Issue #827: Sudden Death state
                 "eliminated": p.eliminated,
                 "eliminated_round": p.eliminated_round,
+                # #2578: „sitzt dieses Stechen aus" ist etwas anderes als
+                # „ist ausgeschieden". Ohne das eigene Feld zeigte der
+                # Fernseher bei acht Spielern und zwei im Stechen sechs
+                # Totenkoepfe.
+                "playoff_spectator": p.playoff_spectator,
                 # Issue #2324: the player's collected row — every song they
                 # placed inside close_range, oldest first. Sent at REVEAL
                 # because that is where it just grew ("you kept it"), and it

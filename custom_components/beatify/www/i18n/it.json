@@ -20,7 +20,9 @@
     "joiningButton": "Ingresso in corso...",
     "scanQr": "Inquadra il codice QR per entrare",
     "shareQr": "Condividi questo codice QR",
-    "reconnecting": "Riconnessione... (tentativo {attempt}/{max})"
+    "reconnecting": "Riconnessione... (tentativo {attempt}/{max})",
+    "otherLanguage": "altra lingua",
+    "chooseLanguage": "Scegli la tua lingua"
   },
   "player": {
     "leaveGameTitle": "Uscire dalla partita?",
@@ -28,7 +30,7 @@
     "leaveGame": "Esci",
     "welcomeBack": "Bentornato, {name}!",
     "waitingForHostReconnect": "In attesa che l'host si riconnetta...",
-    "speakerUnavailable": "Altoparlante non disponibile. Controlla il media player e riprova.",
+    "speakerUnavailable": "L'altoparlante non risponde — l'host se ne sta occupando.",
     "gamePaused": "Partita in pausa. Attendi...",
     "redirecting": "Reindirizzamento...",
     "hostCannotLeave": "L'host non può uscire. Termina invece la partita."
@@ -64,8 +66,38 @@
     "statusReady": "Pronti",
     "statusNeedMore": "Ne serve almeno 1",
     "away": "assente",
+    "awayHeading": "Assenti",
+    "awayJustNow": "proprio ora",
+    "awayMinutes": "{count} min",
+    "awayHours": "{count} h",
     "player": "giocatore",
-    "players": "giocatori"
+    "players": "giocatori",
+    "brief": {
+      "rounds": "{n} turni",
+      "roundsOne": "1 turno",
+      "standard": "{rounds}, regole normali.",
+      "one": "{rounds}, {last}.",
+      "two": "{rounds}, {a} — e {last}.",
+      "three": "{rounds}, {a}, {b} — e {last}.",
+      "threePlus": "{rounds}, {a}, {b}, più {more} — e {last}.",
+      "more": "{n} regole speciali aggiuntive",
+      "moreOne": "una regola speciale aggiuntiva",
+      "dev": {
+        "suddenDeath": "chi sbaglia una volta è fuori",
+        "titleArtist": "indovinate titolo e artista invece dell'anno",
+        "duration": "ogni brano dura solo {n} secondi",
+        "closestWins": "fa punti solo chi si avvicina di più",
+        "difficultyEasy": "anche una stima approssimativa fa punti",
+        "difficultyHard": "fanno punti solo le risposte quasi esatte",
+        "sabotage": "ognuno può sabotare una volta",
+        "comeback": "chi è indietro ruba a metà partita",
+        "finaleDouble": "l'ultimo turno vale doppio",
+        "finaleTiebreaker": "un pari in testa si decide allo spareggio",
+        "betScaling": "la scommessa paga in base alla difficoltà",
+        "intro": "in alcuni turni si sente solo l'intro",
+        "rampup": "i brani vanno dal più facile al più difficile"
+      }
+    }
   },
   "game": {
     "yearLabel": "Anno",
@@ -78,6 +110,7 @@
     "ofLabel": "di",
     "finalRound": "Turno finale!",
     "finaleDouble": "✨ Finale ×2 — punti doppi!",
+    "finalePlayoffChip": "⚔️ Spareggio — sei in parità al primo posto",
     "selectYear": "Scegli l'anno",
     "submit": "Invia",
     "submitGuess": "Invia l'ipotesi",
@@ -94,6 +127,8 @@
     "noBonusThisRound": "Nessun bonus in questo turno: azzecca l'anno",
     "lockedIn": "Confermata · in attesa degli altri",
     "lockedInWaitingCount": "Confermata · mancano ancora {count}",
+    "lockedInWaitingOne": "Confermata · {name} sta ancora pensando",
+    "lockedInWaitingTwo": "Confermata · {first} e {second} stanno ancora pensando",
     "lockedInAllSubmitted": "Confermata · hanno risposto tutti",
     "waitingForOthers": "In attesa degli altri",
     "allSubmitted": "Tutti dentro",
@@ -102,6 +137,10 @@
     "paused": "Partita in pausa",
     "waitingForHost": "In attesa che l'host si riconnetta...",
     "pausedHint": "La partita riprenderà al ritorno dell'host",
+    "pausedHintSpeaker": "La partita riprende appena torna l'audio",
+    "pausedSpeaker": "L'altoparlante non risponde — l'host se ne sta occupando",
+    "pausedNoSongs": "Nessun brano rimasto",
+    "songStoppedChip": "Brano fermato — continua a indovinare",
     "difficultyEasy": "Facile",
     "difficultyNormal": "Normale",
     "difficultyHard": "Difficile",
@@ -131,7 +170,24 @@
     "outRound": "Fuori · T{round}",
     "finalShowdown": "FINALE — MORTE IMPROVVISA",
     "winnerTakesAll": "Chi vince prende tutto",
-    "out": "FUORI"
+    "out": "FUORI",
+    "halftime": "Metà partita",
+    "comebackFieldClosing": "Il gruppo si ricompatta",
+    "comebackYours": "Ricevi un furto.",
+    "sdYouAreIn": "Sei ancora in gioco",
+    "sdYouAreOut": "Sei fuori",
+    "sdStanding": "{alive} su {total} ancora in gioco",
+    "sdOutNames": "{names} fuori",
+    "pauseReasonFood": "È arrivato da mangiare",
+    "pauseReasonDoor": "Qualcuno alla porta",
+    "pauseReasonAway": "Torno subito",
+    "pauseReasonSub": "Musica spenta, tempo fermo — nessuno perde nulla",
+    "pauseMusicOff": "Via solo la musica",
+    "pauseMusicOffSub": "Il tempo continua a scorrere — chi non risponde ora perde il round",
+    "pausedLabel": "Pausa",
+    "pausedClockStopped": "Il tempo è fermo — non si perde nulla",
+    "pausedHintHost": "L'host riprende tra un istante",
+    "pausedGuessesSaved": "Le vostre risposte sono salvate"
   },
   "steal": {
     "available": "Furto disponibile!",
@@ -144,7 +200,9 @@
     "confirmButton": "Ruba",
     "success": "Hai rubato la risposta di {name}: {year}",
     "stolenFrom": "Rubata a {name}",
-    "stolenBy": "Risposta rubata da {name}"
+    "stolenBy": "Risposta rubata da {name}",
+    "comebackChip": "Furto di rimonta",
+    "comebackWhy": "Assegnato a metà partita agli ultimi in classifica. Funziona come ogni furto."
   },
   "sabotage": {
     "available": "Sabotaggio pronto!",
@@ -169,7 +227,8 @@
     "laugh": "Reazione risata",
     "shocked": "Reazione sbigottito",
     "applause": "Reazione applauso",
-    "thinking": "Reazione pensieroso"
+    "thinking": "Reazione pensieroso",
+    "cooldown": "Attesa prima della prossima reazione"
   },
   "reveal": {
     "correct": "Esatto!",
@@ -178,6 +237,7 @@
     "wrong": "Sbagliato",
     "theYearWas": "L'anno era",
     "idleHaltBanner": "Partita ferma: nessuno ha giocato questo turno. Tocca Turno successivo per proseguire.",
+    "idleHaltBannerGuest": "Partita ferma: nessuno ha giocato questo turno. L'host avvierà il turno successivo.",
     "funFact": "Curiosità",
     "collection": {
       "title": "La tua collezione",
@@ -244,7 +304,11 @@
       "playedBeforeSub": "in tutte le partite di Beatify",
       "furthestOff": "Più lontano di tutti in questo turno",
       "onlyPercent": "Solo il {percent}% dei giocatori la indovina.",
-      "empty": "Ancora nessuna statistica per questo turno."
+      "empty": "Ancora nessuna statistica per questo turno.",
+      "avgLate": "{n} anni in più",
+      "avgEarly": "{n} anni in meno",
+      "yearOff": "{n} anno di scarto",
+      "yearsOff": "{n} anni di scarto"
     },
     "reportBtn": "🚩 Anno sbagliato?",
     "reportBtnDone": "✓ Segnalato — grazie!",
@@ -335,7 +399,10 @@
     "streakShieldHeld": "Scudo della serie pronto",
     "fixYearBtn": "🎯 Anno sbagliato? Correggilo",
     "flagYearBtn": "🚩 Anno sbagliato? Dillo all'host",
-    "flaggedForHost": "✓ Segnalato all'host"
+    "flaggedForHost": "✓ Segnalato all'host",
+    "finalePlayoff": "Finale",
+    "coverHint": "Cover — {year} era l'originale; la risposta è la versione appena ascoltata.",
+    "roundVoidedBanner": "Questo turno non conta: nessun punto, nessuna serie interrotta."
   },
   "leaderboard": {
     "leader": "in testa",
@@ -352,10 +419,24 @@
     "thanksForPlaying": "Grazie per aver giocato a Beatify",
     "thanksEmoji": "Grazie per aver giocato!",
     "waitForHost": "Aspetta che l'host avvii una nuova partita",
+    "rejoinHint": "Scansiona di nuovo il codice QR per partecipare alla prossima partita.",
     "bestStreak": "Serie migliore",
     "roundsPlayed": "Turni giocati",
     "betsWon": "Scommesse vinte",
-    "fullRankings": "Classifica completa"
+    "fullRankings": "Classifica completa",
+    "nextTitle": "E adesso?",
+    "nextJustPlayed": "appena suonata",
+    "nextSongCount": "{count} brani",
+    "nextMorePlaylists": "+{count} altre",
+    "nextSearchAll": "Tutte e {count}",
+    "nextSearchSub": "sfoglia",
+    "nextSearchPlaceholder": "Cerca una playlist",
+    "nextNoResults": "Nessuna playlist corrisponde",
+    "nextGo": "Si va con {name}",
+    "nextEveryoneStays": "Restano tutti collegati",
+    "hostPicking": "{name} sta scegliendo la prossima playlist — resta qui",
+    "hostPickingNoName": "L'host sta scegliendo la prossima playlist — resta qui",
+    "staysConnected": "Il tuo nome resta · niente scansione"
   },
   "admin": {
     "alreadyJoined": "Sei già in partita come {name}",
@@ -392,6 +473,8 @@
     "startGame": "Avvia la partita",
     "createGame": "Crea la partita",
     "endGame": "Termina la partita",
+    "resumeGame": "Riprendi la partita",
+    "openAdminPage": "Apri la pagina admin",
     "volDown": "Giù",
     "volUp": "Su",
     "importPlaylist": "Importa una playlist Spotify",
@@ -464,9 +547,6 @@
     "difficultyEasy": "Facile",
     "difficultyNormal": "Normale",
     "difficultyHard": "Difficile",
-    "difficultyEasyDesc": "Punteggio indulgente: si segna indovinando entro 7 anni. Anno esatto = 10 punti, entro 7 anni = 5 punti, entro 10 anni = 1 punto.",
-    "difficultyNormalDesc": "Punteggio standard: si segna indovinando entro 3 anni. Anno esatto = 10 punti, entro 3 anni = 5 punti, entro 5 anni = 1 punto.",
-    "difficultyHardDesc": "Punteggio severo: contano solo le risposte vicine. Anno esatto = 10 punti, entro 2 anni = 3 punti, altrimenti nessun punto.",
     "selectProvider": "Servizio musicale",
     "providerSpotify": "Spotify",
     "viewAnalytics": "Statistiche",
@@ -498,7 +578,6 @@
     "revealAdvance": "Avanzamento automatico",
     "revealAdvanceOff": "Spento",
     "revealAdvanceHint": "Dopo la rivelazione il turno successivo parte da solo — dopo un tempo fisso oppure (Spento) quando la canzone finisce. La partita va avanti senza nessuno davanti alla schermata di amministrazione.",
-    "difficultyHint": "Facile: tolleranza ampia (±7 anni). Normale: media (±3 anni). Difficile: segnano solo le risposte vicine.",
     "artistChallengeHint": "Dopo ogni turno i giocatori possono indovinare l'artista per punti bonus. La prima risposta esatta vale +5 punti.",
     "movieQuiz": "Bonus quiz sui film",
     "movieQuizHint": "Sulle canzoni da colonna sonora i giocatori indovinano il film per punti bonus a scalare. Si attiva solo sulle canzoni con i dati del film.",
@@ -630,6 +709,10 @@
     "points": "Punti",
     "kickPlayerTitle": "Togliere il giocatore?",
     "kickPlayerConfirm": "Togliere {name} dalla sala d'attesa?",
+    "kickPlayerRemove": "Togli",
+    "kickPlayerNote": "Ha perso la connessione. Toglierlo libera il posto: può scansionare di nuovo il codice QR quando vuole.",
+    "kickPlayerAria": "Togliere {name} dalla sala d'attesa",
+    "kickPlayerFailed": "Impossibile togliere {name}: forse è di nuovo online. Riprova tra un momento.",
     "home": {
       "editSetup": "Indietro",
       "startGame": "Avvia la partita",
@@ -648,7 +731,13 @@
       "needPlayerToStart": "Entra come giocatore (o fai inquadrare il QR a un ospite) prima di cominciare.",
       "wsReconnecting": "Riconnessione al server di gioco — riprova.",
       "waitingForGuests": "In attesa degli ospiti…",
-      "libraryPlaylistLabel": "la tua libreria"
+      "guestCount": "{count} ospiti",
+      "guestCountOne": "1 ospite",
+      "guestsHere": "{count} presenti",
+      "libraryPlaylistLabel": "la tua libreria",
+      "noPlaylist": "nessuna playlist",
+      "playlistCount": "{count} playlist",
+      "noSpeaker": "nessun altoparlante"
     },
     "startRematchFailed": "Avvio della rivincita non riuscito",
     "startGameplayFailed": "Avvio della partita non riuscito",
@@ -675,8 +764,8 @@
     "seasonalDismiss": "Nascondi la proposta di stagione",
     "suddenDeathMode": "Eliminazione diretta",
     "suddenDeathModeHint": "Ogni turno viene eliminato l'ultimo in classifica. Vince chi resta per ultimo.",
-    "suddenDeathDisabledTooltip": "L'eliminazione diretta richiede almeno 3 giocatori.",
-    "suddenDeathDisabledGate": "Servono almeno 3 giocatori",
+    "suddenDeathDisabledTooltip": "L'eliminazione diretta richiede almeno {min} giocatori.",
+    "suddenDeathDisabledGate": "Servono almeno {min} giocatori",
     "suddenDeathLive": "Eliminazione diretta",
     "library": {
       "statusLoading": "Controllo della tua libreria…",
@@ -785,7 +874,70 @@
     },
     "providerMyLibrary": "Crate Digger",
     "ttsPreRoundDelay": "Ritardo del tempo (s)",
-    "ttsPreRoundDelayHelp": "Secondi aggiunti al tempo del turno per compensare la durata degli annunci."
+    "ttsPreRoundDelayHelp": "Secondi aggiunti al tempo del turno per compensare la durata degli annunci.",
+    "sessionExpired": "Sessione di amministrazione scaduta. Ricarica la pagina.",
+    "partyLights": {
+      "enable": "Attiva le luci da festa",
+      "off": "Spente",
+      "lights": "{n} luci",
+      "selected": "{n} luci selezionate",
+      "selectAll": "Seleziona tutte",
+      "deselectAll": "Deseleziona tutte",
+      "loading": "Caricamento delle luci…",
+      "preview": "✨ Anteprima",
+      "previewRunning": "✨ In corso…",
+      "previewFailed": "✨ Non riuscita",
+      "previewError": "✨ Errore",
+      "phaseLobby": "Sala d'attesa",
+      "phasePlaying": "In riproduzione",
+      "phaseReveal": "Rivelazione",
+      "phaseStreak": "Serie",
+      "phaseCountdown": "Conto alla rovescia",
+      "phaseEnd": "Fine"
+    },
+    "pwa": {
+      "installTitle": "Installa Beatify",
+      "installHint": "Tocca ⬆️ Condividi, poi «Aggiungi a Home»",
+      "installAria": "Installa l'app Beatify",
+      "analyticsAria": "Pannello delle statistiche"
+    },
+    "drawerTitle": "Svolgimento",
+    "drawerOn": "Sì",
+    "drawerOff": "No",
+    "suddenDeathOnSub": "Dal prossimo turno la risposta più lenta viene eliminata",
+    "suddenDeathOffSub": "Attivalo e dal prossimo turno la risposta più lenta viene eliminata",
+    "lightsOff": "Spente",
+    "lightsSubtle": "Discrete",
+    "lightsFull": "Show completo",
+    "lightsOffSub": "Le luci restano come erano",
+    "lightsSubtleSub": "Solo alla rivelazione, a metà intensità",
+    "lightsFullSub": "A ogni battuta, piena intensità",
+    "lightsLineOff": "Le luci sono spente per il resto della partita",
+    "lightsLineOnRooms": "lampeggiano a ogni rivelazione",
+    "lightsLineOnCount": "{count} luci lampeggiano a ogni rivelazione",
+    "lightsRowTitle": "Luci della festa",
+    "pauseGame": "Pausa",
+    "pauseGameSub": "Musica spenta, tempo fermo, nessuno perde nulla",
+    "pauseAnnouncement": "Cambia l'annuncio",
+    "pauseOnEveryScreen": "Visibile su tutti gli schermi",
+    "resume": "Riprendi",
+    "roundEndTitle": "Chiudere il turno {n}",
+    "roundEndTitleBare": "Chiudere il turno",
+    "roundEndSecondsLeft": "Mancano {n} secondi",
+    "roundEndAnswered": "{n} su {total} hanno risposto",
+    "roundEndScore": "Assegna i punti come sempre",
+    "roundEndCountWrong": "{n} giocatori contano come sbagliati",
+    "roundEndStreaksBreak": "{n} serie si interrompono",
+    "roundEndEliminated": "{name} viene eliminato",
+    "roundEndEliminatedUnknown": "con il Sudden Death qualcuno viene eliminato",
+    "roundEndVoid": "Non assegnare punti",
+    "roundEndVoidSub": "Nessun punto, nessuna serie interrotta, nessun eliminato",
+    "roundEndKeepPlaying": "Lascia suonare",
+    "voidReasonPrompt": "Perché? Facoltativo.",
+    "voidReasonCover": "Cover",
+    "voidReasonSilence": "Silenzio",
+    "voidReasonWrongYear": "Anno sbagliato",
+    "voidReasonWrongTitle": "Titolo sbagliato"
   },
   "analyticsDashboard": {
     "title": "Statistiche Beatify",
@@ -879,6 +1031,8 @@
     "reveal": "Rivelazione",
     "nowRevealing": "Riveliamo",
     "autoAdvance": "Avanzamento automatico",
+    "finalePlayoffBanner": "Spareggio: {players} in parità al primo posto — decide un'altra canzone",
+    "finalePlayoffBannerAnon": "Spareggio — parità al primo posto, decide un'altra canzone",
     "title": "Beatify - Dashboard",
     "connecting": "Connessione alla partita...",
     "noActiveGame": "Nessuna partita in corso",
@@ -1062,6 +1216,20 @@
     "RATE_LIMITED": "Troppe richieste: attendi un minuto e riprova.",
     "RECONNECTING": "Riconnessione...",
     "ROUND_EXPIRED": "Il turno è scaduto",
+    "FROZEN": "Congelato — aspetta",
+    "ELIMINATED": "Sei fuori",
+    "NO_STEAL_AVAILABLE": "Nessun furto disponibile",
+    "CANNOT_STEAL_SELF": "Non puoi rubare a te stesso",
+    "NO_SABOTAGE_AVAILABLE": "Nessun sabotaggio disponibile",
+    "CANNOT_SABOTAGE_SELF": "Non puoi sabotare te stesso",
+    "TARGET_NOT_SUBMITTED": "Non ha ancora risposto",
+    "TARGET_ALREADY_SUBMITTED": "Ha già confermato",
+    "NO_ARTIST_CHALLENGE": "Nessuna sfida artista attiva",
+    "NO_MOVIE_CHALLENGE": "Nessuna sfida film attiva",
+    "NO_TITLE_ARTIST_CHALLENGE": "Niente da indovinare ora",
+    "INTERNAL_ERROR": "Qualcosa è andato storto",
+    "nameEmpty": "Inserisci un nome",
+    "nameTooLong": "Nome troppo lungo (max {max} caratteri)",
     "SAVE_FAILED": "Non è stato possibile salvare il mix. Riprova.",
     "SESSION_NOT_FOUND": "Sessione scaduta",
     "SESSION_TAKEOVER": "Sessione presa da un'altra scheda",
@@ -1090,7 +1258,8 @@
     "joinTimeout": "Connessione non riuscita. Riprova.",
     "INVALID_REQUEST": "La richiesta non era valida. Controlla la configurazione e riprova.",
     "NO_PLAYLISTS_SELECTED": "Scegli almeno una playlist prima di iniziare una partita.",
-    "NO_PLAYABLE_SONGS": "Nessuno dei brani nelle playlist selezionate può essere riprodotto con questo servizio musicale. Prova un’altra playlist o un altro servizio."
+    "NO_PLAYABLE_SONGS": "Nessuno dei brani nelle playlist selezionate può essere riprodotto con questo servizio musicale. Prova un’altra playlist o un altro servizio.",
+    "networkRetry": "Errore di rete. Riprova."
   },
   "highlights": {
     "highlight_exact_match": "{player} ha centrato '{song}' — {year}!",
@@ -1150,7 +1319,13 @@
         "step3": "Torna qui: il tuo {platform} comparirà come altoparlante Music Assistant",
         "primary": "Configura Music Assistant →",
         "ghost": "Scegli un altro servizio",
-        "footer": "Preferisci Spotify? Funziona su {platform} direttamente, senza add-on."
+        "footer": "Preferisci Spotify? Funziona su {platform} direttamente, senza add-on.",
+        "amazonTitle": "Amazon Music richiede un Amazon Echo",
+        "amazonBody": "Amazon Music non è disponibile tramite Music Assistant. Per usarlo, seleziona un Amazon Echo (tramite l'integrazione alexa_media) come altoparlante.",
+        "amazonStep1": "Installa l'integrazione <strong>Alexa Media Player</strong> in Home Assistant",
+        "amazonStep2": "Collega il tuo account Amazon e il tuo Echo",
+        "amazonStep3": "Torna qui: il tuo Echo comparirà tra gli altoparlanti disponibili",
+        "amazonPrimary": "Configura Alexa Media Player →"
       }
     },
     "step3": {
@@ -1171,15 +1346,16 @@
       "roundsCustomLabel": "turni (min. 10)",
       "roundsHint": "circa {min} min per {rounds} turni",
       "autoAdvance": "Avanzamento automatico della rivelazione",
-      "autoAdvanceOff": "Spento",
       "language": "Lingua degli annunci",
       "easy": "Facile",
       "normal": "Normale",
       "hard": "Difficile",
       "modes": "Modalità di gioco",
-      "difficultyHintEasy": "Indulgente: 10 punti per l'anno esatto, 5 punti entro ±7 anni, 1 punto entro ±10 anni.",
-      "difficultyHintNormal": "Equilibrata: 10 punti per l'anno esatto, 5 punti entro ±3 anni, 1 punto entro ±5 anni.",
-      "difficultyHintHard": "Severa: 10 punti per l'anno esatto, 3 punti entro ±2 anni, altrimenti 0.",
+      "difficultyBands": "{exact} punti per l'anno esatto, {close} punti entro ±{closeRange} anni, {near} punto entro ±{nearRange} anni",
+      "difficultyBandsNoNear": "{exact} punti per l'anno esatto, {close} punti entro ±{closeRange} anni, altrimenti 0",
+      "difficultyHintEasy": "Indulgente: {bands}.",
+      "difficultyHintNormal": "Equilibrata: {bands}.",
+      "difficultyHintHard": "Severa: {bands}.",
       "coreMode": "Modalità di gioco",
       "modeYear": "Modalità anno",
       "modeYearHint": "Indovina l'anno di uscita di ogni canzone.",
@@ -1187,7 +1363,17 @@
       "modeTitleArtistHint": "Scrivi titolo e artista della canzone.",
       "taScoring": "Titolo 10 · Artista 5 · Parziale 5/3",
       "modePlaying": "In gioco",
-      "bonusModes": "Modalità bonus"
+      "bonusModes": "Modalità bonus",
+      "playStyle": "Stile di gioco",
+      "setIndividually": "Imposta una per una",
+      "switchCount": "{count} opzioni",
+      "styleClassic": "Classico",
+      "styleClassicLine": "Indovinare l'anno, nient'altro. Per i turni in cui si chiacchiera.",
+      "styleDramatic": "Drammatico",
+      "styleDramaticLine": "Cresce, e l'ultimo turno decide tutto.",
+      "styleChaos": "Caos",
+      "styleChaosLine": "Possono farsi dispetti a vicenda. Non per i suoceri.",
+      "styleCustom": "Personalizzato"
     },
     "done": {
       "badge": "PRONTI A GIOCARE",
@@ -1233,7 +1419,8 @@
         "presetCustom": "Personalizzata",
         "test": "Invia un annuncio di prova",
         "testOk": "Inviato",
-        "testFail": "Non riuscito"
+        "testFail": "Non riuscito",
+        "testNoSpeaker": "Scegli prima un altoparlante"
       }
     },
     "summary": {
@@ -1467,7 +1654,10 @@
       "copyJson": "Copia il JSON convalidato",
       "saveLocal": "Salva in locale (v1.1)",
       "copyResult": "Copia il risultato per il modello",
-      "close": "Chiudi"
+      "close": "Chiudi",
+      "captureIssue": "Segui questo invio",
+      "dismissSubmission": "Salta",
+      "working": "In corso…"
     },
     "hints": {
       "promptCopied": "Prompt copiato negli appunti: incollalo nel tuo modello.",
@@ -1502,6 +1692,16 @@
       "step4": "Premi <b>Convalida</b>: vedrai ✓/✗ per ogni campo.",
       "warnTitle": "Più di ~32 canzoni?",
       "warnBody": "ChatGPT &amp; Claude spesso troncano le playlist lunghe a metà. Dividile in <b>blocchi da 30 canzoni</b>: esegui il prompt per ogni blocco, poi unisci gli array songs. Se ChatGPT si interrompe con un errore poco chiaro, la causa è quasi sempre la lunghezza della risposta."
+    },
+    "saveLocal": {
+      "success": "Salvata come {filename}. Comparirà in Playlist Hub → Community al prossimo aggiornamento.",
+      "error": "Salvataggio non riuscito: {error}"
+    },
+    "submit": {
+      "pasteIssuePrompt": "Completa la issue su GitHub e incolla qui il suo URL: comparirà nella scheda Mine insieme alle tue richieste di playlist.",
+      "captured": "Registrata come issue #{n}. Controlla i progressi in Playlist Hub → Mine.",
+      "captureError": "Impossibile registrare l'invio: {error}",
+      "invalidIssueUrl": "Non sembra l'URL di una issue GitHub. Atteso qualcosa come https://github.com/mholzi/beatify/issues/123."
     }
   },
   "starting": {

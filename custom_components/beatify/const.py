@@ -13,16 +13,48 @@ DEFAULT_ENABLE_COMPANION_AUTH_BYPASS = False
 # Game configuration
 MAX_PLAYERS = 20
 MIN_PLAYERS = 2
+# #2699: the one place the Sudden Death floor is defined. server/game_views.py
+# enforces it at the LOBBY->PLAYING transition, www/js/game-constants.js mirrors
+# it for the wizard card (guarded by
+# www/js/__tests__/game-constants-mirror.test.js), and the six locale files carry
+# it as a `{min}` placeholder rather than a spelled-out digit. Before that the
+# number sat in four places and none of them was the source of truth, so raising
+# it here left the wizard offering a mode the server then quietly dropped.
+SUDDEN_DEATH_MIN_PLAYERS = 3
 DEFAULT_ROUND_DURATION = 45  # seconds
 ROUND_DURATION_MIN = 15  # seconds (Story 13.1)
 ROUND_DURATION_MAX = 60  # seconds (Story 13.1)
 
+# #2562: the one place the reaction brake is defined. Reactions used to be
+# capped at one per player per REVEAL phase, which is a sane budget for a
+# five-second reveal and a nonsensical one for a 45-second round — and #2562
+# opens reactions to anyone who has already submitted. Dropping the cap without
+# a replacement lets one phone flood the TV, so the per-phase budget is replaced
+# by this interval: the fewest seconds between two reactions from the SAME
+# player. game/player_registry.py enforces it, server/ws_handlers/lifecycle.py
+# echoes it back to the sender so the phone can draw the cooldown, and
+# www/js/game-constants.js mirrors it (guarded by
+# www/js/__tests__/game-constants-mirror.test.js) so the bar on the phone counts
+# down exactly the interval the server is enforcing.
+#
+# 8 is a STARTING GUESS, not a measurement: it is roughly five reactions across
+# a 45-second round, which felt like "a room reacting" rather than "a child
+# hammering a button" on paper. Nobody has run a party on it yet. Tuning it is
+# meant to be this one line.
+REACTION_THROTTLE_SECONDS = 8
+
 # #1936: how many playback timeouts IN A ROW count as a systemic failure that
 # pauses the game. Below this, a timeout skips the song and play continues —
-# a rate-limiting provider (Music Assistant's Apple Music backs off ~15.7s,
-# longer than our own deadline) is not a broken one, and pausing on the first
+# a rate-limiting provider is not a broken one, and pausing on the first
 # timeout ended whole games over it. A genuinely offline speaker still reaches
 # the recovery banner, just a few songs later.
+#
+# #2682 raised MA_PLAYBACK_TIMEOUT to 25s, which now covers Music Assistant's
+# backoff up to its fifth retry (~23s to first audio). A timeout that still
+# happens under that budget means MA is at its sixth attempt or later, where
+# the next retry alone is ~16s — so waiting is no longer the better answer and
+# this counter is what keeps the game moving instead. Three of them in a row
+# still pauses, and the log now says which of the two causes it was.
 MAX_CONSECUTIVE_PLAYBACK_FAILURES = 3
 
 # Server-side round backstop (#1865). A periodic tick ends a round whose
@@ -32,6 +64,19 @@ MAX_CONSECUTIVE_PLAYBACK_FAILURES = 3
 # and should still be the thing that ends the round.
 ROUND_SUPERVISOR_INTERVAL_SECONDS = 2
 ROUND_OVERDUE_GRACE_SECONDS = 2.0
+# #1012 / #2626: the auto-advance delays a host can pick at the reveal, in
+# seconds; 0 means "off" (advance manually or when the song ends). This tuple is
+# the ONLY list of allowed values: server/game_views.py validates against it and
+# www/js/game-constants.js mirrors it (guarded by
+# www/js/__tests__/game-constants-mirror.test.js), so both the wizard chips and
+# the admin chips are rendered from it. Before that, three hand-kept lists could
+# disagree and a chip the UI showed as selected silently became "off".
+REVEAL_AUTO_ADVANCE_OPTIONS: tuple[int, ...] = (0, 30, 60, 90)
+
+# #2627: the one place the player-name cap is defined. game/player_registry.py
+# enforces it, and www/js/game-constants.js mirrors it for the join forms
+# (guarded by www/js/__tests__/game-constants-mirror.test.js) so the client
+# never disables a Join button for a name the server would have accepted.
 MAX_NAME_LENGTH = 20
 MIN_NAME_LENGTH = 1
 LOBBY_DISCONNECT_GRACE_PERIOD = 5  # seconds before removing disconnected player
@@ -93,7 +138,9 @@ TITLE_ARTIST_VOTE_WINDOW_SECONDS = 30
 
 # Intro mode constants (Issue #23)
 INTRO_DURATION_SECONDS = 15
-INTRO_ROUND_CHANCE = 0.20  # 20% chance per round
+# #2583: INTRO_ROUND_CHANCE lived here and was never read — the per-round
+# probability is `_INTRO_PROBABILITY` in game/round_manager.py. Two homes
+# for one number meant either could drift without anyone noticing.
 INTRO_BONUS_TIERS: list[int] = [5, 3, 1]  # Same as movie bonus
 MIN_INTRO_BONUSES_FOR_AWARD = 1  # Minimum to qualify for superlative
 
@@ -105,10 +152,26 @@ DIFFICULTY_NORMAL = "normal"
 DIFFICULTY_HARD = "hard"
 DIFFICULTY_DEFAULT = DIFFICULTY_NORMAL
 
+# Points for the two tiers that do not depend on difficulty. They used to live
+# in game/scoring.py, one import away from the table they belong to; #2625
+# brought them here so the whole year-guess payout is readable in one place —
+# and so the frontend mirror in www/js/game-constants.js has a single file to
+# be checked against.
+POINTS_EXACT = 10
+POINTS_WRONG = 0
+
 # Scoring config per difficulty level (Story 14.1)
 # close_range/close_points: years off and points for "close" tier
 # near_range/near_points: years off and points for "near" tier
-# Exact match always awards 10 points (POINTS_EXACT)
+# A near_range of 0 means the level has no near tier at all — everything
+# outside close_range scores POINTS_WRONG.
+# Exact match always awards POINTS_EXACT.
+#
+# #2625: the difficulty hints the wizard and the admin panel show are BUILT
+# from these numbers (www/js/game-constants.js + the {placeholder} templates in
+# www/i18n/*.json), not written out again as prose. The admin hint had already
+# drifted — it promised "only close guesses score" where the wizard promised
+# the concrete "3 pts within ±2 years".
 DIFFICULTY_SCORING: dict[str, dict[str, int]] = {
     DIFFICULTY_EASY: {
         "close_range": 7,
@@ -129,6 +192,38 @@ DIFFICULTY_SCORING: dict[str, dict[str, int]] = {
         "near_points": 0,
     },
 }
+
+# ---------------------------------------------------------------------------
+# Host pause reasons (#2645)
+# ---------------------------------------------------------------------------
+# Every pause reason that existed before #2645 is one the *server* decided: the
+# admin socket dropped, the speaker stopped answering, the playlist ran dry.
+# ``pause_game()`` has taken a reason string for a long time, but no code path
+# let the host name one — the host had Stop, which takes the music away while
+# the clock keeps running and scores the whole room as "missed".
+#
+# These four are the reasons a host picks on purpose, and they double as the
+# announcement the room reads: the TV prints the reason large with the word
+# "Pause" small underneath, so twenty people learn what is happening without
+# anyone having to shout it. ``HOST_PAUSE_REASON`` is what a bare Pause tap
+# sends — a host who opened the door without picking a tile has still paused,
+# and the TV then simply says "Pause".
+HOST_PAUSE_REASON = "host_pause"
+HOST_PAUSE_REASON_FOOD = "host_pause_food"
+HOST_PAUSE_REASON_DOOR = "host_pause_door"
+HOST_PAUSE_REASON_AWAY = "host_pause_away"
+
+#: The reasons an admin socket may set. A reason outside this set is rejected,
+#: and — just as important — a pause the *server* owns can never be relabelled
+#: into one of these: "Pizza is here" must not be able to cover a dead speaker.
+HOST_PAUSE_REASONS: frozenset[str] = frozenset(
+    {
+        HOST_PAUSE_REASON,
+        HOST_PAUSE_REASON_FOOD,
+        HOST_PAUSE_REASON_DOOR,
+        HOST_PAUSE_REASON_AWAY,
+    }
+)
 
 # Error codes
 ERR_NAME_TAKEN = "NAME_TAKEN"
@@ -233,6 +328,11 @@ MEDIA_PLAYER_DOCS_URL = "https://www.home-assistant.io/integrations/#media-playe
 # Playlist configuration
 PLAYLIST_DIR = "beatify/playlists"
 
+# #2648: upper bound on the playlists one rematch may name. The end-screen
+# picker offers a single tile at a time; the cap only keeps a hand-written
+# request from making the loader read the whole catalogue.
+MAX_REMATCH_PLAYLISTS = 20
+
 # Multi-provider URI patterns (Story 17.1).
 # Restored in #688 — these ARE used by game/playlist.py for URI validation
 # during playlist discovery. Removed in #687 by mistake.
@@ -261,3 +361,10 @@ PROVIDER_MA_LIBRARY = "ma_library"
 PROVIDER_AMAZON_MUSIC = "amazon_music"
 PROVIDER_YTMUSIC_FREE = "ytmusic_free"  # #2426, third-party MA provider
 PROVIDER_DEFAULT = PROVIDER_SPOTIFY
+
+# #2646: the reason chips under "Do not score it" on the host's card. Optional
+# and skippable — the host may drop a round without saying why. The value is
+# recorded on the game state and logged; nothing consumes it yet, and the UI
+# deliberately does not promise that anyone will read it (where these reports
+# should go is an open question the design gate left open).
+VOID_ROUND_REASONS = ("cover", "silence", "wrong_year", "wrong_title")

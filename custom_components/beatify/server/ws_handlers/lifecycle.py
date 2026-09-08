@@ -23,6 +23,7 @@ from custom_components.beatify.const import (
     ERR_SESSION_NOT_FOUND,
     ERR_SESSION_TAKEOVER,
     ERR_UNAUTHORIZED,
+    REACTION_THROTTLE_SECONDS,
 )
 from custom_components.beatify.game.state import GamePhase, GameState
 from custom_components.beatify.server.serializers import build_state_message
@@ -58,7 +59,10 @@ def _undo_admin_claim(
     if was_existing_player:
         player = game_state.get_player(name)
         if player is not None:
-            player.connected = False
+            # #2718: set_connected is a no-op on the stamp when the player was
+            # already away, so undoing a rejected claim does not reset their
+            # away clock back to zero.
+            player.set_connected(False)
             player.ws = None
     else:
         game_state.remove_player(name)
@@ -245,7 +249,7 @@ async def handle_join(
         if not state_msg:
             return
         try:
-            await _send_state_to(ws, state_msg, game_state)
+            await _send_state_to(handler, ws, state_msg)
         except (ConnectionError, RuntimeError) as err:
             _LOGGER.warning("Failed to send state to new player: %s", err)
             return
@@ -276,7 +280,7 @@ async def handle_get_state(
     """Handle dashboard/observer state request (Story 10.4)."""
     state_msg = build_state_message(game_state)
     if state_msg:
-        await _send_state_to(ws, state_msg, game_state)
+        await _send_state_to(handler, ws, state_msg)
 
 
 async def handle_round_timeout(
@@ -352,12 +356,32 @@ async def handle_reaction(
     data: dict,
     game_state: GameState,
 ) -> None:
-    """Handle live reaction during reveal (Story 18.9)."""
+    """Handle a live reaction (Story 18.9, widened by #2562).
+
+    Reactions used to exist only at the reveal. #2562 opens them to a player who
+    is already done with the round — they have nothing left to do but watch a
+    timer, and the TV has a `reaction-container` that has always been
+    phase-independent. The gate is therefore *not* "any phase": during PLAYING a
+    player may react only once they are out of the round themselves, either
+    because they submitted or because they are out of play (Sudden Death
+    elimination / finale-playoff spectator). Someone still dragging their slider
+    cannot react — that is what keeps this encouragement rather than a way to
+    guess and heckle at the same time.
+
+    Note that the out-of-play half is a bug fix as much as a feature: #827
+    already shows the reaction bar to eliminated players during PLAYING, and
+    every tap on it has been silently dropped by the old REVEAL-only gate ever
+    since.
+    """
     player = game_state.get_player_by_ws(ws)
     if not player:
         return
 
-    if game_state.phase != GamePhase.REVEAL:
+    phase = game_state.phase
+    if phase == GamePhase.PLAYING:
+        if not (player.submitted or player.out_of_play):
+            return
+    elif phase != GamePhase.REVEAL:
         return
 
     emoji = data.get("emoji", "")
@@ -372,6 +396,23 @@ async def handle_reaction(
                 "emoji": emoji,
             }
         )
+        # #2562: the sender's own cooldown, from the server that enforces it.
+        # The phone draws a bar from this instead of running its own timer, so
+        # the two cannot drift apart over a slow link and hand the player a tap
+        # that looks accepted and is not.
+        retry_after: float = REACTION_THROTTLE_SECONDS
+        throttled = False
+    else:
+        retry_after = game_state.reaction_retry_after(player.name)
+        throttled = True
+
+    await ws.send_json(
+        {
+            "type": "reaction_ack",
+            "retry_after": retry_after,
+            "throttled": throttled,
+        }
+    )
 
 
 async def handle_reconnect(
@@ -429,7 +470,8 @@ async def handle_reconnect(
         _LOGGER.info("Session takeover: %s (old tab disconnected)", player.name)
 
     player.ws = ws
-    player.connected = True
+    # #2718: clears disconnected_at — they are back, so there is no duration.
+    player.set_connected(True)
 
     if player.is_admin:
         if handler._admin_disconnect_task:
@@ -451,7 +493,7 @@ async def handle_reconnect(
 
     state_msg = build_state_message(game_state)
     if state_msg:
-        await _send_state_to(ws, state_msg, game_state)
+        await _send_state_to(handler, ws, state_msg)
 
     await handler.broadcast_state()
 
@@ -486,5 +528,16 @@ async def handle_leave(
     game_state.remove_player(player_name)
     await ws.send_json({"type": "left"})
     await ws.close()
+
+    # #2577: the deliberate exit has to trigger the same early reveal as a
+    # dropped connection. `_handle_disconnect` runs the #928 check, but it
+    # resolves the player through `get_player_by_ws` — and this handler has
+    # already removed them, so it returns before it gets there. The polite way
+    # out was the one case that left the room waiting on somebody who is gone.
+    try:
+        await game_state.trigger_early_reveal_if_complete()
+    except Exception:  # noqa: BLE001
+        _LOGGER.warning("Early-reveal check after leave failed")
+
     await handler.broadcast_state()
     _LOGGER.info("Player left game intentionally: %s", player_name)

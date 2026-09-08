@@ -5,8 +5,8 @@
 
 import {
     state, escapeHtml, showConfirmModal,
-    prefersReducedMotion, animateValue, animateScoreChange, showPointsPopup,
-    previousState, isPreviousStateInitialized, isStreakMilestone, detectRankChanges,
+    prefersReducedMotion, animateValue,
+    previousState, isPreviousStateInitialized, detectRankChanges,
     updatePreviousState, AnimationUtils, AnimationQueue,
     LEADERBOARD_LAZY_CONFIG, lazyLeaderboardState,
     initLeaderboardObserver, renderLazyLeaderboardRange,
@@ -15,6 +15,15 @@ import {
     triggerConfetti, stopConfetti, isTitleArtistMode,
     createModalFocusTrap
 } from './player-utils.js';
+// #2645: the host's pause and the announcement that goes with it.
+import {
+    HOST_PAUSE_GENERIC, HOST_PAUSE_TILES, isHostPause
+} from './host-pause.js';
+
+// #2562: the reaction throttle, mirrored from const.py. The bar starts its
+// cooldown off this the instant a tap is sent; the server's ack then re-anchors
+// it on the authoritative remainder.
+import { REACTION_THROTTLE_SECONDS } from './game-constants.js';
 
 // #1760: focus traps for the steal + intro-splash dialogs (lazily created once
 // per dialog element). Trap Tab within the dialog and restore focus on close.
@@ -48,6 +57,9 @@ import {
 
 // #1663 item 1: non-blocking toast replaces the blocking alert() (connection lost).
 import { showToast } from './notify.js';
+// #2646: the "End round N" card that Next opens while a round is still
+// running, and the ask/no-ask rule behind it. Shared with admin.js.
+import { shouldAskBeforeEnding, openRoundEndChoice } from './round-end-choice.js';
 
 var utils = window.BeatifyUtils || {};
 var debug = utils.debug || function() {};
@@ -213,8 +225,25 @@ export function updateGameView(data) {
     if (currentRound) currentRound.textContent = data.round || 1;
     if (totalRounds) totalRounds.textContent = data.total_rounds || 10;
 
+    // #2722: the two finalists in a tiebreak playoff were the only people in
+    // the room told nothing. Everyone sitting the round out gets the
+    // "watching from the sidelines" screen below, the TV now carries a banner
+    // — but the phones of the two still playing said "Final Round!", the same
+    // as every other last round, while an extra song they never asked for
+    // started. The playoff chip outranks the finale copy: an extra round
+    // needs explaining more urgently than doubled points do.
+    var amFinalist = !!(data.finale_playoff_active &&
+        (function() {
+            var me = findMe(data.players);
+            return me && !me.playoff_spectator && !me.eliminated;
+        })());
+
     if (lastRoundBanner) {
-        if (data.last_round) {
+        if (amFinalist) {
+            lastRoundBanner.classList.remove('hidden');
+            lastRoundBanner.textContent = utils.t('game.finalePlayoffChip');
+            lastRoundBanner.classList.add('arc-chip--finale');
+        } else if (data.last_round) {
             lastRoundBanner.classList.remove('hidden');
             // Issue #1725: on the final round with Finale ×2 active, upgrade the
             // banner copy to advertise the doubled points; otherwise the plain
@@ -334,10 +363,14 @@ export function updateGameView(data) {
         }
     }
 
-    // Issue #827: Sudden Death — gate the play UI on whether the current
-    // player is eliminated. Must run before syncing the chip row / submission
-    // tracker so the eliminated-view album art and locked state are consistent.
+    // Issue #827 / #2612: gate the play UI on whether the current player is
+    // eliminated or sitting out a finale playoff. Must run before syncing the
+    // chip row / submission tracker so the locked state is consistent.
     applySuddenDeathState(data);
+
+    // #2562: the bar belongs to whoever is done with the round — must run
+    // after applySuddenDeathState so the eliminated view is already settled.
+    syncInRoundReactionBar(data);
 
     // Arcade chip row — hide the wrapper when every child chip is hidden
     syncArcChipRow();
@@ -443,7 +476,8 @@ function syncArcChipRow() {
         'sabotage-indicator',  // #1665
         'closest-wins-badge',
         'intro-badge',
-        'last-round-banner'
+        'last-round-banner',
+        'song-stopped-chip'  // #2554
     ];
     var anyVisible = childIds.some(function(id) {
         var el = document.getElementById(id);
@@ -468,9 +502,15 @@ function syncNoBonusFiller(data) {
     filler.classList.toggle('hidden', hasArtist || hasMovie || taMode);
 }
 
-// Issue #827: Sudden Death — true when the current player ("me") is eliminated.
-// Used to defensively block submissions and drive the eliminated view.
+// Issue #827 / #2612: true when the current player cannot act in this round.
+// The two server states remain separate for display, but share the client-side
+// submission guard.
 var meEliminated = false;
+var mePlayoffSpectator = false;
+
+function meOutOfPlay() {
+    return meEliminated || mePlayoffSpectator;
+}
 
 /**
  * Find the current player ("me") in a players array. Matches the existing
@@ -512,22 +552,23 @@ export function renderBetPayout(data) {
 }
 
 /**
- * Issue #827: Sudden Death — apply elimination state for the current player.
- * When `sudden_death_mode` is on AND the current player is eliminated, hide the
- * normal play UI (slider, year display, bet, submit, challenges) and show the
- * #eliminated-view. Otherwise restore the normal UI and keep the view hidden.
- * Guarded so a non-Sudden-Death game is completely unaffected.
+ * Issue #827 / #2612: apply the current player's out-of-play state.
+ * Eliminated players and finale-playoff spectators both lose the normal play
+ * UI (slider, year display, bet, submit, challenges), while only a genuine
+ * elimination gets the skull treatment.
  * @param {Object} data - State data from server
  */
 function applySuddenDeathState(data) {
     var eliminatedView = document.getElementById('eliminated-view');
     if (!eliminatedView) return;
 
-    var suddenDeath = !!(data && data.sudden_death_mode);
     var me = findMe(data && data.players);
-    var amOut = suddenDeath && !!(me && me.eliminated);
+    var amEliminated = !!(me && me.eliminated);
+    var amPlayoffSpectator = !!(me && me.playoff_spectator);
+    var amOut = amEliminated || amPlayoffSpectator;
 
-    meEliminated = amOut;
+    meEliminated = amEliminated;
+    mePlayoffSpectator = amPlayoffSpectator;
 
     // Elements that make up the normal active-play UI.
     var playEls = [
@@ -553,20 +594,31 @@ function applySuddenDeathState(data) {
             elimCover.src = albumCover.src;
         }
 
-        // "Eliminated · Round N" — prefer the round they went out on.
+        var titleEl = document.getElementById('eliminated-title');
         var subEl = document.getElementById('eliminated-sub');
-        if (subEl) {
-            var round = (me && me.eliminated_round != null)
-                ? me.eliminated_round
-                : (data && data.round) || '';
-            subEl.textContent = utils.t('game.eliminatedRound', { round: round })
-                || ('Eliminated · Round ' + round);
+        var skull = eliminatedView.querySelector('.eliminated-skull');
+        if (amPlayoffSpectator && !amEliminated) {
+            if (titleEl) titleEl.textContent = utils.t('reveal.finalePlayoff') || 'Finale playoff';
+            if (subEl) subEl.textContent = utils.t('game.watchingSidelines') || 'Watching from the sidelines';
+            if (skull) skull.classList.add('hidden');
+        } else {
+            // "Eliminated · Round N" — prefer the round they went out on.
+            if (titleEl) titleEl.textContent = utils.t('game.youreOut') || "You're out";
+            if (subEl) {
+                var round = (me && me.eliminated_round != null)
+                    ? me.eliminated_round
+                    : (data && data.round) || '';
+                subEl.textContent = utils.t('game.eliminatedRound', { round: round })
+                    || ('Eliminated · Round ' + round);
+            }
+            if (skull) skull.classList.remove('hidden');
         }
 
-        // Issue #827: eliminated players are spectators — surface the existing
-        // reaction bar during PLAYING (it normally only shows in REVEAL) so they
-        // can still cheer the active players. Piggybacks the live-reaction system.
-        showReactionBar();
+        // Issue #827 gave eliminated players the reaction bar during PLAYING so
+        // they could still cheer — but the server gate was REVEAL-only, so every
+        // one of those taps was dropped without a word. #2562 opens the gate and
+        // moves the show/hide decision to syncInRoundReactionBar(), which
+        // applies the same rule to everyone who is done with the round.
     } else {
         // Restore the normal UI. Only un-hide the year-based play controls when
         // NOT in Title & Artist mode (renderTitleArtistInput owns that toggle);
@@ -577,6 +629,12 @@ function applySuddenDeathState(data) {
             if (el) el.classList.remove('hidden');
         });
         eliminatedView.classList.add('hidden');
+        var restoreTitleEl = document.getElementById('eliminated-title');
+        var restoreSubEl = document.getElementById('eliminated-sub');
+        var restoreSkull = eliminatedView.querySelector('.eliminated-skull');
+        if (restoreTitleEl) restoreTitleEl.textContent = utils.t('game.youreOut') || "You're out";
+        if (restoreSubEl) restoreSubEl.textContent = '';
+        if (restoreSkull) restoreSkull.classList.remove('hidden');
 
         // submitted-banner visibility is owned by handleSubmitAck/reset — it
         // should stay hidden unless this player has submitted. We removed the
@@ -587,6 +645,41 @@ function applySuddenDeathState(data) {
     }
 }
 
+/**
+ * #2562: the line a player who has already submitted reads while they wait.
+ *
+ * Until now it said "waiting for 2 more" — a number, when the thing the room
+ * actually wants to know is *who*. Nothing in the game named them. The rule is
+ * deliberately mechanical rather than a natural-language list: name one, name
+ * two, and past that fall back to the count. Three or more names is a longer
+ * line than the banner has room for, and it would need per-locale list grammar
+ * to read properly in six languages.
+ *
+ * @param {Array} activeList - Players still in the round (out-of-play excluded).
+ * @returns {string} The banner copy.
+ */
+export function waitingLine(activeList) {
+    var waiting = activeList.filter(function(p) {
+        return !p.submitted;
+    }).map(function(p) {
+        return p.name;
+    });
+
+    if (waiting.length === 0) {
+        return utils.t('game.lockedInAllSubmitted') || 'Locked in · everyone submitted';
+    }
+    if (waiting.length === 1) {
+        return utils.t('game.lockedInWaitingOne', { name: waiting[0] })
+            || ('Locked in · ' + waiting[0] + ' is still thinking');
+    }
+    if (waiting.length === 2) {
+        return utils.t('game.lockedInWaitingTwo', { first: waiting[0], second: waiting[1] })
+            || ('Locked in · ' + waiting[0] + ' and ' + waiting[1] + ' are thinking');
+    }
+    return utils.t('game.lockedInWaitingCount', { count: waiting.length })
+        || ('Locked in · waiting for ' + waiting.length + ' more');
+}
+
 function renderSubmissionTracker(players) {
     var tracker = document.getElementById('submission-tracker');
     var container = document.getElementById('submitted-players');
@@ -595,11 +688,10 @@ function renderSubmissionTracker(players) {
     if (!tracker || !container) return;
 
     var playerList = players || [];
-    // Issue #827: Sudden Death — eliminated players are out of the round and
-    // must not count toward the "submitted / waiting" totals. activeList is the
-    // set still in play; counts derive from it.
+    // #827 / #2612: eliminated players and playoff spectators are out of the
+    // round and must not count toward the "submitted / waiting" totals.
     var activeList = playerList.filter(function(p) {
-        return !p.eliminated;
+        return !p.eliminated && !p.playoff_spectator;
     });
     var submittedCount = activeList.filter(function(p) {
         return p.submitted;
@@ -621,17 +713,11 @@ function renderSubmissionTracker(players) {
         }
     }
 
-    // Update the arcade submitted banner copy (count of remaining players).
+    // Update the arcade submitted banner copy.
     var submittedBanner = document.getElementById('submitted-banner');
     var bannerText = document.getElementById('submitted-banner-text');
     if (submittedBanner && bannerText && !submittedBanner.classList.contains('hidden')) {
-        var remaining = Math.max(0, totalCount - submittedCount);
-        if (remaining === 0) {
-            bannerText.textContent = utils.t('game.lockedInAllSubmitted') || 'Locked in · everyone submitted';
-        } else {
-            bannerText.textContent = utils.t('game.lockedInWaitingCount', { count: remaining })
-                || ('Locked in · waiting for ' + remaining + ' more');
-        }
+        bannerText.textContent = waitingLine(activeList);
     }
 
     container.innerHTML = playerList.map(function(player) {
@@ -639,10 +725,12 @@ function renderSubmissionTracker(players) {
         var isCurrentPlayer = player.name === state.playerName;
         var isDisconnected = player.connected === false;
         var isEliminated = !!player.eliminated;  // Issue #827
+        var isPlayoffSpectator = !!player.playoff_spectator;  // Issue #2612
+        var isOutOfPlay = isEliminated || isPlayoffSpectator;
         var classes = [
             'player-indicator',
-            // Issue #827: eliminated chips never read as "submitted".
-            (player.submitted && !isEliminated) ? 'is-submitted' : '',
+            // #827 / #2612: out-of-play chips never read as "submitted".
+            (player.submitted && !isOutOfPlay) ? 'is-submitted' : '',
             isCurrentPlayer ? 'is-current-player' : '',
             isDisconnected ? 'player-indicator--disconnected' : '',
             isEliminated ? 'is-eliminated' : ''
@@ -784,8 +872,6 @@ export function updateLeaderboard(data, targetListId, isRevealPhase) {
         scrollToCurrentPlayer(listEl);
     }
 
-    updateYouIndicator(leaderboard);
-
     updateLeaderboardSummary(leaderboard);
 
     updatePreviousState(data.players || [], leaderboard);
@@ -832,19 +918,6 @@ function scrollToCurrentPlayer(listEl) {
     var currentEntry = listEl.querySelector('.leaderboard-entry.is-current');
     if (currentEntry) {
         currentEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-}
-
-/**
- * Update "You: #X" quick indicator
- * @param {Array} leaderboard - Leaderboard entries
- */
-function updateYouIndicator(leaderboard) {
-    var youEl = document.getElementById('leaderboard-you');
-    var currentPlayer = leaderboard.find(function(e) { return e.is_current; });
-    if (youEl && currentPlayer) {
-        youEl.textContent = utils.t('leaderboard.you') + ' #' + currentPlayer.rank;
-        youEl.classList.remove('hidden');
     }
 }
 
@@ -899,21 +972,6 @@ export function resetLeaderboardSummary(summaryId) {
     });
 }
 
-/**
- * Setup reveal leaderboard toggle behavior (collapsible section pattern)
- */
-export function setupRevealLeaderboardToggle() {
-    var toggle = document.getElementById('reveal-leaderboard-toggle');
-    var leaderboard = document.getElementById('reveal-leaderboard');
-    if (toggle && leaderboard && !toggle.hasAttribute('data-initialized')) {
-        toggle.setAttribute('data-initialized', 'true');
-        toggle.addEventListener('click', function() {
-            var isCollapsed = leaderboard.classList.toggle('collapsed');
-            toggle.setAttribute('aria-expanded', !isCollapsed);
-        });
-    }
-}
-
 // ============================================
 // Year Selector & Submission (Story 4.3)
 // ============================================
@@ -945,7 +1003,14 @@ var hasSabotageAvailable = false;
 // #1665: while a freeze effect is riding on us, block local submits until this
 // timestamp (ms epoch). The server is authoritative (ERR_FROZEN on submit);
 // this just stops the button from looking tappable during the freeze.
+// #2700: the deadline is derived from the server's own countdown
+// (`freeze_remaining` on the hit, `sabotage_freeze_remaining` on every
+// player-state frame). `Infinity` means "frozen, duration not yet known" — see
+// applySabotageFreeze.
 var sabotageFreezeUntilMs = 0;
+// #2700: id of the timeout that drops the frozen styling, so a later state frame
+// can re-aim it instead of stacking a second one.
+var sabotageFreezeTimeoutId = null;
 // #1665: a rolled forced-bet locks betActive on and disables the toggle.
 var sabotageForcedBet = false;
 
@@ -972,7 +1037,7 @@ export function initYearSelector() {
     yearSelectorInitialized = true;  // #854 — set only after DOM was found
 
     slider.addEventListener('input', function() {
-        if (meEliminated) return;  // Issue #827: eliminated players can't change the year
+        if (meOutOfPlay()) return;  // #827 / #2612: out-of-play players can't act
         yearDisplay.textContent = this.value;
     });
 
@@ -997,7 +1062,7 @@ export function initYearSelector() {
         var longPressTimeoutId = null;
 
         btn.addEventListener('pointerdown', function(e) {
-            if (hasSubmitted || meEliminated) return;  // Issue #827
+            if (hasSubmitted || meOutOfPlay()) return;  // #827 / #2612
             e.preventDefault();
             adjustYear(delta);
             longPressTimeoutId = setTimeout(function() {
@@ -1015,7 +1080,7 @@ export function initYearSelector() {
 
         // Keyboard fallback (Space / Enter when the button has focus)
         btn.addEventListener('keydown', function(e) {
-            if (hasSubmitted || meEliminated) return;  // Issue #827
+            if (hasSubmitted || meOutOfPlay()) return;  // #827 / #2612
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 adjustYear(delta);
@@ -1116,7 +1181,7 @@ export function initYearSelector() {
  */
 export function handleSubmitGuess() {
     if (hasSubmitted) return;
-    if (meEliminated) return;  // Issue #827: eliminated players can't submit
+    if (meOutOfPlay()) return;  // #827 / #2612: out-of-play players can't submit
 
     // #1665: freeze effect — the server rejects the submit with ERR_FROZEN, so
     // reflect that locally instead of firing a doomed request. A short toast
@@ -1229,8 +1294,29 @@ export function handleSubmitError(data) {
     } else if (data.code === 'ALREADY_SUBMITTED') {
         handleSubmitAck();
     } else {
-        showSubmitError(data.message || 'Submission failed');
+        // #2553: the server's English prose used to land under the player's
+        // thumb — a sabotaged guest at a German party read "Frozen — hold on".
+        // Same fix as #2532 did for the join rejection: translate by code and
+        // keep the server text only as the last fallback.
+        showSubmitError(errorText(data));
     }
+}
+
+/**
+ * Translate a server error to the player's language (#2553).
+ *
+ * Order: the code's own translation, then the server's message, then a generic
+ * line — so a code the frontend has never heard of still says something.
+ */
+function errorText(data) {
+    var code = data && data.code;
+    if (code) {
+        var translated = utils.t('errors.' + code);
+        // utils.t returns the key itself when it does not know it.
+        if (translated && translated !== 'errors.' + code) return translated;
+    }
+    return (data && data.message)
+        || utils.t('errors.submissionFailed', 'Submission failed');
 }
 
 /**
@@ -1243,7 +1329,12 @@ export function showSubmitError(message) {
         submitBtn.textContent = message;
         submitBtn.classList.add('is-error');
         setTimeout(function() {
-            submitBtn.textContent = utils.t('game.submitGuess');
+            // #2553: restoring the year-mode label in Title & Artist mode left
+            // the button reading "Submit Guess" where it should read the
+            // mode's own label.
+            submitBtn.textContent = titleArtistMode
+                ? utils.t('titleArtist.submitGuess')
+                : utils.t('game.submitGuess');
             submitBtn.classList.remove('is-error');
         }, 2000);
     }
@@ -1314,6 +1405,12 @@ export function resetSubmissionState() {
     // never leaks into this one. The token gating is re-derived from state.
     hasSabotageAvailable = false;
     sabotageFreezeUntilMs = 0;
+    // #2700: drop the pending un-freeze too, so last round's timeout cannot
+    // strip the styling off a fresh freeze.
+    if (sabotageFreezeTimeoutId !== null) {
+        clearTimeout(sabotageFreezeTimeoutId);
+        sabotageFreezeTimeoutId = null;
+    }
     clearForcedBet();
     hideSabotageUI();
 
@@ -1348,7 +1445,7 @@ export function renderTitleArtistInput(data) {
     // before this in updateGameView and has hidden the play UI + shown the
     // blackout view; don't re-show any year/TA/bet control here regardless of
     // mode, or the controls leak in next to the eliminated-view.
-    if (meEliminated) {
+    if (meOutOfPlay()) {
         if (taContainer) taContainer.classList.add('hidden');
         if (yearWrap) yearWrap.classList.add('hidden');
         if (yearXxl) yearXxl.classList.add('hidden');
@@ -1379,7 +1476,7 @@ export function renderTitleArtistInput(data) {
  */
 export function handleTitleArtistSubmit() {
     if (hasSubmitted) return;
-    if (meEliminated) return;  // Issue #827: eliminated players can't submit
+    if (meOutOfPlay()) return;  // #827 / #2612: out-of-play players can't submit
 
     var titleInput = document.getElementById('ta-title-input');
     var artistInput = document.getElementById('ta-artist-input');
@@ -1464,10 +1561,42 @@ function updateStealUI(players) {
     if (hasStealAvailable) {
         if (stealIndicator) stealIndicator.classList.remove('hidden');
         if (stealBtn) stealBtn.classList.remove('hidden');
+        // #2721: a gifted steal is not a streak unlock, and saying so is the
+        // whole issue. The chip is the resting state after the halftime beat —
+        // it is what the player still sees in rounds 6, 7, 8 while the steal
+        // sits unspent, long after the takeover is gone.
+        labelStealChip(stealIndicator, !!currentPlayer.comeback_token_granted);
     } else {
         hideStealUI();
     }
     syncArcChipRow();
+}
+
+/**
+ * #2721: point the steal chip at the right sentence and colour.
+ *
+ * Kept in one place because the two states have to stay mutually exclusive:
+ * a chip left purple after a streak unlock claims a reason that is not there,
+ * which is the same class of bug in the other direction.
+ *
+ * @param {Element|null} chip - the #steal-indicator element
+ * @param {boolean} isComeback - true when this steal was a Comeback Token
+ */
+function labelStealChip(chip, isComeback) {
+    if (!chip) return;
+    var label = document.getElementById('steal-indicator-label');
+    chip.classList.toggle('arc-chip--comeback', isComeback);
+    if (!label) return;
+    if (isComeback) {
+        label.textContent = utils.t('steal.comebackChip') || 'Catch-up steal';
+        // The tooltip carries the reason for anyone who wonders, without
+        // spending a line of a 270 px screen on it.
+        chip.title = utils.t('steal.comebackWhy')
+            || 'Given at halftime to the trailing players. Works like any steal.';
+    } else {
+        label.textContent = utils.t('steal.available') || 'Steal Available!';
+        chip.removeAttribute('title');
+    }
 }
 
 /**
@@ -1705,9 +1834,12 @@ function showStealConfirmation(target, year) {
 // never chooses or predicts it. Enforcement is authoritative on the server's
 // submit path (ws_handlers/guessing.py) — everything here only reflects it.
 
-// #1665: freeze duration mirrored from const.SABOTAGE_FREEZE_SECONDS. Used only
-// for the immediate local reflection; the server holds the real line.
-var SABOTAGE_FREEZE_MS = 3000;
+// #2700: there is deliberately no SABOTAGE_FREEZE_MS here. The duration is
+// const.py's SABOTAGE_FREEZE_SECONDS and reaches us already counted down —
+// `freeze_remaining` on the private hit, `sabotage_freeze_remaining` on every
+// player-state frame. A copy in this file would unlock the button at the wrong
+// moment the first time that constant is tuned, which is exactly what #2700
+// reported: a live-looking button the server answers with ERR_FROZEN.
 
 /**
  * Update sabotage UI based on player state (#1665). Mirror of updateStealUI:
@@ -1722,6 +1854,16 @@ function updateSabotageUI(players) {
     });
 
     if (!currentPlayer) return;
+
+    // #2700: the freeze window is whatever the server says is left on it. Every
+    // state frame re-aims the local lock, so a reconnect or a reload mid-freeze
+    // picks the countdown back up instead of guessing at it. A payload without
+    // the field (an older server) leaves whatever we already had alone.
+    var freezeRemaining = currentPlayer.sabotage_freeze_remaining;
+    if (typeof freezeRemaining === 'number'
+        && (freezeRemaining > 0 || sabotageFreezeUntilMs !== 0)) {
+        applySabotageFreeze(freezeRemaining);
+    }
 
     hasSabotageAvailable = currentPlayer.sabotage_available && !hasSubmitted;
 
@@ -1897,12 +2039,60 @@ export function handleSabotageAck(data) {
  * Handle the private "you were sabotaged" hit for the TARGET (#1665). Reflects
  * the rolled effect locally — banner + client-side handling — while the server
  * stays the authority on the submit path.
- * @param {Object} data - Message with { by, effect }
+ * @param {Object} data - Message with { by, effect, freeze_remaining } (#2700)
  */
 export function handleSabotaged(data) {
     if (!data) return;
-    applySabotageEffect(data.effect);
+    applySabotageEffect(data.effect, data.freeze_remaining);
     showSabotageBanner(data.by, data.effect);
+}
+
+/**
+ * Lock (or release) the submit button for a server-supplied freeze window (#2700).
+ *
+ * The only input is the server's own countdown in whole seconds. There are three
+ * cases, and the middle one is the point of this function:
+ *  - a number > 0 → lock until now + that many seconds,
+ *  - `null`       → the server says a freeze is on but did not say how long
+ *                   (an older build's `sabotaged` hit). Hold the lock open until
+ *                   a player-state frame supplies the real remainder — the state
+ *                   broadcast follows the hit in the same tick, so this is a
+ *                   frame, not a hang. Erring closed is deliberate: a button that
+ *                   unlocks late is a beat of impatience, one that unlocks early
+ *                   is the ERR_FROZEN rejection #2700 is about. Notably it is NOT
+ *                   a local copy of SABOTAGE_FREEZE_SECONDS — that copy was the bug.
+ *  - 0            → the freeze has lapsed; release the button.
+ *
+ * @param {number|null} secondsRemaining - server-computed seconds left, or null
+ */
+function applySabotageFreeze(secondsRemaining) {
+    if (sabotageFreezeTimeoutId !== null) {
+        clearTimeout(sabotageFreezeTimeoutId);
+        sabotageFreezeTimeoutId = null;
+    }
+
+    var submitBtn = document.getElementById('submit-btn');
+
+    if (secondsRemaining === null) {
+        sabotageFreezeUntilMs = Infinity;
+    } else if (secondsRemaining > 0) {
+        sabotageFreezeUntilMs = Date.now() + secondsRemaining * 1000;
+    } else {
+        sabotageFreezeUntilMs = 0;
+        if (submitBtn) submitBtn.classList.remove('submit-arc--frozen');
+        return;
+    }
+
+    if (submitBtn && !hasSubmitted) {
+        submitBtn.classList.add('submit-arc--frozen');
+        if (secondsRemaining !== null) {
+            sabotageFreezeTimeoutId = setTimeout(function() {
+                sabotageFreezeTimeoutId = null;
+                var btn = document.getElementById('submit-btn');
+                if (btn) btn.classList.remove('submit-arc--frozen');
+            }, secondsRemaining * 1000);
+        }
+    }
 }
 
 /**
@@ -1910,10 +2100,11 @@ export function handleSabotaged(data) {
  *  - timer_cut  → the server shortens this player's deadline; nothing to lock
  *                 here, the banner conveys it (timer is server-authoritative).
  *  - forced_bet → nail the bet toggle on and disable it.
- *  - freeze     → block local submits for the freeze window.
+ *  - freeze     → block local submits for the server's freeze window.
  * @param {string} effect - one of SABOTAGE_EFFECTS
+ * @param {number|null} freezeRemaining - #2700: seconds left, from the payload
  */
-function applySabotageEffect(effect) {
+function applySabotageEffect(effect, freezeRemaining) {
     if (effect === 'forced_bet') {
         sabotageForcedBet = true;
         betActive = true;
@@ -1922,14 +2113,11 @@ function applySabotageEffect(effect) {
             betToggle.classList.add('is-active', 'bet-arc--forced');
         }
     } else if (effect === 'freeze') {
-        sabotageFreezeUntilMs = Date.now() + SABOTAGE_FREEZE_MS;
-        var submitBtn = document.getElementById('submit-btn');
-        if (submitBtn && !hasSubmitted) {
-            submitBtn.classList.add('submit-arc--frozen');
-            setTimeout(function() {
-                if (submitBtn) submitBtn.classList.remove('submit-arc--frozen');
-            }, SABOTAGE_FREEZE_MS);
-        }
+        applySabotageFreeze(
+            typeof freezeRemaining === 'number' && freezeRemaining > 0
+                ? freezeRemaining
+                : null,
+        );
     }
     // timer_cut: no local lock — the server owns the deadline.
 }
@@ -2051,6 +2239,387 @@ export function hideAdminControlBar() {
         bar.classList.add('hidden');
         document.body.classList.remove('has-control-bar');
     }
+    // The drawer hangs off the bar; leaving it open over the lobby would be a
+    // control panel for a game that is not running.
+    hideHostDrawer();
+    // #2649: the lights line belongs to a running round.
+    var lightsLine = document.getElementById('party-lights-line');
+    if (lightsLine) lightsLine.classList.add('hidden');
+}
+
+// ============================================
+// Host drawer (#2723)
+// ============================================
+
+/**
+ * Hide the host drawer and collapse it.
+ *
+ * Collapsing on hide is deliberate: the open/closed state is per-moment, not a
+ * preference. A drawer that reopens by itself at the start of the next game
+ * covers the transport bar the host is reaching for.
+ */
+export function hideHostDrawer() {
+    var drawer = document.getElementById('host-drawer');
+    if (!drawer) return;
+    drawer.classList.add('hidden');
+    drawer.classList.remove('is-open');
+    var body = document.getElementById('host-drawer-body');
+    if (body) body.hidden = true;
+    var grip = document.getElementById('host-drawer-grip');
+    if (grip) grip.setAttribute('aria-expanded', 'false');
+}
+
+/**
+ * Render the host drawer for the current state (#2723).
+ *
+ * The drawer is a *container*, not a Sudden Death control. #2649 (party lights)
+ * and #2646 (drop a song without scoring) are meant to arrive as further rows
+ * in the same body — that is the whole reason it exists rather than a seventh
+ * button being squeezed into a bar that already carries six on 270 px.
+ *
+ * Only the host sees it, and only while a game is running.
+ */
+export function renderHostDrawer(data) {
+    var drawer = document.getElementById('host-drawer');
+    if (!drawer) return;
+
+    if (!state.isAdmin || !data) {
+        hideHostDrawer();
+        return;
+    }
+
+    drawer.classList.remove('hidden');
+    _wireHostDrawerGrip();
+    // #2645: Pause is the first row on purpose. It is the one the host reaches
+    // for while carrying a pizza box, and the control bar above has no space
+    // left for it — six elements on 270 px is what created this drawer.
+    _renderPauseRow();
+    _renderSuddenDeathRow(data);
+    _renderPartyLightsRow(data);   // #2649
+}
+
+/**
+ * #2649: the party-lights row — three steps, not a switch.
+ *
+ * The complaint in the issue is not "the light is on", it is "*this* is on":
+ * every lamp flashing at every reveal, at 10pm, with a child asleep upstairs.
+ * Off and on alone force a choice between a disco and darkness; the middle
+ * step is the one that saves the evening, and the server already understands
+ * it — `configure_party_lights` has taken an `intensity` since the wizard was
+ * built, it simply had no caller after the game started.
+ *
+ * Rendered only when lights were ever configured. A three-way control for a
+ * feature the host never set up would be an advert, not a control.
+ */
+function _renderPartyLightsRow(data) {
+    var body = document.getElementById('host-drawer-body');
+    if (!body) return;
+
+    var lights = data.party_lights;
+    var row = document.getElementById('host-drawer-party-lights');
+
+    if (!lights || !lights.configured) {
+        if (row) row.remove();
+        return;
+    }
+
+    if (!row) {
+        row = document.createElement('div');
+        row.id = 'host-drawer-party-lights';
+        row.className = 'host-drawer__row host-drawer__row--static';
+        body.appendChild(row);
+    }
+
+    var current = !lights.active ? 'off' : (lights.intensity === 'subtle' ? 'subtle' : 'party');
+    var steps = [
+        { key: 'off', label: utils.t('admin.lightsOff') || 'Off' },
+        { key: 'subtle', label: utils.t('admin.lightsSubtle') || 'Subtle' },
+        { key: 'party', label: utils.t('admin.lightsFull') || 'Full show' }
+    ];
+
+    var subKey = current === 'off'
+        ? 'admin.lightsOffSub'
+        : (current === 'subtle' ? 'admin.lightsSubtleSub' : 'admin.lightsFullSub');
+    var subFallback = current === 'off'
+        ? 'Lights stay as they were'
+        : (current === 'subtle' ? 'Only on the reveal, at half brightness' : 'Every beat, full brightness');
+
+    row.innerHTML =
+        '<span class="host-drawer__row-icon">💡</span>' +
+        '<span class="host-drawer__row-text">' +
+            '<span class="host-drawer__row-title">' +
+                escapeHtml(utils.t('admin.lightsRowTitle') || 'Party Lights') +
+            '</span>' +
+            '<span class="host-drawer__seg">' +
+                steps.map(function(st) {
+                    return '<button type="button" class="host-drawer__seg-btn' +
+                        (st.key === current ? ' is-on' : '') +
+                        '" data-light-step="' + st.key + '">' +
+                        escapeHtml(st.label) + '</button>';
+                }).join('') +
+            '</span>' +
+            '<span class="host-drawer__row-sub">' + escapeHtml(utils.t(subKey) || subFallback) + '</span>' +
+        '</span>';
+
+    row.querySelectorAll('[data-light-step]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            _setPartyLightStep(btn.dataset.lightStep, lights);
+        });
+    });
+}
+
+/**
+ * Send a party-light step over the admin WebSocket.
+ *
+ * The entity list comes back from the server in every frame precisely because
+ * turning the lights off drops it — without it, "off" would be a one-way door
+ * and the host could not switch them on again mid-game.
+ */
+function _setPartyLightStep(step, lights) {
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+    state.ws.send(JSON.stringify(partyLightPayload(step, lights)));
+}
+
+/**
+ * The WebSocket message for one party-light step (#2649).
+ *
+ * Pure and exported because the interesting part is not the click, it is that
+ * the two "on" steps carry the entity list back to the server. Turning the
+ * lights off drops the service and with it the entities; without re-sending
+ * them, "off" would be a one-way door and the host could not get the lights
+ * back mid-game — which is the situation the issue describes, only inverted.
+ *
+ * @param {'off'|'subtle'|'party'} step
+ * @param {{entity_ids?: string[]}} lights - the server's party_lights block
+ */
+export function partyLightPayload(step, lights) {
+    if (step === 'off') {
+        return {
+            type: 'admin_action',
+            action: 'set_party_lights',
+            enabled: false
+        };
+    }
+    return {
+        type: 'admin_action',
+        action: 'set_party_lights',
+        enabled: true,
+        entity_ids: (lights && lights.entity_ids) || [],
+        // Anything that is not the middle step is the full show — a typo in a
+        // step name must not silently produce a third, undefined intensity.
+        intensity: step === 'subtle' ? 'subtle' : 'party'
+    };
+}
+
+/**
+ * #2649: the line above the round that says what the lights are doing.
+ *
+ * It exists because of the order of the questions. A host who does not know
+ * lights are configured never looks for a switch — the first sign is the
+ * hallway flashing. So the line reports first and is the way in second: it
+ * names the rooms, and tapping it opens the drawer.
+ *
+ * Host-only. A guest has nothing to do with it and no drawer to open.
+ */
+export function renderPartyLightsLine(data) {
+    var el = document.getElementById('party-lights-line');
+    if (!el) return;
+
+    var lights = data && data.party_lights;
+    if (!state.isAdmin || !lights || !lights.configured) {
+        el.classList.add('hidden');
+        return;
+    }
+
+    var ids = lights.entity_ids || [];
+    var names = ids.map(prettifyEntityId);
+    var textEl = document.getElementById('party-lights-line-text');
+    if (textEl) {
+        if (!lights.active) {
+            // Plain text on purpose: a translated string carrying markup is a
+            // trap for the next locale that gets it slightly wrong.
+            textEl.textContent = utils.t('admin.lightsLineOff')
+                || 'Lights are off for the rest of the game';
+        } else if (names.length && names.length <= 3) {
+            textEl.innerHTML = '<b>' + escapeHtml(names.join(', ')) + '</b> ' +
+                escapeHtml(utils.t('admin.lightsLineOnRooms') || 'flash on every reveal');
+        } else {
+            textEl.textContent = utils.t('admin.lightsLineOnCount', { count: names.length })
+                || (names.length + ' lights flash on every reveal');
+        }
+    }
+    el.classList.toggle('is-off', !lights.active);
+    el.classList.remove('hidden');
+
+    if (el.dataset.wired !== '1') {
+        el.dataset.wired = '1';
+        el.addEventListener('click', function() {
+            // The line is the way in: open the drawer it belongs to.
+            var drawer = document.getElementById('host-drawer');
+            var drawerBody = document.getElementById('host-drawer-body');
+            var grip = document.getElementById('host-drawer-grip');
+            if (!drawer || !drawerBody) return;
+            drawer.classList.add('is-open');
+            drawerBody.hidden = false;
+            if (grip) grip.setAttribute('aria-expanded', 'true');
+        });
+    }
+}
+
+/**
+ * `light.wohnzimmer_decke` → `Wohnzimmer decke`.
+ *
+ * Deliberately not a friendly-name lookup: that would mean a second request
+ * from the player page for a line that is read once an evening. The object id
+ * is what the host named the lamp, so it is close enough to recognise — and
+ * where it is not, the count line takes over anyway.
+ */
+export function prettifyEntityId(entityId) {
+    var raw = String(entityId || '').split('.').pop().replace(/_/g, ' ').trim();
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : '';
+}
+
+/** Wire the grip once. Idempotent — renderHostDrawer runs on every broadcast. */
+function _wireHostDrawerGrip() {
+    var grip = document.getElementById('host-drawer-grip');
+    if (!grip || grip.dataset.wired === '1') return;
+    grip.dataset.wired = '1';
+    grip.addEventListener('click', function() {
+        var drawer = document.getElementById('host-drawer');
+        var body = document.getElementById('host-drawer-body');
+        if (!drawer || !body) return;
+        var open = !drawer.classList.contains('is-open');
+        drawer.classList.toggle('is-open', open);
+        body.hidden = !open;
+        grip.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+}
+
+/**
+ * The drawer's Pause row (#2645).
+ *
+ * The tap pauses immediately — it does not open a reason picker first. A host
+ * with a doorbell going has one thing to do, and making them choose a label
+ * before the music stops would be the second-worst version of a pause button.
+ * The reasons are offered afterwards, on the pause screen, as the announcement.
+ *
+ * The subtitle is the sentence that separates this from Stop, which is the
+ * button sitting three centimetres above it in the control bar.
+ */
+function _renderPauseRow() {
+    var body = document.getElementById('host-drawer-body');
+    if (!body) return;
+
+    var row = document.getElementById('host-drawer-pause');
+    if (!row) {
+        row = document.createElement('button');
+        row.id = 'host-drawer-pause';
+        row.type = 'button';
+        row.className = 'host-drawer__row';
+        row.addEventListener('click', function() {
+            sendHostPause(HOST_PAUSE_GENERIC);
+        });
+        body.appendChild(row);
+    }
+
+    row.innerHTML =
+        '<span class="host-drawer__row-icon">⏸️</span>' +
+        '<span class="host-drawer__row-text">' +
+            '<span class="host-drawer__row-title">' +
+                escapeHtml(utils.t('admin.pauseGame')) + '</span>' +
+            '<span class="host-drawer__row-sub">' +
+                escapeHtml(utils.t('admin.pauseGameSub')) + '</span>' +
+        '</span>';
+}
+
+/**
+ * Send the host's pause / re-label (#2645).
+ *
+ * The same action does both: the server pauses when the game is running and
+ * only re-writes the announcement when it is already paused, so the host can
+ * change "pizza" into "back in a minute" without leaving the pause.
+ *
+ * @param {string} reason - one of HOST_PAUSE_CODES
+ */
+function sendHostPause(reason) {
+    if (!debounceAdminAction()) return;
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        showToast(utils.t('errors.CONNECTION_LOST'));
+        return;
+    }
+    state.ws.send(JSON.stringify({
+        type: 'admin',
+        action: 'pause_game',
+        reason: reason
+    }));
+}
+
+/**
+ * The drawer's second row: arm or disarm Sudden Death (#827's endpoint, #2723's
+ * reachable place for it).
+ *
+ * The subtitle says what the switch *does*, not what it is called. The host
+ * arming this mode has to know that a non-submitter counts as the slowest
+ * player — that rule is why #2646 exists at all, and a bare label hides it.
+ */
+function _renderSuddenDeathRow(data) {
+    var body = document.getElementById('host-drawer-body');
+    if (!body) return;
+
+    var row = document.getElementById('host-drawer-sudden-death');
+    if (!row) {
+        row = document.createElement('button');
+        row.id = 'host-drawer-sudden-death';
+        row.type = 'button';
+        row.className = 'host-drawer__row';
+        row.addEventListener('click', function() {
+            if (row.disabled) return;
+            // POST the inverse of the current *server* state and let the WS
+            // broadcast repaint — no optimistic flip, same rule as the admin
+            // page's toggle (admin.js `_renderSuddenDeathLiveToggle`).
+            var enable = !row.classList.contains('is-on');
+            row.disabled = true;
+            var auth = window.BeatifyAuth;
+            if (!auth || !auth.fetch) {
+                console.warn('[Beatify] Sudden Death: no auth helper');
+                row.disabled = false;
+                return;
+            }
+            auth.fetch('/beatify/api/sudden-death', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enable })
+            }).catch(function(err) {
+                console.warn('[Beatify] Sudden Death toggle failed:', err);
+                row.disabled = false;   // let the host retry
+            });
+        });
+        body.appendChild(row);
+    }
+
+    var isOn = !!data.sudden_death_mode;
+    var players = data.players || [];
+    var remaining = players.filter(function(p) { return !p.eliminated; }).length;
+
+    var title = utils.t('admin.suddenDeathLive') || 'Sudden Death';
+    var sub = isOn
+        ? (utils.t('admin.suddenDeathOnSub') || 'The slowest answer is out from the next round')
+        : (utils.t('admin.suddenDeathOffSub') || 'Arm it and the slowest answer is out from the next round');
+    var pill = isOn
+        ? (utils.t('admin.drawerOn') || 'On')
+        : (utils.t('admin.drawerOff') || 'Off');
+
+    row.innerHTML =
+        '<span class="host-drawer__row-icon">💀</span>' +
+        '<span class="host-drawer__row-text">' +
+            '<span class="host-drawer__row-title">' + escapeHtml(title) + '</span>' +
+            '<span class="host-drawer__row-sub">' + escapeHtml(sub) + '</span>' +
+        '</span>' +
+        '<span class="host-drawer__pill' + (isOn ? ' is-on' : '') + '">' + escapeHtml(pill) + '</span>';
+    row.classList.toggle('is-on', isOn);
+    // Below three survivors arming changes nothing (2 = the final already,
+    // 1 = a winner). Same guard as the admin page.
+    row.disabled = remaining < 3;
 }
 
 // ============================================
@@ -2058,7 +2627,7 @@ export function hideAdminControlBar() {
 // ============================================
 
 /**
- * Show reaction bar during REVEAL phase
+ * Show the reaction bar.
  */
 export function showReactionBar() {
     var bar = document.getElementById('reaction-bar');
@@ -2068,7 +2637,7 @@ export function showReactionBar() {
 }
 
 /**
- * Hide reaction bar (non-REVEAL phases)
+ * Hide the reaction bar.
  */
 export function hideReactionBar() {
     var bar = document.getElementById('reaction-bar');
@@ -2078,19 +2647,151 @@ export function hideReactionBar() {
 }
 
 /**
+ * #2562: is this client allowed to react right now?
+ *
+ * The rule mirrors `handle_reaction` in server/ws_handlers/lifecycle.py: at the
+ * reveal everyone may, during the round only a player who is done with it —
+ * they submitted, they are eliminated (#827) or they are sitting out a finale
+ * playoff (#2578). Keeping the two in step is what stops the bar appearing for
+ * someone whose taps the server would drop.
+ *
+ * @param {string} phase - Current game phase.
+ * @param {Object|null} me - This player's entry in the state payload.
+ * @returns {boolean}
+ */
+export function mayReactNow(phase, me) {
+    if (phase === 'REVEAL') return true;
+    if (phase !== 'PLAYING') return false;
+    if (!me) return false;
+    return !!(me.submitted || me.eliminated || me.playoff_spectator);
+}
+
+/**
+ * #2562: show or hide the reaction bar for the PLAYING phase.
+ *
+ * Called from the (coalesced) game render, so it runs with the state payload in
+ * hand — the phase switch in player-core cannot see whether this player has
+ * submitted yet.
+ *
+ * @param {Object} data - PLAYING state payload.
+ */
+export function syncInRoundReactionBar(data) {
+    if (mayReactNow('PLAYING', findMe(data && data.players))) {
+        showReactionBar();
+    } else {
+        hideReactionBar();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// #2562 cooldown
+//
+// The old brake was one reaction per reveal phase, tracked client-side as
+// `state.hasReactedThisPhase` and shown by disabling the whole bar until the
+// next round. That budget cannot carry a 45-second round, so the server now
+// throttles to one reaction per REACTION_THROTTLE_SECONDS and tells the sender
+// how long is left (`reaction_ack`). This is the client half: the bar goes dead
+// for exactly that long, with a line under it draining to zero, so the wait is
+// something the player can see rather than a button that stopped working.
+// ---------------------------------------------------------------------------
+
+/** Timer id for the handle that re-arms the bar when the cooldown expires. */
+var reactionCooldownTimeoutId = null;
+
+/**
+ * Drive the cooldown line: full width, then drain to zero over `seconds`.
+ * @param {number} seconds
+ */
+function paintReactionCooldown(seconds) {
+    var track = document.getElementById('reaction-cooldown');
+    var fill = document.getElementById('reaction-cooldown-fill');
+    if (!track || !fill) return;
+
+    track.classList.remove('hidden');
+    track.setAttribute('aria-valuemin', '0');
+    track.setAttribute('aria-valuemax', String(Math.round(seconds)));
+    track.setAttribute('aria-valuenow', String(Math.round(seconds)));
+
+    // Snap back to full with no transition, then animate down on the next
+    // frame — assigning both in one go collapses into no animation at all.
+    fill.style.transition = 'none';
+    fill.style.transform = 'scaleX(1)';
+    // Force a reflow so the browser takes the reset as its starting point.
+    void fill.offsetWidth;
+    fill.style.transition = 'transform ' + seconds + 's linear';
+    fill.style.transform = 'scaleX(0)';
+}
+
+/** Take the cooldown line off screen. */
+function clearReactionCooldownPaint() {
+    var track = document.getElementById('reaction-cooldown');
+    var fill = document.getElementById('reaction-cooldown-fill');
+    if (track) track.classList.add('hidden');
+    if (fill) {
+        fill.style.transition = 'none';
+        fill.style.transform = 'scaleX(1)';
+    }
+}
+
+/**
+ * Put the bar on cooldown for `seconds` and re-arm it afterwards.
+ * @param {number} seconds - Remaining cooldown, from the server where possible.
+ */
+export function startReactionCooldown(seconds) {
+    var wait = Number(seconds);
+    if (!isFinite(wait) || wait <= 0) {
+        endReactionCooldown();
+        return;
+    }
+
+    state.reactionCooldownUntil = Date.now() + wait * 1000;
+    setReactionButtonsDisabled(true);
+    paintReactionCooldown(wait);
+
+    if (reactionCooldownTimeoutId) clearTimeout(reactionCooldownTimeoutId);
+    reactionCooldownTimeoutId = setTimeout(endReactionCooldown, wait * 1000);
+}
+
+/** Re-arm the bar and clear the used-glow. */
+export function endReactionCooldown() {
+    if (reactionCooldownTimeoutId) {
+        clearTimeout(reactionCooldownTimeoutId);
+        reactionCooldownTimeoutId = null;
+    }
+    state.reactionCooldownUntil = 0;
+    clearReactionCooldownPaint();
+    resetReactionButtons();
+}
+
+/**
+ * #2562: the server's answer to a reaction — accepted (`retry_after` is the
+ * full interval) or throttled (`retry_after` is what is actually left).
+ *
+ * The client already started its own cooldown when it sent, off the mirrored
+ * constant; this re-anchors it on the server's number so the two cannot drift
+ * apart on a slow link and offer a tap that is going to be swallowed.
+ *
+ * @param {Object} data - `reaction_ack` payload.
+ */
+export function handleReactionAck(data) {
+    if (!data) return;
+    startReactionCooldown(data.retry_after);
+}
+
+/**
  * Send reaction via WebSocket.
  * @param {string} emoji - The emoji to send
  * @param {HTMLElement} [btn] - The tapped button, marked used on success
  */
 function sendReaction(emoji, btn) {
-    if (state.hasReactedThisPhase) {
+    if (state.reactionCooldownUntil > Date.now()) {
         return;
     }
 
-    // #1757: don't burn the one-per-phase budget if the socket is mid-
-    // reconnect — the reaction would be silently dropped and the player would
-    // get zero feedback and no retry. Leave the buttons active so they can
-    // react once the socket is back.
+    // #1757: don't burn the cooldown if the socket is mid-reconnect — the
+    // reaction would be silently dropped and the player would get zero feedback
+    // and no retry. Leave the buttons active so they can react once the socket
+    // is back.
     if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
         return;
     }
@@ -2100,21 +2801,22 @@ function sendReaction(emoji, btn) {
         emoji: emoji
     }));
 
-    // Only now is the reaction actually spent — reflect it in the UI.
-    state.hasReactedThisPhase = true;
+    // Start the cooldown optimistically off the mirrored constant, so the bar
+    // answers the tap instead of the round trip; handleReactionAck() corrects
+    // it the moment the server replies.
     markReactionUsed(btn);
+    startReactionCooldown(REACTION_THROTTLE_SECONDS);
 }
 
 /**
- * #1757: reflect the spent reaction — mark the tapped button used and disable
- * the whole bar so further taps aren't silent no-ops.
+ * #1757: reflect the spent reaction — light the tapped emoji. Disabling the bar
+ * is the cooldown's job (#2562).
  * @param {HTMLElement} [usedBtn]
  */
 function markReactionUsed(usedBtn) {
     var bar = document.getElementById('reaction-bar');
     if (!bar) return;
     bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
-        btn.disabled = true;
         var isUsed = btn === usedBtn;
         btn.setAttribute('aria-pressed', isUsed ? 'true' : 'false');
         btn.classList.toggle('is-used', isUsed);
@@ -2122,8 +2824,19 @@ function markReactionUsed(usedBtn) {
 }
 
 /**
- * #1757: re-enable the reaction bar for a fresh reveal round (called when the
- * one-per-phase budget resets in player-core).
+ * Disable or re-enable every button in the bar.
+ * @param {boolean} disabled
+ */
+function setReactionButtonsDisabled(disabled) {
+    var bar = document.getElementById('reaction-bar');
+    if (!bar) return;
+    bar.querySelectorAll('.reaction-btn').forEach(function(btn) {
+        btn.disabled = disabled;
+    });
+}
+
+/**
+ * #1757: re-enable the reaction bar and drop the used-state glow.
  */
 export function resetReactionButtons() {
     var bar = document.getElementById('reaction-bar');
@@ -2173,6 +2886,144 @@ export function showFloatingReaction(senderName, emoji) {
     setTimeout(function() {
         bubble.remove();
     }, 3000);
+}
+
+/**
+ * Show the host's way out of a paused game (#2551).
+ *
+ * The player screen hides the admin control bar in PAUSED, so a host who
+ * joined from their phone saw the same spinner as everyone else with no
+ * resume, no end, and no link to the page that has both. `resume_game` and
+ * `end_game` have accepted PAUSED server-side all along.
+ */
+export function renderPausedAdminActions(data) {
+    var box = document.getElementById('paused-admin-actions');
+    if (!box) return;
+    box.classList.toggle('hidden', !state.isAdmin);
+    if (!state.isAdmin) return;
+
+    if (box.dataset.wired !== '1') {
+        box.dataset.wired = '1';
+        var resumeBtn = document.getElementById('paused-resume-btn');
+        if (resumeBtn) resumeBtn.addEventListener('click', handleResumeGame);
+        var endBtn = document.getElementById('paused-end-btn');
+        if (endBtn) endBtn.addEventListener('click', handleEndGame);
+    }
+
+    renderPauseReasonTiles(data || {});
+}
+
+/** The value the fourth tile carries — the old Stop, not a pause reason. */
+export var PAUSE_TILE_MUSIC_OFF = 'music_off';
+
+/**
+ * Which tiles the host's pause screen offers (#2645) — the decision, without
+ * the DOM, so it can be checked without a browser.
+ *
+ * Three announcements plus the old Stop. Standing them in one list, each with
+ * its consequence in a whole sentence, is the entire point of this variant:
+ * before it, Pause and Stop were two buttons in two places and the host had to
+ * already know which one they meant. Reading them side by side once is enough.
+ *
+ * The fourth tile is only offered when there is a round left to run on. Out of
+ * a pause taken during the reveal, "the clock keeps running" would be a
+ * promise about a clock that has already stopped.
+ *
+ * @param {Object} data - state payload (`pause_reason`, `paused_from`)
+ * @returns {Array<{code: string, emoji: string, titleKey: string, subKey: string,
+ *                  warn: boolean, active: boolean}>} empty for a server pause
+ */
+export function pauseReasonTileModel(data) {
+    if (!data || !isHostPause(data.pause_reason)) return [];
+
+    var tiles = HOST_PAUSE_TILES.map(function(tile) {
+        return {
+            code: tile.code,
+            emoji: tile.emoji,
+            titleKey: tile.titleKey,
+            subKey: 'game.pauseReasonSub',
+            warn: false,
+            active: data.pause_reason === tile.code,
+        };
+    });
+
+    if (data.paused_from === 'PLAYING') {
+        tiles.push({
+            code: PAUSE_TILE_MUSIC_OFF,
+            emoji: '🔇',
+            titleKey: 'game.pauseMusicOff',
+            subKey: 'game.pauseMusicOffSub',
+            warn: true,
+            active: false,
+        });
+    }
+    return tiles;
+}
+
+/**
+ * Paint the announcement list and wire it once (#2645).
+ *
+ * Delegated click: the list is rebuilt on every broadcast (the active tile
+ * moves), so per-button listeners would have to be re-attached each time.
+ */
+function renderPauseReasonTiles(data) {
+    var block = document.getElementById('paused-announce-block');
+    var list = document.getElementById('paused-reason-tiles');
+    if (!block || !list) return;
+
+    var tiles = pauseReasonTileModel(data);
+    block.classList.toggle('hidden', tiles.length === 0);
+    if (!tiles.length) {
+        list.innerHTML = '';
+        return;
+    }
+
+    list.innerHTML = tiles.map(function(tile) {
+        return '<button type="button" class="pause-reason' +
+            (tile.active ? ' is-on' : '') +
+            (tile.warn ? ' pause-reason--warn' : '') +
+            '" data-code="' + escapeHtml(tile.code) + '"' +
+            (tile.active ? ' aria-pressed="true"' : ' aria-pressed="false"') + '>' +
+            '<span class="pause-reason__emoji" aria-hidden="true">' + tile.emoji + '</span>' +
+            '<span class="pause-reason__text">' +
+                '<span class="pause-reason__title">' +
+                    escapeHtml(utils.t(tile.titleKey)) + '</span>' +
+                '<span class="pause-reason__sub">' +
+                    escapeHtml(utils.t(tile.subKey)) + '</span>' +
+            '</span>' +
+        '</button>';
+    }).join('');
+
+    if (list.dataset.wired === '1') return;
+    list.dataset.wired = '1';
+    list.addEventListener('click', function(ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest('.pause-reason') : null;
+        if (!btn) return;
+        var code = btn.getAttribute('data-code');
+        if (code === PAUSE_TILE_MUSIC_OFF) {
+            // The host did not want a pause at all. `stop_song` lifts the host
+            // pause and silences the song server-side (#2645), so the round
+            // carries on — which is exactly what the tile's sentence promised.
+            handleStopSong({ fromPause: true });
+            return;
+        }
+        sendHostPause(code);
+    });
+}
+
+/**
+ * Resume a paused game from the player screen (#2551).
+ */
+function handleResumeGame() {
+    if (!debounceAdminAction()) return;
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        showToast(utils.t('errors.CONNECTION_LOST'));
+        return;
+    }
+    state.ws.send(JSON.stringify({
+        type: 'admin',
+        action: 'resume_game'
+    }));
 }
 
 /**
@@ -2229,13 +3080,19 @@ export function updateControlBarState(phase) {
 
 /**
  * Handle Stop Song button (Story 16.6)
+ *
+ * @param {{fromPause?: boolean}} [opts] - #2645: sent from the "Just the music
+ *   off" tile on the pause screen rather than from the control bar. The bar is
+ *   hidden there, and the local `songStopped` latch must not swallow the
+ *   message — the server has a pause to lift before it silences anything.
  */
-function handleStopSong() {
-    if (songStopped) return;
+function handleStopSong(opts) {
+    var fromPause = !!(opts && opts.fromPause);
+    if (songStopped && !fromPause) return;
 
     if (!debounceAdminAction()) return;
 
-    var stopBtn = document.getElementById('stop-song-btn');
+    var stopBtn = fromPause ? null : document.getElementById('stop-song-btn');
     if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
         // #880: the WebSocket can briefly be CONNECTING right after an
         // admin->player handoff or a tab-return reconnect. The old code
@@ -2243,6 +3100,8 @@ function handleStopSong() {
         // looked dead. Flash visible feedback on the label so they know the
         // click registered and to retry once reconnected.
         console.warn('[Beatify] Cannot stop song: WebSocket not connected');
+        // #2645: from the pause screen there is no control-bar label to flash.
+        if (fromPause) showToast(utils.t('errors.CONNECTION_LOST'));
         if (stopBtn) {
             var warnLabel = stopBtn.querySelector('.control-label');
             if (warnLabel) {
@@ -2356,16 +3215,89 @@ async function handleEndGame() {
 
 // Debounce state to prevent rapid clicks
 var nextRoundPending = false;
-var NEXT_ROUND_DEBOUNCE_MS = 2000;
+// #2583: NEXT_ROUND_DEBOUNCE_MS was declared here and never read —
+// handleNextRound guards with a flag and its own 10s timeout.
 
 /**
- * Handle next round button click
+ * Handle next round button click.
+ *
+ * #2646: while a round is still running this asks first. The host who taps
+ * Next in the middle of round 5 is almost always looking at a broken song, and
+ * the tap used to score the round on the spot — every non-answerer marked
+ * wrong, their streaks reset, and in Sudden Death one of them eliminated. The
+ * card names those consequences and offers the two other exits. After the
+ * timer has expired nothing is asked: the round is over either way.
  */
 export function handleNextRound() {
     if (nextRoundPending) {
         return;
     }
+    if (shouldAskBeforeEnding()) {
+        askBeforeEndingRound();
+        return;
+    }
+    sendNextRound();
+}
 
+/**
+ * Show the #2646 card and act on the host's choice.
+ *
+ * Not awaited by the caller: the card is modal, and `nextRoundPending` is only
+ * armed once a command actually goes out, so the button stays live if the host
+ * backs out.
+ */
+function askBeforeEndingRound() {
+    openRoundEndChoice({
+        doc: document,
+        t: _tRoundEnd,
+        focusTrap: createModalFocusTrap,
+    }).then(function (answer) {
+        if (answer.choice === 'score') {
+            sendNextRound();
+        } else if (answer.choice === 'void') {
+            sendVoidRound(answer.reason);
+        }
+        // 'keep' — the misfire the third exit exists for. Nothing is sent.
+    });
+}
+
+/** `t(key, fallback, params)` over BeatifyI18n, for round-end-choice.js. */
+function _tRoundEnd(key, fallback, params) {
+    var out = utils.t ? utils.t(key, params) : null;
+    if (!out || out === key) {
+        out = fallback;
+        // BeatifyI18n interpolates for us; the English fallback has to do its
+        // own, or an untranslated locale shows a literal "{n} seconds left".
+        if (params) {
+            Object.keys(params).forEach(function (name) {
+                out = out.split('{' + name + '}').join(String(params[name]));
+            });
+        }
+    }
+    return out;
+}
+
+/** #2646: end the round without scoring it. */
+function sendVoidRound(reason) {
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        showToast(utils.t('errors.CONNECTION_LOST'));
+        return;
+    }
+    nextRoundPending = true;
+    state.ws.send(JSON.stringify({
+        type: 'admin',
+        action: 'void_round',
+        reason: reason || null
+    }));
+    setTimeout(function() {
+        if (nextRoundPending) {
+            resetNextRoundPending();
+        }
+    }, 10000);
+}
+
+/** The original Next: end the round and score it. */
+function sendNextRound() {
     if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         nextRoundPending = true;
 
@@ -2447,6 +3379,14 @@ export function setupAdminControlBar() {
  */
 export function handleSongStopped() {
     songStopped = true;
+    // #2554: tell the room, not just the host. Everyone else hears the music
+    // stop with the timer still running and has no way to know it was
+    // deliberate.
+    var chip = document.getElementById('song-stopped-chip');
+    if (chip) {
+        chip.classList.remove('hidden');
+        syncArcChipRow();
+    }
     var stopBtn = document.getElementById('stop-song-btn');
     if (stopBtn) {
         stopBtn.classList.add('is-stopped');
@@ -2464,6 +3404,11 @@ export function handleSongStopped() {
  */
 export function resetSongStoppedState() {
     songStopped = false;
+    var chip = document.getElementById('song-stopped-chip');
+    if (chip) {
+        chip.classList.add('hidden');
+        syncArcChipRow();
+    }
     var stopBtn = document.getElementById('stop-song-btn');
     if (stopBtn) {
         stopBtn.classList.remove('is-stopped');
@@ -2482,8 +3427,32 @@ export function resetSongStoppedState() {
  */
 export function handleVolumeChanged(level) {
     currentVolume = level;
+    renderVolumeReadout(level);
     showVolumeIndicator(level);
     updateVolumeLimitStates(level);
+}
+
+/**
+ * Adopt the speaker's real level from a state broadcast (#2557).
+ *
+ * Without this the host's phone assumed 0.5 until their first tap: the level
+ * only ever came back in reply to their own button press. That made the first
+ * press blind and the at-the-limit guard wrong from the start.
+ */
+export function syncVolumeFromState(data) {
+    if (!data || typeof data.volume_level !== 'number') return;
+    currentVolume = data.volume_level;
+    renderVolumeReadout(currentVolume);
+    updateVolumeLimitStates(currentVolume);
+}
+
+/**
+ * Keep the percentage between the two buttons up to date (#2557).
+ */
+function renderVolumeReadout(level) {
+    var el = document.getElementById('volume-readout');
+    if (!el) return;
+    el.textContent = Math.round(level * 100) + '%';
 }
 
 /**

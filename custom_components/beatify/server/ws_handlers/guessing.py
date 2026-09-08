@@ -28,15 +28,36 @@ from custom_components.beatify.const import (
     ERR_ROUND_EXPIRED,
     ERR_TARGET_ALREADY_SABOTAGED,
     ERR_TARGET_ALREADY_SUBMITTED,
-    YEAR_MAX,
-    YEAR_MIN,
 )
+from custom_components.beatify.game.serializers import year_range
 from custom_components.beatify.game.state import GamePhase, GameState
 
 if TYPE_CHECKING:
     from custom_components.beatify.server.websocket import BeatifyWebSocketHandler
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def _reject_out_of_play(ws: web.WebSocketResponse, player) -> bool:
+    """Reject actions from eliminated players and playoff spectators (#2612)."""
+    if not player.out_of_play:
+        return False
+
+    message = (
+        "You are sitting out this playoff"
+        if player.playoff_spectator and not player.eliminated
+        else "You have been eliminated"
+    )
+    await ws.send_json(
+        {
+            "type": "error",
+            # Keep the established client-side error path for all players who
+            # are not allowed to act during the current round.
+            "code": ERR_ELIMINATED,
+            "message": message,
+        }
+    )
+    return True
 
 
 async def handle_submit(
@@ -62,16 +83,9 @@ async def handle_submit(
         )
         return
 
-    # #1748: a Sudden Death eliminated player is out of the game — reject any
-    # server-side guess so a stale client can't keep banking score.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: neither an eliminated player nor a finale-playoff
+    # spectator may bank a server-side guess.
+    if await _reject_out_of_play(ws, player):
         return
 
     if game_state.phase != GamePhase.PLAYING:
@@ -136,7 +150,13 @@ async def handle_submit(
             return
 
     year = data.get("year")
-    if not isinstance(year, int) or year < YEAR_MIN or year > YEAR_MAX:
+    # #2623: validate against the range the player was actually offered, not
+    # against two constants. The slider widens to cover the playlist, so a
+    # fixed floor of 1950 rejected correct answers for the 27 catalogue songs
+    # dated 1937-1949 — and a fixed ceiling of 2026 would start rejecting the
+    # current year every January.
+    allowed = year_range(game_state)
+    if not isinstance(year, int) or year < allowed["min"] or year > allowed["max"]:
         await ws.send_json(
             {
                 "type": "error",
@@ -205,15 +225,8 @@ async def handle_get_steal_targets(
         )
         return
 
-    # #1748: an eliminated player (Sudden Death) may not use a banked steal.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: an out-of-play player may not use a banked steal.
+    if await _reject_out_of_play(ws, player):
         return
 
     if not player.steal_available:
@@ -258,15 +271,8 @@ async def handle_steal(
         )
         return
 
-    # #1748: an eliminated player (Sudden Death) may not execute a banked steal.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: an out-of-play player may not execute a banked steal.
+    if await _reject_out_of_play(ws, player):
         return
 
     # #2335: the same guard the four guessing handlers have carried since
@@ -354,14 +360,7 @@ async def handle_get_sabotage_targets(
         )
         return
 
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    if await _reject_out_of_play(ws, player):
         return
 
     if not player.sabotage_available:
@@ -401,14 +400,7 @@ async def handle_sabotage(
         )
         return
 
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    if await _reject_out_of_play(ws, player):
         return
 
     # #2335: same guard, opposite harm. All three sabotage effects act on the
@@ -471,6 +463,13 @@ async def handle_sabotage(
                 "type": "sabotaged",
                 "by": player.name,
                 "effect": result["effect"],
+                # #2700: the freeze duration ships WITH the hit, computed by the
+                # same helper the state broadcast uses. The phone locks its
+                # submit button for exactly this many seconds and keeps no copy
+                # of SABOTAGE_FREEZE_SECONDS, so tuning the constant in const.py
+                # moves the button and the server's ERR_FROZEN window together.
+                # 0 for the other two effects — they lock nothing locally.
+                "freeze_remaining": game_state.sabotage_freeze_remaining(target),
             }
         )
 
@@ -532,15 +531,8 @@ async def handle_artist_guess(
         )
         return
 
-    # #1748: reject guesses from a Sudden Death eliminated player.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: reject guesses from any player out of this round.
+    if await _reject_out_of_play(ws, player):
         return
 
     if not game_state.artist_challenge:
@@ -654,15 +646,8 @@ async def handle_movie_guess(
         )
         return
 
-    # #1748: reject guesses from a Sudden Death eliminated player.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: reject guesses from any player out of this round.
+    if await _reject_out_of_play(ws, player):
         return
 
     if not game_state.movie_challenge:
@@ -760,15 +745,8 @@ async def handle_title_artist_guess(
         )
         return
 
-    # #1748: reject guesses from a Sudden Death eliminated player.
-    if player.eliminated:
-        await ws.send_json(
-            {
-                "type": "error",
-                "code": ERR_ELIMINATED,
-                "message": "You have been eliminated",
-            }
-        )
+    # #1748 / #2612: reject guesses from any player out of this round.
+    if await _reject_out_of_play(ws, player):
         return
 
     # One title/artist attempt per player per round (#2498). Without this the
@@ -958,7 +936,7 @@ async def handle_title_artist_override(
         )
         return
 
-    is_admin_ws = game_state._admin_ws is not None and game_state._admin_ws is ws
+    is_admin_ws = handler.admin_ws is not None and handler.admin_ws is ws
     sender = game_state.get_player_by_ws(ws)
     if not (is_admin_ws or (sender and sender.is_admin)):
         await ws.send_json(

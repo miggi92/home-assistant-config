@@ -3,6 +3,15 @@
  * AnimationQueue, easing functions, score popups, confetti helpers, DOM utilities
  */
 
+// #2627: the name cap comes from the shared mirror of const.py, not from a
+// local literal. It used to be declared here AND written out as
+// `name.length > 20` twice in admin.js AND as `maxlength="20"` in two forms.
+import {
+    MAX_NAME_LENGTH,
+    DIFFICULTY_SCORING,
+    DIFFICULTY_DEFAULT,
+} from './game-constants.js';
+
 var utils = window.BeatifyUtils || {};
 
 // ============================================
@@ -16,7 +25,13 @@ export var state = {
     reconnectAttempts: 0,
     isReconnecting: false,
     intentionalLeave: false,
-    hasReactedThisPhase: false,
+    // #2562: `Date.now()` at which the reaction bar comes back to life. Replaces
+    // the old `hasReactedThisPhase` flag — the brake is a time throttle now, not
+    // a one-per-phase budget, and the server's ack is what sets this.
+    reactionCooldownUntil: 0,
+    // #2562: the phase of the last state frame. `player_reaction` frames arrive
+    // outside the phase switch and are rendered on the phone only at the reveal.
+    currentPhase: null,
     currentRoundNumber: 0,
     joinTimeoutId: null,  // #1663: initial-join watchdog timer id
     joinPending: false,   // #2499: a connect attempt is waiting for its ack
@@ -80,6 +95,10 @@ export function showView(viewId) {
     }
 
     if (viewId === 'join-view') {
+        // #2627: the cap the field enforces is the cap the server enforces.
+        // player.html no longer ships `maxlength="20"` — a second copy of the
+        // number that a server-side change would have left behind.
+        applyNameLengthCap(document.getElementById('name-input'));
         // #2506: tapping Join disables the button and relabels it "Joining…",
         // and only the join-timeout path ever put it back. Leaving a game, a
         // session takeover, a failed reconnect and an unknown session all
@@ -95,19 +114,44 @@ export function showView(viewId) {
     }
 }
 
-export var MAX_NAME_LENGTH = 20;
+// Re-exported so existing importers of this module keep working; the value
+// itself is defined once, in game-constants.js (#2627).
+export { MAX_NAME_LENGTH };
+
+/**
+ * Stamp the shared cap onto a name field (#2627).
+ *
+ * The markup deliberately carries no `maxlength`: an attribute is a literal
+ * that no server-side change can reach, which is how the join button and the
+ * two forms drifted apart from `const.py` in the first place. Setting it here
+ * means the field, `validateName()` and `game/player_registry.py` all cap at
+ * the same number.
+ *
+ * @param {HTMLInputElement|null} input
+ */
+export function applyNameLengthCap(input) {
+    if (input) input.maxLength = MAX_NAME_LENGTH;
+}
 
 /**
  * Validate a typed player name. Pure — moved here from player-core (#2506) so
  * the join view's button state has one owner that can reach it.
  */
+/** utils.t with the same optional-utils guard the rest of this module uses. */
+function tr(key, fallback) {
+    return utils.t ? utils.t(key, fallback) : fallback;
+}
+
 export function validateName(name) {
     var trimmed = (name || '').trim();
     if (!trimmed) {
-        return { valid: false, error: 'Please enter a name' };
+        // #2553: these two were the only join-screen strings still hard-coded
+        // in English, on the very first screen a guest sees.
+        return { valid: false, error: tr('errors.nameEmpty', 'Please enter a name') };
     }
     if (trimmed.length > MAX_NAME_LENGTH) {
-        return { valid: false, error: 'Name too long (max 20 characters)' };
+        var tooLong = tr('errors.nameTooLong', 'Name too long (max {max} characters)');
+        return { valid: false, error: tooLong.replace(/\{max\}/g, MAX_NAME_LENGTH) };
     }
     return { valid: true, name: trimmed };
 }
@@ -409,6 +453,58 @@ export function easeOutQuart(t) {
     return 1 - Math.pow(1 - t, 4);
 }
 
+// ============================================
+// Year-guess classification (#2624)
+// ============================================
+
+/**
+ * The scoring table and the default level, re-exported for the reveal's callers.
+ *
+ * The reveal screen used to decide "so close" against fixed distances of 2 and
+ * 5 years while the server awarded points from this table. On easy that showed
+ * the sad face over a 5-point round; on hard it said "so close" over a
+ * 0-pointer. One table, two readings, and the player saw them contradict each
+ * other on screen (#2624).
+ *
+ * #2625 landed the frontend's single mirror of const.py in game-constants.js
+ * shortly after #2624 put a copy here; this file now reads that one rather than
+ * keeping a second. ``tests/unit/test_reveal_difficulty_parity_2624.py`` and
+ * ``__tests__/game-constants-mirror.test.js`` both fail if it stops matching
+ * const.py.
+ */
+export { DIFFICULTY_SCORING, DIFFICULTY_DEFAULT };
+
+/**
+ * Classify a year guess exactly the way the server scores it (#2624).
+ *
+ * Returns the server's own vocabulary from
+ * ``GameState._apply_round_results`` — deliberately, so there is one set of
+ * names for one rule instead of a second frontend one that can drift:
+ *
+ *   'exact'  — bang on, POINTS_EXACT
+ *   'scored' — inside close_range, close_points
+ *   'close'  — inside near_range, near_points (a consolation point)
+ *   'missed' — no points, or no guess at all
+ *
+ * A range of 0 disables its band (hard has no near band), which is why both
+ * checks test the range before the distance.
+ *
+ * @param {number|null|undefined} yearsOff - absolute distance to the real year
+ * @param {string} difficulty - 'easy' | 'normal' | 'hard'
+ * @returns {string} one of exact | scored | close | missed
+ */
+export function classifyYearsOff(yearsOff, difficulty) {
+    if (yearsOff == null || isNaN(yearsOff)) return 'missed';
+
+    var cfg = DIFFICULTY_SCORING[difficulty] || DIFFICULTY_SCORING[DIFFICULTY_DEFAULT];
+    var diff = Math.abs(yearsOff);
+
+    if (diff === 0) return 'exact';
+    if (cfg.close_range > 0 && diff <= cfg.close_range) return 'scored';
+    if (cfg.near_range > 0 && diff <= cfg.near_range) return 'close';
+    return 'missed';
+}
+
 /**
  * Animate a numeric value from start to end
  * Story 18.3: Now device-tier aware with instant updates for low-end devices
@@ -474,105 +570,6 @@ export function animateValue(element, start, end, duration, easing) {
     };
 }
 
-/**
- * Animate score change with visual effects
- * @param {HTMLElement} element - Score element to animate
- * @param {number} oldScore - Previous score value
- * @param {number} newScore - New score value
- * @param {Object} options - Effect options: { betWon, betLost, streakMilestone, isBigScore }
- */
-export function animateScoreChange(element, oldScore, newScore, options) {
-    options = options || {};
-
-    var duration = 500;
-    if (options.betWon) {
-        duration = 800;
-    } else if (options.isBigScore) {
-        duration = 700;
-    } else if (options.betLost) {
-        duration = 400;
-    }
-
-    element.classList.add('score-animating');
-
-    var animationClass = null;
-    if (options.betWon) {
-        animationClass = 'score-glow-gold';
-    } else if (options.betLost) {
-        animationClass = 'score-shake';
-        element.classList.add('score-flash-red');
-    } else if (options.streakMilestone) {
-        animationClass = 'score-burst';
-    } else if (options.isBigScore) {
-        animationClass = 'score-pop';
-    }
-
-    if (animationClass && !prefersReducedMotion()) {
-        element.classList.add(animationClass);
-    }
-
-    animateValue(element, oldScore, newScore, duration);
-
-    function cleanup() {
-        element.classList.remove('score-animating');
-        if (animationClass) {
-            element.classList.remove(animationClass);
-        }
-        element.classList.remove('score-flash-red');
-    }
-
-    if (animationClass && !prefersReducedMotion()) {
-        element.addEventListener('animationend', function onEnd() {
-            element.removeEventListener('animationend', onEnd);
-            cleanup();
-        });
-    } else {
-        setTimeout(cleanup, duration + 50);
-    }
-}
-
-/**
- * Show floating points popup above target element
- * @param {HTMLElement} targetElement - Element to position popup relative to
- * @param {number} points - Points value to display
- * @param {Object} options - Options: { text, isStreak, isBetWin }
- */
-export function showPointsPopup(targetElement, points, options) {
-    options = options || {};
-
-    if (prefersReducedMotion()) {
-        return;
-    }
-
-    var popup = document.createElement('div');
-    popup.className = 'points-popup';
-    popup.textContent = options.text || ('+' + points);
-
-    if (options.isStreak) {
-        popup.classList.add('points-popup--streak');
-    } else if (options.isBetWin) {
-        popup.classList.add('points-popup--gold');
-    }
-
-    var rect = targetElement.getBoundingClientRect();
-    popup.style.left = (rect.left + rect.width / 2) + 'px';
-    popup.style.top = rect.top + 'px';
-
-    document.body.appendChild(popup);
-
-    popup.addEventListener('animationend', function() {
-        if (popup.parentNode) {
-            popup.parentNode.removeChild(popup);
-        }
-    });
-
-    setTimeout(function() {
-        if (popup.parentNode) {
-            popup.parentNode.removeChild(popup);
-        }
-    }, 1200);
-}
-
 // ============================================
 // Previous State Cache (Story 13.2)
 // ============================================
@@ -589,24 +586,6 @@ export var previousState = {
  */
 export function isPreviousStateInitialized() {
     return previousState.initialized;
-}
-
-var STREAK_MILESTONES = [3, 5, 10, 15, 20, 25];
-
-/**
- * Check if a streak milestone was just reached
- * @param {number} oldStreak - Previous streak value
- * @param {number} newStreak - Current streak value
- * @returns {number|null} Milestone reached or null
- */
-export function isStreakMilestone(oldStreak, newStreak) {
-    for (var i = 0; i < STREAK_MILESTONES.length; i++) {
-        var milestone = STREAK_MILESTONES[i];
-        if (oldStreak < milestone && newStreak >= milestone) {
-            return milestone;
-        }
-    }
-    return null;
 }
 
 /**
@@ -656,14 +635,8 @@ export function updatePreviousState(players, leaderboard) {
     previousState.initialized = true;
 }
 
-/**
- * Reset previous state (called on game end/new game)
- */
-export function resetPreviousState() {
-    previousState.players = {};
-    previousState.leaderboard = [];
-    previousState.initialized = false;
-}
+// #2583: `resetPreviousState` reset the three fields above and was
+// exported with no caller — game end and new-game go elsewhere.
 
 // ============================================
 // Animation Performance Utilities (Story 18.3)
@@ -1000,7 +973,9 @@ export function renderLeaderboardEntry(entry) {
     }
 
     var disconnectedClass = entry.connected === false ? 'leaderboard-entry--disconnected' : '';
-    var awayBadge = entry.connected === false ? '<span class="away-badge">(away)</span>' : '';
+    var awayBadge = entry.connected === false
+        ? '<span class="away-badge">(' + escapeHtml(tr('lobby.away', 'away')) + ')</span>'
+        : '';
 
     var displayScore = entry._displayScore !== undefined ? entry._displayScore : score;
 
@@ -1085,30 +1060,6 @@ export function setupLeaderboardResizeHandler() {
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-}
-
-// ============================================
-// QR Section - Responsive Collapse (Story 18.8)
-// ============================================
-
-export function initQrCollapsible() {
-    var qrSection = document.getElementById('qr-share-area');
-    if (!qrSection || qrSection.tagName !== 'DETAILS') return;
-
-    var STORAGE_KEY = 'beatify_qr_expanded';
-    var MOBILE_BREAKPOINT = 768;
-
-    var savedState = sessionStorage.getItem(STORAGE_KEY);
-
-    if (savedState !== null) {
-        qrSection.open = savedState === 'true';
-    } else {
-        qrSection.open = window.innerWidth >= MOBILE_BREAKPOINT;
-    }
-
-    qrSection.addEventListener('toggle', function() {
-        sessionStorage.setItem(STORAGE_KEY, qrSection.open.toString());
-    });
 }
 
 // ============================================

@@ -9,12 +9,148 @@ import {
 } from './player-utils.js';
 // #1663 item 1: non-blocking toast replaces the blocking alert() (rematch failed).
 import { showToast } from './notify.js';
+// #2648: the end screen's playlist picker (variant B of the design gate).
+import {
+    bindSearchInput, loadNextPlaylists, resetGoButton, selectedPlaylists
+} from './player-next-playlist.js';
+// #2645: the paused screen's announcement.
+import { hostPauseAnnouncement } from './host-pause.js';
 
 var utils = window.BeatifyUtils || {};
+
+// #2582: die Punkte-Einheit fuer die Vinyl-Grafik, die Gaeste teilen. Sie stand
+// dort hartkodiert englisch, waehrend der Rest des Endbildschirms uebersetzt
+// ist. `reveal.pointsShort` gibt es in allen sechs Sprachen (de „Pkt.").
+//
+// Faellt auf 'PTS' zurueck, wenn i18n noch nicht geladen ist oder `t()` den
+// Schluessel selbst zurueckgibt: eine englische Einheit ist besser als eine
+// Grafik mit „reveal.pointsShort" darauf.
+function _ptsLabel() {
+    var s = typeof utils.t === 'function' ? utils.t('reveal.pointsShort') : '';
+    if (!s || String(s).indexOf('reveal.') === 0) return 'PTS';
+    return String(s).toUpperCase();
+}
 
 // ============================================
 // End View (Story 5.6)
 // ============================================
+
+/**
+ * #2618: fill the "the game is over, you are a guest" block on the end view.
+ *
+ * `handleGameEnded` in player-core.js used to write two English literals here
+ * ("Thanks for playing!" / "Scan the QR code again to join the next game."),
+ * so every game ended with untranslated text inside an otherwise translated
+ * page. The first sentence has an i18n key the static markup in player.html
+ * already uses (`leaderboard.thanksEmoji`); the second one got its own key in
+ * all six locales.
+ *
+ * Lives here rather than in the core entry point because the end view is this
+ * module's job, and because it makes the block testable on its own.
+ *
+ * The nodes are built with createElement instead of an innerHTML string: a
+ * translation is data, and data must not be parsed as markup.
+ *
+ * @param {HTMLElement|null} container - #end-player-message
+ */
+export function renderEndPlayerMessage(container) {
+    if (!container) return;
+
+    var thanksEl = document.createElement('p');
+    thanksEl.textContent = _endText('leaderboard.thanksEmoji', 'Thanks for playing!');
+
+    var hintEl = document.createElement('p');
+    hintEl.className = 'rejoin-hint';
+    hintEl.textContent = _endText(
+        'leaderboard.rejoinHint',
+        'Scan the QR code again to join the next game.'
+    );
+
+    container.innerHTML = '';
+    container.appendChild(thanksEl);
+    container.appendChild(hintEl);
+    container.classList.remove('hidden');
+}
+
+/**
+ * #2648: the name of whoever is picking the next playlist.
+ *
+ * The host is a leaderboard entry like everyone else — unless they are running
+ * the game from the admin page as a spectator, in which case no entry carries
+ * `is_admin` and there is no name to use. Returns '' there rather than
+ * inventing one; `renderGuestWaiting` has a sentence for both cases.
+ *
+ * @param {Array} leaderboard
+ * @returns {string}
+ */
+export function hostNameOf(leaderboard) {
+    var entries = Array.isArray(leaderboard) ? leaderboard : [];
+    for (var i = 0; i < entries.length; i++) {
+        if (entries[i] && entries[i].is_admin && entries[i].name) {
+            return String(entries[i].name);
+        }
+    }
+    return '';
+}
+
+/**
+ * #2648: what a guest sees while the host picks the next playlist.
+ *
+ * This is the sentence the whole issue is about. Before variant B the end
+ * screen told every guest to scan the QR code again and type their name — at
+ * the moment the room was at its best, and for a disconnection that never
+ * actually happened. They were connected the whole time. So: say who is
+ * choosing, and say the thing they are afraid of losing is not going anywhere.
+ *
+ * Nodes over an innerHTML string, for the same reason as
+ * `renderEndPlayerMessage`: a player name is data.
+ *
+ * @param {HTMLElement|null} container - #end-player-message
+ * @param {string} hostName - '' when the host runs the game from the admin page
+ */
+export function renderGuestWaiting(container, hostName) {
+    if (!container) return;
+
+    var line = document.createElement('p');
+    line.className = 'end-waiting-line';
+    line.textContent = hostName
+        ? _endText(
+            'leaderboard.hostPicking',
+            { name: hostName },
+            hostName + ' is picking the next playlist — stay put'
+        )
+        : _endText(
+            'leaderboard.hostPickingNoName',
+            'The host is picking the next playlist — stay put'
+        );
+
+    var keep = document.createElement('p');
+    keep.className = 'end-waiting-keep';
+    keep.textContent = _endText(
+        'leaderboard.staysConnected',
+        'Your name stays · no rescanning'
+    );
+
+    container.innerHTML = '';
+    container.appendChild(line);
+    container.appendChild(keep);
+    container.classList.remove('hidden');
+}
+
+/**
+ * i18n lookup with a real fallback. `t()` returns the KEY on a miss (#1402-B8),
+ * so `t(k) || fallback` can never fire — the key is truthy. Same guard shape as
+ * `_ptsLabel` above.
+ */
+function _endText(key, paramsOrFallback, fallback) {
+    var s = typeof utils.t === 'function' ? utils.t(key, paramsOrFallback) : '';
+    if (!s || String(s) === key) {
+        // #2648: the second argument doubles as the interpolation params, so
+        // an interpolated key needs a third slot for the English fallback.
+        return typeof paramsOrFallback === 'string' ? paramsOrFallback : (fallback || key);
+    }
+    return String(s);
+}
 
 /**
  * Update end view with final standings and stats
@@ -36,7 +172,12 @@ export function updateEndView(data) {
         if (slotEl) slotEl.classList.toggle('hidden', !player);
         var nameEl = document.getElementById('podium-' + place + '-name');
         var scoreEl = document.getElementById('podium-' + place + '-score');
-        if (nameEl) nameEl.textContent = player ? escapeHtml(player.name) : '---';
+        // #2555: textContent already neutralizes markup, so feeding it
+        // escapeHtml() output double-escapes — "Tom & Jerry" rendered as
+        // "Tom &amp; Jerry" in the podium moment, when everyone is looking at
+        // their name. The TV was fixed for exactly this in #1402-B8; the phone
+        // kept the old line. Assign the raw name directly.
+        if (nameEl) nameEl.textContent = player ? player.name : '---';
         if (scoreEl) scoreEl.textContent = player ? player.score : '0';
     });
 
@@ -62,7 +203,9 @@ export function updateEndView(data) {
         listEl.innerHTML = leaderboard.map(function(entry) {
             var currentClass = entry.is_current ? 'is-current' : '';
             var disconnectedClass = entry.connected === false ? 'final-entry--disconnected' : '';
-            var awayBadge = entry.connected === false ? '<span class="away-badge">(away)</span>' : '';
+            var awayBadge = entry.connected === false
+                ? '<span class="away-badge">(' + escapeHtml(utils.t('lobby.away', 'away')) + ')</span>'
+                : '';
             return '<div class="final-entry ' + currentClass + ' ' + disconnectedClass + '">' +
                 '<span class="final-rank">#' + entry.rank + '</span>' +
                 '<span class="final-name">' + escapeHtml(entry.name) + awayBadge + '</span>' +
@@ -88,23 +231,35 @@ export function updateEndView(data) {
         if (newGameBtn) {
             newGameBtn.onclick = handleNewGame;
         }
+        // #2648: fill the grid before the host looks at it. The picker owns
+        // the button's label from here on — it names the playlist it starts.
+        bindSearchInput();
+        loadNextPlaylists();
         // Wire up rematch button (Issue #254)
         var rematchBtn = document.getElementById('player-rematch-btn');
         if (rematchBtn) {
             rematchBtn.onclick = function() {
                 rematchBtn.disabled = true;
-                var origText = rematchBtn.textContent;
                 rematchBtn.textContent = '⏳';
+
+                // #2648: null means "the playlist that just played", which is
+                // exactly the request the server has always understood. Only a
+                // real change puts a `playlists` field on the wire.
+                var playlists = selectedPlaylists();
 
                 // Issue #535: Prefer WebSocket for rematch (avoids admin token issue)
                 if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-                    state.ws.send(JSON.stringify({ type: 'admin', action: 'rematch_game' }));
+                    var msg = { type: 'admin', action: 'rematch_game' };
+                    if (playlists) msg.playlists = playlists;
+                    state.ws.send(JSON.stringify(msg));
                     return;
                 }
 
                 BeatifyAuth.fetch('/beatify/api/rematch-game', {
                     method: 'POST',
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(playlists ? { playlists: playlists } : {})
                 })
                     .then(function(resp) {
                         if (!resp.ok) return resp.json().then(function(e) { throw new Error(e.message || 'Rematch failed'); });
@@ -118,14 +273,16 @@ export function updateEndView(data) {
                     .catch(function(err) {
                         console.error('[Player] Rematch failed:', err);
                         showToast(err.message || 'Failed to start rematch');
-                        rematchBtn.disabled = false;
-                        rematchBtn.textContent = origText;
+                        resetGoButton();
                     });
             };
         }
     } else {
         if (adminControls) adminControls.classList.add('hidden');
         if (playerMessage) playerMessage.classList.remove('hidden');
+        // #2648: nobody is being thrown out any more, so the guest must not be
+        // told to scan a QR code. Say what is actually happening instead.
+        renderGuestWaiting(playerMessage, hostNameOf(leaderboard));
     }
 
     // Story 14.5: Trigger end-game celebrations (AC3, AC4)
@@ -543,7 +700,7 @@ function renderVisualCard(stats, playlistName) {
         ctx.font = '900 48px Outfit, system-ui, sans-serif';
         ctx.fillText(score, vinylCX, vinylCY - 10);
         ctx.font = '800 14px Inter, system-ui, sans-serif';
-        ctx.fillText('PTS', vinylCX, vinylCY + 26);
+        ctx.fillText(_ptsLabel(), vinylCX, vinylCY + 26);
 
         // Spindle hole (tiny center dot)
         ctx.fillStyle = '#0a0a12';
@@ -668,14 +825,63 @@ function downloadBlob(blob) {
  * @param {Object} data - State data with pause_reason
  */
 export function updatePausedView(data) {
+    var speakerDown = data.pause_reason === 'media_player_error';
     var messageEl = document.getElementById('pause-message');
+
+    // #2645: a pause the host set is an announcement, and the announcement is
+    // the headline. The guest's screen answers the question the guest is
+    // actually asking — "what is going on?" — instead of only stating that
+    // something stopped.
+    var announce = hostPauseAnnouncement(data.pause_reason, function(key) {
+        return utils.t(key);
+    });
+
+    var iconEl = document.getElementById('pause-icon');
+    if (iconEl) iconEl.textContent = announce ? announce.emoji : '⏸️';
+
+    var titleEl = document.getElementById('paused-title');
+    if (titleEl) {
+        titleEl.textContent = announce ? announce.headline : utils.t('game.paused');
+        titleEl.classList.toggle('paused-title--announce', !!(announce && announce.named));
+    }
+
+    // The state under the headline. Only worth its line when the headline is
+    // about pizza — when the headline already says "Game Paused", repeating
+    // "Pause" underneath it says nothing.
+    var stateEl = document.getElementById('pause-state-label');
+    if (stateEl) {
+        var named = !!(announce && announce.named);
+        stateEl.classList.toggle('hidden', !named);
+        stateEl.textContent = named ? utils.t('game.pausedLabel') : '';
+    }
+
     if (messageEl) {
-        if (data.pause_reason === 'admin_disconnected') {
+        if (announce) {
+            // Nobody is missing points while this stands — that is the one
+            // thing a guest needs to hear, and the one thing Stop could never
+            // promise.
+            messageEl.textContent = utils.t('game.pausedClockStopped');
+        } else if (data.pause_reason === 'admin_disconnected') {
             messageEl.textContent = utils.t('player.waitingForHostReconnect');
-        } else if (data.pause_reason === 'media_player_error') {
+        } else if (speakerDown) {
             messageEl.textContent = utils.t('player.speakerUnavailable');
         } else {
             messageEl.textContent = utils.t('player.gamePaused');
+        }
+    }
+    // #2552: the hint under the spinner was hard-coded to "the game will resume
+    // when the host returns". On a speaker failure the host never left, so the
+    // guest was told to wait for something that was not happening.
+    var hintEl = document.getElementById('pause-hint');
+    if (hintEl) {
+        if (announce) {
+            // #2645: "the game will resume when the host returns" is wrong for
+            // a pause the host set on purpose — the host never left.
+            hintEl.textContent = utils.t('game.pausedHintHost');
+        } else {
+            hintEl.textContent = speakerDown
+                ? utils.t('game.pausedHintSpeaker')
+                : utils.t('game.pausedHint');
         }
     }
 }

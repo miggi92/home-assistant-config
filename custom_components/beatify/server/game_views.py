@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import json
 import logging
-from pathlib import Path
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
@@ -14,39 +13,36 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.helpers import entity_registry as er
 
 from custom_components.beatify.const import (
-    DEFAULT_ROUND_DURATION,
     DIFFICULTY_DEFAULT,
     DIFFICULTY_EASY,
     DIFFICULTY_HARD,
     DIFFICULTY_NORMAL,
     DOMAIN,
+    ERR_INTERNAL,
     ERR_MEDIA_PLAYER_UNAVAILABLE,
     ERR_NO_PLAYABLE_SONGS,
     ERR_NO_PLAYLISTS_SELECTED,
+    MAX_REMATCH_PLAYLISTS,
     MIN_PLAYERS,
-    PROVIDER_AMAZON_MUSIC,
-    PROVIDER_APPLE_MUSIC,
-    PROVIDER_DEEZER,
     PROVIDER_DEFAULT,
     PROVIDER_MA_LIBRARY,
-    PROVIDER_SPOTIFY,
-    PROVIDER_YTMUSIC_FREE,
-    PROVIDER_TIDAL,
-    PROVIDER_YOUTUBE_MUSIC,
+    REVEAL_AUTO_ADVANCE_OPTIONS,
     ROUND_DURATION_MAX,
     ROUND_DURATION_MIN,
+    SUDDEN_DEATH_MIN_PLAYERS,
 )
+from custom_components.beatify.game.config import GameOptions
 from custom_components.beatify.game.playlist import (
-    async_discover_playlists_detailed,
+    async_load_songs_from_paths,
 )
-from custom_components.beatify.game.state import GamePhase, GameState
+from custom_components.beatify.game.state import GamePhase
 from custom_components.beatify.game.state_setup import NoPlayableSongsError
+from custom_components.beatify.providers import PROVIDERS_BY_ID, get_provider
 from custom_components.beatify.server.ws_handlers._helpers import finalize_and_end
 from custom_components.beatify.server.base import (
     BeatifyAdminView,
     RateLimitMixin,
     _json_error,
-    _read_file,
 )
 from custom_components.beatify.server.companion_auth import is_authorized_http
 from custom_components.beatify.server.serializers import (
@@ -56,12 +52,47 @@ from custom_components.beatify.server.setup_state import clear_setup
 from custom_components.beatify.services.media_player import (
     async_get_native_twin_remap,
     get_platform_capabilities,
+    resolve_entity_platform,
 )
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def normalize_reveal_auto_advance(value: Any) -> int:
+    """Coerce the client's REVEAL auto-advance to a delay the game can run.
+
+    #1012: 0 means off — the host advances manually, or the round ends when the
+    song does. Anything else must be one of ``REVEAL_AUTO_ADVANCE_OPTIONS``.
+
+    #2626: the allowed delays used to be a literal tuple inside the create-game
+    handler while ``wizard.js`` and ``admin.html`` each kept their own chip
+    list, and a value that fell through this check was replaced by 0 in
+    silence. A chip added to either UI list therefore looked selected while the
+    game ran with auto-advance off, and the host found out at the first reveal.
+    The list now lives in ``const.py``; both chip groups are rendered from the
+    JS mirror of it (``www/js/game-constants.js``), and a rejection is logged
+    rather than swallowed.
+
+    Returns 0 for a missing, unparseable or unsupported value — a party must
+    not fail to start over this setting.
+    """
+    try:
+        seconds = int(value)
+    except (ValueError, TypeError):
+        seconds = 0
+    if seconds not in REVEAL_AUTO_ADVANCE_OPTIONS:
+        if seconds != 0:
+            _LOGGER.warning(
+                "Ignoring unsupported reveal_auto_advance=%r (allowed: %s) — "
+                "auto-advance is off for this game",
+                value,
+                ", ".join(str(v) for v in REVEAL_AUTO_ADVANCE_OPTIONS),
+            )
+        return 0
+    return seconds
 
 
 def _validate_provider(provider: str) -> str:
@@ -76,24 +107,11 @@ def _validate_provider(provider: str) -> str:
     getting Spotify-only candidates, all of which fail on MA without a
     Spotify provider configured.
     """
-    valid_providers = (
-        PROVIDER_SPOTIFY,
-        PROVIDER_APPLE_MUSIC,
-        PROVIDER_YOUTUBE_MUSIC,
-        PROVIDER_TIDAL,
-        PROVIDER_DEEZER,
-        PROVIDER_AMAZON_MUSIC,
-        # Crate Digger. Omitting it here silently coerced the selection to
-        # PROVIDER_DEFAULT, after which the "no playlists" guard fired and
-        # create-game answered 400 with no log line — the same failure mode
-        # this docstring records for Apple Music in #808.
-        PROVIDER_MA_LIBRARY,
-        # #2426: third-party MA provider. Same reason it has to be listed here
-        # as the line above — an unlisted provider is coerced to the default
-        # and then fails the "no playlists" guard with a 400 and no log line.
-        PROVIDER_YTMUSIC_FREE,
-    )
-    return provider if provider in valid_providers else PROVIDER_DEFAULT
+    #: #2713: the list is the registry. It was written out here twice before —
+    #: once as this tuple and once as the validation blocks below — and both
+    #: omissions this docstring records (apple_music in #808, ma_library, then
+    #: ytmusic_free in #2426) were a provider missing from a hand-kept copy.
+    return provider if provider in PROVIDERS_BY_ID else PROVIDER_DEFAULT
 
 
 class StartGameView(RateLimitMixin, HomeAssistantView):
@@ -122,8 +140,26 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         data = self.hass.data.get(DOMAIN, {})
         game_state = data.get("game")
 
+        # #2675: there is exactly one composition root, and it is
+        # ``async_setup_entry``. It builds the GameState, calls ``set_hass``,
+        # attaches the stats service and registers four callbacks that only the
+        # setup path holds references to. This view used to carry a second,
+        # partial copy of that wiring for the case where the domain key is
+        # missing — a branch ``async_setup_entry`` makes unreachable, and one
+        # that had already drifted: it never called ``set_hass``, so the game it
+        # built started fine and then failed at the first song. A second
+        # construction path is not defence, it is a copy that goes stale
+        # unnoticed. If the key is missing, the config entry is not set up; say
+        # so here rather than hand the host a game that cannot play music.
+        if game_state is None:
+            return _json_error(
+                "Beatify is not set up — reload the integration",
+                500,
+                code=ERR_INTERNAL,
+            )
+
         # Check for existing game
-        if game_state and game_state.game_id:
+        if game_state.game_id:
             if game_state.phase == GamePhase.END:
                 # Game is already finished -- auto-clean state so a new game can start
                 # without requiring the user to explicitly dismiss the end screen (#206)
@@ -191,14 +227,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         party_lights_config = body.get("party_lights")  # Issue #331
         tts_config = body.get("tts")  # Issue #447
 
-        # #1012: REVEAL auto-advance — 0 (off, manual + song-end advance)
-        # or 30/60/90 seconds. Default 0: host stays in control.
-        try:
-            reveal_auto_advance = int(reveal_auto_advance)
-        except (ValueError, TypeError):
-            reveal_auto_advance = 0
-        if reveal_auto_advance not in (0, 30, 60, 90):
-            reveal_auto_advance = 0
+        reveal_auto_advance = normalize_reveal_auto_advance(reveal_auto_advance)
 
         # Validate difficulty (Story 14.1)
         valid_difficulties = (DIFFICULTY_EASY, DIFFICULTY_NORMAL, DIFFICULTY_HARD)
@@ -299,66 +328,14 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 "(popularity/genre settings do not apply to saved playlists)",
                 len(playlist_paths),
             )
-        warnings: list[str] = []
-        playlist_dir = Path(self.hass.config.path("beatify/playlists"))
-
-        # #1766: discovery already read+parsed every playlist file (memoised,
-        # off-loop, and refreshed by the /api/status poll seconds before the
-        # Start tap). Reuse that parse instead of re-reading + re-parsing each
-        # ~600-song document on the event loop at this latency-sensitive moment.
-        # ``songs_by_path`` is keyed by the same unresolved glob path the picker
-        # sends, so a hit is a plain dict lookup; only a playlist added since the
-        # last discovery walk (a cache miss) falls back to an executor read.
-        _metas, songs_by_path = await async_discover_playlists_detailed(self.hass)
-
-        for playlist_path in playlist_paths:
-            try:
-                full_path = playlist_dir / playlist_path
-                # Security: Prevent path traversal attacks
-                try:
-                    if not full_path.resolve().is_relative_to(playlist_dir.resolve()):
-                        warnings.append(f"Invalid playlist path: {playlist_path}")
-                        continue
-                except ValueError:
-                    warnings.append(f"Invalid playlist path: {playlist_path}")
-                    continue
-
-                playlist_songs = songs_by_path.get(str(full_path))
-                if playlist_songs is None:
-                    # Cache miss (added since the last discovery walk) — fall back
-                    # to the executor read + parse so the loop stays unblocked.
-                    resolved = full_path.resolve()
-                    if not resolved.exists():
-                        warnings.append(f"Playlist not found: {playlist_path}")
-                        continue
-                    file_content = await self.hass.async_add_executor_job(
-                        _read_file, resolved
-                    )
-                    playlist_songs = json.loads(file_content).get("songs", [])
-
-                for song in playlist_songs:
-                    has_uri = any(
-                        song.get(k)
-                        for k in (
-                            "uri",
-                            "uri_spotify",
-                            "uri_youtube_music",
-                            "uri_tidal",
-                            "uri_deezer",
-                            "uri_apple_music",
-                        )
-                    )
-                    if "year" in song and has_uri:
-                        tagged = dict(song)
-                        tagged["_playlist_source"] = playlist_path
-                        songs.append(tagged)
-                    else:
-                        warnings.append(
-                            f"Invalid song in {playlist_path}: missing year or uri"
-                        )
-
-            except (OSError, ValueError) as err:
-                warnings.append(f"Failed to load {playlist_path}: {err}")
+        # #2648: the read/validate/tag loop moved to game/playlist.py so the
+        # rematch's playlist swap runs the very same one — including the
+        # path-traversal guard and the #1766 reuse of the memoised discovery
+        # parse. Two copies of that would have been two things to keep in step.
+        file_songs, warnings = await async_load_songs_from_paths(
+            self.hass, playlist_paths
+        )
+        songs.extend(file_songs)
 
         if not songs:
             return _json_error(
@@ -369,15 +346,6 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
 
         # Get base URL for join URL construction (from request URL)
         base_url = self._get_base_url(request)
-
-        # Initialize game state if needed
-        if not game_state:
-            game_state = GameState()
-            self.hass.data[DOMAIN]["game"] = game_state
-            # Connect stats service if available (Story 14.4)
-            stats_service = self.hass.data.get(DOMAIN, {}).get("stats")
-            if stats_service:
-                game_state.set_stats_service(stats_service)
 
         # Detect platform and validate compatibility (resolves #38, #39)
 
@@ -402,75 +370,52 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                 details={"speaker": speaker_name},
             )
 
-        # Validate provider is supported by platform
-        if provider == "apple_music" and not capabilities.get("apple_music"):
+        # Validate the provider is one this speaker can actually serve.
+        #
+        # #2713: one check against the registry, where there were five
+        # copy-pasted blocks. They covered apple_music, youtube_music, tidal,
+        # deezer and amazon_music — so Crate Digger or ytmusic_free on a Sonos
+        # or an Echo passed this gate and started a game that could never play
+        # a note, even though the wizard had already greyed the chip out. The
+        # message and the `provider` detail are built from the same fields the
+        # blocks spelled out, so the five wordings they produced are unchanged.
+        provider_spec = get_provider(provider)
+        if provider_spec is not None and not provider_spec.plays_on(platform):
             return _json_error(
-                "Apple Music is not supported on this speaker. Use Music Assistant.",
+                f"{provider_spec.label} is not supported on this speaker. "
+                f"{provider_spec.unsupported_hint}",
                 400,
                 code="PROVIDER_NOT_SUPPORTED",
-                details={"speaker": speaker_name, "provider": "Apple Music"},
+                details={"speaker": speaker_name, "provider": provider_spec.label},
             )
 
-        if provider == PROVIDER_YOUTUBE_MUSIC and not capabilities.get("youtube_music"):
-            return _json_error(
-                "YouTube Music is not supported on this speaker. Use Music Assistant.",
-                400,
-                code="PROVIDER_NOT_SUPPORTED",
-                details={"speaker": speaker_name, "provider": "YouTube Music"},
-            )
-
-        if provider == PROVIDER_TIDAL and not capabilities.get("tidal"):
-            return _json_error(
-                "Tidal is not supported on this speaker. Use Music Assistant.",
-                400,
-                code="PROVIDER_NOT_SUPPORTED",
-                details={"speaker": speaker_name, "provider": "Tidal"},
-            )
-
-        if provider == PROVIDER_DEEZER and not capabilities.get("deezer"):
-            return _json_error(
-                "Deezer is not supported on this speaker. Use Music Assistant.",
-                400,
-                code="PROVIDER_NOT_SUPPORTED",
-                details={"speaker": speaker_name, "provider": "Deezer"},
-            )
-
-        if provider == PROVIDER_AMAZON_MUSIC and not capabilities.get("amazon_music"):
-            return _json_error(
-                "Amazon Music is not supported on this speaker. Use an Amazon Echo (alexa_media).",
-                400,
-                code="PROVIDER_NOT_SUPPORTED",
-                details={"speaker": speaker_name, "provider": "Amazon Music"},
-            )
-
-        # Build create_game kwargs with optional round_duration (Story 13.1),
-        # difficulty (Story 14.1), provider (Story 17.2), platform,
-        # and artist_challenge_enabled (Story 20.7)
-        create_kwargs: dict[str, Any] = {
-            "playlists": playlist_paths,
-            "songs": songs,
-            "media_player": media_player,
-            "base_url": base_url,
-            "difficulty": difficulty,
-            "provider": provider,
-            "platform": platform,
-            "artist_challenge_enabled": artist_challenge_enabled,  # Story 20.7
-            "movie_quiz_enabled": movie_quiz_enabled,  # Issue #28
-            "intro_mode_enabled": intro_mode_enabled,  # Issue #23
-            "closest_wins_mode": closest_wins_mode,  # Issue #442
-            "sudden_death_mode": sudden_death_mode,  # Issue #827
-            "title_artist_mode": title_artist_mode,  # #1180
-            "rampup_order_enabled": rampup_order_enabled,  # Issue #1726
-            "finale_double_enabled": finale_double_enabled,  # Issue #1725
-            "finale_tiebreaker_enabled": finale_tiebreaker_enabled,  # Issue #1725
-            "comeback_token_enabled": comeback_token_enabled,  # Issue #1724
-            "difficulty_bet_scaling_enabled": difficulty_bet_scaling_enabled,  # Issue #1727
-            "sabotage_enabled": sabotage_enabled,  # Issue #1665
-            "reveal_auto_advance": reveal_auto_advance,  # #1012
-            "max_rounds": max_rounds,  # #1475
-        }
+        # #2635: the admin's options as ONE object, not a kwargs dict that had
+        # to be kept in step with create_game's parameter list by hand. An
+        # option missing here used to reach create_game as its default with no
+        # error; a wrong name is now a TypeError at construction.
+        # Story 13.1 (round_duration), Story 14.1 (difficulty),
+        # Story 17.2 (provider), Story 20.7 (artist_challenge_enabled).
+        create_options = GameOptions(
+            difficulty=difficulty,
+            provider=provider,
+            platform=platform,
+            artist_challenge_enabled=artist_challenge_enabled,  # Story 20.7
+            movie_quiz_enabled=movie_quiz_enabled,  # Issue #28
+            intro_mode_enabled=intro_mode_enabled,  # Issue #23
+            closest_wins_mode=closest_wins_mode,  # Issue #442
+            sudden_death_mode=sudden_death_mode,  # Issue #827
+            title_artist_mode=title_artist_mode,  # #1180
+            rampup_order_enabled=rampup_order_enabled,  # Issue #1726
+            finale_double_enabled=finale_double_enabled,  # Issue #1725
+            finale_tiebreaker_enabled=finale_tiebreaker_enabled,  # Issue #1725
+            comeback_token_enabled=comeback_token_enabled,  # Issue #1724
+            difficulty_bet_scaling_enabled=difficulty_bet_scaling_enabled,  # Issue #1727
+            sabotage_enabled=sabotage_enabled,  # Issue #1665
+            reveal_auto_advance=reveal_auto_advance,  # #1012
+            max_rounds=max_rounds,  # #1475
+        )
         if round_duration is not None:
-            create_kwargs["round_duration"] = round_duration
+            create_options = replace(create_options, round_duration=round_duration)
 
         # #1867: state the round timer's provenance at the one moment it is
         # decided. The only prior trace was "Round N started (%.1fs timer)",
@@ -480,7 +425,7 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         # which no log had; one line here makes the next report a lookup.
         _LOGGER.info(
             "Game created with round_duration=%ss (client sent %r)",
-            create_kwargs.get("round_duration", DEFAULT_ROUND_DURATION),
+            create_options.round_duration,
             body.get("round_duration"),
         )
 
@@ -491,7 +436,13 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
         # rejection gets its own code so the client can say WHICH one fired) and
         # sends the i18n lookup in errors.<CODE> looking for nothing.
         try:
-            result = game_state.create_game(**create_kwargs)
+            result = game_state.create_game(
+                playlists=playlist_paths,
+                songs=songs,
+                media_player=media_player,
+                base_url=base_url,
+                options=create_options,
+            )
         except NoPlayableSongsError as err:
             return _json_error(str(err), 400, code=ERR_NO_PLAYABLE_SONGS)
         except ValueError as err:
@@ -532,6 +483,16 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                     if isinstance(mp, str) and mp and self.hass.states.get(mp):
                         if gs.media_player != mp:
                             gs.media_player = mp
+                            # #2693: the speaker and its platform are one fact.
+                            # This hook used to move only the entity_id, so a
+                            # stored Sonos speaker kept the platform of the one
+                            # it replaced. `build_strategy` dispatches on the
+                            # platform (#2636) and the factory now derives it
+                            # per entity, so playback is safe either way — but
+                            # `start_round` and the pre-warm still read
+                            # `gs.platform` to decide whether to run the
+                            # non-MA responsiveness probe. Keep the pair honest.
+                            gs.platform = resolve_entity_platform(self.hass, mp)
                             # #2143: same release-instead-of-null as the lobby
                             # switch below. This path runs pre-start, so there
                             # is usually nothing captured yet — but a force-
@@ -541,7 +502,11 @@ class StartGameView(RateLimitMixin, HomeAssistantView):
                             if callable(_cp):
                                 with contextlib.suppress(Exception):
                                     _cp()
-                            _LOGGER.info("Pre-start: media_player -> %s", mp)
+                            _LOGGER.info(
+                                "Pre-start: media_player -> %s (platform %s)",
+                                mp,
+                                gs.platform,
+                            )
                     if "tts" in out:
                         with contextlib.suppress(Exception):
                             applied = await _apply_tts_config(gs, out["tts"])
@@ -708,6 +673,29 @@ class EndGameView(BeatifyAdminView):
             else:
                 await game_state.advance_to_end()
 
+            # #2724: advance_to_end has QUEUED the winner and podium phrases,
+            # not spoken them — `_tts_announce` reserves a slot on the
+            # estimated speaker timeline and lets a background task sleep
+            # until its turn. `end_game()` below calls `disable_tts()` and
+            # then resets the round counter, so a podium task that wakes
+            # afterwards either finds `_tts_service is None` (the exception is
+            # swallowed as "TTS announcement failed") or is dropped by the
+            # staleness guard. Either way the host hears nothing.
+            #
+            # The WebSocket path does not need this: it leaves the game in END
+            # and only tears down on Dismiss, by which time the ceremony is
+            # over. This endpoint is the fallback for a CLOSED admin socket —
+            # the host is not looking at a screen, which is exactly when the
+            # spoken podium is the whole point. So wait for it here.
+            drain = getattr(game_state, "drain_announcements", None)
+            if callable(drain):
+                try:
+                    await drain()
+                except Exception as err:  # noqa: BLE001 — teardown must run
+                    _LOGGER.warning(
+                        "Waiting for the end-game announcements failed: %s", err
+                    )
+
         await game_state.end_game()
 
         # Broadcast game_ended to WebSocket clients so players clean up properly
@@ -843,8 +831,45 @@ class RematchGameView(HomeAssistantView):
                 "Can only rematch from END phase", 400, code="INVALID_PHASE"
             )
 
+        # #2648: the same optional playlist swap the WebSocket path takes. This
+        # view is the fallback player-end.js uses when the socket is gone, so
+        # it has to understand the same request or the swap silently degrades
+        # into "the same playlist again" at the worst possible moment.
+        swap_songs: list[dict[str, Any]] | None = None
+        swap_paths: list[str] | None = None
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            body = {}
+        raw_playlists = body.get("playlists") if isinstance(body, dict) else None
+        if raw_playlists is not None:
+            if not isinstance(raw_playlists, list) or not all(
+                isinstance(p, str) for p in raw_playlists
+            ):
+                return _json_error(
+                    "playlists must be a list of paths", 400, code="INVALID_REQUEST"
+                )
+            swap_paths = raw_playlists[:MAX_REMATCH_PLAYLISTS]
+            if not swap_paths:
+                return _json_error(
+                    "No playlists selected", 400, code=ERR_NO_PLAYLISTS_SELECTED
+                )
+            swap_songs, _warnings = await async_load_songs_from_paths(
+                self.hass, swap_paths
+            )
+            if not swap_songs:
+                return _json_error(
+                    "No valid songs found in selected playlists",
+                    400,
+                    code=ERR_NO_PLAYABLE_SONGS,
+                )
+
         player_count = len(game_state.players)
-        game_state.rematch_game()
+        try:
+            game_state.rematch_game(songs=swap_songs, playlists=swap_paths)
+        except NoPlayableSongsError as err:
+            # Validated before anything was mutated — the finished game stands.
+            return _json_error(str(err), 400, code=ERR_NO_PLAYABLE_SONGS)
 
         # Broadcast to WebSocket clients
         ws_handler = data.get("ws_handler")
@@ -1231,11 +1256,13 @@ class StartGameplayView(BeatifyAdminView):
         if game_state.phase != GamePhase.LOBBY:
             return _json_error("Game already started", 409, code="INVALID_PHASE")
 
-        # #2497: the minimum-player floor. It used to live in
-        # GameState.start_game(), which no production path calls, so a game
+        # #2497: the minimum-player floor. It used to live in a
+        # GameState.start_game() that no production path called, so a game
         # could be started alone. Enforced at the two places a *user* starts a
         # game — here and in the websocket admin handler — rather than inside
         # start_round(), which runs for every round of every game.
+        # #2717 deleted start_game() and its third, unreachable copy of this
+        # gate, which returned error codes no client ever saw.
         if len(game_state.players) < MIN_PLAYERS:
             return _json_error(
                 f"Need at least {MIN_PLAYERS} players to start",
@@ -1243,19 +1270,24 @@ class StartGameplayView(BeatifyAdminView):
                 code="NOT_ENOUGH_PLAYERS",
             )
 
-        # Issue #827: Sudden Death requires >=3 players. Players join the LOBBY
-        # *after* create_game (which clears sessions), so the floor can only be
-        # enforced here, at the LOBBY->PLAYING transition. The wizard also
-        # disables the toggle client-side; this is the server-side backstop for
-        # direct API callers. Auto-disable rather than block the start so the
-        # host isn't stuck — surface a warning instead.
+        # Issue #827: Sudden Death needs SUDDEN_DEATH_MIN_PLAYERS connected
+        # players. Players join the LOBBY *after* create_game (which clears
+        # sessions), so the floor can only be enforced here, at the
+        # LOBBY->PLAYING transition. The wizard also disables the toggle
+        # client-side; this is the server-side backstop for direct API callers.
+        # Auto-disable rather than block the start so the host isn't stuck —
+        # surface a warning instead.
+        # #2699: both the comparison and the warning read the constant, so
+        # raising the floor in const.py cannot leave this message promising the
+        # old number.
         sudden_death_warning = None
         if game_state.sudden_death_mode:
             connected_count = sum(1 for p in game_state.players.values() if p.connected)
-            if connected_count < 3:
+            if connected_count < SUDDEN_DEATH_MIN_PLAYERS:
                 game_state.set_sudden_death(False)
                 sudden_death_warning = (
-                    "Sudden Death needs at least 3 players — starting without it."
+                    f"Sudden Death needs at least {SUDDEN_DEATH_MIN_PLAYERS} "
+                    "players — starting without it."
                 )
 
         # Set round end callback for broadcasting

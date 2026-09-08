@@ -18,6 +18,8 @@
  * ES module. Loaded via <script type="module"> in admin.html.
  */
 
+import { PROVIDERS } from './providers.generated.js';
+
 const API_STATUS = '/beatify/api/status';
 const API_USAGE = '/beatify/api/usage';
 
@@ -266,13 +268,9 @@ export function mount(rootEl, options = {}) {
     _loadData();
 }
 
-export function unmount() {
-    if (!state.mounted) return;
-    _detachDelegates(state.root);
-    if (state.root) state.root.innerHTML = '';
-    state.mounted = false;
-    state.root = null;
-}
+// #2583: `unmount()` was exported here and never called — the hub is
+// mounted once and lives for the page. Its only helper,
+// `_detachDelegates`, went with it.
 
 export function getSelection() {
     return Array.from(state.selectedPaths);
@@ -344,13 +342,6 @@ function _attachDelegates(rootEl) {
     rootEl.addEventListener('click', _onClick);
     rootEl.addEventListener('input', _onInput);
     rootEl.addEventListener('keydown', _onKeyDown);
-}
-
-function _detachDelegates(rootEl) {
-    if (!rootEl) return;
-    rootEl.removeEventListener('click', _onClick);
-    rootEl.removeEventListener('input', _onInput);
-    rootEl.removeEventListener('keydown', _onKeyDown);
 }
 
 function _onClick(e) {
@@ -1294,6 +1285,31 @@ function _renderNoFilterResults() {
 
 // ---------- Detail sheet ----------
 
+/**
+ * "Streaming coverage" block of the detail sheet — one row per provider that
+ * reports a per-playlist count.
+ *
+ * #2713: the six rows and the five-way condition above them used to be typed
+ * out here, so a provider that started reporting a count reached this sheet
+ * only if somebody remembered the file. The section still appears only when a
+ * provider whose count measures STORED URIs has one — Amazon Music's count is
+ * "every song", since Alexa searches by name, so it can show a row but cannot
+ * on its own make a playlist look like it has streaming coverage.
+ */
+function _streamingCoverageHtml(p) {
+    const rows = PROVIDERS
+        .filter((spec) => spec.countKey && p[spec.countKey])
+        .map((spec) => `<div class="plh-sheet-provider">${spec.shortLabel} <b>${p[spec.countKey]}</b>/${p.song_count || 0}</div>`);
+    const hasCatalogue = PROVIDERS.some((spec) => spec.catalogueCoverage && spec.countKey && p[spec.countKey]);
+    if (!hasCatalogue) return '';
+    return `
+                    <div class="plh-sheet-sec-title">${_escape(_t('playlistHub.detail.streaming', 'Streaming coverage'))}</div>
+                    <div class="plh-sheet-providers">
+                        ${rows.join('')}
+                    </div>
+                `;
+}
+
 function _renderDetailSheet() {
     const host = state.root && state.root.querySelector('[data-plh-sheet]');
     if (!host) return;
@@ -1347,17 +1363,7 @@ function _renderDetailSheet() {
                     <div class="plh-sheet-sec-title">${_escape(_t('playlistHub.detail.tags', 'Tags'))}</div>
                     <div class="plh-sheet-tags">${tags.map((t) => `<span class="plh-sheet-tag">${_escape(t)}</span>`).join('')}</div>
                 ` : ''}
-                ${(p.spotify_count || p.apple_music_count || p.youtube_music_count || p.tidal_count || p.deezer_count) ? `
-                    <div class="plh-sheet-sec-title">${_escape(_t('playlistHub.detail.streaming', 'Streaming coverage'))}</div>
-                    <div class="plh-sheet-providers">
-                        ${p.spotify_count ? `<div class="plh-sheet-provider">Spotify <b>${p.spotify_count}</b>/${p.song_count || 0}</div>` : ''}
-                        ${p.apple_music_count ? `<div class="plh-sheet-provider">Apple <b>${p.apple_music_count}</b>/${p.song_count || 0}</div>` : ''}
-                        ${p.youtube_music_count ? `<div class="plh-sheet-provider">YouTube <b>${p.youtube_music_count}</b>/${p.song_count || 0}</div>` : ''}
-                        ${p.tidal_count ? `<div class="plh-sheet-provider">Tidal <b>${p.tidal_count}</b>/${p.song_count || 0}</div>` : ''}
-                        ${p.deezer_count ? `<div class="plh-sheet-provider">Deezer <b>${p.deezer_count}</b>/${p.song_count || 0}</div>` : ''}
-                        ${p.song_count ? `<div class="plh-sheet-provider">Amazon <b>${p.song_count}</b>/${p.song_count || 0}</div>` : ''}
-                    </div>
-                ` : ''}
+                ${_streamingCoverageHtml(p)}
             </div>
             <div class="plh-sheet-foot">
                 <button class="plh-btn ${selected ? 'plh-btn-neon' : 'plh-btn-primary'}" data-plh-action="detail-select" data-plh-path="${_escape(path)}">

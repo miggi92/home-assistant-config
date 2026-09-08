@@ -82,6 +82,13 @@ class RoundManager:
         self.song_stopped: bool = False
         self.round_analytics: RoundAnalytics | None = None
 
+        # #2646: the host dropped this round instead of scoring it. Per-round,
+        # so `initialize_round` clears it; `voided_rounds` is game-level and is
+        # only cleared by `reset()`.
+        self.round_voided: bool = False
+        self.void_reason: str | None = None
+        self.voided_rounds: list[dict[str, Any]] = []
+
         # Metadata
         self.metadata_pending: bool = False
 
@@ -128,6 +135,9 @@ class RoundManager:
         self.round_duration = DEFAULT_ROUND_DURATION
         self.song_stopped = False
         self.round_analytics = None
+        self.round_voided = False  # #2646
+        self.void_reason = None  # #2646
+        self.voided_rounds = []  # #2646 — game-level, so only cleared here
         self.metadata_pending = False
         self._early_reveal = False
 
@@ -135,6 +145,15 @@ class RoundManager:
         self.intro_stopped = False
         self._intro_round_start_time = None
         self._intro_splash_pending = False
+        # #2615: the deferral is per-round state like the splash flag above,
+        # so it must not survive into the next game. It is otherwise cleared
+        # only by start_timer_at_playback and confirm_intro_splash, and a game
+        # ended while either was still outstanding (TTS announcements running,
+        # or an unconfirmed intro splash) leaves it True. is_deadline_passed()
+        # then answers False for every round of the next game, which silently
+        # disables force_end_round_if_overdue, the client round watchdogs and
+        # the late-guess guard in handle_submit.
+        self._deadline_deferred = False
         self._intro_splash_shown = False
         self._intro_splash_deferred_song = None
         self._rounds_since_intro = 0
@@ -174,7 +193,9 @@ class RoundManager:
         """Mark the stamped deadline as not-yet-started (announcements)."""
         self._deadline_deferred = True
 
-    def start_timer_at_playback(self, timer_countdown: Any = None) -> None:
+    def start_timer_at_playback(
+        self, timer_countdown: Any = None, extra_seconds: float = 0.0
+    ) -> None:
         """Re-stamp the deadline from NOW, because the song is now audible.
 
         Round-start announcements run between ``initialize_round`` and the
@@ -187,15 +208,35 @@ class RoundManager:
         and re-arm the countdown. Idempotent — calling it without a deferral
         pending does nothing, so a provider that never announces is
         unaffected.
+
+        #2543: an intro-splash round must NOT be started here. With intro mode
+        and TTS both on, ``_start_round_locked`` defers the deadline for the
+        announcements while ``_prepare_intro_round`` also holds playback back
+        for the splash. Re-stamping here would arm a real countdown on a round
+        whose song has not played yet — a host who takes longer than
+        ``round_duration`` to confirm would see the round end in silence, every
+        player scored as "missed". The deferral is left standing for
+        ``confirm_intro_splash``, which owns the clock for that round.
+
+        ``extra_seconds`` (#2546) keeps the announcement budget the caller
+        already computed: the announce_* helpers queue their phrases rather
+        than blocking until the speaker is done, so at this point the room may
+        still be listening to the round number and the countdown. Without it
+        the re-stamp silently discards both the measured announcement cost and
+        the user's #1211 "Timer delay" — the very setting that exists to keep
+        that time out of the round.
         """
+        if self._intro_splash_pending:
+            return
         if not self._deadline_deferred:
             return
         self._deadline_deferred = False
         self.cancel_timer()
         now = self._now()
         self.round_start_time = now
-        self.deadline = int(now * 1000) + int(self.round_duration * 1000)
-        delay = self.round_duration
+        extra_ms = max(0, int(float(extra_seconds) * 1000))
+        self.deadline = int(now * 1000) + int(self.round_duration * 1000) + extra_ms
+        delay = self.round_duration + (extra_ms / 1000.0)
         countdown = timer_countdown or self._timer_countdown
         self._timer_task = asyncio.create_task(countdown(delay))
         self._timer_task.add_done_callback(_log_timer_task_failure)
@@ -367,6 +408,11 @@ class RoundManager:
         self.round += 1
         self.current_song = dict(song)
         self.song_stopped = False
+        # #2646: a new round is never born voided. The flag drives the "this
+        # round does not count" card, and a stale True would put it on the
+        # reveal of a perfectly good round.
+        self.round_voided = False
+        self.void_reason = None
         self._early_reveal = False
         self.metadata_pending = metadata.get("metadata_pending", False)
         self.round_analytics = None
@@ -439,6 +485,11 @@ class RoundManager:
 
         self._intro_splash_pending = False
         self._intro_splash_shown = True
+        # #2543: this method stamps its own deadline below, so any deferral
+        # taken out for the round-start announcements is consumed here. Left
+        # standing it would make is_deadline_passed() report False for the rest
+        # of the round, disabling the client-side round watchdog.
+        self._deadline_deferred = False
 
         song = self._intro_splash_deferred_song
         if song:

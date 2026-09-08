@@ -32,7 +32,6 @@ from .game.playlist import (
     async_discover_playlists,
     async_ensure_playlist_directory,
 )
-from .game.service import GameService
 from .game.state import GameState
 from .server import async_register_static_paths
 from .server.views import (
@@ -52,6 +51,7 @@ from .server.views import (
     PreviewLightsView,
     TtsEntitiesView,
     TtsTestView,
+    NextPlaylistsView,
     PlayerView,
     PlaylistRequestsView,
     MixPlaylistView,
@@ -89,7 +89,7 @@ from .server.library_views import (
 from .server.setup_state import clear_setup
 from .server.websocket import BeatifyWebSocketHandler
 from .server.ws_handlers._helpers import finalize_and_end
-from .services.media_player import async_get_media_players
+from .services.factories import ha_service_factories
 from .services.stats import StatsService
 
 if TYPE_CHECKING:
@@ -144,18 +144,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Ensure playlist directory exists
     playlist_dir = await async_ensure_playlist_directory(hass)
 
-    # Discover media players and playlists
-    media_players = await async_get_media_players(hass)
+    # Warm the playlist discovery memo (#2716). The result is deliberately not
+    # stored in hass.data: every consumer rediscovers from scratch — the status
+    # view calls async_discover_playlists itself on each request — so a stored
+    # copy would only go stale. The memo this call fills is the real effect.
+    # The companion async_get_media_players call that used to sit here fed
+    # nothing but the log line and was dropped with it.
     playlists = await async_discover_playlists(hass)
 
-    _LOGGER.info(
-        "Found %d media players, %d playlists",
-        len(media_players),
-        len(playlists),
-    )
+    _LOGGER.info("Found %d playlists", len(playlists))
 
-    # Initialize game state
-    game_state = GameState()
+    # Initialize game state. #2638: this is the composition root — the only
+    # place that decides the game's outputs are Home-Assistant-backed. The
+    # domain package itself never names a concrete service class, which is what
+    # makes GameState constructible (and testable) without hass.
+    game_state = GameState(service_factories=ha_service_factories(hass))
     game_state.set_hass(hass)
 
     # Initialize stats service (Story 14.4)
@@ -195,8 +198,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Connect analytics to websocket handler for error recording (Story 19.1)
     ws_handler.set_analytics(analytics)
 
-    # Issue #603/#609: Create GameService facade
-    game_service = GameService(hass, game_state)
+    # #2638: the admin spectator socket belongs to the WebSocket handler now.
+    # A game teardown/rebuild used to null it inside _reset_game_internals; the
+    # reset callback fires at that same point so the timing is unchanged.
+    game_state.register_reset_callback(ws_handler.clear_admin_socket)
 
     # #1357: Companion auth-bypass opt-in. Read once at setup; the auth helper
     # in server/companion_auth.py reads this live from hass.data per request,
@@ -205,15 +210,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         CONF_ENABLE_COMPANION_AUTH_BYPASS, DEFAULT_ENABLE_COMPANION_AUTH_BYPASS
     )
 
-    # Store discovery results and game infrastructure
+    # Store game infrastructure. #2716 dropped "entry_id", "media_players" and
+    # "playlists" from this dict: nothing ever read them. build_status_response
+    # is the only consumer of such lists and takes them as parameters from a
+    # fresh discovery in the status view, not from here.
     hass.data[DOMAIN] = {
-        "entry_id": entry.entry_id,
         "version": version,  # #784 — single source of truth from manifest.json
-        "media_players": media_players,
-        "playlists": playlists,
         "playlist_dir": str(playlist_dir),
         "game": game_state,
-        "game_service": game_service,
         "ws_handler": ws_handler,
         "stats": stats_service,
         "analytics": analytics,
@@ -306,6 +310,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.http.register_view(SongStatsView(hass))  # Story 19.7
         hass.http.register_view(PlaylistRequestsView(hass))  # Story 44
         hass.http.register_view(SavePlaylistView(hass))  # #1057
+        hass.http.register_view(NextPlaylistsView(hass))  # #2648
         hass.http.register_view(MixPlaylistView(hass))  # #1538 — Smart Playlist Mixer
         hass.http.register_view(UsageView(hass))  # v3.3 Playlist Hub local stats
 

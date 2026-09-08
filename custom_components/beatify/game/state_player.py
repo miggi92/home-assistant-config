@@ -144,6 +144,10 @@ class PlayerLifecycleMixin:
         """Record a player reaction. Delegates to PlayerRegistry."""
         return self._player_registry.record_reaction(player_name, emoji)
 
+    def reaction_retry_after(self, player_name: str) -> float:
+        """Seconds until this player may react again (#2562). Delegates to PlayerRegistry."""
+        return self._player_registry.reaction_retry_after(player_name)
+
     def get_steal_targets(self, stealer_name: str) -> list[str]:
         """Get list of players who can be stolen from (Story 15.3). Delegates to PowerUpManager."""
         return self._powerup_manager.get_steal_targets(stealer_name, self.players)
@@ -175,6 +179,15 @@ class PlayerLifecycleMixin:
     def get_players_state(self) -> list[dict[str, Any]]:
         """Get player list for state broadcast. Delegates to PlayerRegistry."""
         return self._player_registry.get_players_state()
+
+    def sabotage_freeze_remaining(self, player: PlayerSession) -> int:
+        """Whole seconds left on a player's sabotage freeze (#1665/#2700).
+
+        Delegates to PlayerRegistry. The private "you were sabotaged" hit carries
+        this alongside the broadcast so the victim's phone gets the authoritative
+        duration in the same tick it gets the banner.
+        """
+        return self._player_registry.sabotage_freeze_remaining(player)
 
     def all_submitted(self) -> bool:
         """Check if all connected players have submitted. Delegates to PlayerRegistry."""

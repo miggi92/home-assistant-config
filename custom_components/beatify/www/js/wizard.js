@@ -17,6 +17,7 @@ import {
     refresh as plhRefresh,
     getPlaylistByPath as plhGetPlaylistByPath,
 } from './playlist-hub.js';
+import { PROVIDERS } from './providers.generated.js';
 import {
     MIN_ROUNDS,
     roundCountOptions,
@@ -24,6 +25,16 @@ import {
     availableSongs,
     estimateGameMinutes,
 } from './round-count.js';
+// #2625/#2626: the difficulty hints and the auto-advance delays come from the
+// shared mirror of const.py. Both used to be written out again right here — the
+// hints under a "keep in sync" comment that was the only safeguard.
+import {
+    REVEAL_AUTO_ADVANCE_OPTIONS,
+    SUDDEN_DEATH_MIN_PLAYERS,
+    autoAdvanceChipLabel,
+    difficultyHint,
+    normalizeRevealAutoAdvance,
+} from './game-constants.js';
 
 const LS_WIZARD_STATE = 'beatify_wizard_state';   // 'step1'|'step2'|'step3'|'step4'|'done'|'dismissed'
 const LS_SELECTED_PLAYER = 'beatify_last_player'; // set by admin.js when a speaker is picked
@@ -256,6 +267,20 @@ let chosenIntroMode = false;
 let chosenClosestWins = false;
 let chosenSuddenDeath = true; // Issue #827 — default ON (unlike the other bonuses); gated to >=3 players
 let chosenTitleArtistMode = false; // #1180
+// #2692: the six modes that shipped complete and unreachable — their only
+// switches lived in the flat admin panel that CSS hides (admin.html:581-656,
+// styles.css:10181). All six default OFF, which is what every game has been
+// running since the wizard rewrite; the play style below is what turns them on.
+let chosenRampupOrder = false;        // #1726
+let chosenFinaleDouble = false;       // #1725
+let chosenFinaleTiebreaker = false;   // #1725
+let chosenComebackToken = false;      // #1724
+let chosenBetScaling = false;         // #1727
+let chosenSabotage = false;           // #1665
+// #2692: which play style is selected, or null for a hand-picked combination.
+let chosenPlayStyle = 'classic';
+// #2692: whether the eleven individual switches are unfolded.
+let modesExpanded = false;
 const chosenLevelUps = { lights: false, tts: false };
 // Details the user sets when a level-up is toggled on
 let cachedLights = null; // HA lights from /api/lights
@@ -518,7 +543,7 @@ function _platformLabel(raw) {
 // SVG icon for the speaker-row avatar. Single generic speaker silhouette —
 // the platform name already appears below, no need to disambiguate by icon.
 const SPEAKER_ICON = `<svg class="wiz-row-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="15" r="3"/><line x1="12" y1="7" x2="12.01" y2="7"/></svg>`;
-const PLAYLIST_ICON = `<svg class="wiz-row-avatar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+// #2583: PLAYLIST_ICON was declared here and never used.
 
 // Summarize a speaker's service capabilities for the Step 1 badge.
 function _capabilityBadge(player) {
@@ -594,32 +619,11 @@ function _renderSpeakers() {
     });
 }
 
-const PROVIDERS = [
-    { id: 'spotify', label: 'Spotify' },
-    { id: 'apple_music', label: 'Apple Music' },
-    { id: 'youtube_music', label: 'YouTube Music' },
-    { id: 'tidal', label: 'Tidal' },
-    { id: 'deezer', label: 'Deezer' },
-    { id: 'amazon_music', label: 'Amazon Music' },
-    {
-        id: 'ma_library',
-        label: 'Crate Digger',
-        sub: 'Your personal Music Assistant library',
-        subKey: 'wizard.providerLibrarySub',
-    },
-    // #2426: a third-party Music Assistant provider, not part of MA itself.
-    // Listed last, and the subtitle carries the prerequisite rather than the
-    // selling point: the dimmed-chip explainer below only opens for options
-    // the selected speaker cannot serve, and this one is selectable on any MA
-    // speaker whether or not the provider is actually installed. The subtitle
-    // is therefore the only place the user is told what to install.
-    {
-        id: 'ytmusic_free',
-        label: 'YouTube Music (Free)',
-        sub: 'Needs the ytmusic_free provider in Music Assistant',
-        subKey: 'wizard.providerYtmusicFreeSub',
-    },
-];
+// #2713: the chip list IS the integration's provider registry, generated from
+// providers.py. It used to be typed out here as well, so a provider added in
+// Python appeared in the wizard only if somebody remembered this file — and a
+// chip nobody added is not an error, just an option the host never sees.
+// Order, labels and the second lines all come from the registry.
 
 // Lock icon SVG for dimmed provider chips (#772 UX).
 const CHIP_LOCK_ICON = `<svg class="chip-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -882,29 +886,17 @@ const DIFFICULTIES = [
     { id: 'hard', labelKey: 'wizard.step4.hard', labelFallback: 'Hard' },
 ];
 
-// Mirrors DIFFICULTY_SCORING in custom_components/beatify/const.py — keep in sync.
-// Scoring tiers: exact match, "close" band, "near" band.
-const DIFFICULTY_HINTS = {
-    easy: {
-        fallback: 'Forgiving: 10 pts for an exact year, 5 pts within ±7 years, 1 pt within ±10 years.',
-        key: 'wizard.step4.difficultyHintEasy',
-    },
-    normal: {
-        fallback: 'Balanced: 10 pts for an exact year, 5 pts within ±3 years, 1 pt within ±5 years.',
-        key: 'wizard.step4.difficultyHintNormal',
-    },
-    hard: {
-        fallback: 'Sharp: 10 pts for an exact year, 3 pts within ±2 years, otherwise 0.',
-        key: 'wizard.step4.difficultyHintHard',
-    },
-};
 const DURATIONS = [15, 30, 45, 60]; // seconds per round
-const AUTO_ADVANCE_OPTIONS = [
-    { id: 0, labelKey: 'wizard.step4.autoAdvanceOff', labelFallback: 'Off' },
-    { id: 30, label: '30s' },
-    { id: 60, label: '60s' },
-    { id: 90, label: '90s' },
-];
+// #2626: built from REVEAL_AUTO_ADVANCE_OPTIONS (the mirror of const.py) rather
+// than hand-listed. A delay the server does not accept can no longer reach a
+// chip, which is how a chip could look selected while the game ran with
+// auto-advance off.
+export const AUTO_ADVANCE_OPTIONS = REVEAL_AUTO_ADVANCE_OPTIONS.map((seconds) => {
+    const label = autoAdvanceChipLabel(seconds);
+    return label.key
+        ? { id: seconds, labelKey: label.key, labelFallback: label.fallback }
+        : { id: seconds, label: label.fallback };
+});
 const LANGUAGES = [
     { id: 'en', label: 'English' },
     { id: 'de', label: 'Deutsch' },
@@ -1027,17 +1019,174 @@ const GAME_MODES = [
         titleKey: 'admin.suddenDeathMode',
         titleFallback: 'Sudden Death',
         hintKey: 'admin.suddenDeathModeHint',
-        hintFallback: 'When the timer runs out, the lowest-scoring player is eliminated. Last player standing wins. Requires at least 3 players.',
+        hintFallback: 'When the timer runs out, the lowest-scoring player is eliminated. Last player standing wins. Requires at least {min} players.',
         get: () => chosenSuddenDeath,
         set: (v) => { chosenSuddenDeath = v; },
     },
+    // #2692: the six that were finished and unreachable. Their strings already
+    // ship in all six locales (admin.* keys), so the cards need no new copy —
+    // only a place to be rendered.
+    {
+        key: 'rampupOrder',
+        icon: '📈',
+        titleKey: 'admin.rampupOrder',
+        titleFallback: 'Ramp-up Ordering',
+        hintKey: 'admin.rampupOrderHint',
+        hintFallback: 'Easy rounds first, the hardest known song saved for the finale.',
+        get: () => chosenRampupOrder,
+        set: (v) => { chosenRampupOrder = v; },
+    },
+    {
+        key: 'finaleDouble',
+        icon: '✨',
+        titleKey: 'admin.finaleDouble',
+        titleFallback: 'Finale ×2',
+        hintKey: 'admin.finaleDoubleHint',
+        hintFallback: "Double every player's score on the final round.",
+        get: () => chosenFinaleDouble,
+        set: (v) => { chosenFinaleDouble = v; },
+    },
+    {
+        key: 'finaleTiebreaker',
+        icon: '⚔️',
+        titleKey: 'admin.finaleTiebreaker',
+        titleFallback: 'Finale Tiebreaker',
+        hintKey: 'admin.finaleTiebreakerHint',
+        hintFallback: 'A tie for first plays one more song instead of sharing the win.',
+        get: () => chosenFinaleTiebreaker,
+        set: (v) => { chosenFinaleTiebreaker = v; },
+    },
+    {
+        key: 'comebackToken',
+        icon: '🎁',
+        titleKey: 'admin.comebackToken',
+        titleFallback: 'Comeback Token',
+        hintKey: 'admin.comebackTokenHint',
+        hintFallback: 'After halftime the trailing third is handed a steal.',
+        get: () => chosenComebackToken,
+        set: (v) => { chosenComebackToken = v; },
+    },
+    {
+        key: 'betScaling',
+        icon: '🎲',
+        titleKey: 'admin.difficultyBetScaling',
+        titleFallback: 'Difficulty Bet Scaling',
+        hintKey: 'admin.difficultyBetScalingHint',
+        hintFallback: "Scale a won bet's payout with difficulty.",
+        get: () => chosenBetScaling,
+        set: (v) => { chosenBetScaling = v; },
+    },
+    {
+        key: 'sabotage',
+        icon: '💣',
+        titleKey: 'admin.sabotage',
+        titleFallback: 'Sabotage',
+        hintKey: 'admin.sabotageHint',
+        hintFallback: 'Every player gets one sabotage token per game.',
+        get: () => chosenSabotage,
+        set: (v) => { chosenSabotage = v; },
+    },
 ];
 
-// Issue #827 — Sudden Death needs at least 3 connected players to be playable.
+// #2692: the play styles.
+//
+// The six modes did not go missing because they were hard to reach — they went
+// missing because a host with eight guests watching makes ONE decision, not
+// six. A style is that one decision; the eleven switches stay reachable one tap
+// below it for anyone who wants a different combination.
+//
+// `modes` lists every key the style turns ON. Everything not named is turned
+// OFF, so picking a style is a complete statement rather than an addition to
+// whatever was set before — otherwise switching from Chaos to Classic would
+// silently leave Sabotage running.
+//
+// Sabotage appears in exactly one style, and that style is never the default:
+// it is the only mode that actively takes something away from a guest, and an
+// angry guest the host cannot explain is worse than an unused feature.
+export const PLAY_STYLES = [
+    {
+        key: 'classic',
+        glyph: '🎵',
+        accent: 'cyan',
+        nameKey: 'wizard.step4.styleClassic',
+        nameFallback: 'Classic',
+        lineKey: 'wizard.step4.styleClassicLine',
+        lineFallback: 'Guess the year, nothing else. For rounds where people talk.',
+        modes: ['artist'],
+    },
+    {
+        key: 'dramatic',
+        glyph: '🏆',
+        accent: 'pink',
+        nameKey: 'wizard.step4.styleDramatic',
+        nameFallback: 'Dramatic',
+        lineKey: 'wizard.step4.styleDramaticLine',
+        lineFallback: 'It builds, and the last round decides it.',
+        modes: ['artist', 'rampupOrder', 'finaleDouble', 'finaleTiebreaker', 'comebackToken'],
+    },
+    {
+        key: 'chaos',
+        glyph: '💣',
+        accent: 'orange',
+        nameKey: 'wizard.step4.styleChaos',
+        nameFallback: 'Chaos',
+        lineKey: 'wizard.step4.styleChaosLine',
+        lineFallback: 'They get to mess with each other. Not for the in-laws.',
+        modes: [
+            'artist', 'rampupOrder', 'finaleDouble', 'finaleTiebreaker',
+            'comebackToken', 'sabotage', 'betScaling', 'intro',
+        ],
+    },
+];
+
+/**
+ * Apply a play style: every mode it names ON, every other mode OFF.
+ *
+ * Pure over the GAME_MODES setters so it can be unit-tested through them, and
+ * exported for exactly that reason. The "everything else OFF" half is the part
+ * worth testing — a style that only adds would leave Sabotage running after a
+ * host switched from Chaos back to Classic, which is precisely the kind of
+ * silent state #2692 is about.
+ *
+ * `suddenDeath` is deliberately left alone: it defaults ON, is gated on the
+ * player count, and is not a flavour of the evening but a rule about it.
+ */
+export function applyPlayStyle(styleKey) {
+    const style = PLAY_STYLES.find((s) => s.key === styleKey);
+    if (!style) return false;
+    GAME_MODES.forEach((m) => {
+        if (m.key === 'suddenDeath') return;
+        m.set(style.modes.indexOf(m.key) !== -1);
+    });
+    chosenPlayStyle = style.key;
+    return true;
+}
+
+/**
+ * Which style the current switch positions correspond to, or null.
+ *
+ * Recomputed rather than trusted from `chosenPlayStyle`, because the host can
+ * flip a single switch after picking a style — and then the style label is a
+ * lie. Returning null is what makes the UI drop back to "Custom" honestly.
+ */
+export function detectPlayStyle() {
+    const onKeys = GAME_MODES
+        .filter((m) => m.key !== 'suddenDeath' && m.get())
+        .map((m) => m.key)
+        .sort();
+    const match = PLAY_STYLES.find((s) => {
+        const want = s.modes.slice().sort();
+        return want.length === onKeys.length
+            && want.every((k, i) => k === onKeys[i]);
+    });
+    return match ? match.key : null;
+}
+
+// Issue #827 — Sudden Death needs SUDDEN_DEATH_MIN_PLAYERS connected players to
+// be playable; the floor itself lives in const.py (#2699).
 // The wizard already fetches /beatify/api/status into cachedStatus; an active
 // game's connected players live under active_game.players (built by
 // build_status_response → game_state.get_state()). No game / no players ⇒ 0.
-const SUDDEN_DEATH_MIN_PLAYERS = 3;
 function _connectedPlayerCount() {
     const game = cachedStatus && cachedStatus.active_game;
     const players = game && Array.isArray(game.players) ? game.players : [];
@@ -1101,15 +1250,91 @@ function _renderCoreMode() {
             _renderCoreMode();
             _renderDifficulty();
             _renderGameModes();
+            // #2692: Title & Artist hides two cards, which changes both the
+            // switch count and whether the current combination is still a style.
+            _renderPlayStyles();
         });
+    });
+}
+
+/**
+ * #2692: render the three play styles.
+ *
+ * Only the selected style shows what it switches on. Listing all three
+ * expansions at once turns the one decision back into a comparison table, and
+ * a comparison table is what the host has no time for.
+ */
+function _renderPlayStyles() {
+    const el = document.getElementById('wiz-play-styles');
+    if (!el) return;
+
+    // Recomputed from the switches, never trusted from the last click — a
+    // single manual toggle must drop the label back to "Custom".
+    const active = detectPlayStyle();
+
+    el.innerHTML = PLAY_STYLES.map((style) => {
+        const on = style.key === active;
+        const names = style.modes
+            .map((k) => {
+                const m = GAME_MODES.find((g) => g.key === k);
+                return m ? `${m.icon} ${_t(m.titleKey, m.titleFallback)}` : '';
+            })
+            .filter(Boolean)
+            .join(' · ');
+        return `<div class="wiz-style-panel ${on ? 'sel' : 'dim'}" data-style="${style.key}"
+                     data-accent="${style.accent}" role="button" tabindex="0" aria-pressed="${on}">
+            <div class="wiz-style-glyph" aria-hidden="true">${style.glyph}</div>
+            <div class="wiz-style-body">
+                <div class="wiz-style-name">${_t(style.nameKey, style.nameFallback)}</div>
+                <div class="wiz-style-line">${_t(style.lineKey, style.lineFallback)}</div>
+                <div class="wiz-style-what">${escapeAttr(names)}</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    el.querySelectorAll('[data-style]').forEach((panel) => {
+        panel.addEventListener('click', () => {
+            applyPlayStyle(panel.dataset.style);
+            _renderPlayStyles();
+            _renderGameModes();
+        });
+    });
+
+    // The fold label carries the count so the switches never look absent.
+    const countEl = document.getElementById('wiz-modes-toggle-count');
+    if (countEl) {
+        const visible = GAME_MODES.filter((m) => !(
+            chosenTitleArtistMode && (m.key === 'artist' || m.key === 'closest')
+        )).length;
+        countEl.textContent = _t(
+            'wizard.step4.switchCount',
+            '{count} switches',
+            { count: visible },
+        );
+    }
+}
+
+/** #2692: fold/unfold the individual switch list. Wired once. */
+function _wireModesToggle() {
+    const btn = document.getElementById('wiz-modes-toggle');
+    const list = document.getElementById('wiz-modes');
+    if (!btn || !list || btn.dataset.wired === '1') return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => {
+        modesExpanded = !modesExpanded;
+        list.hidden = !modesExpanded;
+        btn.setAttribute('aria-expanded', modesExpanded ? 'true' : 'false');
     });
 }
 
 function _renderGameModes() {
     const el = document.getElementById('wiz-modes');
     if (!el) return;
-    // Issue #827 — Sudden Death is only playable with >=3 connected players.
-    // When below that, force the choice off so a <3-player game never starts in
+    // #2692: the list starts folded; the style above answers the step.
+    el.hidden = !modesExpanded;
+    _wireModesToggle();
+    // Issue #827 — Sudden Death is only playable at or above the const.py floor.
+    // When below that, force the choice off so an undersized game never starts in
     // Sudden Death, and render the card disabled (dimmed, non-interactive).
     const suddenDeathDisabled = _connectedPlayerCount() < SUDDEN_DEATH_MIN_PLAYERS;
     if (suddenDeathDisabled) chosenSuddenDeath = false;
@@ -1121,19 +1346,22 @@ function _renderGameModes() {
             return '';
         }
         // Issue #827 — disabled Sudden Death card: dimmed, non-interactive, with
-        // a tooltip explaining the >=3 player requirement.
+        // a tooltip explaining the player-count requirement.
         // Issue #1799 — the tooltip is hover-only, so on touch (the primary way
         // the wizard is used) the requirement was invisible and the dimmed card
         // read as broken. Swap the hint line for the requirement itself, and
         // mark it .gated so the CSS can keep it legible against the dimming.
         const disabled = m.key === 'suddenDeath' && suddenDeathDisabled;
+        // #2699: the floor is `{min}`-interpolated into all three strings, so
+        // the number on screen can only ever be the one const.py holds.
+        const minParams = { min: SUDDEN_DEATH_MIN_PLAYERS };
         const titleAttr = disabled
-            ? ` title="${escapeAttr(_t('admin.suddenDeathDisabledTooltip', 'Needs at least 3 players'))}"`
+            ? ` title="${escapeAttr(_t('admin.suddenDeathDisabledTooltip', 'Sudden Death needs at least {min} players.', minParams))}"`
             : '';
         const hint = modeHintHtml(
             disabled,
-            _t('admin.suddenDeathDisabledGate', 'Needs at least 3 players'),
-            _t(m.hintKey, m.hintFallback),
+            _t('admin.suddenDeathDisabledGate', 'Needs at least {min} players', minParams),
+            _t(m.hintKey, m.hintFallback, minParams),
         );
         return `<div class="wiz-mode-card ${on ? 'on' : ''}${disabled ? ' disabled' : ''}" data-mode="${m.key}" role="button" tabindex="0" aria-disabled="${disabled}"${titleAttr}>
             <div class="wiz-mode-icon" aria-hidden="true">${m.icon}</div>
@@ -1152,6 +1380,8 @@ function _renderGameModes() {
             if (mode.key === 'suddenDeath' && suddenDeathDisabled) return;
             mode.set(!mode.get());
             _renderGameModes();
+            // #2692: a hand-flipped switch can invalidate the style label.
+            _renderPlayStyles();
         });
     });
 }
@@ -1159,8 +1389,9 @@ function _renderGameModes() {
 function _renderDifficultyHint() {
     const el = document.getElementById('wiz-difficulty-hint');
     if (!el) return;
-    const hint = DIFFICULTY_HINTS[chosenDifficulty] || DIFFICULTY_HINTS.normal;
-    el.textContent = _t(hint.key, hint.fallback);
+    // #2625: composed from DIFFICULTY_SCORING, not restated. The locale strings
+    // hold the sentence; every number in it comes from const.py.
+    el.textContent = difficultyHint(chosenDifficulty, _t);
 }
 
 // Difficulty area depends on the core mode. Jahr: year-distance chips + hint.
@@ -1283,7 +1514,7 @@ function _renderGameMode() {
     });
     _renderRounds();
     _renderChipGroup('wiz-autoadvance', AUTO_ADVANCE_OPTIONS, chosenRevealAutoAdvance, (val) => {
-        chosenRevealAutoAdvance = parseInt(val, 10) || 0;
+        chosenRevealAutoAdvance = normalizeRevealAutoAdvance(val);
         _renderGameMode();
     });
     _renderChipGroup('wiz-language', LANGUAGES, chosenLanguage, async (val) => {
@@ -1302,6 +1533,7 @@ function _renderGameMode() {
         _renderGameMode();
     });
     _renderGameModes();
+    _renderPlayStyles();   // #2692
 }
 
 function _lightsDetailHtml() {
@@ -1743,6 +1975,16 @@ function _persistGameSettings() {
             closestWinsMode: chosenClosestWins,
             suddenDeathMode: chosenSuddenDeath,  // Issue #827
             titleArtistMode: chosenTitleArtistMode,  // #1180
+            // #2692: the six that had no path out of the wizard at all. The key
+            // names match what admin/util.js `applySavedSettings` reads, which
+            // is the only reason they reach the server.
+            rampupOrder: chosenRampupOrder,               // #1726
+            finaleDouble: chosenFinaleDouble,             // #1725
+            finaleTiebreaker: chosenFinaleTiebreaker,     // #1725
+            comebackToken: chosenComebackToken,           // #1724
+            difficultyBetScaling: chosenBetScaling,       // #1727
+            sabotage: chosenSabotage,                     // #1665
+            playStyle: detectPlayStyle(),                 // null = hand-picked
         };
         if (chosenPlaylists.size > 0) {
             // admin.js stores selectedPlaylists as [{ path, songCount }]; include minimally.
@@ -1770,6 +2012,18 @@ export async function show(stepOverride) {
         chosenSpeaker = ls ? ls.getItem(LS_SELECTED_PLAYER) : null;
         const rawSettings = ls ? ls.getItem(LS_GAME_SETTINGS) : null;
         const savedSettings = rawSettings ? JSON.parse(rawSettings) : null;
+
+        // #2692: hydrate the six previously-unreachable modes, so reopening the
+        // wizard shows what the game is actually set to rather than resetting
+        // it to off the moment the host taps Continue.
+        if (savedSettings) {
+            if (typeof savedSettings.rampupOrder === 'boolean') chosenRampupOrder = savedSettings.rampupOrder;
+            if (typeof savedSettings.finaleDouble === 'boolean') chosenFinaleDouble = savedSettings.finaleDouble;
+            if (typeof savedSettings.finaleTiebreaker === 'boolean') chosenFinaleTiebreaker = savedSettings.finaleTiebreaker;
+            if (typeof savedSettings.comebackToken === 'boolean') chosenComebackToken = savedSettings.comebackToken;
+            if (typeof savedSettings.difficultyBetScaling === 'boolean') chosenBetScaling = savedSettings.difficultyBetScaling;
+            if (typeof savedSettings.sabotage === 'boolean') chosenSabotage = savedSettings.sabotage;
+        }
 
         // #1354 + #815 + #822: resolve the game-language default from the
         // BROWSER on EVERY wizard open, regardless of whether saved settings
@@ -1812,7 +2066,10 @@ export async function show(stepOverride) {
             if (typeof s.maxRounds === 'number' && Number.isFinite(s.maxRounds) && s.maxRounds > 0) {
                 chosenMaxRounds = Math.floor(s.maxRounds);
             }
-            if (typeof s.revealAutoAdvance === 'number') chosenRevealAutoAdvance = s.revealAutoAdvance;
+            // #2626: a blob from an older build (or another device) can hold a
+            // delay the server no longer accepts — normalize before it becomes a
+            // selected chip.
+            if (typeof s.revealAutoAdvance === 'number') chosenRevealAutoAdvance = normalizeRevealAutoAdvance(s.revealAutoAdvance);
             if (typeof s.artistChallenge === 'boolean') chosenArtistChallenge = s.artistChallenge;
             if (typeof s.movieQuiz === 'boolean') chosenMovieQuiz = s.movieQuiz;
             if (typeof s.introMode === 'boolean') chosenIntroMode = s.introMode;

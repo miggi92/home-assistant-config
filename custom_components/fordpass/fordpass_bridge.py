@@ -28,7 +28,8 @@ from .const_shared import (
     ZONE_LIGHTS_VALUE_OFF,
     REMOTE_START_STATE_ACTIVE,
     REMOTE_START_STATE_INACTIVE,
-    HONK_AND_FLASH
+    REMOTE_START_EXPIREDATE,
+    HONK_AND_FLASH,
 )
 from .fordpass_handler import (
     ROOT_STATES,
@@ -263,6 +264,10 @@ class ConnectedFordPassVehicle:
         self._last_ignition_state = INTEGRATION_INIT
         self._last_remote_start_state = INTEGRATION_INIT
         self._last_ev_connect_state = INTEGRATION_INIT
+
+        # we MUST limit the number of calls to the request_update() function - since users are not willing
+        # to listen - and believe they are smart - HiHo Generation TikTok
+        self._request_update_calls_limiter = []
 
         _LOGGER.info(f"{self.vli}init vehicle object for vin: '{self.vin}' - using token from: '{self.stored_tokens_location}'")
 
@@ -1083,19 +1088,33 @@ class ConnectedFordPassVehicle:
 
         # listing for possible state changes...
         if ROOT_METRICS not in data_obj:
-            # compare 'ignitionStatus' reading with default impl in FordPassDataHandler!
-            new_ignition_state = self._data_container.get(ROOT_METRICS, {}).get("ignitionStatus", {}).get("value", INTEGRATION_INIT).upper()
-            new_ev_connect_state = self._data_container.get(ROOT_METRICS, {}).get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
-            new_remote_start_countdown = self._data_container.get(ROOT_METRICS, {}).get("remoteStartCountdownTimer", {}).get("value", -1)
+            a_dict = self._data_container.get(ROOT_METRICS, {})
         else:
-            new_ignition_state = data_obj.get(ROOT_METRICS, {}).get("ignitionStatus", {}).get("value", INTEGRATION_INIT).upper()
-            new_ev_connect_state = data_obj.get(ROOT_METRICS, {}).get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
-            new_remote_start_countdown = data_obj.get(ROOT_METRICS, {}).get("remoteStartCountdownTimer", {}).get("value", -1)
+            a_dict = data_obj.get(ROOT_METRICS, {})
+            # check if we have received an updated 'remoteStartCountdownTimer' - and if this is the
+            # case, we calculate the final expiry date [since it can happen that we do not get
+            # the information that the 'remoteStartCountdownTimer' is 0 - or no longer present]
+            if "remoteStartCountdownTimer" in a_dict and "value" in a_dict["remoteStartCountdownTimer"]:
+                remote_start_countdown_obj = a_dict.get("remoteStartCountdownTimer", {})
+                # we must check/verify what unit the 'remoteStartCountdownTimer' has - I currently
+                # assume it is in seconds...
+                countdown_value = remote_start_countdown_obj.get("value", -1)
+                if countdown_value > -1:
+                    expire_date_value = time.time() + countdown_value
+                    remote_start_countdown_obj[REMOTE_START_EXPIREDATE] = expire_date_value
+                    if countdown_value == 0:
+                        _LOGGER.debug(f"New RemoteStartCountdown value is 0 (ZERO), so RemoteStart should be INACTIVE")
+                    else:
+                        _LOGGER.debug(f"New RemoteStartCountdown value: {int(countdown_value)} -> countdown expires at: {datetime.fromtimestamp(expire_date_value).strftime("%H:%M:%S")}")
+
+        # compare 'ignitionStatus' reading with default impl in FordPassDataHandler!
+        new_ignition_state = a_dict.get("ignitionStatus", {}).get("value", INTEGRATION_INIT).upper()
+        new_ev_connect_state = a_dict.get("xevPlugChargerStatus", {}).get("value", INTEGRATION_INIT).upper()
+        new_remote_start_countdown = a_dict.get("remoteStartCountdownTimer", {}).get("value", -1)
 
         if new_ignition_state is not None and new_ignition_state != INTEGRATION_INIT:
             if self._last_ignition_state != INTEGRATION_INIT:
                 if new_ignition_state != self._last_ignition_state:
-                    _LOGGER.info(f"{self.vli}ws(): NEW ignition state '{new_ignition_state}' | LAST ignition state: '{self._last_ignition_state}'")
                     if "OFF" == new_ignition_state:
                         _LOGGER.info(f"{self.vli}ws(): ignition state changed to 'OFF' (just as INFO)")
                         # AFTER August 2026 - the 'req_status' should no longer be used - so this part of the code should be removed
@@ -1237,7 +1256,7 @@ class ConnectedFordPassVehicle:
                 collected_keys.append(a_root_key)
 
             if a_root_key == ROOT_UPDTIME:
-                _LOGGER.info(f"{self.vli}ws(): this is a 'heartbeat': {data_obj[a_root_key]} {collected_keys}")
+                _LOGGER.debug(f"{self.vli}ws(): this is a 'heartbeat': {data_obj[a_root_key]} {collected_keys}")
 
             return True
 
@@ -2540,8 +2559,30 @@ class ConnectedFordPassVehicle:
         """Issue an unlock command to the doors"""
         return await self.__request_and_poll_command_autonomic(baseurl=AUTONOMIC_URL, write_command="unlock")
 
-    async def request_update(self):
+
+    async def request_update(self, force:bool=False):
         """Send request to vehicle for update"""
+        # it's really sad that integration users seam to ignore all information provided concerning the possible
+        # negative impact calling 'request_update' from HA automations - this is a simple rate limit implementation
+        # that makes sure that in 24h the call just can be made 24 times
+        if not force:
+            now = time.time()
+            # 86400 = One DAY_IN_SECONDS! (24 * 60 * 60)
+            # 86340 = One Day minus one minute!
+            now_minus_a_day = now - 86340
+            while self._request_update_calls_limiter and self._request_update_calls_limiter[0] <= now_minus_a_day:
+                self._request_update_calls_limiter.pop(0)
+
+            if len(self._request_update_calls_limiter) > 23:
+                # The earliest call will expire exactly 24 hours after it was placed
+                next_time_dt = datetime.fromtimestamp(self._request_update_calls_limiter[0] + 86400)
+                formatted_time = next_time_dt.strftime("%H:%M:%S")
+                formatted_date = next_time_dt.strftime("%b %d")
+                _LOGGER.info(f"[@{self.vli}] request_update: RATELIMIT EXCEEDED - you can try it again at {formatted_time} on {formatted_date}")
+                return False
+
+            self._request_update_calls_limiter.append(now)
+
         status = await self.__request_and_poll_command_autonomic(baseurl=AUTONOMIC_URL, write_command="statusRefresh")
         return status
 

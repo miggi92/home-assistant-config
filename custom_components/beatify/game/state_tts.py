@@ -14,7 +14,9 @@ and every caller / test are unchanged.
 The mixin relies on attributes that the host class owns and that live on
 ``self`` at runtime:
 
-* ``self._hass`` — Home Assistant instance (for the TTS provider).
+* ``self._service_factories`` — the #2638 injection bundle; its ``tts`` factory
+  builds the announcement service ``configure_tts`` installs.
+  The mixin no longer touches ``self._hass`` at all.
 * ``self._bg_tasks`` — set of fire-and-forget background tasks.
 * ``self.media_player`` — speaker entity the audio is routed through.
 * ``self.language`` — game language (resolved defensively via ``_lang``).
@@ -32,9 +34,12 @@ import asyncio
 import contextlib
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING
 
 from . import tts_phrases
+
+if TYPE_CHECKING:
+    from .protocols import TtsProtocol
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,7 +58,13 @@ class TtsAnnouncerMixin:
         bloating ``GameState.__init__``.
         """
         # Issue #447: TTS announcement service
-        self._tts_service: Any = None  # TTSService (lazy import)
+        # #2638: built by the injected TTS factory (see game/protocols.py).
+        self._tts_service: TtsProtocol | None = None
+        # #2724: the announcement tasks still waiting for their turn at the
+        # speaker. `_bg_tasks` also holds party-light flashes and media work,
+        # so a caller that wants to wait for *speech* — the REST end-game
+        # teardown — needs the narrower set. Tasks remove themselves when done.
+        self._announce_tasks: set[asyncio.Task] = set()
         self._tts_announce_game_start: bool = True
         self._tts_announce_winner: bool = True
         # Issue #471 Phase 1: Game Flow announcements
@@ -137,13 +148,19 @@ class TtsAnnouncerMixin:
         the most common host expectation (round start + time's up + correct
         answer announced; per-round 3-2-1 countdown opt-in only).
         """
-        from custom_components.beatify.services.tts import TTSService
-
-        self._tts_service = TTSService(
-            self._hass,
-            tts_entity_id=entity_id,
-            media_player_entity_id=self.media_player,
-        )
+        # #2638: the concrete TTSService is built by the injected ``tts``
+        # factory. With no factory wired (a game-logic unit test) the flags
+        # below are still applied but no announcement is ever spoken — every
+        # announce_* method already guards on ``self._tts_service``.
+        factory = self._service_factories.tts
+        if factory is None:
+            _LOGGER.debug("No TTS factory wired — announcements unavailable")
+            self._tts_service = None
+        else:
+            self._tts_service = factory(
+                tts_entity_id=entity_id,
+                media_player_entity_id=self.media_player,
+            )
         self._tts_announce_game_start = announce_game_start
         self._tts_announce_winner = announce_winner
         self._tts_announce_round_start = announce_round_start
@@ -176,6 +193,47 @@ class TtsAnnouncerMixin:
     async def disable_tts(self) -> None:
         """Disable TTS announcements."""
         self._tts_service = None
+
+    #: How long :meth:`drain_announcements` will wait at most (#2724). Two
+    #: queued phrases can reserve at most 2 x ``_TTS_MAX_ESTIMATE_S`` of
+    #: speaker time, so this never truncates a real end-game ceremony; it
+    #: exists so a wedged TTS provider cannot hold an HTTP request open.
+    _ANNOUNCE_DRAIN_TIMEOUT_S = 26.0
+
+    async def drain_announcements(self, timeout: float | None = None) -> bool:
+        """Wait until every queued announcement has reached the speaker (#2724).
+
+        ``_tts_announce`` does not speak inline: it reserves a slot in the
+        estimated speaker timeline and hands the phrase to a background task
+        that sleeps until its turn. So right after ``advance_to_end`` has
+        called ``announce_winner`` and ``announce_podium``, both phrases are
+        still only *queued* — the podium one typically sleeps out the winner's
+        estimate first.
+
+        Anything that tears the game down in the same breath therefore has to
+        wait here first. ``end_game`` calls ``disable_tts`` (``_tts_service =
+        None``) and then ``_reset_game_internals`` (which moves ``self.round``,
+        tripping the staleness guard): a podium task that wakes after either of
+        those is dropped, or dies on ``None.speak`` and is swallowed as "TTS
+        announcement failed" — silently, which is how #2724 stayed invisible.
+
+        Returns:
+            True when the queue drained, False when ``timeout`` cut it short.
+        """
+        pending = {t for t in self._announce_tasks if not t.done()}
+        if not pending:
+            return True
+        limit = self._ANNOUNCE_DRAIN_TIMEOUT_S if timeout is None else timeout
+        _, still_pending = await asyncio.wait(pending, timeout=limit)
+        if still_pending:
+            _LOGGER.warning(
+                "Announcement queue did not drain within %.1fs — %d phrase(s) "
+                "may be lost (#2724)",
+                limit,
+                len(still_pending),
+            )
+            return False
+        return True
 
     def _lang(self) -> str:
         """Resolve the game's TTS language, defaulting to English.
@@ -324,6 +382,10 @@ class TtsAnnouncerMixin:
             task = asyncio.create_task(_run())
             self._bg_tasks.add(task)
             task.add_done_callback(self._bg_tasks.discard)
+            # #2724: also tracked on their own so a teardown can wait for
+            # speech alone, without waiting on light flashes or media work.
+            self._announce_tasks.add(task)
+            task.add_done_callback(self._announce_tasks.discard)
         except Exception:  # noqa: BLE001
             _LOGGER.warning("TTS announcement failed")
 
@@ -341,12 +403,20 @@ class TtsAnnouncerMixin:
         await self._tts_announce(message)
 
     async def announce_winner(self) -> None:
-        """Announce the winner (use case 18)."""
+        """Announce the winner (use case 18).
+
+        #2548: reads ``compute_winners()`` rather than a plain score max. In a
+        Sudden Death game the finish order is survival-first (#827/#1749), so a
+        late-eliminated high scorer is NOT the winner — the END screen and the
+        leaderboard have said so since #1749, while the speaker went on
+        crowning them and contradicted the screen in front of the whole room.
+        """
         if not self._tts_service or not self._tts_announce_winner or not self.players:
             return
         lang = self._lang()
-        top_score = max(p.score for p in self.players.values())
-        winners = [p for p in self.players.values() if p.score == top_score]
+        winners, top_score = self.compute_winners()
+        if not winners:
+            return
         points = tts_phrases.spoken_number(lang, top_score)
         if len(winners) == 1:
             message = tts_phrases.phrase(
@@ -469,6 +539,26 @@ class TtsAnnouncerMixin:
             elif p.bet_outcome == "lost" and self._tts_announce_bet_lost:
                 frags.append(tts_phrases.phrase(lang, "bet_lost", name=p.name))
 
+        # #2721: Comeback Tokens are announced as one halftime sentence, not as
+        # N streak unlocks. The old loop said "{name} unlocked steal" for a
+        # player who had just answered nothing right — to the room that reads
+        # as a broken streak counter, which is exactly what #2721 reports.
+        #
+        # The names are still added to the dedup set below, so the per-player
+        # line never fires for them afterwards; they are announced here once,
+        # together, with the reason.
+        comeback_names = list(self.comeback_granted_this_round)
+        for name in comeback_names:
+            self._tts_steal_unlocked_announced.add(name)
+        if comeback_names and self._tts_announce_steal_unlocked:
+            frags.append(
+                tts_phrases.phrase(
+                    lang,
+                    "comeback_tokens",
+                    names=tts_phrases.join_names(lang, comeback_names),
+                )
+            )
+
         # Steal unlocks — once per player per game. The dedup set is updated
         # regardless of the toggle so a mid-game toggle-on can't replay it.
         for p in players:
@@ -549,14 +639,18 @@ class TtsAnnouncerMixin:
         """
         if not self._tts_service or not self._tts_announce_podium:
             return
-        ranked = sorted(self.players.values(), key=lambda p: p.score, reverse=True)
-        podium = [p for p in ranked if p.score > 0][:3]
+        # #2548: the podium follows get_final_leaderboard's ranking, which is
+        # survival-first once Sudden Death has claimed anyone (#827). Sorting by
+        # score here put eliminated players on a podium the screen ranks below
+        # the cut-line.
+        ranked = self.get_final_leaderboard()
+        podium = [entry for entry in ranked if entry.get("score", 0) > 0][:3]
         if not podium:
             return
         lang = self._lang()
         segments = [
             f"{tts_phrases.place_label(lang, i + 1)}: "
-            f"{podium[i].name}{'!' if i == 0 else '.'}"
+            f"{podium[i]['name']}{'!' if i == 0 else '.'}"
             for i in reversed(range(len(podium)))
         ]
         await self._tts_announce(" ".join(segments))

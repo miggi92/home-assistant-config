@@ -53,6 +53,10 @@
     // once per elimination (re-renders / re-broadcasts of the same REVEAL must
     // not re-trigger it). Format: "<round>:<joined names>".
     var sdLastOutKey = null;
+    // #2721: same dedup shape as sdLastOutKey — a REVEAL re-broadcast must not
+    // replay the halftime takeover.
+    var comebackLastKey = null;
+    var comebackTimer = null;
     var sdOutTimer = null;
 
     // #1705: track the countdown's active deadline so the 1Hz timer is torn
@@ -60,6 +64,12 @@
     // every state broadcast (a submission/score update re-renders the view but
     // the clock is unchanged, so the running timer must be left ticking).
     var lastCountdownDeadline = null;
+
+    // #2554: `song_stopped` is an event, not part of the state payload, so the
+    // chip is pinned to the round it arrived in and clears itself once the next
+    // round renders.
+    var songStoppedRound = null;
+    var lastRenderedRound = null;
 
     // --- #1705: WS-broadcast render coalescing ------------------------------
     // Mirrors admin's createRenderCoalescer (#1584): the dashboard used to push
@@ -517,8 +527,14 @@
             // broadcast replaces it.
             stopCountdown();
             showView('dashboard-starting');
+        } else if (data.type === 'song_stopped') {
+            // #2554: the dashboard used to ignore this. To the room the music
+            // just stopped while the timer kept running, which is
+            // indistinguishable from the speaker dying.
+            songStoppedRound = lastRenderedRound;
+            setSongStoppedChip(true);
         }
-        // Dashboard ignores submit_ack, song_stopped, volume_changed since it doesn't interact
+        // Dashboard ignores submit_ack and volume_changed since it doesn't interact
     }
 
     /**
@@ -624,6 +640,10 @@
             return;
         }
 
+        // #2702: the beats belong to one reveal. Anything that is not REVEAL
+        // ends them, which is what lets a fast next round cut the staging.
+        if (phase !== 'REVEAL') stopRevealStaging();
+
         switch (phase) {
             case 'LOBBY':
                 stopCountdown();
@@ -646,11 +666,117 @@
                 break;
             case 'PAUSED':
                 stopCountdown();
+                renderPausedView(data);
                 showView('dashboard-paused');
                 break;
             default:
                 debug('[Dashboard] Unknown phase:', phase);
         }
+    }
+
+    /**
+     * #2552: the paused screen names the actual reason.
+     *
+     * `pause_reason` has been in the state payload all along
+     * (game/serializers.py) and the dashboard ignored it, so a speaker failure
+     * told the room the host had disconnected — in front of a host standing
+     * next to the TV. The guests' phones meanwhile read "check your media
+     * player", which is not theirs to check.
+     */
+    function renderPausedView(state) {
+        var el = document.getElementById('dashboard-pause-message');
+        if (!el) return;
+        var reason = state && state.pause_reason;
+
+        // #2645: a pause the host set is an announcement, and the TV is where
+        // it is read. The reason takes the headline and "Pause" drops to the
+        // small line, so the room learns *why* the music stopped instead of
+        // being told, in the largest type on the wall, only that it did.
+        var announce = hostPauseAnnouncement(reason);
+        var iconEl = document.getElementById('dashboard-pause-icon');
+        if (iconEl) iconEl.textContent = announce ? announce.emoji : '⏸';
+        var titleEl = document.getElementById('dashboard-pause-title');
+        if (titleEl) {
+            titleEl.textContent = announce
+                ? announce.headline
+                : utils.t('game.paused', 'Game Paused');
+            titleEl.classList.toggle('is-announcement', !!(announce && announce.named));
+        }
+        // Kept in the accent colour rather than grey: the whole cost of this
+        // layout is that a glance reads the reason and not the state, and a
+        // grey line at this size would not be read at all.
+        var stateEl = document.getElementById('dashboard-pause-state');
+        if (stateEl) {
+            var named = !!(announce && announce.named);
+            stateEl.classList.toggle('hidden', !named);
+            stateEl.textContent = named ? utils.t('game.pausedLabel', 'Pause') : '';
+        }
+
+        if (announce) {
+            // The one thing the room needs to know, and the one thing Stop
+            // could never promise: the clock is not running.
+            el.setAttribute('data-i18n', 'game.pausedGuessesSaved');
+            el.textContent = utils.t('game.pausedGuessesSaved', 'Your guesses are saved');
+            return;
+        }
+
+        var key = 'game.waitingForHost';
+        var fallback = 'Waiting for host to reconnect...';
+        if (reason === 'media_player_error') {
+            key = 'game.pausedSpeaker';
+            fallback = 'Speaker is not responding — the host is on it';
+        } else if (reason === 'no_songs_available') {
+            key = 'game.pausedNoSongs';
+            fallback = 'No more songs available';
+        }
+        el.setAttribute('data-i18n', key);
+        el.textContent = utils.t(key, fallback);
+    }
+
+    /**
+     * #2645: the host-pause announcement, for the TV.
+     *
+     * dashboard.js is a standalone IIFE bundle and cannot import
+     * `js/host-pause.js`, which is where the canonical list lives for the two
+     * ESM bundles. This is the second copy, and
+     * `__tests__/host-pause-2645.test.js` fails the moment the two disagree —
+     * a reason added in only one of them would render on the TV as its raw
+     * code, in poster size, in front of the whole room.
+     */
+    var HOST_PAUSE_GENERIC = 'host_pause';
+    var HOST_PAUSE_TILES = [
+        { code: 'host_pause_food', emoji: '🍕', titleKey: 'game.pauseReasonFood' },
+        { code: 'host_pause_door', emoji: '🚪', titleKey: 'game.pauseReasonDoor' },
+        { code: 'host_pause_away', emoji: '⏸', titleKey: 'game.pauseReasonAway' },
+    ];
+
+    function hostPauseAnnouncement(reason) {
+        for (var i = 0; i < HOST_PAUSE_TILES.length; i++) {
+            if (HOST_PAUSE_TILES[i].code === reason) {
+                return {
+                    emoji: HOST_PAUSE_TILES[i].emoji,
+                    headline: utils.t(HOST_PAUSE_TILES[i].titleKey),
+                    named: true,
+                };
+            }
+        }
+        if (reason === HOST_PAUSE_GENERIC) {
+            // Paused without picking a tile — the room is told that much.
+            return { emoji: '⏸', headline: utils.t('game.paused', 'Game Paused'), named: false };
+        }
+        return null;
+    }
+
+    /**
+     * #2554: show or clear the "song stopped" chip in the PLAYING strip.
+     *
+     * `song_stopped` is an event, not part of the state payload, so the chip is
+     * pinned to the round it arrived in and clears itself when the next round
+     * renders.
+     */
+    function setSongStoppedChip(visible) {
+        var chip = document.getElementById('dashboard-song-stopped');
+        if (chip) chip.classList.toggle('hidden', !visible);
     }
 
     // ============================================
@@ -689,6 +815,13 @@
 
         // Render game settings indicator (top-right corner)
         renderGameSettings(data);
+
+        // #2647: the sentence across the empty middle of the lobby. The room
+        // used to find out in round 2, at the first skull, that Sudden Death
+        // was on — the server has sent every flag all along, no screen said so.
+        // Shared with the guest's phone (player-lobby.js) so both read the same
+        // words; utils owns the wording so they cannot drift.
+        utils.renderLobbyBrief(document.getElementById('dashboard-lobby-brief'), data);
 
         // Update player count
         // #1402-B8: was hardcoded English ("N players joined") on an otherwise
@@ -818,6 +951,13 @@
         var song = data.song || {};
         var players = data.players || [];
 
+        // #2554: a stop belongs to the round it happened in.
+        lastRenderedRound = data.round;
+        if (songStoppedRound !== data.round) {
+            songStoppedRound = null;
+            setSongStoppedChip(false);
+        }
+
         // Update round indicator
         var currentRound = document.getElementById('dashboard-current-round');
         var totalRounds = document.getElementById('dashboard-total-rounds');
@@ -900,6 +1040,11 @@
 
         // Issue #827: Sudden-Death FINAL banner (2 players left).
         renderSuddenDeathFinalBanner(data, 'sd-final-banner-playing');
+
+        // #2719 / #2722: say why the deciding round is different — doubled
+        // points, or an extra song because the top of the table is tied.
+        renderFinaleDoubleBanner(data, 'dashboard-finale-banner-playing');
+        renderFinalePlayoffBanner(data, 'dashboard-playoff-banner-playing');
     }
 
     /**
@@ -1069,6 +1214,46 @@
                 streakIndicator = '<span class="streak-indicator ' + hotClass + '">🔥' + entry.streak + '</span>';
             }
 
+            // #2578: Variante B aus dem Design-Entwurf — im Finale-Stechen
+            // bekommen die ZWEI Finalisten ein Abzeichen, alle anderen bleiben
+            // normal. Vorher trugen die Nicht-Fuehrenden `eliminated` und der
+            // Fernseher zeigte bei acht Spielern sechs Totenkoepfe, obwohl
+            // niemand rausgeflogen war.
+            //
+            // Der Bildschirm sagt jetzt, was wahr ist („zwei sind im Stechen"),
+            // statt etwas Falsches zu behaupten — und das sind zwei Abzeichen
+            // statt sechs Entwertungen.
+            var playoffLaeuft = leaderboard.some(function (x) { return x.playoff_spectator; });
+            var finalistBadge = (playoffLaeuft && !entry.playoff_spectator)
+                ? '<span class="finalist-badge">⚔️ ' + utils.escapeHtml(
+                    utils.t('reveal.finalePlayoff') || 'Finale') + '</span>'
+                : '';
+
+            // #2584: Sabotage sichtbar machen — Variante B aus dem Design-Entwurf
+            // vom 05.09.2026. Bis dahin sahen den Treffer nur Taeter und Opfer
+            // auf ihren Handys; der halbe Raum schaut aber auf den Fernseher,
+            // und genau dort passierte das lauteste soziale Element des Spiels
+            // unsichtbar.
+            //
+            // Das Abzeichen steht in der Zeile des GETROFFENEN, nicht als
+            // Einblendung ueber dem Jahr: es beantwortet die Frage, die im Raum
+            // gestellt wird („wen hat's erwischt?"), es bleibt den ganzen Reveal
+            // lesbar, und zwei Treffer in einer Runde stapeln sich nicht.
+            // Der Taeter wird genannt — Sabotage ist ein soziales Element, ohne
+            // Namen fehlt ihr die Pointe.
+            var sabotageBadge = '';
+            if (entry.sabotaged_by) {
+                var effektName = utils.t('sabotage.effect.' + (entry.sabotage_effect || ''), '');
+                var effektKurz = effektName && effektName.indexOf('sabotage.effect.') !== 0
+                    ? effektName
+                    : '';
+                sabotageBadge = '<span class="sabotage-badge" title="'
+                    + utils.escapeHtml(entry.sabotaged_by) + (effektKurz ? ' · ' + utils.escapeHtml(effektKurz) : '')
+                    + '">❄️ ' + utils.escapeHtml(entry.sabotaged_by)
+                    + (effektKurz ? ' <small>' + utils.escapeHtml(effektKurz) + '</small>' : '')
+                    + '</span>';
+            }
+
             // Bet badge next to name during playing phase
             var betBadge = '';
             if (showBet && betMap[entry.name]) {
@@ -1084,7 +1269,7 @@
 
             var html = '<div class="leaderboard-entry ' + rankClass + ' ' + animationClass + ' ' + disconnectedClass + ' ' + eliminatedClass + '">' +
                 '<span class="entry-rank">#' + entry.rank + '</span>' +
-                '<span class="entry-name">' + skullPrefix + utils.escapeHtml(entry.name) + awayBadge + betBadge + '</span>' +
+                '<span class="entry-name">' + skullPrefix + utils.escapeHtml(entry.name) + awayBadge + betBadge + finalistBadge + sabotageBadge + '</span>' +
                 '<span class="entry-meta">' +
                     streakIndicator +
                     changeIndicator +
@@ -1141,13 +1326,22 @@
         // Artist mode the year row hides and the TA banner carries the answer.
         var taMode = !!data.title_artist_mode;
         var yearRow = document.getElementById('reveal-year-row');
-        if (yearRow) yearRow.classList.toggle('hidden', taMode);
+        // #2646: a voided round hides the year too. "Wrong year" is one of the
+        // reasons a host drops a round, so putting the number on the wall as
+        // the answer is the last thing this screen should do.
+        if (yearRow) yearRow.classList.toggle('hidden', taMode || !!data.round_voided);
 
         // Title & Artist mode (#1180): show truth banner + voting status on TV.
         renderDashboardTitleArtist(data);
 
         // Year mode: the guess-the-artist mini-game result (🎤 who got it).
         renderDashboardArtistChallenge(taMode ? null : data.artist_challenge);
+
+        // #2720: the movie-quiz result (🎬 who named the film). Not gated on
+        // Title & Artist mode the way the artist challenge is — the movie quiz
+        // runs independently of it (game/challenges.py), and its answer is
+        // never the thing being voted on.
+        renderDashboardMovieChallenge(data.movie_challenge);
 
         // Render fun fact (Story 16.4)
         renderFunFact(song);
@@ -1163,12 +1357,34 @@
         renderSuddenDeathOut(data);
         renderSuddenDeathFinalBanner(data, 'sd-final-banner-reveal');
 
+        // #2721: halftime takeover for the Comeback Token.
+        renderComebackHalftime(data);
+
+        // #2703: the round stalled and the game is waiting for the host — the
+        // countdown ring below hides itself in that case, so without this the
+        // TV shows a reveal and no reason for the pause.
+        renderIdleHaltBanner(data);
+
+        // #2646: the host dropped this round instead of scoring it. The TV is
+        // the one screen the whole room is watching, so it is where "this does
+        // not count" has to be said — otherwise the year is up, the leaderboard
+        // has not moved, and it looks like the game ate everyone's guess.
+        renderRoundVoidedBanner(data);
+
+        // #2719 / #2722: keep the finale explained while the scores are read.
+        renderFinaleDoubleBanner(data, 'dashboard-finale-banner-reveal');
+        renderFinalePlayoffBanner(data, 'dashboard-playoff-banner-reveal');
+
         // Render motivational message (Story 14.4)
         renderMotivationalMessage(data.game_performance);
 
         // #1185: Auto-advance countdown ring (Phone reveal already shows one;
         // TV dashboard didn't until @Dtrieb asked for it).
         updateRevealCountdown(data);
+
+        // #2702: run the three beats. Keyed on the round inside, so calling it
+        // on every re-broadcast is cheap and does not restart anything.
+        startRevealStaging(data);
 
         // Render song difficulty rating (Story 15.1)
         renderSongDifficulty(data.song_difficulty);
@@ -1295,6 +1511,161 @@
     }
 
     /**
+     * #2720: movie-quiz result on the TV — the mirror of
+     * renderDashboardArtistChallenge above.
+     *
+     * The quiz ships ON by default (wizard.js) and the server has sent the
+     * decided winner since #1723, but "movie" appeared nowhere in dashboard.js
+     * or dashboard.html: one guest earned +5 for naming the film and the room
+     * saw only a number move. Winner-takes-all, so `results.winners` holds at
+     * most one entry (game/challenges.py `_build_results`); index 0 is the
+     * fastest correct guesser and later-correct guessers scored 0 and are not
+     * shown — the same shape the phone renders.
+     *
+     * @param {Object|null} mc - data.movie_challenge
+     *   { correct_movie, results: { winners: [{name, time, bonus}] } }
+     */
+    function renderDashboardMovieChallenge(mc) {
+        var el = document.getElementById('reveal-movie-challenge');
+        if (!el) return;
+        if (!mc || !mc.correct_movie) {
+            el.classList.add('hidden');
+            el.innerHTML = '';
+            return;
+        }
+        var label = utils.t('movieChallenge.theMovieWas', 'The movie was');
+        var winners = (mc.results && mc.results.winners) || [];
+        var resultHtml;
+        if (winners.length && winners[0].name) {
+            var pts = winners[0].bonus || 5;
+            resultHtml = '<span class="reveal-ac-result reveal-ac-result--won">' +
+                utils.escapeHtml(winners[0].name) + ' +' + pts + '</span>';
+        } else {
+            resultHtml = '<span class="reveal-ac-result reveal-ac-result--none">' +
+                utils.escapeHtml(utils.t('movieChallenge.noWinner', 'No one guessed the movie')) +
+                '</span>';
+        }
+        el.innerHTML =
+            '<span class="reveal-ac-ic" aria-hidden="true">🎬</span>' +
+            '<span class="reveal-ac-label">' + utils.escapeHtml(label) + '</span>' +
+            '<span class="reveal-ac-name">' + utils.escapeHtml(mc.correct_movie) + '</span>' +
+            resultHtml;
+        el.classList.remove('hidden');
+    }
+
+    /**
+     * #2703: the idle-halt notice on the TV.
+     *
+     * A round where nobody guessed stops playback and holds the game on REVEAL
+     * until the host taps "Next round". The phones have explained that since
+     * #1012, and since #2622 they say it in the words that fit the reader.
+     * The TV said nothing at all: `updateRevealCountdown` hides the
+     * auto-advance ring on `idle_halt`, so the one element that would have
+     * hinted at a wait disappeared and the screen just sat there.
+     *
+     * The TV is a read-only observer — it can never tap "Next round" — so it
+     * gets the GUEST sentence, the same one the guests' phones show. The
+     * `data-i18n` attribute stays on the element so a mid-game language switch
+     * re-renders it (`initPageTranslations`).
+     *
+     * @param {Object} data - REVEAL state data (reads `idle_halt`)
+     */
+    function renderIdleHaltBanner(data) {
+        var banner = document.getElementById('dashboard-idle-halt');
+        if (!banner) return;
+        var halted = !!(data && data.idle_halt);
+        banner.classList.toggle('hidden', !halted);
+        if (!halted) return;
+        var textEl = document.getElementById('dashboard-idle-halt-text');
+        if (!textEl) return;
+        var text = utils.t('reveal.idleHaltBannerGuest');
+        if (text && text !== 'reveal.idleHaltBannerGuest') textEl.textContent = text;
+    }
+
+    /**
+     * #2646: "this round does not count" on the TV.
+     *
+     * Twin of renderIdleHaltBanner above. dashboard.js is a classic script
+     * outside the module graph, so it carries its own copy of the two lines
+     * `round-end-choice.js` exports for the phone and the admin browser.
+     *
+     * @param {Object} data - REVEAL state data (reads `round_voided`)
+     */
+    function renderRoundVoidedBanner(data) {
+        var banner = document.getElementById('dashboard-round-voided');
+        if (!banner) return;
+        banner.classList.toggle('hidden', !(data && data.round_voided));
+    }
+
+    /**
+     * #2719: the Finale ×2 banner on the TV.
+     *
+     * On the last round with the opt-in finale bonus armed, every score earned
+     * is doubled (game/state.py). The player's phone has advertised that since
+     * #1725 and the TTS mentions it once if TTS is on; the TV showed a round
+     * counter reading "10/10" and then scores jumping by twice the usual step.
+     * To a room watching one screen that reads as a scoring bug, in the single
+     * round where the result is decided.
+     *
+     * `finale_double_active` is already `finale_double_enabled and last_round`
+     * server-side (game/serializers.py), so this is a straight toggle — the
+     * client must not re-derive it from `last_round`.
+     *
+     * @param {Object} data - State data (reads `finale_double_active`)
+     * @param {string} bannerId - id of the banner element for this phase
+     */
+    function renderFinaleDoubleBanner(data, bannerId) {
+        var banner = document.getElementById(bannerId);
+        if (!banner) return;
+        if (data && data.finale_double_active) {
+            banner.textContent = utils.t('game.finaleDouble', 'Finale ×2 — Double Points!');
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
+    /**
+     * #2722: the finale playoff banner on the TV.
+     *
+     * When the last round ends in a tie for first, the game quietly arms a
+     * playoff (game/state.py `_maybe_start_finale_playoff`) and starts another
+     * song. Until now the only sign of it was the ⚔️ badge #2578 put next to
+     * the tied names in the leaderboard — a badge answers "who?", not "why is
+     * this still going?". The scoreboard said the game should have ended, a
+     * song started anyway, and nobody in the room had been told.
+     *
+     * The finalists are the players NOT sitting the round out: the backend
+     * marks everyone else `playoff_spectator` (never `eliminated` — that was
+     * the #2578 bug), so the same predicate the badge uses picks them here.
+     * Falls back to a nameless sentence if the roster hasn't arrived yet,
+     * because the banner explaining the extra song matters more than the names
+     * in it.
+     *
+     * @param {Object} data - State data (reads `finale_playoff_active` + leaderboard)
+     * @param {string} bannerId - id of the banner element for this phase
+     */
+    function renderFinalePlayoffBanner(data, bannerId) {
+        var banner = document.getElementById(bannerId);
+        if (!banner) return;
+        if (!data || !data.finale_playoff_active) {
+            banner.classList.add('hidden');
+            banner.textContent = '';
+            return;
+        }
+        var roster = data.leaderboard || data.players || [];
+        var finalists = roster.filter(function(p) {
+            return p && !p.playoff_spectator && !p.eliminated && p.name;
+        }).map(function(p) { return p.name; });
+        var names = finalists.join(' · ');
+        var text = names
+            ? utils.t('dashboard.finalePlayoffBanner', { players: names })
+            : utils.t('dashboard.finalePlayoffBannerAnon');
+        banner.textContent = '⚔️ ' + text;
+        banner.classList.remove('hidden');
+    }
+
+    /**
      * Year-mode artist-challenge result on the TV (the guess-the-artist
      * mini-game). Shows "🎤 The artist: <name>" + who got it (winner +bonus,
      * or a muted "nobody guessed"). Hidden when the challenge isn't active.
@@ -1387,6 +1758,51 @@
      * submissions, game holds on REVEAL until manual advance).
      */
     var _countdownTick = null;
+
+    // #2702: the TV ring had the same defect as the phone's — it stopped at
+    // zero and sat there for the 5-25 s `start_round()` blocks (longer since
+    // #2682 raised MA_PLAYBACK_TIMEOUT), which is what made the room ask the
+    // host whether the game had crashed. A stopped clock claims a timer is
+    // running; only movement withdraws that claim, so the ring turns instead.
+    // Derived here from what the client already knows (the countdown ended, no
+    // PLAYING state arrived) rather than from a new server frame.
+    var REVEAL_WAIT_GLYPH = '\u2026';
+
+    /**
+     * Toggle the TV countdown chip between counting and waiting.
+     * @param {Element} chip - #reveal-countdown
+     * @param {Element} numEl - the digit inside the ring
+     * @param {Element} fgCircle - the drawn arc
+     * @param {boolean} waiting - true once the countdown has run out
+     * @param {number} circumference - the arc's full length in user units
+     */
+    function setRevealWaiting(chip, numEl, fgCircle, waiting, circumference) {
+        if (!chip || !numEl || !fgCircle) return;
+        var labelEl = chip.querySelector ? chip.querySelector('.chip-countdown-label') : null;
+        if (waiting) {
+            chip.classList.add('is-waiting');
+            // A quarter arc at a fixed offset: with the gauge meaning gone the
+            // stroke must not read as "three quarters of the time is left".
+            fgCircle.style.transition = 'none';
+            fgCircle.style.strokeDasharray = (circumference * 0.25) + ' ' + (circumference * 0.75);
+            fgCircle.style.strokeDashoffset = '0';
+            numEl.textContent = REVEAL_WAIT_GLYPH;
+            if (labelEl) {
+                // Keep data-i18n in step so a mid-game language switch
+                // re-renders the label that is actually on screen (#2619).
+                labelEl.setAttribute('data-i18n', 'game.starting');
+                labelEl.textContent = utils.t('game.starting') || 'Starting...';
+            }
+        } else {
+            chip.classList.remove('is-waiting');
+            fgCircle.style.transition = '';
+            if (labelEl) {
+                labelEl.setAttribute('data-i18n', 'dashboard.autoAdvance');
+                labelEl.textContent = utils.t('dashboard.autoAdvance') || 'Auto-advance';
+            }
+        }
+    }
+
     function updateRevealCountdown(data) {
         var chip = document.getElementById('reveal-countdown');
         var numEl = document.getElementById('reveal-countdown-num');
@@ -1405,28 +1821,116 @@
 
         if (duration <= 0 || !startedAt || idleHalt) {
             chip.classList.add('hidden');
+            chip.classList.remove('is-waiting');
             return;
         }
 
         chip.classList.remove('hidden');
         // SVG circle r=25 → circumference 2πr ≈ 157.08
         var circumference = 157.08;
+        // #2702: clear a waiting state left by the previous round BEFORE the
+        // gauge geometry is re-applied — the waiting arc is written inline.
+        setRevealWaiting(chip, numEl, fgCircle, false, circumference);
         fgCircle.style.strokeDasharray = circumference;
+
+        var waiting = false;
 
         function paint() {
             var remainingMs = Math.max(0, startedAt + duration * 1000 - Date.now());
+            if (remainingMs <= 0) {
+                waiting = true;
+                if (_countdownTick !== null) {
+                    clearInterval(_countdownTick);
+                    _countdownTick = null;
+                }
+                setRevealWaiting(chip, numEl, fgCircle, true, circumference);
+                return;
+            }
             var remaining = Math.ceil(remainingMs / 1000);
             numEl.textContent = remaining;
             // Drained progress: ring is full at start, empties as time elapses.
             var pctRemaining = remainingMs / (duration * 1000);
             fgCircle.style.strokeDashoffset = String(circumference * (1 - pctRemaining));
-            if (remainingMs <= 0 && _countdownTick !== null) {
-                clearInterval(_countdownTick);
-                _countdownTick = null;
-            }
         }
         paint();
-        _countdownTick = setInterval(paint, 500);
+        // A TV that renders straight into the gap needs no ticking interval.
+        if (!waiting) _countdownTick = setInterval(paint, 500);
+    }
+
+    // #2702: the reveal in three beats — the answer, then who got it right,
+    // then the standings. Own clock, deliberately NOT the loading signal: gating
+    // the beats on "the next round is late" would make a fast round flash all
+    // three at once. If the next round starts first, the phase change cuts it.
+    var REVEAL_BEAT_2_MS = 1500;
+    var REVEAL_BEAT_3_MS = 3000;
+    var _revealStageTimers = [];
+    var _revealStageKey = null;
+
+    function _setRevealStage(root, stage) {
+        if (root && root.setAttribute) root.setAttribute('data-reveal-stage', String(stage));
+    }
+
+    /** Clear the beats and drop the attribute (absent = show everything). */
+    function stopRevealStaging() {
+        for (var i = 0; i < _revealStageTimers.length; i++) clearTimeout(_revealStageTimers[i]);
+        _revealStageTimers = [];
+        _revealStageKey = null;
+        var root = document.getElementById('dashboard-reveal');
+        if (root && root.removeAttribute) root.removeAttribute('data-reveal-stage');
+    }
+
+    /**
+     * Start the beats for THIS reveal. REVEAL re-broadcasts are constant (live
+     * title/artist voting, reactions, host overrides), so the run is keyed on
+     * the round + start stamp — a re-render must not rewind beats the room has
+     * already watched.
+     * @param {Object} data - REVEAL state payload (round + reveal_started_at)
+     */
+    function startRevealStaging(data) {
+        var root = document.getElementById('dashboard-reveal');
+        if (!root || !root.setAttribute) return;
+        var key = String((data && data.round) || 0) + ':' + String((data && data.reveal_started_at) || 0);
+        if (_revealStageKey === key) return;
+        for (var i = 0; i < _revealStageTimers.length; i++) clearTimeout(_revealStageTimers[i]);
+        _revealStageTimers = [];
+        _revealStageKey = key;
+        _setRevealStage(root, 1);
+        _revealStageTimers.push(setTimeout(function() { _setRevealStage(root, 2); }, REVEAL_BEAT_2_MS));
+        _revealStageTimers.push(setTimeout(function() { _setRevealStage(root, 3); }, REVEAL_BEAT_3_MS));
+    }
+
+    /**
+     * Message types StatsService emits (services/stats.py) mapped onto the
+     * translated strings that already exist in every locale. The server sends
+     * the type plus the raw numbers; it does not know which language the TV is
+     * showing, so the wording is picked here, where the locale is known.
+     * @type {Object.<string, string>}
+     */
+    var MOTIVATIONAL_KEYS = {
+        'first': 'stats.firstGame',
+        'record': 'stats.newRecord',
+        'strong': 'stats.strongGame',
+        'above': 'stats.aboveAverage',
+        'close': 'stats.closeToAverage'
+    };
+
+    /**
+     * Translate a motivational message, falling back to the server's English
+     * text for an unknown type or a missing key. utils.t() returns the key on
+     * a miss and a key is truthy (#1402-B8), so the miss is checked explicitly.
+     * @param {Object} message - {type, message} from get_motivational_message
+     * @param {number} difference - pts/round vs the all-time average
+     * @returns {string} - Text for the chip
+     */
+    function motivationalText(message, difference) {
+        var key = MOTIVATIONAL_KEYS[message.type];
+        if (!key) return message.message || '';
+        // Every template that interpolates states the direction in words, so
+        // the number itself is always unsigned.
+        var diff = Math.abs(typeof difference === 'number' ? difference : 0).toFixed(1);
+        var translated = utils.t(key, { diff: diff });
+        if (!translated || translated === key) return message.message || '';
+        return translated;
     }
 
     /**
@@ -1459,7 +1963,7 @@
             'close': '💪'
         };
         if (iconEl) iconEl.textContent = icons[message.type] || '';
-        if (textEl) textEl.textContent = message.message || '';
+        if (textEl) textEl.textContent = motivationalText(message, performance.difference);
     }
 
     /**
@@ -1765,21 +2269,34 @@
         var text = '';
         var cssClass = 'stats-comparison';
 
+        var avg = performance.current_avg.toFixed(1);
+
         if (performance.is_first_game) {
             icon = '🌟';
-            text = 'First game recorded! Avg: ' + performance.current_avg.toFixed(1) + ' pts/round';
+            text = utils.t('stats.firstGameRecorded', { avg: avg });
             cssClass += ' stats-comparison--first';
         } else if (performance.is_new_record) {
             icon = '🏆';
-            text = 'NEW RECORD! ' + performance.current_avg.toFixed(1) + ' pts/round (prev: ' + performance.all_time_avg.toFixed(1) + ')';
+            text = utils.t('stats.newRecordEnd', {
+                avg: avg,
+                prev: performance.all_time_avg.toFixed(1)
+            });
             cssClass += ' stats-comparison--record';
         } else if (performance.is_above_average) {
+            // The '+' sign lives in the template, so pass the bare number.
             icon = '📈';
-            text = performance.current_avg.toFixed(1) + ' pts/round (+' + performance.difference.toFixed(1) + ' vs all-time avg)';
+            text = utils.t('stats.aboveAverageEnd', {
+                avg: avg,
+                diff: performance.difference.toFixed(1)
+            });
             cssClass += ' stats-comparison--above';
         } else {
+            // difference is <= 0 here, so toFixed already carries the minus.
             icon = '📊';
-            text = performance.current_avg.toFixed(1) + ' pts/round (' + performance.difference.toFixed(1) + ' vs all-time avg)';
+            text = utils.t('stats.belowAverageEnd', {
+                avg: avg,
+                diff: performance.difference.toFixed(1)
+            });
             cssClass += ' stats-comparison--below';
         }
 
@@ -1878,6 +2395,77 @@
             overlay.classList.remove('show');
             sdOutTimer = null;
         }, 2500);
+    }
+
+    /**
+     * #2721: the halftime takeover for the Comeback Token.
+     *
+     * The token is granted once per game, at the midpoint, to the trailing
+     * third — all in the same second. That is the shape of a game beat, so it
+     * gets one: five seconds of full screen, the reason spelled out, and the
+     * names as a group.
+     *
+     * Why a group and not a per-player line: two names together read as a team,
+     * one name alone reads as a verdict. The phrasing carries that, and the
+     * caller cannot make it say anything else.
+     *
+     * Deduped per (round, names) exactly like the Sudden Death overlay, and it
+     * auto-hides, because this is a TV — nothing here may ever stay on screen
+     * waiting for an input that has no keyboard.
+     *
+     * @param {Object} data - REVEAL state data
+     */
+    function renderComebackHalftime(data) {
+        var overlay = document.getElementById('comeback-overlay');
+        if (!overlay) return;
+
+        var names = data.comeback_granted_this_round || [];
+        if (!names.length) return;
+
+        var key = (data.round || 0) + ':' + names.join(',');
+        if (key === comebackLastKey) return;
+        comebackLastKey = key;
+
+        var wordEl = document.getElementById('comeback-word');
+        if (wordEl) {
+            wordEl.textContent =
+                (utils.t('game.halftime', 'HALFTIME') || 'HALFTIME').toUpperCase();
+        }
+
+        var roundEl = document.getElementById('comeback-round');
+        if (roundEl) {
+            // Reuse the existing round line rather than inventing a second
+            // one — six locales already carry it.
+            roundEl.textContent = utils.t('game.round', {
+                current: data.round || 0,
+                total: data.total_rounds || 0
+            });
+        }
+
+        var lineEl = document.getElementById('comeback-line');
+        if (lineEl) {
+            lineEl.textContent = utils.t(
+                'game.comebackFieldClosing',
+                'The field is closing up'
+            );
+        }
+
+        var namesEl = document.getElementById('comeback-names');
+        if (namesEl) {
+            namesEl.innerHTML = names.map(function(n) {
+                return '<span class="comeback__plate">' +
+                    '<span class="comeback__plate-icon" aria-hidden="true">🥷</span>' +
+                    utils.escapeHtml(n) +
+                '</span>';
+            }).join('');
+        }
+
+        overlay.classList.add('show');
+        if (comebackTimer) clearTimeout(comebackTimer);
+        comebackTimer = setTimeout(function() {
+            overlay.classList.remove('show');
+            comebackTimer = null;
+        }, 5000);
     }
 
     /**

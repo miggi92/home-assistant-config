@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 
 from homeassistant.components.binary_sensor import BinarySensorEntityDescription
 from homeassistant.components.button import ButtonEntityDescription
+from homeassistant.components.fan import FanEntityDescription
+from homeassistant.components.light import LightEntityDescription
 from homeassistant.components.number import NumberEntityDescription
 from homeassistant.components.select import SelectEntityDescription
 from homeassistant.components.sensor import SensorEntityDescription
@@ -94,10 +96,26 @@ class HCNumberEntityDescription(
     available_access: tuple[Access] = (Access.READ_WRITE, Access.WRITE_ONLY)
 
 
+class HCLightEntityDescription(HCEntityDescription, LightEntityDescription, frozen_or_thawed=True):
+    """Description for Number Entity."""
+
+    available_access: tuple[Access] = (Access.READ_WRITE, Access.WRITE_ONLY)
+    brightness_entity: str | None = None
+    color_temperature_entity: str | None = None
+    color_entity: str | None = None
+    color_mode_entity: str | None = None
+
+
+class HCFanEntityDescription(HCEntityDescription, FanEntityDescription, frozen_or_thawed=True):
+    """Description for Fan Entity."""
+
+    available_access: tuple[Access] = (Access.READ_WRITE,)
+
+
 class EntityDescriptions(TypedDict):
     """Entity descriptions by type."""
 
-    abort_button: list[HCButtonEntityDescription]
+    button: list[HCButtonEntityDescription]
     active_program: list[HCSensorEntityDescription]
     binary_sensor: list[HCBinarySensorEntityDescription]
     event_sensor: list[HCSensorEntityDescription]
@@ -107,11 +125,14 @@ class EntityDescriptions(TypedDict):
     sensor: list[HCSensorEntityDescription]
     start_button: list[HCButtonEntityDescription]
     switch: list[HCSwitchEntityDescription]
+    wifi: list[HCSensorEntityDescription]
+    light: list[HCLightEntityDescription]
+    fan: list[HCFanEntityDescription]
 
 
 _EntityDescriptionsDefinitionsType = dict[
     Literal[
-        "abort_button",
+        "button",
         "active_program",
         "binary_sensor",
         "event_sensor",
@@ -121,6 +142,9 @@ _EntityDescriptionsDefinitionsType = dict[
         "sensor",
         "start_button",
         "switch",
+        "wifi",
+        "light",
+        "fan",
         "dynamic",
     ],
     list[
@@ -131,7 +155,7 @@ _EntityDescriptionsDefinitionsType = dict[
 
 _EntityDescriptionsType = dict[
     Literal[
-        "abort_button",
+        "button",
         "active_program",
         "binary_sensor",
         "event_sensor",
@@ -141,6 +165,9 @@ _EntityDescriptionsType = dict[
         "sensor",
         "start_button",
         "switch",
+        "wifi",
+        "light",
+        "fan",
     ],
     list[HCEntityDescription],
 ]
