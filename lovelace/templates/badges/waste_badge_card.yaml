@@ -3,6 +3,8 @@ waste_badge_template:
   card:
     type: custom:mushroom-template-badge
     icon: "{{ state_attr(entity, 'icon')}}"
+    picture: >-
+      {{ state_attr(config.entity, "entity_picture") }}
     entity: "[[entity]]"
     content: "{{states(entity) }}"
     tap_action:

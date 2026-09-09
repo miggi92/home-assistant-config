@@ -16,6 +16,8 @@ waste_card_template:
       {% else %}
       [[icon]]
       {% endif %}
+    picture: >-
+      {{ state_attr(config.entity, "entity_picture") }}
     primary: "[[title]]"
     icon_color: "[[icon_color]]"
     layout: "[[layout]]"
