@@ -1,0 +1,25 @@
+{
+  "entity": {
+    "sensor": {
+      "latest": { "default": "mdi:cart-off" },
+      "reason": { "default": "mdi:alert-octagon-outline" },
+      "batch": { "default": "mdi:barcode" },
+      "expiry": { "default": "mdi:calendar-alert" },
+      "product": { "default": "mdi:package-variant-closed" },
+      "manufacturer": { "default": "mdi:factory" },
+      "count": { "default": "mdi:counter" },
+      "published": { "default": "mdi:clock-outline" }
+    },
+    "image": {
+      "product_image": { "default": "mdi:image-search-outline" }
+    },
+    "binary_sensor": {
+      "recent_warning": {
+        "default": "mdi:bell-outline",
+        "state": {
+          "on": "mdi:bell-alert"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lebensmittelwarnung.de",
+        "description": "Wähle Meldungsart und Bundesland, die du verfolgen möchtest.",
+        "data": {
+          "meldungsart": "Meldungsart",
+          "bundesland": "Bundesland"
+        }
+      },
+      "reconfigure": {
+        "title": "Lebensmittelwarnung.de",
+        "description": "Passe Meldungsart und Bundesland an.",
+        "data": {
+          "meldungsart": "Meldungsart",
+          "bundesland": "Bundesland"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Diese Kombination aus Meldungsart und Bundesland ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Einstellungen wurden aktualisiert."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest": {
+        "name": "Letzte Meldung"
+      },
+      "reason": {
+        "name": "Grund"
+      },
+      "batch": {
+        "name": "Chargennummer"
+      },
+      "expiry": {
+        "name": "Haltbarkeit"
+      },
+      "product": {
+        "name": "Produktbezeichnung"
+      },
+      "manufacturer": {
+        "name": "Hersteller"
+      },
+      "count": {
+        "name": "Anzahl Meldungen"
+      },
+      "published": {
+        "name": "Veröffentlicht"
+      }
+    },
+    "image": {
+      "product_image": {
+        "name": "Produktbild"
+      }
+    },
+    "binary_sensor": {
+      "recent_warning": {
+        "name": "Aktuelle Warnung"
+      }
+    }
+  }
+}
