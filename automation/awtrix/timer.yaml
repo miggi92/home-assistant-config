@@ -41,13 +41,12 @@ action:
               value_template: "{{ timer_active }}"
           then:
             - variables:
-                timer_end: "{{ raw_state | as_datetime }}"
-                start: "{{ states[repeat.item.entity_id].last_changed | as_datetime }}"
-                total: "{{ (timer_end - start).total_seconds() }}"
-                elapsed: "{{ (now() - start).total_seconds() }}"
                 progress_bar: >-
+                  {% set start = states[repeat.item.entity_id].last_changed %}
+                  {% set total = ((raw_state | as_datetime) - start).total_seconds() %}
+                  {% set elapsed = (now() - start).total_seconds() %}
                   {% if total > 0 %}
-                    {{ ([0, (elapsed / total * 100) | round(2), 100] | sort)[1] }}
+                    {{ [[0, (elapsed / total * 100) | round(0) | int] | max, 100] | min }}
                   {% else %}
                     0
                   {% endif %}
