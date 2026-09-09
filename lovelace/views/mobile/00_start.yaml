@@ -88,44 +88,44 @@ badges:
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
-      - entity: sensor.restmull
+      - entity: sensor.aussen_home_abfallkalender_restmull
     visibility:
       - condition: state
-        entity: sensor.restmull
+        entity: sensor.aussen_home_abfallkalender_restmull
         state: ["Restabfall in 2 days", "Restabfall in 1 days", "Restabfall in 0 days"]
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
-      - entity: sensor.papier
+      - entity: sensor.aussen_home_abfallkalender_papier
     visibility:
       - condition: state
-        entity: sensor.papier
+        entity: sensor.aussen_home_abfallkalender_papier
         state:
           ["Papiertonne in 2 days", "Papiertonne in 1 days", "Papiertonne in 0 days"]
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
-      - entity: sensor.gelbe_tonne
+      - entity: sensor.aussen_home_abfallkalender_gelbe_tonne
     visibility:
       - condition: state
-        entity: sensor.gelbe_tonne
+        entity: sensor.aussen_home_abfallkalender_gelbe_tonne
         state:
           ["Gelbe Tonne in 2 days", "Gelbe Tonne in 1 days", "Gelbe Tonne in 0 days"]
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
-      - entity: sensor.bio
+      - entity: sensor.aussen_home_abfallkalender_bio
     visibility:
       - condition: state
-        entity: sensor.bio
+        entity: sensor.aussen_home_abfallkalender_bio
         state: ["Bioabfall in 2 days", "Bioabfall in 1 days", "Bioabfall in 0 days"]
   - type: custom:decluttering-card
     template: waste_badge_template
     variables:
-      - entity: sensor.schadstoffe
+      - entity: sensor.aussen_home_abfallkalender_schadstoffe
     visibility:
       - condition: state
-        entity: sensor.schadstoffe
+        entity: sensor.aussen_home_abfallkalender_schadstoffe
         state:
           ["Schadstoffe in 2 days", "Schadstoffe in 1 days", "Schadstoffe in 0 days"]
   - type: custom:decluttering-card
