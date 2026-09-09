@@ -7,12 +7,27 @@ condition: []
 action:
   - variables:
       message: "Essen ist fertig."
+  - action: script.ansage
+    data:
+      message: "{{ message }}"
+      alexa:
+        - notify.echo_dot_weiss_sprechen
+        - notify.milos_dot_sprechen
+        - notify.echo_schlafzimmer_sprechen
+        - notify.echo_show_sprechen
+        - notify.buro_echo_buro_sprechen
+        - notify.echo_gross_sprechen
+        - notify.miguel_s_ford_sync_sprechen
+      speaker:
+        - media_player.voiceassistant_media_player
+        - media_player.home_assistant_voice_09e5e4_2
+
   - action: script.notify_engine
     data:
       title: |
         👨‍🍳 Essen 👨‍🍳
       value1: "{{ message }}"
-      who: "home, home_audio"
+      who: "home"
       tag_id: "information"
       group: "Food"
 

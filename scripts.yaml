@@ -1,0 +1,48 @@
+ansage:
+  alias: Ansage mit Chime
+  mode: queued
+  max: 10
+  fields:
+    message:
+      selector:
+        text:
+    alexa:
+      description: notify-Entities der Echos
+      selector:
+        entity:
+          multiple: true
+          domain: notify
+    speaker:
+      description: normale Media Player
+      selector:
+        entity:
+          multiple: true
+          domain: media_player
+  sequence:
+  - action: chime_tts.say_url
+    response_variable: chime
+    data:
+      message: '{{ message }}'
+      chime_path: airport
+      audio_conversion: Alexa
+      cache: true
+  - parallel:
+    - if:
+      - condition: template
+        value_template: '{{ alexa | default([]) | count > 0 }}'
+      then:
+      - action: notify.send_message
+        target:
+          entity_id: '{{ alexa }}'
+        data:
+          message: <audio src="{{ chime.url }}"/>
+    - if:
+      - condition: template
+        value_template: '{{ speaker | default([]) | count > 0 }}'
+      then:
+      - action: chime_tts.say
+        target:
+          entity_id: '{{ speaker }}'
+        data:
+          message: '{{ message }}'
+          chime_path: airport
