@@ -42,7 +42,8 @@ action:
           then:
             - variables:
                 progress_bar: >-
-                  {% set start = states[repeat.item.entity_id].last_changed %}
+                  {% set st = states[entity] %}
+                  {% set start = st.last_changed if st else None %}
                   {% set total = ((raw_state | as_datetime) - start).total_seconds() %}
                   {% set elapsed = (now() - start).total_seconds() %}
                   {% if total > 0 %}
