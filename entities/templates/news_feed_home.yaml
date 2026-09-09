@@ -4,7 +4,7 @@
     - trigger: state
       entity_id:
         - event.regionalnachrichten_aus_baden_wurttemberg
-        - event.tagesschau_de_die_nachrichten_der_ard
+        - event.tagesschau
   action:
     - alias: Update news array with latest state
       variables:
