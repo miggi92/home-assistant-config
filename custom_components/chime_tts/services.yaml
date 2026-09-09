@@ -45,8 +45,6 @@ say:
   target:
     entity:
       domain: media_player
-      supported_features:
-      - media_player.MediaPlayerEntityFeature.PLAY_MEDIA
   fields:
     chime_path:
       description: A preset or custom audio file to be played before TTS audio
@@ -59,88 +57,62 @@ say:
           mode: dropdown
           multiple: false
           options:
-          - &id001
-            label: Ba-Dum Tss!
+          - label: Airport
+            value: airport
+          - label: Ba-Dum Tss!
             value: ba_dum_tss
-          - &id002
-            label: Bells
+          - label: Bells
             value: bells
-          - &id003
-            label: Bells 2
+          - label: Bells 2
             value: bells_2
-          - &id004
-            label: Bright
+          - label: Bright
             value: bright
-          - &id005
-            label: Chirp
+          - label: Chirp
             value: chirp
-          - &id006
-            label: Choir
+          - label: Choir
             value: choir
-          - &id007
-            label: Chord
+          - label: Chord
             value: chord
-          - &id008
-            label: Classical
+          - label: Classical
             value: classical
-          - &id009
-            label: Crickets
+          - label: Crickets
             value: crickets
-          - &id010
-            label: Ding Dong
+          - label: Ding Dong
             value: ding_dong
-          - &id011
-            label: Drum Roll
+          - label: Doorbell
+            value: doorbell
+          - label: Drum Roll
             value: drumroll
-          - &id012
-            label: Dun dun DUUUN!
+          - label: Dun dun DUUUN!
             value: dun_dun_dun
-          - &id013
-            label: Error
+          - label: Error
             value: error
-          - &id014
-            label: Fanfare
+          - label: Fanfare
             value: fanfare
-          - &id015
-            label: Glockenspiel
+          - label: Glockenspiel
             value: glockenspiel
-          - &id016
-            label: Hail
+          - label: Hail
             value: hail
-          - &id017
-            label: Knock
+          - label: Knock
             value: knock
-          - &id018
-            label: Marimba
+          - label: Marimba
             value: marimba
-          - &id019
-            label: Mario Coin
+          - label: Mario Coin
             value: mario_coin
-          - &id020
-            label: Microphone Tap
+          - label: Microphone Tap
             value: microphone_tap
-          - &id021
-            label: Sad Trombone
+          - label: Sad Trombone
             value: sad_trombone
-          - &id022
-            label: Soft
+          - label: Soft
             value: soft
-          - &id023
-            label: Ta-da!
+          - label: Ta-da!
             value: tada
-          - &id024
-            label: Toast
+          - label: Toast
             value: toast
-          - &id025
-            label: Twenty Four
+          - label: Twenty Four
             value: twenty_four
-          - &id026
-            label: Whistle
+          - label: Whistle
             value: whistle
-          - &id027
-            label: '*** Add a local folder path in the configuration for your own
-              custom chimes ***'
-            value: null
           translation_key: chime_paths
     end_chime_path:
       description: A preset or custom audio file to be played after TTS audio
@@ -153,33 +125,62 @@ say:
           mode: dropdown
           multiple: false
           options:
-          - *id001
-          - *id002
-          - *id003
-          - *id004
-          - *id005
-          - *id006
-          - *id007
-          - *id008
-          - *id009
-          - *id010
-          - *id011
-          - *id012
-          - *id013
-          - *id014
-          - *id015
-          - *id016
-          - *id017
-          - *id018
-          - *id019
-          - *id020
-          - *id021
-          - *id022
-          - *id023
-          - *id024
-          - *id025
-          - *id026
-          - *id027
+          - label: Airport
+            value: airport
+          - label: Ba-Dum Tss!
+            value: ba_dum_tss
+          - label: Bells
+            value: bells
+          - label: Bells 2
+            value: bells_2
+          - label: Bright
+            value: bright
+          - label: Chirp
+            value: chirp
+          - label: Choir
+            value: choir
+          - label: Chord
+            value: chord
+          - label: Classical
+            value: classical
+          - label: Crickets
+            value: crickets
+          - label: Ding Dong
+            value: ding_dong
+          - label: Doorbell
+            value: doorbell
+          - label: Drum Roll
+            value: drumroll
+          - label: Dun dun DUUUN!
+            value: dun_dun_dun
+          - label: Error
+            value: error
+          - label: Fanfare
+            value: fanfare
+          - label: Glockenspiel
+            value: glockenspiel
+          - label: Hail
+            value: hail
+          - label: Knock
+            value: knock
+          - label: Marimba
+            value: marimba
+          - label: Mario Coin
+            value: mario_coin
+          - label: Microphone Tap
+            value: microphone_tap
+          - label: Sad Trombone
+            value: sad_trombone
+          - label: Soft
+            value: soft
+          - label: Ta-da!
+            value: tada
+          - label: Toast
+            value: toast
+          - label: Twenty Four
+            value: twenty_four
+          - label: Whistle
+            value: whistle
           translation_key: chime_paths
     offset:
       description: Adds a delay between audio segments when value > 0, or overlays
@@ -201,6 +202,18 @@ say:
       required: false
       selector:
         number:
+          min: 0
+          mode: box
+          step: 1
+          unit_of_measurement: ms
+    initial_delay:
+      description: Initial delay (in milliseconds) added to the start of the audio
+      example: 100
+      name: Initial Delay
+      required: false
+      selector:
+        number:
+          max: 10000
           min: 0
           mode: box
           step: 1
@@ -234,37 +247,7 @@ say:
           custom_value: true
           mode: dropdown
           multiple: false
-          options:
-          - label: Amazon Polly
-            value: amazon_polly
-          - label: Baidu
-            value: baidu
-          - label: ElevenLabs
-            value: tts.elevenlabs
-          - label: Google Cloud
-            value: google_cloud
-          - label: Google Translate
-            value: google_translate
-          - label: IBM Watson TTS
-            value: watson_tts
-          - label: MaryTTS
-            value: marytts
-          - label: Microsoft Edge TTS
-            value: edge_tts
-          - label: Microsoft Text-to-Speech (TTS)
-            value: microsoft
-          - label: Nabu Casa Cloud TTS
-            value: cloud
-          - label: OpenAI TTS
-            value: openai_tts
-          - label: Pico TTS
-            value: picotts
-          - label: Piper
-            value: tts.piper
-          - label: VoiceRSS
-            value: voicerss
-          - label: Yandex TTS
-            value: yandextts
+          options: []
     tts_speed:
       description: Set the speed of the TTS audio to between 1% and 500% of the original
       example: 125
@@ -290,6 +273,48 @@ say:
           mode: slider
           step: 1
           unit_of_measurement: semitones
+    repeat:
+      description: Number of additional times to play the complete chime and message
+        after the initial play
+      example: 2
+      name: Repeat
+      required: false
+      selector:
+        number:
+          max: 10
+          min: 0
+          mode: box
+          step: 1
+    repeat_delay:
+      description: Delay between repeated chime and message audio segments
+      example: 500
+      name: Repeat Delay
+      required: false
+      selector:
+        number:
+          max: 10000
+          min: 0
+          mode: box
+          step: 10
+          unit_of_measurement: ms
+    pre_script:
+      description: A script entity to run before the audio plays, or YAML containing
+        a script entity and parameter values
+      example: "script: script.front_door\ndata:\n  volume: 0.5"
+      name: Pre-playback Script
+      required: false
+      selector:
+        text:
+          multiline: true
+    post_script:
+      description: A script entity to run after the audio finishes, or YAML containing
+        a script entity and parameter values
+      example: "script: script.front_door\ndata:\n  volume: 0.5"
+      name: Post-playback Script
+      required: false
+      selector:
+        text:
+          multiline: true
     volume_level:
       description: The volume to use when playing audio
       example: 0.75
@@ -331,6 +356,14 @@ say:
       required: false
       selector:
         boolean: null
+    extra:
+      description: Additional media-player data, such as Cast metadata and artwork
+      example: "metadata:\n  metadataType: 3\n  title: Doorbell\n  images:\n    -\
+        \ url: https://example.com/doorbell.jpg"
+      name: Extra Media Data
+      required: false
+      selector:
+        object: null
     fade_audio:
       description: Fade out playing audio during announcement, fade back in when completed
         (on supported devices)
@@ -371,6 +404,7 @@ say:
       required: false
       selector:
         select:
+          custom_value: true
           options:
           - label: com
             value: com
@@ -427,33 +461,62 @@ say_url:
           mode: dropdown
           multiple: false
           options:
-          - *id001
-          - *id002
-          - *id003
-          - *id004
-          - *id005
-          - *id006
-          - *id007
-          - *id008
-          - *id009
-          - *id010
-          - *id011
-          - *id012
-          - *id013
-          - *id014
-          - *id015
-          - *id016
-          - *id017
-          - *id018
-          - *id019
-          - *id020
-          - *id021
-          - *id022
-          - *id023
-          - *id024
-          - *id025
-          - *id026
-          - *id027
+          - label: Airport
+            value: airport
+          - label: Ba-Dum Tss!
+            value: ba_dum_tss
+          - label: Bells
+            value: bells
+          - label: Bells 2
+            value: bells_2
+          - label: Bright
+            value: bright
+          - label: Chirp
+            value: chirp
+          - label: Choir
+            value: choir
+          - label: Chord
+            value: chord
+          - label: Classical
+            value: classical
+          - label: Crickets
+            value: crickets
+          - label: Ding Dong
+            value: ding_dong
+          - label: Doorbell
+            value: doorbell
+          - label: Drum Roll
+            value: drumroll
+          - label: Dun dun DUUUN!
+            value: dun_dun_dun
+          - label: Error
+            value: error
+          - label: Fanfare
+            value: fanfare
+          - label: Glockenspiel
+            value: glockenspiel
+          - label: Hail
+            value: hail
+          - label: Knock
+            value: knock
+          - label: Marimba
+            value: marimba
+          - label: Mario Coin
+            value: mario_coin
+          - label: Microphone Tap
+            value: microphone_tap
+          - label: Sad Trombone
+            value: sad_trombone
+          - label: Soft
+            value: soft
+          - label: Ta-da!
+            value: tada
+          - label: Toast
+            value: toast
+          - label: Twenty Four
+            value: twenty_four
+          - label: Whistle
+            value: whistle
           translation_key: chime_paths
     end_chime_path:
       description: A preset or custom audio file to be played after TTS audio
@@ -466,33 +529,62 @@ say_url:
           mode: dropdown
           multiple: false
           options:
-          - *id001
-          - *id002
-          - *id003
-          - *id004
-          - *id005
-          - *id006
-          - *id007
-          - *id008
-          - *id009
-          - *id010
-          - *id011
-          - *id012
-          - *id013
-          - *id014
-          - *id015
-          - *id016
-          - *id017
-          - *id018
-          - *id019
-          - *id020
-          - *id021
-          - *id022
-          - *id023
-          - *id024
-          - *id025
-          - *id026
-          - *id027
+          - label: Airport
+            value: airport
+          - label: Ba-Dum Tss!
+            value: ba_dum_tss
+          - label: Bells
+            value: bells
+          - label: Bells 2
+            value: bells_2
+          - label: Bright
+            value: bright
+          - label: Chirp
+            value: chirp
+          - label: Choir
+            value: choir
+          - label: Chord
+            value: chord
+          - label: Classical
+            value: classical
+          - label: Crickets
+            value: crickets
+          - label: Ding Dong
+            value: ding_dong
+          - label: Doorbell
+            value: doorbell
+          - label: Drum Roll
+            value: drumroll
+          - label: Dun dun DUUUN!
+            value: dun_dun_dun
+          - label: Error
+            value: error
+          - label: Fanfare
+            value: fanfare
+          - label: Glockenspiel
+            value: glockenspiel
+          - label: Hail
+            value: hail
+          - label: Knock
+            value: knock
+          - label: Marimba
+            value: marimba
+          - label: Mario Coin
+            value: mario_coin
+          - label: Microphone Tap
+            value: microphone_tap
+          - label: Sad Trombone
+            value: sad_trombone
+          - label: Soft
+            value: soft
+          - label: Ta-da!
+            value: tada
+          - label: Toast
+            value: toast
+          - label: Twenty Four
+            value: twenty_four
+          - label: Whistle
+            value: whistle
           translation_key: chime_paths
     offset:
       description: Adds a delay between audio segments when value > 0, or overlays
@@ -514,6 +606,18 @@ say_url:
       required: false
       selector:
         number:
+          min: 0
+          mode: box
+          step: 1
+          unit_of_measurement: ms
+    initial_delay:
+      description: Initial delay (in milliseconds) added to the start of the audio
+      example: 100
+      name: Initial Delay
+      required: false
+      selector:
+        number:
+          max: 10000
           min: 0
           mode: box
           step: 1
@@ -547,37 +651,7 @@ say_url:
           custom_value: true
           mode: dropdown
           multiple: false
-          options:
-          - label: Amazon Polly
-            value: amazon_polly
-          - label: Baidu
-            value: baidu
-          - label: ElevenLabs
-            value: tts.elevenlabs
-          - label: Google Cloud
-            value: google_cloud
-          - label: Google Translate
-            value: google_translate
-          - label: IBM Watson TTS
-            value: watson_tts
-          - label: MaryTTS
-            value: marytts
-          - label: Microsoft Edge TTS
-            value: edge_tts
-          - label: Microsoft Text-to-Speech (TTS)
-            value: microsoft
-          - label: Nabu Casa Cloud TTS
-            value: cloud
-          - label: OpenAI TTS
-            value: openai_tts
-          - label: Pico TTS
-            value: picotts
-          - label: Piper
-            value: tts.piper
-          - label: VoiceRSS
-            value: voicerss
-          - label: Yandex TTS
-            value: yandextts
+          options: []
     tts_speed:
       description: Set the speed of the TTS audio to between 1% and 500% of the original
       example: 125
@@ -603,6 +677,48 @@ say_url:
           mode: slider
           step: 1
           unit_of_measurement: semitones
+    repeat:
+      description: Number of additional times to generate the complete chime and message
+        after the initial copy
+      example: 2
+      name: Repeat
+      required: false
+      selector:
+        number:
+          max: 10
+          min: 0
+          mode: box
+          step: 1
+    repeat_delay:
+      description: Delay between repeated chime and message audio segments
+      example: 500
+      name: Repeat Delay
+      required: false
+      selector:
+        number:
+          max: 10000
+          min: 0
+          mode: box
+          step: 10
+          unit_of_measurement: ms
+    pre_script:
+      description: A script entity to run before the audio is generated, or YAML containing
+        a script entity and parameter values
+      example: "script: script.front_door\ndata:\n  volume: 0.5"
+      name: Pre-generation Script
+      required: false
+      selector:
+        text:
+          multiline: true
+    post_script:
+      description: A script entity to run after the audio is generated, or YAML containing
+        a script entity and parameter values
+      example: "script: script.front_door\ndata:\n  volume: 0.5"
+      name: Post-generation Script
+      required: false
+      selector:
+        text:
+          multiline: true
     cache:
       description: Whether or not to save/reuse the generated audio file in a local
         cache
@@ -630,7 +746,7 @@ say_url:
           translation_key: audio_conversion
     language:
       description: The TTS language (supported by Google Translate, Microsoft Edge
-        TTS and Nabu Casa Cloud TTS)
+        TTS, Amazon Polly and Nabu Casa Cloud TTS)
       example: en
       name: Language
       required: false
@@ -643,6 +759,7 @@ say_url:
       required: false
       selector:
         select:
+          custom_value: true
           options:
           - label: com
             value: com

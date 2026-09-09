@@ -28,6 +28,7 @@ SERVICE_SAY_URL = "say_url"
 OFFSET_KEY = "offset"
 DEFAULT_OFFSET_MS = 450
 CROSSFADE_KEY = "crossfade"
+INITIAL_DELAY_KEY = "initial_delay"
 
 DATA_STORAGE_KEY = "chime_tts_integration_data"
 AUDIO_PATH_KEY = "audio_path" # <-- Deprecated
@@ -62,6 +63,7 @@ WWW_PATH_DEFAULT = "/config/www/chime_tts/"
 MP3_PRESET_PATH = "custom_components/chime_tts/mp3s/"
 MP3_PRESET_PATH_PLACEHOLDER = "mp3_path_placeholder-"  # DEPRECATED
 DEFAULT_CHIME_OPTIONS = [
+    {"label": "Airport", "value": "airport"},
     {"label": "Ba-Dum Tss!", "value": "ba_dum_tss"},
     {"label": "Bells", "value": "bells"},
     {"label": "Bells 2", "value": "bells_2"},
@@ -72,6 +74,7 @@ DEFAULT_CHIME_OPTIONS = [
     {"label": "Classical", "value": "classical"},
     {"label": "Crickets", "value": "crickets"},
     {"label": "Ding Dong", "value": "ding_dong"},
+    {"label": "Doorbell", "value": "doorbell"},
     {"label": "Drum Roll", "value": "drumroll"},
     {"label": "Dun dun DUUUN!", "value": "dun_dun_dun"},
     {"label": "Error", "value": "error"},
@@ -91,6 +94,36 @@ DEFAULT_CHIME_OPTIONS = [
 ]
 MP3_PRESET_CUSTOM_PREFIX = "custom_chime_path_"
 MP3_PRESET_CUSTOM_KEY = "custom_paths"
+CHIME_SETS_KEY = "chime_sets"
+CHIME_OFFSETS_KEY = "chime_offsets"
+# Default start offsets tuned against the bundled Chime TTS audio files.  Chimes
+# not listed here continue to use the integration-wide default offset.
+DEFAULT_CHIME_OFFSETS = {
+    "airport": -540,
+    "ba_dum_tss": -1100,
+    "bells": 0,
+    "bells_2": -250,
+    "bright": 0,
+    "chirp": 0,
+    "choir": -1070,
+    "chord": 0,
+    "classical": -610,
+    "crickets": 0,
+    "ding_dong": -330,
+    "doorbell": -1720,
+    "drumroll": 0,
+    "dun_dun_dun": -590,
+    "error": -410,
+    "glockenspiel": -310,
+    "hail": 0,
+    "sad_trombone": -500,
+    "soft": -2300,
+    "tada": 0,
+    "toast": -420,
+    "twenty_four": -530,
+    "whistle": 0,
+}
+CHIME_SET_PREFIX = "chime_set:"
 QUEUE = "QUEUE"
 QUEUE_STATUS_KEY = "QUEUE_STATUS"
 QUEUE_RUNNING = "QUEUE_RUNNING"
@@ -110,6 +143,14 @@ FALLBACK_TTS_PLATFORM_KEY = "fallback_tts_platform_key"
 DEFAULT_LANGUAGE_KEY = "default_language_key"
 DEFAULT_VOICE_KEY = "default_voice_key"
 DEFAULT_TLD_KEY = "default_tld_key"
+DEFAULT_PRE_SCRIPT_KEY = "default_pre_script_key"
+DEFAULT_POST_SCRIPT_KEY = "default_post_script_key"
+# Deprecated shared setting retained only to migrate existing configurations.
+DEFAULT_SCRIPTS_SHARED_KEY = "default_scripts_shared_key"
+DEFAULT_PRE_SCRIPT_SHARED_KEY = "default_pre_script_shared_key"
+DEFAULT_POST_SCRIPT_SHARED_KEY = "default_post_script_shared_key"
+DEFAULT_PRE_SCRIPT_SAY_URL_KEY = "default_pre_script_say_url_key"
+DEFAULT_POST_SCRIPT_SAY_URL_KEY = "default_post_script_say_url_key"
 
 # FFmpeg Arguments
 FFMPEG_ARGS_ALEXA = "-y -ac 2 -codec:a libmp3lame -b:a 48k -ar 24000 -write_xing 0"
@@ -132,5 +173,8 @@ PICOTTS = "picotts"
 PIPER = "tts.piper"
 VOICE_RSS = "voicerss"
 YANDEX_TTS = "yandextts"
+
+# Platforms verified to pronounce Hebrew niqqud. Any other platform has it stripped.
+NIQQUD_SUPPORTED_TTS_PLATFORMS = [GOOGLE_TRANSLATE]
 
 QUOTE_CHAR_SUBSTITUTE = "🁢"
