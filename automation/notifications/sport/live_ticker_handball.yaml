@@ -8,7 +8,7 @@ trigger:
     entity_id:
       - sensor.sg_heuchelberg_erwachsene_weiblich_live_events
       - sensor.tv_1895_flein_erwachsene_mannlich_live_events
-      - sensor.sensor.sg_heuchelberg_erwachsene_weiblich_2_live_events
+      - sensor.sg_heuchelberg_erwachsene_weiblich_2_live_events
       - sensor.hsg_lauffen_neipperg_erwachsene_mannlich_live_events
 condition:
   - condition: template
