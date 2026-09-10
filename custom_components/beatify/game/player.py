@@ -92,11 +92,34 @@ class PlayerSession:
     # Sudden Death tracking (Issue #827) - CUMULATIVE, NOT reset in reset_round()
     eliminated: bool = False  # True once eliminated; stays out for the rest of the game
     eliminated_round: int | None = None  # Round number the player was eliminated in
+    # #2559 Ghost League: was ein Ausgeschiedener nach seinem Aus noch
+    # zusammenraet. **Bewusst ein eigenes Feld neben `score`** und nicht dessen
+    # Fortschreibung: der #1748-Riegel existiert, damit ein veralteter Client
+    # nicht weiterpunkten kann, und `score` haengt an 45 Stellen im Code. Ein
+    # Geisterpunkt, der dort ankommt, veraendert Rangliste, Sudden-Death-Auswahl
+    # und die gesprochene Ansage — deshalb beruehrt er `score`, `round_scores`,
+    # `streak` und `closest_players` an keiner Stelle.
+    ghost_score: int = 0
+    # Wie viele Runden dieser Geist mitgeraten hat. Nicht ableitbar aus
+    # `eliminated_round`: wer eine Runde aussetzt, spielt sie nicht mit, und die
+    # Best-Ghost-Wertung teilt durch genau diese Zahl.
+    ghost_rounds: int = 0
     # #2578: im Finale-Stechen sitzen alle Nicht-Fuehrenden eine Runde aus. Das
     # lief bisher ueber `eliminated`, weil der Scoring-Skip daran haengt — nur
     # sieht der Fernseher dann sechs Totenkoepfe, obwohl niemand rausgeflogen
     # ist. Ein eigenes Feld trennt „zaehlt diese Runde nicht" von „ist raus".
     playoff_spectator: bool = False
+    # #2746: der Gastgeber hat diesen Gast aus dem laufenden Spiel genommen.
+    # Der dritte Fall neben „ist raus" und „sitzt das Stechen aus", und der
+    # einzige, den ein Mensch entschieden hat statt die Spielregeln. Eigenes
+    # Feld, weil der Fernseher die drei unterschiedlich zeigt: kein Totenkopf
+    # fuer jemanden, der gegangen ist, sondern „sitzt aus".
+    sat_out_by_host: bool = False
+    # #2746: dieser Gast hat auf seinem eigenen Handy „wieder rein" getippt,
+    # waehrend eine Runde laeuft. Wirksam wird das erst zur naechsten Runde —
+    # ein Tipp mitten in einer laufenden Runde wuerde gegen einen Song gewertet,
+    # den er nicht von Anfang an gehoert hat.
+    rejoin_requested: bool = False
     # #2579: die Runde, in der dieser Spieler zuletzt einen Datenfehler gemeldet
     # hat. Ein Report je Spieler und Runde reicht — der Knopf sitzt neben der
     # Aufloesung, und ohne Riegel oeffnet jeder weitere Tipp ein weiteres
@@ -136,8 +159,12 @@ class PlayerSession:
         ``playoff_spectator`` heisst „sitzt dieses Stechen aus" (#2578). Fuer
         die Punktevergabe sind beide gleich; fuer die Anzeige eben nicht, und
         genau daran ist die alte Loesung gescheitert.
+
+        Seit #2746 kommt ``sat_out_by_host`` dazu: vom Gastgeber aus dem
+        laufenden Spiel genommen. Fuer die Punktevergabe wieder derselbe Fall —
+        die Runde wartet nicht auf ihn —, fuer die Anzeige wieder ein eigener.
         """
-        return self.eliminated or self.playoff_spectator
+        return self.eliminated or self.playoff_spectator or self.sat_out_by_host
 
     # #1752: round number a late joiner entered the game in. None for LOBBY joins
     # (and after reset_for_new_game). Used to grant a mid-round joiner one grace
@@ -355,7 +382,14 @@ class PlayerSession:
         # Reset Sudden Death state (Issue #827)
         self.eliminated = False
         self.eliminated_round = None
+        self.ghost_score = 0
+        self.ghost_rounds = 0
         self.playoff_spectator = False
+        # #2746: ein neues Spiel holt jeden zurueck, den der Gastgeber im
+        # vorigen herausgenommen hat. Ohne diese Zeile startet er als
+        # Zuschauer in ein Spiel, das er nie gespielt hat.
+        self.sat_out_by_host = False
+        self.rejoin_requested = False
         self.reported_round = None
         # #1752: clear late-join grace tracking so a rematch/new game never
         # grants a carried-over player Sudden Death grace on a stale round number.

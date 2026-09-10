@@ -707,6 +707,29 @@ class GameState(
             # _score_intro_round independently excludes out-of-play players so
             # survivors' ranks are unaffected.)
             if player.out_of_play:
+                # #2559 Ghost League: ein Ausgeschiedener raet weiter, aber in
+                # seinen EIGENEN Topf. Das ist der einzige Zweig, der einen
+                # out_of_play-Spieler ueberhaupt noch punkten laesst, und er
+                # laeuft ueber `score_ghost_round`, das `score`, `round_scores`,
+                # `streak` und `closest_players` nachweislich nicht anfasst —
+                # genau die Zusage, die der #1748-Riegel gibt.
+                #
+                # Nur Ausgeschiedene, nicht die Zuschauer eines Finale-Stechens:
+                # die sind naechste Runde wieder dabei und haben keine eigene
+                # Liga. Und nur im Sudden-Death-Modus, weil es ausserhalb davon
+                # keine Geister gibt.
+                if (
+                    self.sudden_death_mode
+                    and player.eliminated
+                    and not player.playoff_spectator
+                ):
+                    ScoringService.score_ghost_round(
+                        player,
+                        correct_year=correct_year,
+                        round_start_time=self.round_start_time,
+                        round_duration=self.round_duration,
+                        difficulty=self.difficulty,
+                    )
                 continue
             try:
                 ScoringService.score_player_round(
@@ -1452,7 +1475,14 @@ class GameState(
             # start_round couldn't launch (e.g. it paused / exhausted under us).
             # Drop the active flag; the caller will finalize as usual.
             self._finale_playoff_active = False
-        return started
+            return False
+
+        # #2734: speak it, but only now. The announcement waited a whole issue
+        # for this line to be trustworthy — announcing a playoff that then does
+        # not start is worse than the silence it replaces, and this is the one
+        # branch where that could still happen.
+        await self.announce_finale_playoff(sorted(winner_names))
+        return True
 
     def _schedule_reveal_advance(self) -> None:
         """Schedule the REVEAL vote window or auto-advance task (#1272).

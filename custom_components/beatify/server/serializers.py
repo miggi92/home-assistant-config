@@ -106,6 +106,11 @@ _PLAYER_VISIBLE_ROUND = frozenset(
         "total_rounds",
         "last_round",
         "songs_remaining",
+        # #2559: die Geister-Liga. Fuer JEDEN sichtbar, und das ist der Punkt
+        # der gewaehlten Variante: die Geister sollen etwas zu gewinnen haben,
+        # das der Raum sieht. Sie verraet nichts ueber den laufenden Song — es
+        # sind Punkte vergangener Runden — und beeinflusst das Spiel nicht.
+        "ghost_league",
         "deadline",
         "server_now_ms",
         "seconds_remaining",
@@ -163,6 +168,11 @@ _PLAYER_VISIBLE_REVEAL = frozenset(
         # otherwise looking at what reads like a scoring bug. It reveals nothing
         # about the song: by REVEAL the round is over either way.
         "round_voided",
+        # #2746: who came back to this round. The room is the audience for this
+        # one — a name reappearing on the leaderboard without a word looks like
+        # a scoring bug, and the guest who returned deserves to see their own
+        # return acknowledged rather than only the host's screen knowing.
+        "returned_players",
         "reveal_auto_advance",
         "reveal_started_at",
     }
@@ -205,6 +215,13 @@ ADMIN_ONLY_KEYS: frozenset[str] = frozenset(
         # nobody: the room does not need to be told the host called the song a
         # cover, and nothing has been promised about where the report goes.
         "void_reason",
+        # #2503: whether the encore offer is open, and how many rounds it
+        # would add. The host's decision, and it must not appear on the guests'
+        # phones while it is still being made — a room that has been shown
+        # "five more rounds?" has effectively been asked, and a host who then
+        # declines is overruling twenty people instead of making a call.
+        "encore_available",
+        "encore_rounds",
     }
 )
 

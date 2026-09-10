@@ -155,6 +155,13 @@ class LeaderboardMixin:
                 # Issue #827: Sudden Death
                 "eliminated": player.eliminated,
                 "eliminated_round": player.eliminated_round,
+                # #2746: vom Gastgeber herausgenommen. Rang und Punktestand
+                # bleiben genau, wo sie sind — das Feld faerbt die Zeile und
+                # setzt das Abzeichen „sitzt aus", es rechnet nichts um. Genau
+                # das macht den Griff des Gastgebers vertretbar: die Zeile
+                # bleibt stehen, statt dass der naechste durch eine Entfernung
+                # statt durch einen Tipp aufsteigt.
+                "sat_out_by_host": player.sat_out_by_host,
                 # Issue #2324: the collected row, carried into the END screen —
                 # the one artifact of a finished game worth photographing. A
                 # score vanishes when the game does; this list does not.
@@ -163,3 +170,37 @@ class LeaderboardMixin:
             leaderboard.append(entry)
 
         return leaderboard
+
+    def ghost_league(self) -> list[dict[str, Any]]:
+        """Die zweite Tabelle: wer nach seinem Aus noch weitergeraten hat (#2559).
+
+        Getrennt von :meth:`get_leaderboard` und nicht als Spalte darin — die
+        Rangliste des laufenden Spiels darf einen Geist nicht enthalten, sonst
+        steht er zwischen Lebenden und der Raum liest es als Wertung. Der
+        Fernseher setzt die Liga als eigenen Block darunter, ausdruecklich
+        beschriftet mit „eigene Punkte, kein Einfluss auf das Spiel".
+
+        Sortiert nach Geisterpunkten, bei Gleichstand nach der frueheren
+        Ausscheiderunde: wer laenger Geist war und dieselbe Zahl hat, hat sie
+        muehsamer verdient. ``schnitt`` ist die Zahl, auf die der Best-Ghost-
+        Award geht — roh gewinnt sonst, wer am fruehesten rausflog.
+        """
+        geister = [
+            p
+            for p in self.players.values()
+            if p.eliminated and not p.playoff_spectator and p.ghost_rounds > 0
+        ]
+        geister.sort(
+            key=lambda p: (-p.ghost_score, p.eliminated_round or 0, p.name.lower())
+        )
+        return [
+            {
+                "rank": i + 1,
+                "name": p.name,
+                "ghost_score": p.ghost_score,
+                "ghost_rounds": p.ghost_rounds,
+                "eliminated_round": p.eliminated_round,
+                "schnitt": round(p.ghost_score / p.ghost_rounds, 1),
+            }
+            for i, p in enumerate(geister)
+        ]

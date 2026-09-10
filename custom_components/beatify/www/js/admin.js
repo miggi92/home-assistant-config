@@ -925,6 +925,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('admin-confirm-intro')?.addEventListener('click', function() {
         sendAdminCommand({ type: 'admin', action: 'confirm_intro_splash' });
     });
+    // #2503: five more rounds, scores untouched. No confirmation dialog — the
+    // control already states what it does, and a second tap is the drawn
+    // behaviour for a host who wants ten. The button is hidden again by the
+    // state broadcast that follows, so the disable here only covers the round
+    // trip.
+    document.getElementById('admin-encore-btn')?.addEventListener('click', function(e) {
+        const btn = e.currentTarget;
+        if (btn) btn.disabled = true;
+        sendAdminCommand({ type: 'admin', action: 'extend_rounds' });
+        setTimeout(function() { if (btn) btn.disabled = false; }, 1500);
+    });
     document.getElementById('admin-rematch')?.addEventListener('click', showRematchModal);
     document.getElementById('admin-new-game')?.addEventListener('click', adminDismissGame);
 
@@ -933,6 +944,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         sendAdminCommand({ type: 'admin', action: 'resume_game' });
     });
     document.getElementById('admin-end-game-paused')?.addEventListener('click', endGame);
+
+    // #2746: per-row host controls on the in-game leaderboards.
+    setupSitOutControls();
 
     // End game modal setup (Story 9.10)
     setupEndGameModal();
@@ -1268,6 +1282,75 @@ function showLobbyView(gameData) {
 // ./admin/sections/qr-modal.js (#1589). openQRModal + setupQRModal are imported
 // above; closeQRModal is now internal to that module.
 
+/**
+ * The host's game options, by the names the server knows them under (#2769).
+ *
+ * One source for three callers: the start-game body, the update-lobby push
+ * right before the phase flip, and the push after the wizard finishes. Before
+ * #2769 the derivation below lived inline in the start-game body alone, which
+ * is why the wizard's exit path had no way to send the same values — and why a
+ * lobby game kept the settings the host had just replaced.
+ *
+ * Every key here is a field of the server's GameOptions dataclass (#2635).
+ * That is what lets `GameOptions.patched` overlay them by name instead of
+ * repeating a seventeen-field parse in a second view.
+ */
+function buildGameOptionsPayload() {
+    // #1180: Title & Artist mode replaces the year round, so the year-only
+    // bonuses are suppressed here at payload-build time (NOT by mutating the
+    // stored flags — that would corrupt the host's saved preferences on the
+    // next reload). The in-memory flags remain the host's untouched choices.
+    const rawBonusFlags = {
+        artist_challenge_enabled: adminState.artistChallengeEnabled,  // Story 20.7
+        movie_quiz_enabled: adminState.movieQuizEnabled,  // #947
+        intro_mode_enabled: adminState.introModeEnabled,  // Issue #23
+        closest_wins_mode: adminState.closestWinsModeEnabled  // Issue #442
+    };
+    const bonusFlags = (window.BeatifyTitleArtist && typeof window.BeatifyTitleArtist.applyTitleArtistBonusPrecedence === 'function')
+        ? window.BeatifyTitleArtist.applyTitleArtistBonusPrecedence(rawBonusFlags, adminState.titleArtistModeEnabled)
+        : { ...rawBonusFlags, ...(adminState.titleArtistModeEnabled ? { artist_challenge_enabled: false, closest_wins_mode: false } : {}) };  // #1180: must match YEAR_ROUND_BONUS_KEYS — movie quiz + intro stay ON in TA mode
+
+    // Issue #827 / #1475: Sudden Death and the round count are wizard choices
+    // persisted to beatify_game_settings; the admin submodules hydrate no
+    // adminState field for either, so both are read straight from localStorage.
+    // Defaults are the pre-issue behaviour: no sudden death, all songs.
+    var suddenDeathMode = false;
+    var maxRounds = 0;
+    try {
+        const raw = localStorage.getItem(STORAGE_GAME_SETTINGS);
+        if (raw) {
+            const settings = JSON.parse(raw);
+            if (settings && typeof settings.suddenDeathMode === 'boolean') {
+                suddenDeathMode = settings.suddenDeathMode;
+            }
+            const mr = settings && settings.maxRounds;
+            if (typeof mr === 'number' && Number.isFinite(mr) && mr > 0) {
+                maxRounds = Math.floor(mr);
+            }
+        }
+    } catch (e) { /* private mode / malformed — keep the defaults */ }
+
+    return {
+        round_duration: adminState.selectedDuration,  // Story 13.1
+        max_rounds: maxRounds,  // Issue #1475
+        reveal_auto_advance: adminState.revealAutoAdvance,  // #1012
+        difficulty: adminState.selectedDifficulty,  // Story 14.1
+        provider: adminState.selectedProvider,  // Story 17.2
+        artist_challenge_enabled: bonusFlags.artist_challenge_enabled,  // Story 20.7 (#1180: suppressed in TA mode)
+        movie_quiz_enabled: bonusFlags.movie_quiz_enabled,  // #947 (#1180: suppressed in TA mode)
+        intro_mode_enabled: bonusFlags.intro_mode_enabled,  // Issue #23 (#1180: suppressed in TA mode)
+        closest_wins_mode: bonusFlags.closest_wins_mode,  // Issue #442 (#1180: suppressed in TA mode)
+        sudden_death_mode: suddenDeathMode,  // Issue #827
+        title_artist_mode: adminState.titleArtistModeEnabled,  // #1180
+        rampup_order_enabled: adminState.rampupOrderEnabled,  // Issue #1726
+        finale_double_enabled: adminState.finaleDoubleEnabled,  // Issue #1725
+        finale_tiebreaker_enabled: adminState.finaleTiebreakerEnabled,  // Issue #1725
+        comeback_token_enabled: adminState.comebackTokenEnabled,  // Issue #1724
+        difficulty_bet_scaling_enabled: adminState.difficultyBetScalingEnabled,  // Issue #1727
+        sabotage_enabled: adminState.sabotageEnabled,  // Issue #1665
+    };
+}
+
 // ==========================================
 // Game Control Functions (Story 2.3)
 // ==========================================
@@ -1302,6 +1385,20 @@ async function persistSetupToServer() {
         });
     } catch (e) {
         console.warn('[Beatify] setup persist failed (non-fatal):', e);
+    }
+    // #2769: saved_setup is now current, the open lobby game is not. Pushing
+    // here rather than only at start means /beatify/api/status stops
+    // contradicting itself the moment the wizard closes — the host must not be
+    // able to leave the wizard with a game that disagrees with it. LOBBY-only
+    // and no-op otherwise; the server decides that, not this call.
+    try {
+        await window.BeatifyAuth?.fetch('/beatify/api/game/update-lobby', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_options: buildGameOptionsPayload() }),
+        });
+    } catch (e) {
+        console.warn('[Beatify] lobby option push failed (non-fatal):', e);
     }
 }
 // Exposed so wizard.js can persist the host's picks the moment setup finishes,
@@ -1359,76 +1456,16 @@ async function startGame() {
     }
 
     try {
-        // #1180: Title & Artist mode replaces the year round, so the year-only
-        // bonuses are suppressed here at payload-build time (NOT by mutating the
-        // stored flags — that would corrupt the host's saved preferences on the
-        // next reload). The in-memory flags remain the host's untouched choices.
-        const rawBonusFlags = {
-            artist_challenge_enabled: adminState.artistChallengeEnabled,  // Story 20.7
-            movie_quiz_enabled: adminState.movieQuizEnabled,  // #947
-            intro_mode_enabled: adminState.introModeEnabled,  // Issue #23
-            closest_wins_mode: adminState.closestWinsModeEnabled  // Issue #442
-        };
-        const bonusFlags = (window.BeatifyTitleArtist && typeof window.BeatifyTitleArtist.applyTitleArtistBonusPrecedence === 'function')
-            ? window.BeatifyTitleArtist.applyTitleArtistBonusPrecedence(rawBonusFlags, adminState.titleArtistModeEnabled)
-            : { ...rawBonusFlags, ...(adminState.titleArtistModeEnabled ? { artist_challenge_enabled: false, closest_wins_mode: false } : {}) };  // #1180: must match YEAR_ROUND_BONUS_KEYS — movie quiz + intro stay ON in TA mode
-
-        // Issue #827: Sudden Death is the host's wizard choice, persisted to
-        // beatify_game_settings.suddenDeathMode (mirrors how closestWinsMode is
-        // stored). The admin submodules don't hydrate a dedicated adminState
-        // field for it, so read it straight from localStorage here. Default false.
-        var suddenDeathMode = false;
-        try {
-            var _sdRaw = localStorage.getItem(STORAGE_GAME_SETTINGS);
-            if (_sdRaw) {
-                var _sdSettings = JSON.parse(_sdRaw);
-                if (_sdSettings && typeof _sdSettings.suddenDeathMode === 'boolean') {
-                    suddenDeathMode = _sdSettings.suddenDeathMode;
-                }
-            }
-        } catch (e) { /* private mode / malformed — keep default false */ }
-
-        // #1475: round count. Same situation as suddenDeathMode above — the
-        // wizard owns the setting and adminState has no field for it, so read
-        // it from localStorage. 0 means "all songs", which is the behaviour
-        // every game had before this issue, so it is also the fallback for a
-        // missing, malformed or nonsensical value.
-        var maxRounds = 0;
-        try {
-            var _mrRaw = localStorage.getItem(STORAGE_GAME_SETTINGS);
-            if (_mrRaw) {
-                var _mrSettings = JSON.parse(_mrRaw);
-                var _mr = _mrSettings && _mrSettings.maxRounds;
-                if (typeof _mr === 'number' && Number.isFinite(_mr) && _mr > 0) {
-                    maxRounds = Math.floor(_mr);
-                }
-            }
-        } catch (e) { /* private mode / malformed — keep default 0 (all songs) */ }
+        const gameOptions = buildGameOptionsPayload();
 
         const response = await BeatifyAuth.fetch('/beatify/api/start-game', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                ...gameOptions,
                 playlists: adminState.selectedPlaylists.map(p => p.path),
                 media_player: adminState.selectedMediaPlayer?.entityId,
                 language: adminState.selectedLanguage,
-                round_duration: adminState.selectedDuration,  // Story 13.1
-                max_rounds: maxRounds,  // Issue #1475
-                reveal_auto_advance: adminState.revealAutoAdvance,  // #1012
-                difficulty: adminState.selectedDifficulty,  // Story 14.1
-                provider: adminState.selectedProvider,  // Story 17.2
-                artist_challenge_enabled: bonusFlags.artist_challenge_enabled,  // Story 20.7 (#1180: suppressed in TA mode)
-                movie_quiz_enabled: bonusFlags.movie_quiz_enabled,  // #947 (#1180: suppressed in TA mode)
-                intro_mode_enabled: bonusFlags.intro_mode_enabled,  // Issue #23 (#1180: suppressed in TA mode)
-                closest_wins_mode: bonusFlags.closest_wins_mode,  // Issue #442 (#1180: suppressed in TA mode)
-                sudden_death_mode: suddenDeathMode,  // Issue #827
-                title_artist_mode: adminState.titleArtistModeEnabled,  // #1180
-                rampup_order_enabled: adminState.rampupOrderEnabled,  // Issue #1726
-                finale_double_enabled: adminState.finaleDoubleEnabled,  // Issue #1725
-                finale_tiebreaker_enabled: adminState.finaleTiebreakerEnabled,  // Issue #1725
-                comeback_token_enabled: adminState.comebackTokenEnabled,  // Issue #1724
-                difficulty_bet_scaling_enabled: adminState.difficultyBetScalingEnabled,  // Issue #1727
-                sabotage_enabled: adminState.sabotageEnabled,  // Issue #1665
                 party_lights: partyLightsConfig(),  // Issue #331
                 tts: ttsConfig(),
                 library: (typeof getLibraryConfig === 'function') ? getLibraryConfig() : null,  // Issue #447
@@ -1550,6 +1587,11 @@ async function startGameplay() {
                 media_player: (adminState.selectedMediaPlayer || {}).entityId || null,
                 tts: ttsConfig(),
                 party_lights: partyLightsConfig(),
+                // #2769: the play style, the mode flags and the round count
+                // were frozen at room creation too, and nothing pushed them.
+                // A wizard run between creation and start replaced them in
+                // saved_setup while the lobby kept the old ones.
+                game_options: buildGameOptionsPayload(),
             }),
         });
     } catch (e) { /* never block the start on a failed push */ }
@@ -2869,7 +2911,130 @@ function showAdminPlayingView(data) {
     if (introSplash) introSplash.classList.toggle('hidden', !data.intro_splash_pending);
 
     // Leaderboard (player-style entries)
-    renderAdminLeaderboard(data.leaderboard);
+    // #2746: true = render the host's per-row control. The END screen
+    // below deliberately passes nothing — a finished game has nobody to
+    // take out.
+    adminState.lastLeaderboard = data.leaderboard || [];
+    renderAdminLeaderboard(data.leaderboard, null, true);
+}
+
+/**
+ * The one line the reveal says about a guest who came back (#2746).
+ *
+ * Only the transition, never the state: someone who played the whole round is
+ * not announced. Without it the room watches a name reappear on the
+ * leaderboard and reads it as a scoring bug.
+ */
+function renderReturnedBanner(data) {
+    const box = document.getElementById('admin-reveal-returned');
+    if (!box) return;
+    const names = (data && data.returned_players) || [];
+    box.classList.toggle('hidden', names.length === 0);
+    if (!names.length) return;
+    const text = document.getElementById('admin-reveal-returned-text');
+    if (text) {
+        text.textContent = BeatifyI18n.t('game.returnedLine', { name: names.join(', ') })
+            || (names.join(', ') + ' is back in');
+    }
+}
+
+/**
+ * Take a guest out of the running game, or bring them back (#2746).
+ *
+ * The design gate picked option B: every guest row is removable, connected or
+ * not, in the lobby and in a running game. Both server-side refusals are gone,
+ * so the confirm card below is the only guard there is — which is why it names
+ * the consequence instead of asking a yes/no, and why it says the score stays.
+ * A misplaced tap in a dark room is then recoverable: the guest taps "I'm
+ * back" and keeps their points.
+ *
+ * Delegated from the leaderboard container rather than bound per row, because
+ * the rows are re-rendered on every state broadcast.
+ */
+var _sitOutTarget = null;
+
+function setupSitOutControls() {
+    ['admin-playing-leaderboard-list', 'admin-reveal-leaderboard'].forEach(function(id) {
+        const list = document.getElementById(id);
+        if (!list) return;
+        list.addEventListener('click', function(e) {
+            const btn = e.target.closest ? e.target.closest('.entry-host-action') : null;
+            if (!btn) return;
+            const name = btn.getAttribute('data-player');
+            if (!name) return;
+            if (btn.getAttribute('data-action') === 'reinstate') {
+                // No confirmation: letting someone back in is not the tap that
+                // needs a guard.
+                sendAdminCommand({ type: 'admin', action: 'reinstate_player', player_name: name });
+                return;
+            }
+            openSitOutModal(name);
+        });
+    });
+    document.getElementById('sit-out-cancel-btn')?.addEventListener('click', closeSitOutModal);
+    document.getElementById('sit-out-confirm-btn')?.addEventListener('click', function() {
+        if (_sitOutTarget) {
+            sendAdminCommand({ type: 'admin', action: 'kick_player', player_name: _sitOutTarget });
+        }
+        closeSitOutModal();
+    });
+}
+
+function openSitOutModal(name) {
+    _sitOutTarget = name;
+    const modal = document.getElementById('sit-out-modal');
+    const msg = document.getElementById('sit-out-message');
+    if (msg) {
+        // The score comes from the row the host is looking at, so the card
+        // states the actual number rather than a generic promise.
+        const entry = (adminState.lastLeaderboard || []).find(function(p) { return p.name === name; });
+        msg.textContent = BeatifyI18n.t('admin.sitOutBody', {
+            name: name,
+            score: entry ? entry.score : 0,
+        });
+    }
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeSitOutModal() {
+    _sitOutTarget = null;
+    document.getElementById('sit-out-modal')?.classList.add('hidden');
+}
+
+/**
+ * The encore offer on the reveal before the last round (#2503).
+ *
+ * Four options were drawn; the chosen one asks a round EARLY rather than on
+ * the final reveal, so the last round stays the last one. The window belongs
+ * to this reveal and closes when the next round starts — the server owns that
+ * rule (`encore_available`), this only renders its verdict.
+ *
+ * The button names the number and the hint names the consequence, because the
+ * promise "scores stay" belongs inside the control rather than in a
+ * confirmation dialog after the tap.
+ */
+function renderEncoreOffer(data) {
+    const box = document.getElementById('admin-encore');
+    if (!box) return;
+    const available = !!(data && data.encore_available);
+    box.classList.toggle('hidden', !available);
+    if (!available) return;
+
+    const count = (data.encore_rounds || 5);
+    const label = document.getElementById('admin-encore-label');
+    const hint = document.getElementById('admin-encore-hint');
+    if (label) {
+        label.textContent = BeatifyI18n.t('admin.encoreButton', { count: count })
+            || ('Make it ' + count + ' more');
+    }
+    if (hint) {
+        // The finish line the host would move TO. Computed from the live
+        // total, so a game already extended once says 30 rather than
+        // repeating 25 — the drawn option annotates exactly that case.
+        const total = (data.total_rounds || 0) + count;
+        hint.textContent = BeatifyI18n.t('admin.encoreHint', { total: total })
+            || ('Moves the finish line to ' + total + '. Scores stay.');
+    }
 }
 
 /**
@@ -2964,6 +3129,7 @@ function showAdminRevealView(data) {
 
     // #2646: the host dropped this round instead of scoring it.
     renderVoidedBanner(document, 'admin-reveal-voided', data);
+    renderReturnedBanner(data);
 
     // Show control bar during reveal too (admin can skip, end game)
     var controlBar = document.getElementById('admin-control-bar');
@@ -2986,8 +3152,10 @@ function showAdminRevealView(data) {
         if (guessers.length > 0) {
             avgOff = Math.round(guessers.reduce(function(s, p) { return s + (p.years_off || 0); }, 0) / guessers.length);
         }
-        var emotionText = '';
-        var emotionClass = 'reveal-emotion--wrong';
+        // Ohne Anfangswert: die Kette darunter hat ein `else`, jeder Zweig
+        // setzt beide. Ein Anfangswert waere tot und wird seit eslint 10 als
+        // `no-useless-assignment` gemeldet.
+        var emotionText, emotionClass;
         if (exactCount > 0) {
             emotionText = '🎯 ' + exactCount + 'x ' + (BeatifyI18n.t('reveal.exact') || 'Exact!');
             emotionClass = 'reveal-emotion--exact';
@@ -3011,6 +3179,11 @@ function showAdminRevealView(data) {
     var totalEl = document.getElementById('admin-reveal-total');
     if (roundEl) roundEl.textContent = data.round || '?';
     if (totalEl) totalEl.textContent = data.total_rounds || '?';
+
+    // Encore offer (#2503) — only on the reveal BEFORE the last round.
+    // encore_available is admin-only in the serializer, so a guest socket
+    // never carries it and this block simply stays hidden there.
+    renderEncoreOffer(data);
 
     // Song hero
     if (data.song) {
@@ -3109,7 +3282,11 @@ function showAdminRevealView(data) {
     renderAdminResultCards(data.players, data.closest_wins_mode, data.song ? data.song.year : null);
 
     // Leaderboard (player-style entries)
-    renderAdminLeaderboard(data.leaderboard);
+    // #2746: true = render the host's per-row control. The END screen
+    // below deliberately passes nothing — a finished game has nobody to
+    // take out.
+    adminState.lastLeaderboard = data.leaderboard || [];
+    renderAdminLeaderboard(data.leaderboard, null, true);
 }
 
 /**

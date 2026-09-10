@@ -33,7 +33,10 @@
     "speakerUnavailable": "Der Lautsprecher antwortet nicht — der Gastgeber kümmert sich darum.",
     "gamePaused": "Spiel pausiert. Bitte warten...",
     "redirecting": "Weiterleiten...",
-    "hostCannotLeave": "Der Host kann das Spiel nicht verlassen. Beende das Spiel stattdessen."
+    "hostCannotLeave": "Der Host kann das Spiel nicht verlassen. Beende das Spiel stattdessen.",
+    "imBack": "Ich bin wieder da",
+    "satOutOwn": "Der Gastgeber hat dich aussetzen lassen. Deine Punkte bleiben.",
+    "rejoinPending": "Ab der nächsten Runde wieder dabei"
   },
   "lobby": {
     "gameLobby": "Spiellobby",
@@ -187,7 +190,10 @@
     "pausedLabel": "Pause",
     "pausedClockStopped": "Die Uhr steht — nichts geht verloren",
     "pausedHintHost": "Es geht gleich weiter",
-    "pausedGuessesSaved": "Eure Tipps sind gespeichert"
+    "pausedGuessesSaved": "Eure Tipps sind gespeichert",
+    "satOut": "sitzt aus",
+    "satOutLine": "{name} setzt aus — die Runde geht weiter",
+    "returnedLine": "{name} ist wieder dabei"
   },
   "steal": {
     "available": "Klauen verfügbar!",
@@ -937,7 +943,16 @@
     "voidReasonCover": "Coverversion",
     "voidReasonSilence": "Stille",
     "voidReasonWrongYear": "Falsches Jahr",
-    "voidReasonWrongTitle": "Falscher Titel"
+    "voidReasonWrongTitle": "Falscher Titel",
+    "encoreBadge": "GLEICH DIE LETZTE RUNDE",
+    "encoreButton": "{count} Runden dranhängen",
+    "encoreHint": "Das Ziel rückt auf {total}. Der Punktestand bleibt.",
+    "rematchHint": "Jeder Punktestand zurück auf 0",
+    "sitOutTitle": "Diesen Gast aussetzen lassen?",
+    "sitOutConfirm": "Aussetzen",
+    "sitOutBody": "{name} spielt dieses Spiel nicht weiter und belegt keinen Platz mehr. Die {score} Punkte bleiben.",
+    "sitOutAria": "{name} aussetzen lassen",
+    "bringBack": "Zurückholen"
   },
   "analyticsDashboard": {
     "title": "Beatify Statistik",
@@ -1056,7 +1071,8 @@
     "wakeLockDismiss": "Schließen",
     "reconnecting": "Verbinde erneut…",
     "qrUnavailable": "Scannen nicht möglich – gib die Webadresse unten ein",
-    "joinAddressLabel": "Beitrittsadresse"
+    "joinAddressLabel": "Beitrittsadresse",
+    "stillOpen": "Noch offen"
   },
   "launcher": {
     "title": "Beatify",
@@ -1175,7 +1191,15 @@
     "artists": "Künstler erraten",
     "nearMisses": "knapp daneben",
     "film_buff": "🎬 Filmkenner",
-    "movie_bonus": "Film-Songs"
+    "movie_bonus": "Film-Songs",
+    "best_ghost": "Bester Geist",
+    "ghostAvg": "GP pro Runde",
+    "ghostLeague": "Geister-Liga",
+    "ghostLeagueNote": "eigene Punkte, kein Einfluss auf das Spiel",
+    "ghostOut": "raus in R{round}",
+    "ghostRounds": "{n} Runden",
+    "ghostRound": "1 Runde",
+    "ghostBadge": "GEIST {rank} / {total}"
   },
   "stats": {
     "firstGame": "Erstes Spiel! Maßstab gesetzt",

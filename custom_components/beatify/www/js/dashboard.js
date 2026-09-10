@@ -48,7 +48,7 @@
     // State tracking
     var previousPlayers = [];
     var countdownInterval = null;
-    var lastQRCodeUrl = null;
+    var lastQRCodeUrl = {};
     // Issue #827: dedup key for the full-bleed "OUT" takeover so it only fires
     // once per elimination (re-renders / re-broadcasts of the same REVEAL must
     // not re-trigger it). Format: "<round>:<joined names>".
@@ -206,6 +206,13 @@
      */
     function showView(viewId) {
         utils.showView(allViews, viewId);
+        // #2504: one place decides that the join corner is gone, instead of a
+        // hide call in every view that does not want it. The two views that DO
+        // want it call renderJoinCorner afterwards and switch it back on — the
+        // lobby is deliberately not one of them, it carries its own large code.
+        if (viewId !== 'dashboard-playing' && viewId !== 'dashboard-reveal') {
+            hideJoinCorner();
+        }
     }
 
     /**
@@ -858,16 +865,69 @@
     }
 
     /**
+     * #2504: keep the way in on screen while the game runs.
+     *
+     * The corner is shown during PLAYING and REVEAL and hidden on a rule the
+     * host cannot argue with, because a judgement call here would be a setting
+     * nobody wants to make mid-party:
+     *
+     *   - Sudden Death is armed — whoever joins now is out in the next round.
+     *   - fewer than three songs remain — the average score a latecomer
+     *     inherits cannot carry a game across two rounds.
+     *
+     * Both values ride along in every state broadcast, so this needs no new
+     * server field.
+     *
+     * @param {Object} data - State data
+     */
+    function renderJoinCorner(data) {
+        var el = document.getElementById('dashboard-join-corner');
+        if (!el) return;
+
+        var remaining = data.songs_remaining;
+        var tooLate = (typeof remaining === 'number') && remaining < 3;
+        var show = !!data.join_url && !data.sudden_death_mode && !tooLate;
+
+        el.classList.toggle('hidden', !show);
+        el.setAttribute('aria-hidden', show ? 'false' : 'true');
+        if (!show) return;
+
+        renderQRCode(data.join_url, 'join-corner-qr', 96);
+
+        var urlEl = document.getElementById('join-corner-url');
+        if (urlEl) {
+            // The full address does not fit next to a 96 px code on a TV seen
+            // from the sofa. The path is what a guest types; the host is on the
+            // same network and knows the host part.
+            urlEl.textContent = String(data.join_url).replace(/^https?:\/\/[^/]*/, '\u2026');
+        }
+    }
+
+    /**
+     * #2504: hide the corner outside the two phases that show it.
+     */
+    function hideJoinCorner() {
+        var el = document.getElementById('dashboard-join-corner');
+        if (!el) return;
+        el.classList.add('hidden');
+        el.setAttribute('aria-hidden', 'true');
+    }
+
+    /**
      * Render QR code for joining game
      * @param {string} joinUrl - URL to encode
      */
-    function renderQRCode(joinUrl) {
-        var container = document.getElementById('dashboard-qr-code');
+    function renderQRCode(joinUrl, containerId, size) {
+        var id = containerId || 'dashboard-qr-code';
+        var container = document.getElementById(id);
         if (!container) return;
 
-        // Skip re-render if URL hasn't changed (prevents flicker)
-        if (joinUrl === lastQRCodeUrl) return;
-        lastQRCodeUrl = joinUrl;
+        // Skip re-render if URL hasn't changed (prevents flicker). #2504 added a
+        // second, smaller code in the corner during play, so the guard is kept
+        // per container — one shared variable made the corner render once and
+        // then never again after the lobby had drawn the same URL.
+        if (lastQRCodeUrl[id] === joinUrl) return;
+        lastQRCodeUrl[id] = joinUrl;
 
         // Clear previous
         container.innerHTML = '';
@@ -875,8 +935,8 @@
         if (typeof QRCode !== 'undefined') {
             new QRCode(container, {
                 text: joinUrl,
-                width: 200,
-                height: 200,
+                width: size || 200,
+                height: size || 200,
                 colorDark: '#000000',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.M
@@ -950,6 +1010,8 @@
     function renderPlayingView(data) {
         var song = data.song || {};
         var players = data.players || [];
+
+        renderJoinCorner(data);
 
         // #2554: a stop belongs to the round it happened in.
         lastRenderedRound = data.round;
@@ -1034,6 +1096,7 @@
 
         // Render leaderboard with submission indicators and bet badges
         renderLeaderboard(data.leaderboard || [], players, 'dashboard-leaderboard', true, true);
+        renderGhostLeague(data.ghost_league, 'ghost-league-playing');
 
         // Update round statistics (Story 16.4)
         renderRoundStats(data, players);
@@ -1163,6 +1226,45 @@
      * @param {boolean} showSubmitted - Whether to show submission indicators
      * @param {boolean} showBet - Whether to show bet badges next to names
      */
+    /**
+     * #2559 Ghost League — die zweite Tabelle unter den Lebenden.
+     *
+     * Bewusst NICHT in `renderLeaderboard` eingemischt: ein Geist zwischen
+     * Lebenden liest sich als Wertung, und genau das soll er nicht sein. Die
+     * gewaehlte Variante nimmt die zwei Tabellen auf einem Fernseher in Kauf
+     * und bezahlt sie mit der Zeile „eigene Punkte, kein Einfluss auf das
+     * Spiel" — deshalb steht die im Kopf und nicht als Fussnote.
+     *
+     * Blendet sich aus, solange niemand als Geist geraten hat. Ein Spiel ohne
+     * Sudden Death sieht damit aus wie vorher.
+     */
+    function renderGhostLeague(league, containerId) {
+        var box = document.getElementById(containerId);
+        if (!box) return;
+        var rows = league || [];
+        box.classList.toggle('hidden', rows.length === 0);
+        if (!rows.length) return;
+        var list = box.querySelector('.ghost-league-rows');
+        if (!list) return;
+        list.innerHTML = rows.map(function(g) {
+            // „raus in R2 · 5 Runden" — beides, weil die eine Zahl ohne die
+            // andere nichts sagt: fruehes Aus heisst viele Runden, und der
+            // Award rechnet genau dagegen.
+            var meta = [
+                utils.t('superlatives.ghostOut', { round: g.eliminated_round || '?' }),
+                g.ghost_rounds === 1
+                    ? utils.t('superlatives.ghostRound')
+                    : utils.t('superlatives.ghostRounds', { n: g.ghost_rounds })
+            ].join(' · ');
+            return '<div class="ghost-row">'
+                + '<span class="ghost-rank">' + g.rank + '</span>'
+                + '<span class="ghost-name">' + utils.escapeHtml(g.name) + '</span>'
+                + '<span class="ghost-meta">' + utils.escapeHtml(meta) + '</span>'
+                + '<span class="ghost-score">' + g.ghost_score + ' gp</span>'
+                + '</div>';
+        }).join('');
+    }
+
     function renderLeaderboard(leaderboard, players, containerId, showSubmitted, showBet) {
         var container = document.getElementById(containerId);
         if (!container) return;
@@ -1295,6 +1397,8 @@
         var song = data.song || {};
         var players = data.players || [];
 
+        renderJoinCorner(data);
+
         // Update album art (clear - no blur)
         // #1767: unchanged-src short-circuit (see renderPlayingView). renderRevealView
         // reruns on every changed REVEAL broadcast during vote-heavy phases; skip the
@@ -1351,6 +1455,7 @@
 
         // Render leaderboard with position changes
         renderRevealLeaderboard(data.leaderboard || []);
+        renderGhostLeague(data.ghost_league, 'ghost-league-reveal');
 
         // Issue #827: Sudden-Death — full-bleed "OUT" takeover for this round's
         // eliminations + FINAL banner (2 players left).
@@ -2265,8 +2370,10 @@
         var textEl = container.querySelector('.stats-comparison-text');
 
         // Build comparison text based on performance
-        var icon = '';
-        var text = '';
+        // `cssClass` behaelt seinen Anfangswert — die Zweige haengen nur an.
+        // `icon` und `text` werden in jedem Zweig gesetzt, die Kette endet auf
+        // `else`; ein Anfangswert waere tot (eslint 10, no-useless-assignment).
+        var icon, text;
         var cssClass = 'stats-comparison';
 
         var avg = performance.current_avg.toFixed(1);
@@ -2321,7 +2428,8 @@
 
         var html = '';
         superlatives.forEach(function(award, index) {
-            var valueText = '';
+            // Der switch darunter hat ein `default`, also weist jeder Weg zu.
+            var valueText;
             switch (award.value_label) {
                 case 'avg_time':
                     valueText = award.value + 's ' + utils.t('superlatives.avgTime');
@@ -2337,6 +2445,14 @@
                     break;
                 case 'close_guesses':
                     valueText = award.value + ' ' + utils.t('superlatives.closeGuesses');
+                    break;
+                case 'ghost_avg':
+                    // #2559: die Zahl der Best-Ghost-Karte ist ein Schnitt pro
+                    // gespielter Geisterrunde, keine Summe — die Beschriftung
+                    // muss das sagen, sonst liest sie sich als Gesamtpunkte
+                    // und wirkt gegen die lebenden Zahlen daneben laecherlich
+                    // klein.
+                    valueText = award.value + ' ' + utils.t('superlatives.ghostAvg');
                     break;
                 default:
                     valueText = award.value;

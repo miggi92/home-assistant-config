@@ -287,6 +287,10 @@ class GameStateSerializer:
             state["seconds_remaining"] = max(0, round(gs.deadline / 1000 - gs._now()))
         state["last_round"] = gs.last_round
         state["songs_remaining"] = gs.songs_remaining
+        # #2559 Ghost League: die zweite Tabelle. Leer, solange niemand als
+        # Geist geraten hat — dann zeigt der Fernseher den Block gar nicht, und
+        # ein normales Spiel ohne Sudden Death sieht aus wie vorher.
+        state["ghost_league"] = gs.ghost_league()
         # #2557: the host's volume buttons had no idea what the speaker was set
         # to — volume_changed only comes back in reply to their own tap, so the
         # first press was blind and the at-the-limit guard checked an assumed
@@ -367,6 +371,25 @@ class GameStateSerializer:
         # the host picked; it is shown to nobody but recorded (see void_round).
         state["round_voided"] = gs.round_voided
         state["void_reason"] = gs.void_reason
+        # #2559 Ghost League: die zweite Tabelle. Leer, solange niemand als
+        # Geist geraten hat — dann zeigt der Fernseher den Block gar nicht, und
+        # ein normales Spiel ohne Sudden Death sieht aus wie vorher.
+        state["ghost_league"] = gs.ghost_league()
+        # #2503: the encore offer, open only on the reveal of the
+        # second-to-last round. ADMIN-ONLY (see ADMIN_ONLY_KEYS in
+        # server/serializers.py): a room that has been shown "five more
+        # rounds?" has effectively been asked, and a host who then declines is
+        # overruling twenty people instead of making a call. `encore_rounds`
+        # travels with it so the control names the number instead of hardcoding
+        # a five the reserve may not cover.
+        state["encore_available"] = gs.encore_available()
+        state["encore_rounds"] = gs.ENCORE_ROUNDS
+        # #2746: wer zu dieser Runde zurueckgekommen ist. Eine Zeile auf dem
+        # Fernseher, damit der Raum versteht, warum sich die Rangliste bewegt
+        # hat — ohne sie sieht ein wieder auftauchender Name nach einem
+        # Wertungsfehler aus. Nur der Uebergang wird gemeldet, nicht der
+        # Zustand: wer die ganze Runde dabei war, steht hier nicht.
+        state["returned_players"] = list(getattr(gs, "_returned_this_round", []))
         # Issue #1725: mirror the PLAYING-phase finale flags so the reveal card
         # can keep the "Finale ×2" / playoff badge visible.
         state["finale_double_active"] = gs.finale_double_enabled and gs.last_round
