@@ -25,7 +25,7 @@ importers:
         version: 2.1.0(@types/node@26.4.0)(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)))(unstorage@1.17.5(db0@0.3.4(better-sqlite3@12.11.1))(ioredis@5.11.1(supports-color@10.2.2)))
       '@nuxt/ui':
         specifier: 4.11.1
-        version: 4.11.1(b1f8617c484cb838ae7e5d4f0df4f9f0)
+        version: 4.11.1(4f2c8063e0b17d666f199b5c90adf13c)
       better-sqlite3:
         specifier: ^12.5.0
         version: 12.11.1
@@ -47,10 +47,10 @@ importers:
     devDependencies:
       zod:
         specifier: ^4.1.13
-        version: 4.5.4
+        version: 4.6.1
       zod-to-json-schema:
         specifier: ^3.25.0
-        version: 3.25.2(zod@4.5.4)
+        version: 3.25.2(zod@4.6.1)
 
 packages:
 
@@ -7764,6 +7764,9 @@ packages:
   zod@4.5.4:
     resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
+  zod@4.6.1:
+    resolution: {integrity: sha512-341aRWQsve0rvronKNTqZpjmzdbUDlFuzHaI/XLg/Ej82qffDJRRfBTCuv7+9q/rMjB6LSLyEBnW4InJeMtt/Q==}
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -9658,7 +9661,7 @@ snapshots:
       - vue
       - webpack
 
-  '@nuxt/ui@4.11.1(b1f8617c484cb838ae7e5d4f0df4f9f0)':
+  '@nuxt/ui@4.11.1(4f2c8063e0b17d666f199b5c90adf13c)':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@iconify/vue': 5.0.1(vue@3.5.42(typescript@6.0.3))
@@ -9730,7 +9733,7 @@ snapshots:
       '@nuxt/content': 3.16.0(@oxc-project/types@0.147.0)(better-sqlite3@12.11.1)(esbuild@0.28.2)(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(rollup@4.63.1)(supports-color@10.2.2)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
       ai: 7.0.84(zod@4.5.4)
       vue-router: 5.3.0(@vue/compiler-sfc@3.5.42)(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))(vue@3.5.42(typescript@6.0.3))
-      zod: 4.5.4
+      zod: 4.6.1
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -16960,8 +16963,14 @@ snapshots:
     dependencies:
       zod: 4.5.4
 
+  zod-to-json-schema@3.25.2(zod@4.6.1):
+    dependencies:
+      zod: 4.6.1
+
   zod@3.25.76: {}
 
   zod@4.5.4: {}
+
+  zod@4.6.1: {}
 
   zwitch@2.0.4: {}
