@@ -1,0 +1,32 @@
+---
+# Food warnings
+alias: FoodWarnings
+id: 6c428450-a1aa-4edf-aaa0-8beffe89cfa0
+description: "Benachrichtigt wenn es eine Lebensmittelwarnung gibt."
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.lebensmittelwarnung_baden_wurttemberg_aktuelle_warnung
+    to: "on"
+  - platform: state
+    entity_id: sensor.lebensmittelwarnung_baden_wurttemberg_produktbezeichnung
+
+condition:
+  - condition: state
+    entity_id: input_boolean.holiday_mode
+    state: "off"
+action:
+  - service: script.notify_engine
+    data:
+      title: |
+        ⚠️ Lebensmittelwarnung ⚠️
+      value1: |
+        Produkt: {{ states('sensor.lebensmittelwarnung_baden_wurttemberg_produktbezeichnung') }}
+        Grund: {{ states('sensor.lebensmittelwarnung_baden_wurttemberg_grund') }}
+        Charge: {{ states('sensor.lebensmittelwarnung_baden_wurttemberg_chargennummer') }}
+        Haltbarkeit: {{ states('sensor.lebensmittelwarnung_baden_wurttemberg_haltbarkeit') }}
+        Hersteller: {{ states('sensor.lebensmittelwarnung_baden_wurttemberg_hersteller') }}
+      who: "home"
+      tag_id: "warning"
+      group: "Lebensmittel"
+mode: single
