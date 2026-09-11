@@ -52,33 +52,33 @@ sections:
               - type: custom:decluttering-card
                 template: waste_card_template
                 variables:
-                  - entity: sensor.restmull
+                  - entity: sensor.aussen_home_abfallkalender_restmull
                   - title: Restmüll
                   - max_days: 15
               - type: custom:decluttering-card
                 template: waste_card_template
                 variables:
-                  - entity: sensor.papier
+                  - entity: sensor.aussen_home_abfallkalender_papier
                   - title: Papiertonne
                   - icon_color: blue
               - type: custom:decluttering-card
                 template: waste_card_template
                 variables:
-                  - entity: sensor.gelbe_tonne
+                  - entity: sensor.aussen_home_abfallkalender_gelbe_tonne
                   - title: Gelbe Tonne
                   - icon_color: yellow
                   - max_days: 15
               - type: custom:decluttering-card
                 template: waste_card_template
                 variables:
-                  - entity: sensor.schadstoffe
+                  - entity: sensor.aussen_home_abfallkalender_schadstoffe
                   - title: Schadstoffe
                   - icon_color: orange
                   - max_days: 80
               - type: custom:decluttering-card
                 template: waste_card_template
                 variables:
-                  - entity: sensor.bio
+                  - entity: sensor.aussen_home_abfallkalender_bio
                   - title: Biotonne
                   - icon_color: brown
                   - max_days: 15
