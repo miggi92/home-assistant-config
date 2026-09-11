@@ -28,6 +28,9 @@
       "latest": {
         "name": "Letzte Meldung"
       },
+      "previous": {
+        "name": "Vorherige Meldung"
+      },
       "reason": {
         "name": "Grund"
       },

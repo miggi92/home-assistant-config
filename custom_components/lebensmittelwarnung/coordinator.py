@@ -18,7 +18,7 @@ from .parser import parse_entry
 
 _LOGGER = logging.getLogger(__name__)
 
-MAX_ENTRIES = 20
+MAX_ENTRIES = 10
 
 
 class LebensmittelwarnungCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):

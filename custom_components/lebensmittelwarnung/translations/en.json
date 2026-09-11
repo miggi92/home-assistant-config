@@ -28,6 +28,9 @@
       "latest": {
         "name": "Last Warning"
       },
+      "previous": {
+        "name": "Previous Warning"
+      },
       "reason": {
         "name": "Reason"
       },
