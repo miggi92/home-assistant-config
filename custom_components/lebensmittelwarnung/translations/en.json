@@ -3,61 +3,61 @@
     "step": {
       "user": {
         "title": "Lebensmittelwarnung.de",
-        "description": "Wähle Meldungsart und Bundesland, die du verfolgen möchtest.",
+        "description": "Select the warning type and federal state you want to follow.",
         "data": {
-          "meldungsart": "Meldungsart",
-          "bundesland": "Bundesland"
+          "meldungsart": "Warning Type",
+          "bundesland": "Federal State"
         }
       },
       "reconfigure": {
         "title": "Lebensmittelwarnung.de",
-        "description": "Passe Meldungsart und Bundesland an.",
+        "description": "Adjust the warning type and federal state.",
         "data": {
-          "meldungsart": "Meldungsart",
-          "bundesland": "Bundesland"
+          "meldungsart": "Warning Type",
+          "bundesland": "Federal State"
         }
       }
     },
     "abort": {
-      "already_configured": "Diese Kombination aus Meldungsart und Bundesland ist bereits eingerichtet.",
-      "reconfigure_successful": "Die Einstellungen wurden aktualisiert."
+      "already_configured": "This combination of warning type and federal state is already configured.",
+      "reconfigure_successful": "Settings updated successfully."
     }
   },
   "entity": {
     "sensor": {
       "latest": {
-        "name": "Letzte Meldung"
+        "name": "Last Warning"
       },
       "reason": {
-        "name": "Grund"
+        "name": "Reason"
       },
       "batch": {
-        "name": "Chargennummer"
+        "name": "Batch Number"
       },
       "expiry": {
-        "name": "Haltbarkeit"
+        "name": "Expiring date"
       },
       "product": {
-        "name": "Produktbezeichnung"
+        "name": "Product Name"
       },
       "manufacturer": {
-        "name": "Hersteller"
+        "name": "Manufacturer"
       },
       "count": {
-        "name": "Anzahl Meldungen"
+        "name": "Number of Warnings"
       },
       "published": {
-        "name": "Veröffentlicht"
+        "name": "Published"
       }
     },
     "image": {
       "product_image": {
-        "name": "Produktbild"
+        "name": "Product Image"
       }
     },
     "binary_sensor": {
       "recent_warning": {
-        "name": "Aktuelle Warnung"
+        "name": "Recent Warning"
       }
     }
   }

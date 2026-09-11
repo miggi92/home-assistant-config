@@ -76,7 +76,11 @@ class LmwImage(LmwEntity, ImageEntity):
                     url, headers={"User-Agent": USER_AGENT}
                 )
                 response.raise_for_status()
-                content_type = response.headers.get("Content-Type", "")
+                # aiohttp trennt den MIME-Type sauber vom charset-Parameter.
+                # Der rohe Content-Type-Header (z.B. "image/jpeg; charset=UTF-8")
+                # lässt sich nicht direkt an web.Response übergeben - das lehnt
+                # ein charset im content_type-Argument mit ValueError ab.
+                content_type = response.content_type
                 data = await response.read()
             except Exception as err:  # noqa: BLE001
                 _LOGGER.debug(
