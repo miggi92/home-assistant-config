@@ -61,8 +61,8 @@ sections:
       - type: conditional
         conditions:
           - condition: state
-            entity: sensor.team_tracker_fifa_wm
-            state_not: "NOT_FOUND"
+            entity: binary_sensor.fifa_wm_aktiv
+            state: "on"
         card:
           type: custom:teamtracker-card
           entity: sensor.team_tracker_fifa_wm
