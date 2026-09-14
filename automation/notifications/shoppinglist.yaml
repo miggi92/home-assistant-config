@@ -3,11 +3,10 @@ alias: "Einkaufsbenachrichtigung"
 id: 9c0cb04f-09bc-49f6-a9d8-e5ec3ff73f2b
 description: Einkaufsbenachrichtigung
 trigger:
-  - platform: state
-    entity_id:
-      - zone.rewe
-      - zone.kaufland
-    from: "0"
+  - platform: template
+    value_template: >
+      {{ expand(label_entities('einkauf'))
+        | map(attribute='state') | map('int', 0) | sum > 0 }}
     for:
       hours: 0
       minutes: 3
