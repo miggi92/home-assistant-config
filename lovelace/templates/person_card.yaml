@@ -214,8 +214,8 @@ person_card_template:
                       chips:
                         - type: template
                           content: Bei Silke
-                          icon: mdi:human-female-child
-                          icon_color: "{{ 'purple' if is_state('input_select.[[dummy]]_person_sync', 'silke') else 'disabled' }}"
+                          icon: mdi:human-female-boy
+                          icon_color: "{{ 'purple' if is_state('input_select.[[dummy]]_person_sync', 'silke') else 'grey' }}"
                           tap_action:
                             action: perform-action
                             perform_action: script.change_dummy_locations
@@ -225,7 +225,7 @@ person_card_template:
                         - type: template
                           content: Bei Miguel
                           icon: mdi:human-male-child
-                          icon_color: "{{ 'blue' if is_state('input_select.[[dummy]]_person_sync', 'miguel') else 'disabled' }}"
+                          icon_color: "{{ 'blue' if is_state('input_select.[[dummy]]_person_sync', 'miguel') else 'grey' }}"
                           tap_action:
                             action: perform-action
                             perform_action: script.change_dummy_locations
