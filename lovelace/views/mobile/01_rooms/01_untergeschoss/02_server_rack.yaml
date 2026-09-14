@@ -18,6 +18,13 @@ sections:
           - icon: mdi:server-network
           - nav_path: proxmox
           - icon_color: orange
+      - type: custom:decluttering-card
+        template: navigation_card_template
+        variables:
+          - title: KI
+          - icon: mdi:robot-happy
+          - nav_path: ai
+          - icon_color: yellow
   - type: grid
     cards:
       - type: "custom:auto-entities"
