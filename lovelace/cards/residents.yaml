@@ -20,7 +20,7 @@ cards:
           {"id": "person.silke", "vars": [{"title": "Silke Info"}, {"entity": "person.silke"}, {"work_zone": "zone.work_silke"}, {"eta_work": "sensor.silke_eta_work"}, {"eta_home": "sensor.silke_eta_home"}, {"phone": "pixel_10_pro"}, {"watch": "silke_uhr"}, {"id": "silke"}, {"beacon": "sensor.ibeacon_pixel_10_pro_area"}]},
           {"id": "person.milo_carlos", "vars": [{"title": "Milo Info"}, {"entity": "person.milo_carlos"}, {"id": "milo_carlos"}, {"work_zone": "zone.kita"}, {"dummy": "milo"}]},
           {"id": "person.finn_manuel", "vars": [{"title": "Finn Info"}, {"entity": "person.finn_manuel"}, {"id": "finn_manuel"}, {"work_zone": "zone.kita"}, {"dummy": "finn"}]},
-          {"id": "person.maja", "vars": [{"title": "Maja Info"}, {"entity": "person.maja"}, {"id": "maja"}, {"work_zone": "zone.home"}, {"korbchen": "binary_sensor.maja_korbchen_occupancy"}, {"dummy": "maja"}]}
+          {"id": "person.maja", "vars": [{"title": "Maja Info"}, {"entity": "person.maja"}, {"id": "maja"}, {"work_zone": "zone.tierarzt"}, {"korbchen": "binary_sensor.maja_korbchen_occupancy"}, {"dummy": "maja"}]}
         ] %}
         {% set ns = namespace(home=[], away=[]) %}
         {% for p in persons %}
