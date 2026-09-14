@@ -430,6 +430,8 @@
     "roundsPlayed": "Gespeelde Rondes",
     "betsWon": "Gewonnen Inzetten",
     "fullRankings": "Volledige Ranglijst",
+    "momentKicker": "Het spel kantelde in ronde {round}",
+    "momentVerb": "passeert",
     "nextTitle": "Wat nu?",
     "nextJustPlayed": "net gespeeld",
     "nextSongCount": "{count} nummers",
@@ -1072,7 +1074,12 @@
     "reconnecting": "Opnieuw verbinden…",
     "qrUnavailable": "Scannen niet beschikbaar – voer het webadres hieronder in",
     "joinAddressLabel": "Deelnameadres",
-    "stillOpen": "Nog open"
+    "stillOpen": "Nog open",
+    "guessAxisTitle": "Zo gokte de kamer",
+    "guessAxisNoGuess": "Geen gok",
+    "guessAxisYearsOff": "{count} jaar ernaast",
+    "guessAxisYearsOffOne": "1 jaar ernaast",
+    "standingsMore": "+ {count} meer"
   },
   "launcher": {
     "title": "Beatify",

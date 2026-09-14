@@ -430,6 +430,8 @@
     "roundsPlayed": "Rounds Played",
     "betsWon": "Bets Won",
     "fullRankings": "Full Rankings",
+    "momentKicker": "The game turned in round {round}",
+    "momentVerb": "overtakes",
     "nextTitle": "What's next?",
     "nextJustPlayed": "just played",
     "nextSongCount": "{count} songs",
@@ -1072,7 +1074,12 @@
     "reconnecting": "Reconnecting…",
     "qrUnavailable": "Scan unavailable — enter the web address below",
     "joinAddressLabel": "Join address",
-    "stillOpen": "Still open"
+    "stillOpen": "Still open",
+    "guessAxisTitle": "How the room guessed",
+    "guessAxisNoGuess": "No guess",
+    "guessAxisYearsOff": "{count} years off",
+    "guessAxisYearsOffOne": "1 year off",
+    "standingsMore": "+ {count} more"
   },
   "launcher": {
     "title": "Beatify",

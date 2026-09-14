@@ -2,7 +2,7 @@ import logging
 import re
 from datetime import datetime
 
-import requests
+from curl_cffi import requests
 from waste_collection_schedule import Collection, Icons  # type: ignore[attr-defined]
 
 # Currently, Montreal does not offer an iCal/Webcal subscription method.
@@ -13,6 +13,7 @@ from waste_collection_schedule import Collection, Icons  # type: ignore[attr-def
 TITLE = "Montreal (QC)"
 DESCRIPTION = "Source script for montreal.ca/info-collectes"
 URL = "https://montreal.ca/info-collectes"
+COUNTRY = "ca"
 TEST_CASES = {
     "Lasalle": {"sector": "LSL4"},
     "Mercier-Hochelaga": {
@@ -100,6 +101,36 @@ MONTH_PATTERN = r"\b(?:January|February|March|April|May|June|July|August|Septemb
 FOOD_INCLUDED_IN_GREEN_PATTERN = re.compile(
     r"included in the collection of organic waste", re.IGNORECASE
 )
+
+# Biweekly seasons are written as "every two weeks", "every second week" or
+# "once every two weeks". The substring "week" also matches the weekly branch
+# below, so these lines have to be recognised and excluded from it explicitly.
+BIWEEKLY_PATTERN = re.compile(r"every\s+(?:two|second|other|2)\s+weeks?", re.IGNORECASE)
+
+# A sector that enumerates collection days across several months has
+# published a schedule, not prose that happens to mention a date. Such a
+# message must not take the whole-year weekday expansion, which would
+# invent a collection on every remaining weekday of the year.
+#
+# Counted over the hyphen-delimited body only, because that is what the
+# date parser actually reads. A message whose dates sit ahead of the first
+# hyphen would otherwise be handed to a parser that cannot see them, and
+# would yield nothing at all.
+EXPLICIT_DATE_LIST_MIN_MONTHS = 4
+MONTH_WITH_DAY_PATTERN = re.compile(
+    rf"\b({'|'.join(MONTHS)})\s+\d{{1,2}}\b", re.IGNORECASE
+)
+
+
+def enumerates_dates_across_months(schedule_message):
+    """Whether the parsed body lists days in several distinct months."""
+    months = {
+        match.group(1).lower()
+        for line in schedule_message.split("-")[1:]
+        for match in MONTH_WITH_DAY_PATTERN.finditer(line)
+    }
+    return len(months) >= EXPLICIT_DATE_LIST_MIN_MONTHS
+
 
 LOGGER = logging.getLogger(__name__)
 HOW_TO_GET_ARGUMENTS_DESCRIPTION = {
@@ -205,7 +236,7 @@ class Source:
         # These happens weekly
         if not re.search(
             r"(?:every\s+(?:.*)week|of the month)", schedule_message, re.IGNORECASE
-        ):
+        ) and not enumerates_dates_across_months(schedule_message):
             # Iterate through each month and day, and handle the "out of range" error
             for month in range(1, 13):
                 for day in range(1, 32):
@@ -240,6 +271,7 @@ class Source:
             month_stop = 12
             day_start = 1
             day_stop = 31
+            within_dates = False
             # There could be seasonal schedules, every week, every other week or specific dates
             if re.match(r".*[fF]rom (.*) to (.*)", line):
                 date_range = re.match(r".*[fF]rom (.*) to (.*)", line)
@@ -251,10 +283,9 @@ class Source:
                     if re.search(rf"{month}", date_range_stop, re.IGNORECASE):
                         month_stop = month_id
                 if re.search(r"\d+", date_range_start):
-                    day_start = int(re.match(r".*(\d+).*", date_range_start).group(1))
+                    day_start = int(re.search(r"(\d+)", date_range_start).group(1))
                 if re.search(r"\d+", date_range_stop):
                     day_stop = int(re.search(r"\d+(?!.*\d+)", date_range_stop).group(0))
-                within_dates = False
             elif re.match(r"(.*\d+.*){1,}", line):
                 # Multiple dates ?
                 dates_defined = True
@@ -267,7 +298,9 @@ class Source:
                     continue
                 if dates_defined and month not in months_found:
                     continue
-                if re.search("(every )?week(ly)?", line):
+                if re.search(
+                    "(every )?week(ly)?", line
+                ) and not BIWEEKLY_PATTERN.search(line):
                     for day in range(1, 32):
                         try:
                             if (
@@ -278,7 +311,7 @@ class Source:
                                 within_dates = True
                             if (
                                 within_dates
-                                and day_stop >= day
+                                and day > day_stop
                                 and month_stop == month_id
                             ):
                                 within_dates = False
@@ -299,25 +332,46 @@ class Source:
                 line = line.replace("*", "")
 
                 try:
-                    days_in_month = re.search(
-                        rf"\b{month}(.*){MONTH_PATTERN}", line, re.IGNORECASE
+                    # Capture only up to the next month name (non-greedy),
+                    # otherwise a month inherits the day numbers of every
+                    # later month on the same line. An explicit year right
+                    # after the month name is skipped so it is not mistaken
+                    # for a day number.
+                    days_in_month_match = re.search(
+                        rf"\b{month}\b(?:\s+{year})?(.*?)(?={MONTH_PATTERN}|$)",
+                        line,
+                        re.IGNORECASE | re.MULTILINE,
                     )
-                    if not days_in_month:
-                        days_in_month = re.search(
-                            rf"(?:\s*{month} {year})(.*)", line, re.IGNORECASE
-                        ).group(1)
-                    else:
-                        days_in_month = days_in_month.group(1)
+                    if not days_in_month_match:
+                        continue
+                    days_in_month = days_in_month_match.group(1)
 
-                    days_in_month = re.split(r", | and ", days_in_month)
-                    days_in_month = [
-                        part.lstrip().split(" ")[0] for part in days_in_month
-                    ]
-
-                    # Converting the extracted strings to integers
-                    days_numbers = [
-                        int(num) for num in days_in_month if num.isnumeric()
-                    ]
+                    # Treat an Oxford comma as one separator. Splitting on
+                    # ", " first leaves "and 29" as a token in "1, 15, and
+                    # 29", and the day is then dropped as non-numeric.
+                    days_in_month = re.split(
+                        r",\s*and\s+|,\s*|\s+and\s+", days_in_month
+                    )
+                    # A day list is a contiguous run of bare numbers.
+                    # A token that carries words after its number is the
+                    # end of the list: on sectors that continue in prose
+                    # on the same line, reading on takes the clock times
+                    # in "between 7 p.m. and 7 a.m." for days of the
+                    # month. Leading non-numeric tokens are skipped
+                    # rather than ending the list, because it can open
+                    # with an ordinal ("July 1st, 15, and 29") that is
+                    # not parsed as a day but must not discard the rest.
+                    days_numbers = []
+                    for part in days_in_month:
+                        token = part.strip()
+                        day_match = re.match(r"(\d{1,2})\b", token)
+                        if not day_match:
+                            if days_numbers:
+                                break
+                            continue
+                        days_numbers.append(int(day_match.group(1)))
+                        if token != day_match.group(1):
+                            break
 
                     for day in days_numbers:
                         date = datetime(year, MONTHS[month], day)
@@ -362,7 +416,7 @@ class Source:
         if source_type == "Green" and self._green_features is not None:
             features = self._green_features
         else:
-            r = requests.get(url, timeout=60)
+            r = requests.get(url, timeout=60, impersonate="chrome")
             r.raise_for_status()
 
             schedule = r.json()

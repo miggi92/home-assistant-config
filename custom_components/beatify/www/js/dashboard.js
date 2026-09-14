@@ -161,8 +161,17 @@
             if (!el || prevSig[row.key] !== row.html) {
                 var tmp = document.createElement('div');
                 tmp.innerHTML = row.html;
-                el = tmp.firstElementChild;
-                if (el) el.setAttribute('data-row-key', row.key);
+                var fresh = tmp.firstElementChild;
+                if (fresh) fresh.setAttribute('data-row-key', row.key);
+                // #2820: swap the stale node out. Leaving it in place kept two
+                // children with the same key — the cleanup pass below only drops
+                // keys that are no longer desired — so every changed row showed
+                // up twice on the TV.
+                if (el) {
+                    if (fresh) container.replaceChild(fresh, el);
+                    else container.removeChild(el);
+                }
+                el = fresh;
             }
             if (el) { newSig[row.key] = row.html; desired.push(el); }
         });
@@ -890,6 +899,9 @@
 
         el.classList.toggle('hidden', !show);
         el.setAttribute('aria-hidden', show ? 'false' : 'true');
+        // #2833/#2834: the corner is fixed and paints over what lies beneath;
+        // the stylesheet keeps its footprint free while this class is on.
+        if (document.body) document.body.classList.toggle('join-corner-open', show);
         if (!show) return;
 
         renderQRCode(data.join_url, 'join-corner-qr', 96);
@@ -907,6 +919,7 @@
      * #2504: hide the corner outside the two phases that show it.
      */
     function hideJoinCorner() {
+        if (document.body) document.body.classList.remove('join-corner-open');
         var el = document.getElementById('dashboard-join-corner');
         if (!el) return;
         el.classList.add('hidden');
@@ -1450,11 +1463,20 @@
         // Render fun fact (Story 16.4)
         renderFunFact(song);
 
-        // Render top 3 guesses this round (AC 10.4.4)
+        // #2502: in year mode the lower band becomes the guess axis and the
+        // top-three strip goes. Title & Artist mode and a voided round keep the
+        // layout they had — neither has a year to put guesses against.
+        var axisMode = !taMode && !data.round_voided && parseInt(song.year, 10) > 0;
+        var revealRoot = document.getElementById('dashboard-reveal');
+        if (revealRoot) revealRoot.classList.toggle('reveal-axis-mode', axisMode);
+        placeRevealFunFact(axisMode);
+
+        // Render top 3 guesses this round (AC 10.4.4) — hidden by CSS in axis mode
         renderTopGuesses(players);
 
         // Render leaderboard with position changes
         renderRevealLeaderboard(data.leaderboard || []);
+        renderStandingsMore((data.leaderboard || []).length, axisMode);
         renderGhostLeague(data.ghost_league, 'ghost-league-reveal');
 
         // Issue #827: Sudden-Death — full-bleed "OUT" takeover for this round's
@@ -1482,6 +1504,11 @@
 
         // Render motivational message (Story 14.4)
         renderMotivationalMessage(data.game_performance);
+
+        // #2502 / #2833: the axis sizes its rows from the band's height, so it
+        // is drawn after every banner that can push the band down. Still before
+        // the staging below, which picks up its dots as beat two.
+        renderGuessAxis(data, axisMode);
 
         // #1185: Auto-advance countdown ring (Phone reveal already shows one;
         // TV dashboard didn't until @Dtrieb asked for it).
@@ -2140,6 +2167,417 @@
         container.innerHTML = html;
     }
 
+    // ============================================
+    // #2502: the room's guess spread on the TV
+    // ============================================
+    //
+    // Design Variant A ("the axis as the stage"): in year mode the lower band
+    // becomes a full-width year axis, the big year sits above its own position,
+    // and every guest is a dot labelled with two-letter initials. It replaces
+    // the top-three strip, which showed three guests and hid the one who was
+    // twenty years out — the moment the room actually wants to see.
+    //
+    // The geometry is split into two pure functions (no DOM, no globals) so the
+    // decisions — initials, stacking, "+N", range clamping, the farthest span —
+    // are unit-tested on the bytes that ship (__tests__/dashboard-guess-axis-2502).
+
+    /**
+     * Two-letter initials for every name, unique within the list.
+     *
+     * First + last word initial for multi-word names ("Anna Berg" → AB), the
+     * first two letters otherwise ("Lena" → LE). A collision is resolved in
+     * name order, so the result does not depend on payload order: the first
+     * name keeps its initials, the next tries its first letter with each later
+     * letter ("Michael" after "Mia" → MC), and only then a digit ("MI2").
+     * @param {Array<string>} names
+     * @returns {Object<string, string>} name → initials
+     */
+    function guessAxisInitials(names) {
+        var LETTER = /[\p{L}\p{N}]/u;
+        var taken = {};
+        var result = {};
+        var order = (names || []).map(function(n) { return String(n == null ? '' : n); })
+            .sort(function(a, b) { return a < b ? -1 : (a > b ? 1 : 0); });
+        order.forEach(function(name) {
+            if (Object.prototype.hasOwnProperty.call(result, name)) return;
+            var letters = function(s) {
+                return Array.from(s).filter(function(ch) { return LETTER.test(ch); });
+            };
+            var chars = letters(name);
+            if (chars.length === 0) chars = ['?'];
+            var words = name.trim().split(/\s+/).map(letters)
+                .filter(function(w) { return w.length > 0; });
+            var primary = words.length >= 2
+                ? words[0][0] + words[words.length - 1][0]
+                : chars[0] + (chars[1] || '');
+            var candidates = [primary];
+            for (var k = 1; k < chars.length; k++) candidates.push(chars[0] + chars[k]);
+            var pick = null;
+            for (var c = 0; c < candidates.length && pick === null; c++) {
+                var up = candidates[c].toUpperCase();
+                if (!taken[up]) pick = up;
+            }
+            for (var d = 2; pick === null; d++) {
+                var withDigit = primary.toUpperCase() + d;
+                if (!taken[withDigit]) pick = withDigit;
+            }
+            taken[pick] = true;
+            result[name] = pick;
+        });
+        return result;
+    }
+
+    /**
+     * Lay out the guess axis in pixels.
+     *
+     * - Range: the correct year and every guess within ±30 years, padded by a
+     *   year and snapped outwards to five-year steps, never narrower than 20
+     *   years. A guess further out than 30 years does not stretch the scale —
+     *   it sits at a broken edge of the axis instead.
+     * - Dots: 64 px up to ten guesses, 52 px above. Each dot sits at its exact
+     *   year; where it would touch a neighbour it drops a row (identical years
+     *   therefore stack). At most five rows; whatever would need a sixth folds
+     *   into the fifth-row dot below it, which becomes "+N".
+     * - Span: a dashed line from the correct year to the farthest guess, shown
+     *   when it is long enough to carry its label; the full name joins it when
+     *   the guess is ten or more years off.
+     *
+     * @param {Array<{name:string, guess:number, years_off:number, round_score:number}>} guesses
+     * @param {number} correctYear
+     * @param {number} width - plot width in px
+     * @param {{missed?: Array<string>, spanLabelChars?: number}} [opts]
+     * @returns {Object} layout
+     */
+    function layoutGuessAxis(guesses, correctYear, width, opts) {
+        opts = opts || {};
+        var W = width > 0 ? width : 1620;
+        var OUTLIER_YEARS = 30;
+        var MIN_SPAN = 20;
+        var MAX_ROWS = 5;
+        var BREAK_GAP = 90;      // room at a broken edge for the break mark
+        var YEAR_HALF = 190;     // half the width of the 150 px year
+        var LABEL_CLEAR = 210;   // tick labels this close to the year would sit under it
+        var NAME_ROW_LIMIT = MAX_ROWS;
+        var ROW0 = 284;          // --guess-axis-row0 in dashboard.css: centre of the first row
+        var BOTTOM_CLEAR = 8;    // the last row keeps this much band below it
+        var MIN_SIZE = 40;
+
+        var list = (guesses || []).filter(function(g) {
+            return g && typeof g.guess === 'number' && isFinite(g.guess);
+        });
+        var size = opts.size > 0 ? opts.size : (list.length <= 10 ? 64 : 52);
+        var minDx = size + 4;
+        var missed = opts.missed || [];
+        var initials = guessAxisInitials(list.map(function(g) { return g.name; }).concat(missed));
+
+        var lo = correctYear;
+        var hi = correctYear;
+        var brokenLow = false;
+        var brokenHigh = false;
+        list.forEach(function(g) {
+            var delta = g.guess - correctYear;
+            if (delta < -OUTLIER_YEARS) brokenLow = true;
+            else if (delta > OUTLIER_YEARS) brokenHigh = true;
+            else {
+                lo = Math.min(lo, g.guess);
+                hi = Math.max(hi, g.guess);
+            }
+        });
+        var min = Math.floor((lo - 1) / 5) * 5;
+        var max = Math.ceil((hi + 1) / 5) * 5;
+        while (max - min < MIN_SPAN) {
+            if (correctYear - min <= max - correctYear) min -= 5;
+            else max += 5;
+        }
+        var x0 = brokenLow ? BREAK_GAP : 0;
+        var x1 = brokenHigh ? W - BREAK_GAP : W;
+        var xOf = function(year) {
+            if (year - correctYear < -OUTLIER_YEARS) return 0;
+            if (year - correctYear > OUTLIER_YEARS) return W;
+            return x0 + (year - min) / (max - min) * (x1 - x0);
+        };
+
+        var correctX = xOf(correctYear);
+        var yearX = Math.min(Math.max(correctX, YEAR_HALF - 70), W + 70 - YEAR_HALF);
+
+        var step = (max - min) > 40 ? 10 : 5;
+        var ticks = [];
+        for (var ty = Math.ceil(min / step) * step; ty <= max; ty += step) {
+            var tx = xOf(ty);
+            ticks.push({ year: ty, x: tx, label: Math.abs(tx - yearX) >= LABEL_CLEAR });
+        }
+
+        var byName = function(a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); };
+        var items = list.map(function(g) {
+            var off = typeof g.years_off === 'number' ? g.years_off : Math.abs(g.guess - correctYear);
+            return {
+                name: g.name,
+                initials: initials[String(g.name == null ? '' : g.name)],
+                guess: g.guess,
+                yearsOff: off,
+                x: xOf(g.guess),
+                kind: off === 0 ? 'exact' : ((g.round_score || 0) > 0 ? 'near' : 'off'),
+                row: 0,
+                folded: 0
+            };
+        }).sort(function(a, b) { return (a.x - b.x) || byName(a, b); });
+
+        var rows = [];
+        items.forEach(function(it) {
+            for (var r = 0; ; r++) {
+                if (!rows[r]) rows[r] = [];
+                var clear = rows[r].every(function(o) { return Math.abs(o.x - it.x) >= minDx; });
+                if (clear) {
+                    rows[r].push(it);
+                    it.row = r;
+                    return;
+                }
+            }
+        });
+        // #2833: the rows were sized from the width alone. A 1080 p band is
+        // shorter than five 64 px rows once a banner sits above it, and the
+        // fifth row is where "+N" counts the hidden guesses. Shrink the dots
+        // until the last row fits the band. Smaller dots only ever stack into
+        // fewer rows, so one pass is enough.
+        var usedRows = Math.min(rows.length, MAX_ROWS);
+        if (!(opts.size > 0) && opts.height > 0 && usedRows > 1) {
+            var fit = Math.floor((opts.height - ROW0 - BOTTOM_CLEAR - 4 * (usedRows - 1)) / (usedRows - 0.5));
+            if (fit < size) {
+                var smaller = {};
+                Object.keys(opts).forEach(function(k) { smaller[k] = opts[k]; });
+                smaller.size = Math.max(MIN_SIZE, fit);
+                return layoutGuessAxis(guesses, correctYear, width, smaller);
+            }
+        }
+        items.forEach(function(it) {
+            if (it.row < MAX_ROWS) return;
+            var host = null;
+            rows[MAX_ROWS - 1].forEach(function(o) {
+                if (!host || Math.abs(o.x - it.x) < Math.abs(host.x - it.x)) host = o;
+            });
+            host.folded += 1;
+        });
+        var visible = items.filter(function(it) { return it.row < MAX_ROWS; });
+        var dots = visible.map(function(it) {
+            return {
+                name: it.name,
+                initials: it.initials,
+                guess: it.guess,
+                yearsOff: it.yearsOff,
+                kind: it.kind,
+                x: it.x,
+                row: it.row,
+                plus: it.folded > 0 ? it.folded + 1 : 0
+            };
+        });
+
+        var span = null;
+        var far = null;
+        items.forEach(function(it) { if (!far || it.yearsOff > far.yearsOff) far = it; });
+        if (far && far.yearsOff > 0) {
+            var dir = far.guess > correctYear ? 1 : -1;
+            var nearest = null;
+            visible.forEach(function(it) {
+                if (it === far || it.row !== 0) return;
+                if ((far.x - it.x) * dir < minDx) return;          // at or past the far dot
+                if ((it.x - correctX) * dir < -size / 2) return;   // on the other side of the answer
+                if (!nearest || (it.x - nearest.x) * dir > 0) nearest = it;
+            });
+            var start = nearest ? nearest.x + dir * (size / 2 + 24) : correctX + dir * 16;
+            var end = far.x - dir * (size / 2 + 16);
+            var chars = opts.spanLabelChars > 0 ? opts.spanLabelChars : 16;
+            if ((end - start) * dir >= chars * 17 + 40) {
+                span = {
+                    from: Math.min(start, end),
+                    to: Math.max(start, end),
+                    labelX: (start + end) / 2,
+                    years: far.yearsOff,
+                    name: null,
+                    nameX: null,
+                    nameRow: null
+                };
+                if (far.yearsOff >= 10 && far.row < MAX_ROWS) {
+                    var column = 0;
+                    visible.forEach(function(it) {
+                        if (Math.abs(it.x - far.x) < minDx) column = Math.max(column, it.row);
+                    });
+                    if (column + 1 < NAME_ROW_LIMIT) {
+                        var half = String(far.name).length * 7 + 10;
+                        span.name = far.name;
+                        span.nameRow = column + 1;
+                        span.nameX = Math.min(Math.max(far.x, half - 90), W + 90 - half);
+                    }
+                }
+            }
+        }
+
+        return {
+            width: W,
+            min: min,
+            max: max,
+            step: step,
+            brokenLow: brokenLow,
+            brokenHigh: brokenHigh,
+            breakGap: BREAK_GAP,
+            size: size,
+            pitch: size + 4,
+            rows: usedRows,
+            correctX: correctX,
+            yearX: yearX,
+            ticks: ticks,
+            dots: dots,
+            span: span,
+            missed: missed.map(function(name) {
+                return { name: name, initials: initials[String(name == null ? '' : name)] };
+            })
+        };
+    }
+
+    /**
+     * Draw the guess axis into the lower band, or hide it.
+     * @param {Object} data - REVEAL state
+     * @param {boolean} axisMode - year mode with a year to show
+     */
+    function renderGuessAxis(data, axisMode) {
+        var root = document.getElementById('reveal-guess-axis');
+        if (!root) return;
+        if (!axisMode) {
+            root.classList.add('hidden');
+            return;
+        }
+        var plot = document.getElementById('guess-axis-plot');
+        var missedEl = document.getElementById('guess-axis-missed');
+        var band = root.parentNode;
+        if (!plot) return;
+
+        var guesses = ((data.round_analytics || {}).all_guesses || []).filter(function(g) {
+            return g && typeof g.guess === 'number';
+        });
+        var guessed = {};
+        guesses.forEach(function(g) { guessed[g.name] = true; });
+        var missed = (data.players || []).filter(function(p) {
+            return p && p.missed_round && !p.eliminated && !guessed[p.name];
+        }).map(function(p) { return p.name; });
+
+        var farthest = 0;
+        guesses.forEach(function(g) { farthest = Math.max(farthest, g.years_off || 0); });
+        var spanLabel = farthest === 1
+            ? utils.t('dashboard.guessAxisYearsOffOne')
+            : utils.t('dashboard.guessAxisYearsOff', { count: farthest });
+
+        root.classList.remove('hidden');
+        var correct = parseInt((data.song || {}).year, 10);
+        var L = layoutGuessAxis(guesses, correct, plot.clientWidth, {
+            missed: missed,
+            spanLabelChars: spanLabel.length,
+            height: root.clientHeight
+        });
+        var pct = function(x) { return (x / L.width * 100).toFixed(3) + '%'; };
+
+        root.classList.toggle('guess-axis--compact', L.size < 64);
+        if (root.style && root.style.setProperty) {
+            root.style.setProperty('--guess-axis-dot', L.size + 'px');
+            root.style.setProperty('--guess-axis-pitch', L.pitch + 'px');
+        }
+        if (band && band.style && band.style.setProperty) {
+            band.style.setProperty('--guess-axis-year', (L.yearX / L.width).toFixed(4));
+        }
+
+        var html = '<div class="guess-axis-line"></div>';
+        L.ticks.forEach(function(tk) {
+            html += '<div class="guess-axis-tick" style="left:' + pct(tk.x) + '">' +
+                (tk.label
+                    ? '<span class="guess-axis-tick-label">’' + String(((tk.year % 100) + 100) % 100).padStart(2, '0') + '</span>'
+                    : '') +
+                '</div>';
+        });
+        if (L.brokenLow) html += '<div class="guess-axis-break" style="left:' + pct(L.breakGap / 2) + '"></div>';
+        if (L.brokenHigh) html += '<div class="guess-axis-break" style="left:' + pct(L.width - L.breakGap / 2) + '"></div>';
+        html += '<div class="guess-axis-marker" style="left:' + pct(L.correctX) + '"></div>';
+
+        // #2702 beat two: the dots land together with the rest of the round result.
+        html += '<div class="guess-axis-dots" data-stage="2">';
+        if (L.span) {
+            html += '<div class="guess-axis-span" style="left:' + pct(L.span.from) + ';width:' + pct(L.span.to - L.span.from) + '"></div>' +
+                '<div class="guess-axis-span-label" style="left:' + pct(L.span.labelX) + '">' + utils.escapeHtml(spanLabel) + '</div>';
+            if (L.span.name !== null) {
+                html += '<div class="guess-axis-span-name" style="left:' + pct(L.span.nameX) + ';--row:' + L.span.nameRow + '">' +
+                    utils.escapeHtml(L.span.name) + '</div>';
+            }
+        }
+        L.dots.forEach(function(dot) {
+            var label = utils.escapeHtml(dot.name) + ' — ' + dot.guess;
+            html += '<div class="guess-axis-dot guess-axis-dot--' + (dot.plus ? 'more' : dot.kind) + '" ' +
+                'style="left:' + pct(dot.x) + ';--row:' + dot.row + '" title="' + label + '" aria-label="' + label + '">' +
+                (dot.plus ? '+' + dot.plus : utils.escapeHtml(dot.initials)) +
+                '</div>';
+        });
+        html += '</div>';
+        if (plot._beatifyAxisHtml !== html) {
+            plot._beatifyAxisHtml = html;
+            plot.innerHTML = html;
+        }
+
+        if (missedEl) {
+            var MAX_MISSED = 4;
+            var missedHtml = '';
+            if (L.missed.length > 0) {
+                missedHtml = '<span class="guess-axis-missed-label">' + utils.escapeHtml(utils.t('dashboard.guessAxisNoGuess')) + '</span>';
+                L.missed.slice(0, MAX_MISSED).forEach(function(m) {
+                    missedHtml += '<span class="guess-axis-missed-item">' +
+                        '<span class="guess-axis-missed-dot">' + utils.escapeHtml(m.initials) + '</span>' +
+                        '<span class="guess-axis-missed-name">' + utils.escapeHtml(m.name) + '</span>' +
+                        '</span>';
+                });
+                if (L.missed.length > MAX_MISSED) {
+                    missedHtml += '<span class="guess-axis-missed-name">+' + (L.missed.length - MAX_MISSED) + '</span>';
+                }
+            }
+            missedEl.innerHTML = missedHtml;
+        }
+    }
+
+    /**
+     * #2502: the fun fact lived in the results strip, which the axis replaces.
+     * In axis mode it moves under the song in the now-revealing card, and back
+     * when the round is Title & Artist or voided.
+     * @param {boolean} axisMode
+     */
+    function placeRevealFunFact(axisMode) {
+        var fact = document.getElementById('dashboard-fun-fact');
+        if (!fact || !document.querySelector) return;
+        var home = document.querySelector(axisMode
+            ? '#dashboard-reveal .reveal-song-info'
+            : '#dashboard-reveal .reveal-results');
+        if (home && fact.parentNode !== home) home.appendChild(fact);
+    }
+
+    /**
+     * #2502: the standings card is shorter in axis mode. Past eight rows it
+     * shows seven and says how many more there are, instead of shrinking every
+     * row below what a room can read.
+     * #2821: Title & Artist mode and a voided round get the same treatment
+     * with their taller card — past ten rows, nine and "+ N more". The CSS
+     * hides rows from the same index (`nth-child(n+8)` / `nth-child(n+10)`).
+     * @param {number} count - leaderboard length
+     * @param {boolean} axisMode
+     */
+    function renderStandingsMore(count, axisMode) {
+        var root = document.getElementById('dashboard-reveal');
+        var more = document.getElementById('reveal-leaderboard-more');
+        var cap = axisMode ? 8 : 10;
+        var capped = count > cap;
+        if (root) root.classList.toggle('reveal-standings-capped', capped);
+        if (!more) return;
+        if (capped) {
+            more.textContent = utils.t('dashboard.standingsMore', { count: count - (cap - 1) });
+            more.classList.remove('hidden');
+        } else {
+            more.textContent = '';
+            more.classList.add('hidden');
+        }
+    }
+
     /**
      * Render reveal leaderboard with position change indicators (AC 10.4.4)
      * @param {Array} leaderboard - Leaderboard entries
@@ -2207,15 +2645,253 @@
      * Render end view with podium and final leaderboard
      * @param {Object} data - State data
      */
+    /* ----------------------------------------------------------------
+       #2563 — the closing moment
+
+       The end screen has always shown the result and never the route to it.
+       round_scores has existed on the player since the beginning (it is what
+       clutch_player and comeback_king are computed from) but was never
+       serialized; it now arrives on each final leaderboard entry as per-round
+       deltas. Three seconds of the TV are spent on the single round where the
+       lead last changed hands, and then the podium stage resolves as before.
+       ---------------------------------------------------------------- */
+
+    // The game_id the moment has already played for. State updates repeat on
+    // every reconnect, and a closing shot that replays on a dropped socket is
+    // worse than no closing shot.
+    var closingMomentPlayedFor = null;
+
+    /**
+     * Find the round in which the eventual winner took the lead for the last
+     * time.
+     *
+     * Deliberately mechanical: no "biggest swing" scoring, no drama heuristic.
+     * The moment is the last round at which the top of the board changed hands
+     * AND the new leader is the player who finished first. A winner who led
+     * from the first round has no such round, and then there is nothing
+     * honest to show — the caller skips the prologue rather than inventing
+     * one.
+     *
+     * @param {Array} leaderboard - final leaderboard entries; each may carry
+     *   round_scores, a list of per-round deltas (NOT a running total).
+     * @returns {Object|null} { round, winner, loser } where winner/loser each
+     *   hold { name, cum } with cum[0] = 0 and cum[i] = total after round i.
+     */
+    function findClosingMoment(leaderboard) {
+        if (!leaderboard || leaderboard.length < 2) return null;
+
+        var rows = leaderboard.filter(function(entry) {
+            return entry && Array.isArray(entry.round_scores) && entry.round_scores.length > 0;
+        });
+        if (rows.length < 2) return null;
+
+        var rounds = 0;
+        rows.forEach(function(entry) {
+            if (entry.round_scores.length > rounds) rounds = entry.round_scores.length;
+        });
+        if (rounds < 2) return null;
+
+        // Cumulative totals, index 0 = before the first round.
+        var series = rows.map(function(entry) {
+            var cum = [0];
+            var sum = 0;
+            for (var i = 0; i < rounds; i++) {
+                var delta = Number(entry.round_scores[i]);
+                sum += isFinite(delta) ? delta : 0;
+                cum.push(sum);
+            }
+            return { name: entry.name, rank: entry.rank, cum: cum };
+        });
+
+        var winner = null;
+        series.forEach(function(s) { if (s.rank === 1 && !winner) winner = s; });
+        if (!winner) return null;
+
+        // Leader at a point in time. Ties break by name so the same game
+        // always yields the same moment.
+        function leaderAt(i) {
+            var best = null;
+            series.forEach(function(s) {
+                if (!best) { best = s; return; }
+                if (s.cum[i] > best.cum[i]) { best = s; return; }
+                if (s.cum[i] === best.cum[i] && s.name < best.name) best = s;
+            });
+            return best;
+        }
+
+        var found = null;
+        for (var r = 1; r <= rounds; r++) {
+            var before = leaderAt(r - 1);
+            var after = leaderAt(r);
+            // Nobody had scored yet, so nobody was overtaken.
+            if (!before || before.cum[r - 1] <= 0) continue;
+            if (!after || after.name === before.name) continue;
+            if (after.name !== winner.name) continue;
+            found = { round: r, winner: after, loser: before };
+        }
+        return found;
+    }
+
+    /**
+     * Draw the two cumulative lines plus the marker on the round in question.
+     * Hand-built SVG: the dashboard carries no chart library and this needs
+     * two polylines, not a dependency.
+     *
+     * @param {Object} moment - as returned by findClosingMoment
+     */
+    function renderClosingMomentChart(moment) {
+        var host = document.getElementById('end-moment-chart');
+        if (!host) return;
+
+        var NS = 'http://www.w3.org/2000/svg';
+        var W = 1000, H = 380;
+        var LEFT = 70, RIGHT = 900, TOP = 40, BOTTOM = 300;
+        var rounds = moment.winner.cum.length - 1;
+
+        var peak = 0;
+        [moment.winner, moment.loser].forEach(function(s) {
+            s.cum.forEach(function(v) { if (v > peak) peak = v; });
+        });
+        if (peak <= 0) peak = 1;
+
+        function px(i) { return LEFT + (RIGHT - LEFT) * (i / rounds); }
+        function py(v) { return BOTTOM - (BOTTOM - TOP) * (v / peak); }
+
+        function el(tag, attrs) {
+            var node = document.createElementNS(NS, tag);
+            Object.keys(attrs).forEach(function(k) { node.setAttribute(k, attrs[k]); });
+            return node;
+        }
+
+        var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img' });
+
+        svg.appendChild(el('line', {
+            x1: LEFT, x2: RIGHT, y1: py(0), y2: py(0),
+            stroke: 'rgba(255,255,255,0.22)', 'stroke-width': 2
+        }));
+
+        // Round ticks: the decisive one always, plus the first and the last
+        // where they do not crowd it. In a game decided in the second-to-last
+        // round, "14" and "15" would otherwise be printed on top of each other.
+        var gap = Math.max(2, Math.round(rounds * 0.08));
+        var ticks = [moment.round];
+        [1, rounds].forEach(function(r) {
+            if (ticks.indexOf(r) === -1 && Math.abs(r - moment.round) >= gap) ticks.push(r);
+        });
+        ticks.forEach(function(r) {
+            var label = el('text', {
+                x: px(r), y: BOTTOM + 40, fill: 'rgba(255,255,255,0.55)',
+                'font-size': '26', 'text-anchor': 'middle',
+                'font-family': "var(--font-display, 'Outfit'), sans-serif"
+            });
+            label.textContent = String(r);
+            svg.appendChild(label);
+        });
+
+        var lines = [
+            { s: moment.loser, color: '#ff6600' },
+            { s: moment.winner, color: '#39ff14' }
+        ];
+        lines.forEach(function(item) {
+            var d = '';
+            for (var i = 0; i <= rounds; i++) {
+                d += (i ? ' L ' : 'M ') + px(i).toFixed(1) + ' ' + py(item.s.cum[i]).toFixed(1);
+            }
+            var path = el('path', { d: d, stroke: item.color, class: 'end-moment__path' });
+            svg.appendChild(path);
+            // getTotalLength only answers once the node is in a document.
+            item.path = path;
+        });
+
+        var mark = el('g', { class: 'end-moment__mark' });
+        mark.appendChild(el('line', {
+            x1: px(moment.round), x2: px(moment.round), y1: TOP, y2: BOTTOM,
+            stroke: 'rgba(255,255,255,0.55)', 'stroke-width': 2, 'stroke-dasharray': '8 8'
+        }));
+        lines.forEach(function(item) {
+            mark.appendChild(el('circle', {
+                cx: px(moment.round), cy: py(item.s.cum[moment.round]),
+                r: 13, fill: item.color
+            }));
+        });
+        lines.forEach(function(item) {
+            var name = el('text', {
+                x: RIGHT + 18, y: py(item.s.cum[rounds]) + 10, fill: item.color,
+                'font-size': '30', 'font-weight': '700', 'text-anchor': 'start',
+                stroke: 'var(--color-bg, #0a0a0f)', 'stroke-width': '6',
+                'paint-order': 'stroke',
+                'font-family': "var(--font-display, 'Outfit'), sans-serif"
+            });
+            name.textContent = item.s.name;
+            mark.appendChild(name);
+        });
+        svg.appendChild(mark);
+
+        host.innerHTML = '';
+        host.appendChild(svg);
+
+        lines.forEach(function(item) {
+            item.path.style.setProperty('--len', item.path.getTotalLength().toFixed(1));
+        });
+    }
+
+    /**
+     * Play the prologue, if this game has one. Returns true when the end
+     * screen is covered and the caller should hold back anything loud.
+     *
+     * @param {Object} data - END state data
+     * @returns {boolean} whether the moment is on screen
+     */
+    function playClosingMoment(data) {
+        var overlay = document.getElementById('end-moment');
+        if (!overlay) return false;
+
+        var gameId = data && data.game_id ? String(data.game_id) : 'unknown';
+        if (closingMomentPlayedFor === gameId) return false;
+        closingMomentPlayedFor = gameId;
+
+        var moment = findClosingMoment(data && data.leaderboard);
+        if (!moment) return false;
+
+        var kicker = document.getElementById('end-moment-kicker');
+        var line = document.getElementById('end-moment-line');
+        if (kicker) {
+            kicker.textContent = utils.t('leaderboard.momentKicker', { round: moment.round })
+                || ('Round ' + moment.round);
+        }
+        if (line) {
+            line.innerHTML = '<span class="is-winner">' + utils.escapeHtml(moment.winner.name) +
+                '</span> ' + utils.escapeHtml(utils.t('leaderboard.momentVerb') || 'goes past') +
+                ' <span class="is-loser">' + utils.escapeHtml(moment.loser.name) + '</span>';
+        }
+
+        renderClosingMomentChart(moment);
+
+        overlay.classList.remove('hidden', 'is-leaving');
+        setTimeout(function() { overlay.classList.add('is-leaving'); }, 3000);
+        setTimeout(function() {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('is-leaving');
+        }, 3600);
+        return true;
+    }
+
     function renderEndView(data) {
         var leaderboard = data.leaderboard || [];
+
+        // #2563: the prologue covers the stage while the rest of this function
+        // builds it underneath. Nothing below waits for it except the confetti.
+        var momentOnScreen = playClosingMoment(data);
 
         // Issue #827: Sudden-Death "Last One Standing" hero above the podium.
         renderSuddenDeathLastStanding(data);
 
         // Update podium (AC 10.4.5) — name, score, and a colour-keyed avatar.
+        // #2835: stands are filled by position, not by rank value — a tie for
+        // first used to leave stand 2 empty and drop the second winner.
+        var podium = utils.podiumStands(leaderboard);
         [1, 2, 3].forEach(function(place) {
-            var player = leaderboard.find(function(p) { return p.rank === place; });
+            var player = podium.stands[place - 1];
             var nameEl = document.getElementById('end-podium-' + place + '-name');
             var scoreEl = document.getElementById('end-podium-' + place + '-score');
             var avatarEl = document.getElementById('end-podium-' + place + '-avatar');
@@ -2235,6 +2911,12 @@
             var placeEl = (nameEl || scoreEl || avatarEl);
             placeEl = placeEl && placeEl.closest ? placeEl.closest('.podium-place') : null;
             if (placeEl) placeEl.classList.toggle('podium-place--empty', !player);
+            // #2835: a co-winner on stand 2 is still first — the stand's label
+            // and medal follow the rank of whoever stands on it.
+            var lblEl = placeEl && placeEl.querySelector ? placeEl.querySelector('.podium-place-lbl') : null;
+            if (lblEl) lblEl.textContent = player ? player.rank : place;
+            var medalEl = placeEl && placeEl.querySelector ? placeEl.querySelector('.podium-medal') : null;
+            if (medalEl) medalEl.textContent = utils.podiumMedal(player ? player.rank : place);
             if (avatarEl) {
                 var nm = player ? player.name : '';
                 avatarEl.textContent = nm ? nm.trim().charAt(0).toUpperCase() : '';
@@ -2262,16 +2944,23 @@
         // H2 fix: Only trigger if there's a valid winner with score > 0
         var winner = leaderboard.find(function(p) { return p.rank === 1; });
         if (winner && winner.score > 0) {
-            triggerConfetti('winner');
+            // #2563: fired behind the prologue it would be over before anyone
+            // saw it, so it waits for the stage to be uncovered.
+            if (momentOnScreen) {
+                setTimeout(function() { triggerConfetti('winner'); }, 3600);
+            } else {
+                triggerConfetti('winner');
+            }
         }
 
-        // Full standings panel — the players BELOW the podium (rank 4+). The
-        // podium already celebrates the top 3; this completes the ranking.
-        // Fallback to the whole board for small games (<=3 players) so the
-        // panel is never empty.
+        // Full standings panel — the players NOT on a stand. The podium already
+        // celebrates three; this completes the ranking. Fallback to the whole
+        // board for small games (<=3 players) so the panel is never empty.
+        // #2835: this used to be `rank > 3`, which lost everyone tied inside the
+        // top three who did not get a stand.
         var container = document.getElementById('end-leaderboard');
         if (container) {
-            var rest = leaderboard.filter(function(e) { return e.rank > 3; });
+            var rest = podium.rest;
             var rows = rest.length ? rest : leaderboard;
             var html = '';
             rows.forEach(function(entry) {
