@@ -1,0 +1,42 @@
+---
+door_popup:
+  alias: "Kamera Popup"
+  mode: restart
+  fields:
+    camera:
+      description: "Kamera-Entity, die im Popup angezeigt wird"
+      example: camera.flurcam
+      required: true
+      selector:
+        entity:
+          filter:
+            domain: camera
+    title:
+      description: "Überschrift des Popups"
+      example: "Haustüre wurde geöffnet"
+      default: "Kamera"
+      selector:
+        text:
+    timeout:
+      description: "Autoclose nach x Millisekunden"
+      default: 30000
+      selector:
+        number:
+          min: 5000
+          max: 120000
+          step: 1000
+          unit_of_measurement: ms
+  sequence:
+    - action: browser_mod.popup
+      data:
+        content:
+          type: picture-entity
+          entity: "{{ camera }}"
+          show_state: false
+          show_name: false
+          camera_view: live
+        autoclose: true
+        timeout: "{{ timeout }}"
+        title: "{{ title }}"
+        size: classic
+        allow_nested_more_info: false
