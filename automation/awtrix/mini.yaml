@@ -3,28 +3,26 @@
 alias: Show mini countdown on clock
 id: 5ce560a2-c147-40f0-b02f-46ba328c5b84
 description: "Show mini countdown on clock"
-trigger:
-  - platform: time
+triggers:
+  - trigger: time
     at: "00:01:00"
-condition:
-  - condition: state
-    entity_id: group.parents
-    state: "home"
-action:
+  - trigger: state
+    entity_id: input_boolean.holiday_mode
+  - trigger: homeassistant
+    event: start
+conditions: []
+actions:
   - variables:
-      triggered_entity: "sensor.anniversary_special_b_mini"
-      entity_name: "{{ state_attr(triggered_entity, 'friendly_name') }}"
-  - if:
-      - condition: template
-        value_template: "{{ triggered_entity != '' }}"
-    then:
-      - action: script.awtrix3customapp
-        data:
-          app_id: "mini"
-          text: "{{ states(triggered_entity) }} {{ state_attr(triggered_entity, 'unit_of_measurement')}}"
-          icon: "365"
-    else:
-      - action: script.awtrix3delapp
-        data:
-          app_id: "mini"
+      mini: sensor.anniversary_special_b_mini
+  - action: script.awtrix_app
+    data:
+      app_id: mini
+      show: >-
+        {{ is_state('group.parents', 'home')
+          and is_state('input_boolean.holiday_mode', 'off')
+          and states(mini) | float(-1) >= 0 }}
+      text: >-
+        {{ states(mini) }} {{ state_attr(mini, 'unit_of_measurement') }}
+      icon: "365"
+      lifetime_ms: 90000000
 mode: single

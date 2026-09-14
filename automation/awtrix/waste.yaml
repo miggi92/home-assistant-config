@@ -1,24 +1,20 @@
 ---
-#
+# Abfallkalender
 alias: Show waste on clock
 id: 33ea773e-67d2-4f5c-97ba-778d098b0ade
 description: "Show waste on clock"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: sensor.aussen_home_abfallkalender_nachste_abholung
-condition: []
-action:
-  - if:
-      - condition: template
-        value_template: "{{ trigger.to_state.attributes.daysTo | int <= 1 }}"
-    then:
-      - action: script.awtrix3customapp
-        data:
-          app_id: "waste"
-          text: "{{ trigger.to_state.state }}"
-          icon: "57283"
-    else:
-      - action: script.awtrix3delapp
-        data:
-          app_id: "waste"
-mode: parallel
+conditions: []
+actions:
+  - variables:
+      waste_sensor: sensor.aussen_home_abfallkalender_nachste_abholung
+      days_to: "{{ state_attr(waste_sensor, 'daysTo') | int(99) }}"
+  - action: script.awtrix_app
+    data:
+      app_id: waste
+      show: "{{ days_to <= 1 }}"
+      text: "{{ states(waste_sensor) }}"
+      icon: "57283"
+mode: single

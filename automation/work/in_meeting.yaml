@@ -3,27 +3,29 @@
 alias: inMeeting
 id: d1c10388-a5c9-4749-b035-76776b593a00
 description: "Show in meeting info"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
     to:
       - "on"
       - "off"
-condition: []
-action:
+conditions: []
+actions:
   - if:
       - condition: state
         entity_id: binary_sensor.bcwmc5cg4100cy0_isinmeeting
         state: "on"
         alias: "Check if meeting started"
     then:
-      - action: script.awtrix3customapp
-        alias: "Show Meeting on Clock"
+      - alias: "Show Meeting on Clock"
+        action: script.awtrix_app
         data:
           app_id: meeting
           text: "In meeting"
           icon: "9603"
-      - service: notify.tvoverlaynotifyfixed
+          # Falls der Laptop-Agent abstuerzt, raeumt sich die App nach 4 h auf
+          lifetime_ms: 14400000
+      - action: notify.tvoverlaynotifyfixed
         data:
           data:
             id: meeting
@@ -37,10 +39,11 @@ action:
         target:
           entity_id: switch.buro_echo_buro_bitte_nicht_storen
     else:
-      - action: script.awtrix3delapp
-        alias: "Remove Meeting from Clock"
+      - alias: "Remove Meeting from Clock"
+        action: script.awtrix_app
         data:
           app_id: meeting
+          show: false
       - action: notify.tvoverlaynotifyfixed
         data:
           data:
@@ -53,6 +56,5 @@ action:
       - action: switch.turn_off
         target:
           entity_id: switch.buro_echo_buro_bitte_nicht_storen
-
 mode: queued
 max: 5

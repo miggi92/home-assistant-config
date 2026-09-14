@@ -3,59 +3,49 @@
 alias: UhrFestnetz
 id: 9369a9dc-88fb-4ee8-a724-94559678db81
 description: "Uhr Festnetz"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: sensor.fritz_box_7590_ax_anrufmonitor_nextcloud
-condition: []
-action:
+conditions:
+  - condition: template
+    value_template: "{{ trigger.from_state is not none and trigger.to_state is not none }}"
+actions:
   - variables:
       from_state: >-
-        {% if trigger.from_state.attributes.from_name %}
-          {{ trigger.from_state.attributes.from_name }}
-        {% else %}
-          {{ trigger.from_state.attributes.from }}
-        {% endif %}
+        {{ trigger.from_state.attributes.get('from_name')
+          or trigger.from_state.attributes.get('from')
+          or 'Unbekannt' }}
       to_state: >-
-        {% if trigger.to_state.attributes.from_name %}
-          {{ trigger.to_state.attributes.from_name }}
-        {% else %}
-          {{ trigger.to_state.attributes.from }}
-        {% endif %}
-  - if:
+        {{ trigger.to_state.attributes.get('from_name')
+          or trigger.to_state.attributes.get('from')
+          or 'Unbekannt' }}
+      missed: >-
+        {{ trigger.to_state.state == 'idle'
+          and trigger.from_state.state == 'ringing' }}
+      forwarded: >-
+        {{ trigger.to_state.state == 'talking'
+          and trigger.to_state.attributes.get('device') == '40' }}
+
+  - alias: Es klingelt
+    if:
       - condition: template
-        value_template: "{{  trigger.to_state.state == 'ringing' }}"
+        value_template: "{{ trigger.to_state.state == 'ringing' }}"
     then:
-      - action: script.awtrix3notif
+      - action: script.awtrix_notify
         data:
           text: "{{ to_state }}"
           icon: "1232"
           repeat: 2
-  - if:
-      - condition: or
-        conditions:
-          - condition: and
-            alias: "Verpasst"
-            conditions:
-              - condition: template
-                value_template: "{{ trigger.to_state.state == 'idle' }}"
-              - condition: template
-                value_template: "{{ trigger.from_state.state == 'ringing' }}"
-          - condition: and
-            alias: "AB Weiterleitung"
-            conditions:
-              - condition: template
-                value_template: "{{  trigger.to_state.state == 'talking' }}"
-              - condition: template
-                value_template: "{{ trigger.to_state.attributes.device == '40' }}"
-    then:
-      - action: script.awtrix3customapp
-        data:
-          app_id: phone
-          text: "{{ from_state }}"
-          icon: "21482"
-          duration: 15
-    else:
-      - action: script.awtrix3delapp
-        data:
-          app_id: phone
+          name: phone_ringing
+
+  - alias: Verpasst oder auf AB umgeleitet
+    action: script.awtrix_app
+    data:
+      app_id: phone
+      show: "{{ missed or forwarded }}"
+      text: "{{ from_state }}"
+      icon: "21482"
+      duration_ms: 15000
+      # Verpasster Anruf ist nach 12 h keine Neuigkeit mehr
+      lifetime_ms: 43200000
 mode: single
