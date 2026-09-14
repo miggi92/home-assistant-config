@@ -1,6 +1,5 @@
 ---
-# Ersetzt lights_on.yaml, doors_open.yaml, hot_beverages.yaml und bed.yaml.
-# Vier praktisch identische if/else-Automationen -> eine datengetriebene.
+# Ersetzt lights_on / doors_open / hot_beverages / bed.
 alias: AWTRIX · Zähler & Status
 id: 7d21c4ab-3e55-4a90-b1f2-8c0e6d93aa41
 description: "Lichter, Türen, Heißgetränke und Bett-Status auf der Uhr"
@@ -11,35 +10,35 @@ triggers:
       - number.count_doors_open
       - input_number.heissgetranke_zahler
       - binary_sensor.bett_tracker
+  - trigger: homeassistant
+    event: start
 conditions: []
 actions:
-  - variables:
-      config:
-        number.count_lights_on:
+  - alias: Zaehler
+    repeat:
+      for_each:
+        - entity_id: number.count_lights_on
           app_id: lights
           icon: "1762"
-        number.count_doors_open:
+        - entity_id: number.count_doors_open
           app_id: doors
           icon: "9766"
-        input_number.heissgetranke_zahler:
+        - entity_id: input_number.heissgetranke_zahler
           app_id: coffee
           icon: "14060"
-        binary_sensor.bett_tracker:
-          app_id: bed
-          icon: "19723"
-      item: "{{ config.get(trigger.entity_id) }}"
-      is_bed: "{{ trigger.entity_id == 'binary_sensor.bett_tracker' }}"
-      value: "{{ states(trigger.entity_id) | int(0) }}"
-      show: >-
-        {{ is_state('binary_sensor.bett_tracker', 'on') if is_bed
-          else value > 0 }}
-  - condition: template
-    value_template: "{{ item is not none }}"
-  - action: script.awtrix_app
+      sequence:
+        - action: script.awtrix_app
+          data:
+            app_id: "{{ repeat.item.app_id }}"
+            show: "{{ states(repeat.item.entity_id) | int(0) > 0 }}"
+            text: "{{ states(repeat.item.entity_id) | int(0) }}"
+            icon: "{{ repeat.item.icon }}"
+  - alias: Bett
+    action: script.awtrix_app
     data:
-      app_id: "{{ item.app_id }}"
-      show: "{{ show }}"
-      text: "{{ 'Zz Zz Zz' if is_bed else value }}"
-      icon: "{{ item.icon }}"
+      app_id: bed
+      show: "{{ is_state('binary_sensor.bett_tracker', 'on') }}"
+      text: "Zz Zz Zz Zz Zz Zz"
+      icon: "19723"
 mode: queued
 max: 10

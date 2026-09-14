@@ -1,8 +1,4 @@
 ---
-# Vorher: time_pattern seconds:/5 -> 3 MQTT-Publishes alle 5 s, rund um die Uhr
-#         (~52.000/Tag, auch wenn gar kein Timer läuft).
-# Jetzt:  Pattern nur alle 10 s UND nur wenn mindestens ein Timer aktiv ist;
-#         Löschen passiert einmalig beim Zustandswechsel.
 alias: AWTRIX · Alexa-Timer
 id: 2c96d793-ea37-49cb-89c2-972a4518789b
 description: "Zeigt laufende Alexa-Timer als Fortschrittsbalken"
@@ -30,11 +26,10 @@ variables:
       text: "Wohnzimmer"
       icon: "63810"
 conditions:
-  # Ticks nur verarbeiten, wenn wirklich etwas läuft
   - condition: or
     conditions:
       - condition: template
-        value_template: "{{ trigger.id != 'tick' }}"
+        value_template: "{{ trigger is not defined or trigger.id != 'tick' }}"
       - condition: template
         value_template: >-
           {{ timers | map(attribute='entity_id') | map('states')
@@ -43,26 +38,24 @@ actions:
   - repeat:
       for_each: "{{ timers }}"
       sequence:
-        - variables:
-            raw: "{{ states(repeat.item.entity_id) }}"
-            ends_at: "{{ raw | as_datetime(default=none) }}"
-            active: "{{ ends_at is not none and ends_at > now() }}"
-            started: "{{ states[repeat.item.entity_id].last_changed }}"
-            total: >-
-              {{ (ends_at - started).total_seconds() if active else 0 }}
-            pct: >-
-              {% if active and total > 0 %}
-                {{ [[0, ((now() - started).total_seconds() / total * 100)
-                    | round(0) | int] | max, 100] | min }}
-              {% else %}-1{% endif %}
         - action: script.awtrix_app
           data:
             app_id: "timer_{{ repeat.item.id }}"
-            show: "{{ active }}"
-            text: "{{ repeat.item.text if active else '' }}"
+            show: >-
+              {% set e = states(repeat.item.entity_id) | as_datetime(default=none) %}
+              {{ e is not none and e > now() }}
+            text: "{{ repeat.item.text }}"
             icon: "{{ repeat.item.icon }}"
-            progress: "{{ pct }}"
-            # Totmannschalter: verschwindet von selbst, falls HA aussteigt
+            progress: >-
+              {% set e = states(repeat.item.entity_id) | as_datetime(default=none) %}
+              {% if e is none or e <= now() %}-1
+              {% else %}
+                {% set s = states[repeat.item.entity_id].last_changed %}
+                {% set total = (e - s).total_seconds() %}
+                {% if total > 0 %}
+                  {{ [[0, ((now() - s).total_seconds() / total * 100) | round(0) | int] | max, 100] | min }}
+                {% else %}0{% endif %}
+              {% endif %}
             lifetime_ms: 60000
 mode: restart
 max_exceeded: silent

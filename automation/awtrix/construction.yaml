@@ -1,18 +1,23 @@
 ---
+# Hausbau-Fortschritt
 alias: Show construction state on clock
 id: 5f2cc568-35a6-4dff-9b4c-0a0c7f37833d
-description: "Show bed state on clock"
-trigger:
-  - platform: state
-    entity_id: sensor.hausbau_fertigstellung
-  - platform: state
-    entity_id: sensor.hausbau_aktuelle_phase
-condition: []
-action:
-  - action: script.awtrix3customapp
+description: "Show construction state on clock"
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.hausbau_fertigstellung
+      - sensor.hausbau_aktuelle_phase
+conditions: []
+actions:
+  - action: script.awtrix_app
     data:
       app_id: construction
+      show: >-
+        {{ states('sensor.hausbau_aktuelle_phase')
+          not in ['unknown', 'unavailable', 'none', ''] }}
       text: "{{ states('sensor.hausbau_aktuelle_phase') }}"
       icon: "50401"
-      progress: "{{ (states('sensor.hausbau_fertigstellung') | float(0)) | round(2) }}"
+      # progress ist int - round(2) hat hier eine Kommazahl geschickt
+      progress: "{{ states('sensor.hausbau_fertigstellung') | float(0) | round(0) | int }}"
 mode: single

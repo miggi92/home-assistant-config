@@ -1,32 +1,23 @@
 ---
-#
+# Spotify
 alias: Show spotify on the clock
 id: 65f0caac-6ebc-4025-af11-4ef6bf3b75e1
 description: "Show spotify on the clock"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: media_player.spotify_miguel
-condition:
+conditions:
   - condition: state
     entity_id: group.parents
     state: "home"
-action:
-  - alias: Check if Spotify is playing
-    if:
-      - condition: state
-        entity_id: media_player.spotify_miguel
-        state: "playing"
-    then:
-      - alias: Send current song to Awtrix
-        action: script.awtrix3customapp
-        data:
-          app_id: spotify
-          text: "{{states.media_player.spotify_miguel.attributes.media_title}}"
-          icon: "12676"
-          repeat: 1
-    else:
-      - alias: Remove app from Awtrix
-        action: script.awtrix3delapp
-        data:
-          app_id: spotify
+actions:
+  - action: script.awtrix_app
+    data:
+      app_id: spotify
+      show: "{{ is_state('media_player.spotify_miguel', 'playing') }}"
+      text: "{{ state_attr('media_player.spotify_miguel', 'media_title') | default('', true) }}"
+      icon: "12676"
+      repeat: 1
+      # Falls HA den Stop-Event verpasst, raeumt sich die App selbst auf
+      lifetime_ms: 900000
 mode: restart
