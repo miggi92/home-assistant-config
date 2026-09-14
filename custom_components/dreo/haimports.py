@@ -96,6 +96,7 @@ try:
 
     MICROGRAMS_PER_CUBIC_METER = UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
 except ImportError:
-    from homeassistant.const import CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
-
-    MICROGRAMS_PER_CUBIC_METER = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+    # Home Assistant spells this unit with GREEK SMALL LETTER MU (U+03BC), not the
+    # visually identical MICRO SIGN (U+00B5). Use an escape so the fallback cannot
+    # silently drift from the UnitOfDensity value above.
+    MICROGRAMS_PER_CUBIC_METER = "\u03bcg/m\u00b3"
