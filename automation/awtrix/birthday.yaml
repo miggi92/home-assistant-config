@@ -13,17 +13,10 @@ action:
         {{ states | selectattr('entity_id', 'match',
         'sensor.anniversary_birthday_') | selectattr('state', 'eq', '0') | map(attribute='entity_id') | list
         | first }}
-  - if:
-      - condition: template
-        value_template: "{{ triggered_entity != '' }}"
-    then:
-      - action: script.awtrix3customapp
-        data:
-          app_id: birthday
-          text: "{{ state_attr(triggered_entity, 'friendly_name') }}"
-          icon: "102"
-    else:
-      - action: script.awtrix3delapp
-        data:
-          app_id: birthday
+  - action: script.awtrix_app
+    data:
+      app_id: birthday
+      text: "{{ state_attr(triggered_entity, 'friendly_name') }}"
+      show: "{{ triggered_entity != '' }}"
+      icon: "102"
 mode: single

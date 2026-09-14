@@ -11,7 +11,7 @@ condition:
     entity_id: group.parents
     state: "home"
 action:
-  - action: script.awtrix3notif
+  - action: script.awtrix_notify
     data:
       text: "{{ trigger.event.data.airport_origin_city }} -> {{ trigger.event.data.airport_destination_city }}"
       icon: "8879"
