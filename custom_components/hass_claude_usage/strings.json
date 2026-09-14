@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Authenticate with Claude",
+        "description": "To authenticate, [open this link]({url}) to log in with Anthropic.\n\nAfter authorizing, paste the authorization code below.\n\nNote: The code may include a '#' character - paste the entire string.",
+        "data": {
+          "auth_code": "Authorization Code"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Claude",
+        "description": "Re-authenticate this entry (your token expired or was revoked, or you want to switch to a different Claude account). [Open this link]({url}) to log in with Anthropic — make sure you are logged in as the account you want this entry to track. After authorizing, paste the new authorization code below.",
+        "data": {
+          "auth_code": "Authorization Code"
+        }
+      }
+    },
+    "error": {
+      "missing_code": "Please enter the authorization code",
+      "exchange_failed": "Failed to exchange code for tokens. Please try again."
+    },
+    "abort": {
+      "already_configured": "This Claude account is already configured",
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Re-authentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Claude Usage Options",
+        "description": "Configure polling interval. Note: the usage API has rate limits, so avoid setting this too low.",
+        "data": {
+          "update_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}
