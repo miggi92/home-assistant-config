@@ -1,5 +1,12 @@
 ---
-# Display holiday countdown
+# Display holiday countdowns
+# Zeigt alle anstehenden Urlaube als holiday_1 .. holiday_<max_apps>,
+# sortiert nach Resttagen (naechster zuerst).
+#
+# Fortschrittsbalken: die Anniversaries-Sensoren liefern nur das Zieldatum,
+# kein Startdatum - "X % der Wartezeit rum" ist also nicht berechenbar.
+# Stattdessen ein fester Horizont: ab horizon_days vor dem Termin faellt
+# der Balken ein und fuellt sich bis 100 % am Tag selbst. Davor: kein Balken.
 alias: Show holiday countdown on clock
 id: 82d9f15e-5dae-4708-997f-6bae2bc337ee
 description: "Show holiday countdown on clock"
@@ -11,28 +18,52 @@ triggers:
 conditions: []
 actions:
   - variables:
-      holiday_entity: >-
-        {% set ns = namespace(best='', days=99999) %}
+      # Wie viele Urlaubs-Apps maximal im Loop stehen duerfen
+      max_apps: 3
+      # Ab wie vielen Tagen vorher der Balken erscheint.
+      # 30 Tage = rund 1 px pro Tag auf dem 24-px-Balken.
+      horizon_days: 30
+      holidays: >-
+        {% set ns = namespace(items=[]) %}
         {% for s in states.sensor
           if s.entity_id is match('sensor\.anniversary_urlaub_') %}
           {% set d = s.state | int(-1) %}
-          {% if d > 0 and d < ns.days %}
-            {% set ns.days = d %}
-            {% set ns.best = s.entity_id %}
+          {% if d >= 0 %}
+            {% set ns.items = ns.items + [{
+                'days': d,
+                'unit': s.attributes.get('unit_of_measurement', 'Tage'),
+                'name': s.attributes.get('friendly_name', s.entity_id)
+              }] %}
           {% endif %}
         {% endfor %}
-        {{ ns.best }}
-  - action: script.awtrix_app
-    data:
-      app_id: holiday
-      show: "{{ holiday_entity != '' }}"
-      text: >-
-        {% set unit = state_attr(holiday_entity, 'unit_of_measurement') %}
-        {%- if holiday_entity -%}
-          {{ states(holiday_entity) }} - {{ unit }}
-          {{ state_attr(holiday_entity, 'friendly_name') }}
-        {%- endif -%}
-      icon: "15644"
-      # Totmannschalter: faellt nach 25 h raus, falls HA den Refresh verpasst
-      lifetime_ms: 90000000
+        {{ ns.items | sort(attribute='days') }}
+
+  - alias: Anstehende Urlaube anzeigen
+    repeat:
+      for_each: "{{ holidays[:max_apps] }}"
+      sequence:
+        - action: script.awtrix_app
+          data:
+            app_id: "holiday_{{ repeat.index }}"
+            text: "{{ repeat.item.days }} {{ repeat.item.unit }} - {{ repeat.item.name }}"
+            icon: "15644"
+            progress: >-
+              {%- if repeat.item.days > horizon_days -%}
+                -1
+              {%- else -%}
+                {{ (100 * (horizon_days - repeat.item.days) / horizon_days)
+                  | round(0) | int }}
+              {%- endif -%}
+            # Totmannschalter: faellt nach 25 h raus, falls HA den Refresh verpasst
+            lifetime_ms: 90000000
+
+  - alias: Uebrige Urlaubs-Apps aufraeumen
+    repeat:
+      count: >-
+        {{ [0, max_apps - ([holidays | length, max_apps] | min)] | max }}
+      sequence:
+        - action: script.awtrix_app
+          data:
+            app_id: "holiday_{{ ([holidays | length, max_apps] | min) + repeat.index }}"
+            show: false
 mode: single
