@@ -2,15 +2,21 @@
 # sensor.wohnungstemperatur
 alias: Show temperature on clock
 id: 4439da33-a3b6-4566-981d-fcfa49f6786b
-description: " Show temperature on clock"
-trigger:
-  - platform: state
+description: "Show temperature on clock"
+triggers:
+  - trigger: state
     entity_id: sensor.wohnungstemperatur
-condition: []
-action:
+conditions: []
+actions:
   - action: script.awtrix_app
     data:
       app_id: temperature
-      text: "{{ states('sensor.wohnungstemperatur') | float(0) | round(2) }} {{ state_attr('sensor.wohnungstemperatur', 'unit_of_measurement') }}"
+      show: "{{ states('sensor.wohnungstemperatur') | float(none) is not none }}"
+      text: >-
+        {{ states('sensor.wohnungstemperatur') | float(0) | round(1) }}{{
+          state_attr('sensor.wohnungstemperatur', 'unit_of_measurement') }}
       icon: "4286"
+      # Nach 1 h ohne Update roter Rahmen statt stumm alter Wert
+      lifetime_ms: 3600000
+      lifetime_expiry: mark
 mode: single

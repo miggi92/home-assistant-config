@@ -1,29 +1,37 @@
 ---
-# Display dwd warning
+# Display dwd warnings
 alias: Show dwd warning on clock
 id: 6ce30133-5f41-456c-a80f-111fbe92bd0c
 description: "Show dwd warning on clock"
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: sensor.home_aktuelle_warnstufe
-condition: []
-action:
+conditions: []
+actions:
   - variables:
-      warn_count: "{{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') | int(0) }}"
-  - repeat:
-      for_each: "{{ range(1, warn_count + 1) | list }}"
+      max_apps: 5
+      warn_count: >-
+        {{ [state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') | int(0),
+            max_apps] | min }}
+  - alias: Aktive Warnungen anzeigen
+    repeat:
+      count: "{{ warn_count }}"
       sequence:
-        - service: script.awtrix3customapp
+        - action: script.awtrix_app
           data:
-            app_id: "dwd_{{ repeat.item }}"
-            text: "{{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_' ~ repeat.item ~ '_name') }}"
+            app_id: "dwd_{{ repeat.index }}"
+            text: >-
+              {{ state_attr('sensor.home_aktuelle_warnstufe',
+                'warning_' ~ repeat.index ~ '_name') }}
             icon: "6874"
-  - variables:
-      max_possible: 3
-  - repeat:
-      for_each: "{{ range(warn_count + 1, max_possible + 1) | list }}"
+            # Warnung laeuft aus, auch wenn der Sensor haengen bleibt
+            lifetime_ms: 21600000
+  - alias: Uebrige Warn-Apps aufraeumen
+    repeat:
+      count: "{{ max_apps - warn_count }}"
       sequence:
-        - service: script.awtrix3delapp
+        - action: script.awtrix_app
           data:
-            app_id: "dwd_{{ repeat.item }}"
+            app_id: "dwd_{{ warn_count + repeat.index }}"
+            show: false
 mode: single

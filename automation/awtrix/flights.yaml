@@ -3,18 +3,23 @@
 alias: Flights above home
 id: 0d54b339-fb39-44f2-8675-cd24ccf2f17c
 description: "Flights above home"
-trigger:
-  - platform: event
+triggers:
+  - trigger: event
     event_type: flightradar24_entry
-condition:
+conditions:
   - condition: state
     entity_id: group.parents
     state: "home"
-action:
+actions:
   - action: script.awtrix_notify
     data:
-      text: "{{ trigger.event.data.airport_origin_city }} -> {{ trigger.event.data.airport_destination_city }}"
+      text: >-
+        {{ trigger.event.data.airport_origin_city | default('?', true) }} ->
+        {{ trigger.event.data.airport_destination_city | default('?', true) }}
       icon: "8879"
       repeat: 2
+      stack: false
+      name: flight
 mode: queued
-max: 5
+max: 3
+max_exceeded: silent

@@ -1,16 +1,21 @@
 ---
-# sensor.wohnungstemperatur
+# sensor.wohnungsfeuchtigkeit
 alias: Show humidity on clock
 id: e90f58ed-9d21-499f-aa84-81a9e2523643
-description: " Show humidity on clock"
-trigger:
-  - platform: state
+description: "Show humidity on clock"
+triggers:
+  - trigger: state
     entity_id: sensor.wohnungsfeuchtigkeit
-condition: []
-action:
+conditions: []
+actions:
   - action: script.awtrix_app
     data:
       app_id: humidity
-      text: "{{ states('sensor.wohnungsfeuchtigkeit') | float(0) | round(2) }}  {{ state_attr('sensor.wohnungsfeuchtigkeit', 'unit_of_measurement') }}"
+      show: "{{ states('sensor.wohnungsfeuchtigkeit') | float(none) is not none }}"
+      text: >-
+        {{ states('sensor.wohnungsfeuchtigkeit') | float(0) | round(0) }} {{
+          state_attr('sensor.wohnungsfeuchtigkeit', 'unit_of_measurement') }}
       icon: "39041"
+      lifetime_ms: 3600000
+      lifetime_expiry: mark
 mode: single

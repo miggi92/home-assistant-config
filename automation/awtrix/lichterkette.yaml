@@ -1,26 +1,42 @@
 ---
-# Show lights on
+# Lichterkette-Restlaufzeit
 alias: Show lightstrip time
 id: 5f7b6ea8-5d4b-4bf8-80d0-cd976f9ea7d5
 description: "Show lightstrip time"
-trigger:
-  - platform: time_pattern
+triggers:
+  - trigger: state
+    entity_id: timer.lichterkette
+  - trigger: time_pattern
     minutes: "/5"
-condition: []
-action:
-  - if:
-      - condition: state
-        entity_id: timer.lichterkette
-        state: "idle"
-    then:
-      - action: script.awtrix3delapp
-        data:
-          app_id: lightstrip
-    else:
-      - action: script.awtrix3customapp
-        data:
-          app_id: lightstrip
-          text: "Lichterkette"
-          icon: "66625"
-          progress: "{{  ( 100 - max(0, ((state_attr('timer.lichterkette', 'finishes_at') | as_datetime - now().replace(microsecond=0)).total_seconds() / 25200) * 100) ) | round(2) }}"
+    id: tick
+conditions:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ trigger is not defined or trigger.id != 'tick' }}"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: timer.lichterkette
+            state: "idle"
+actions:
+  - variables:
+      active: "{{ not is_state('timer.lichterkette', 'idle') }}"
+      total: >-
+        {{ (state_attr('timer.lichterkette', 'duration')
+            | default('0:00:00', true) | as_timedelta).total_seconds() }}
+      remaining: >-
+        {% if active %}
+          {{ [0, (state_attr('timer.lichterkette', 'finishes_at')
+              | as_datetime - now()).total_seconds()] | max }}
+        {% else %}0{% endif %}
+  - action: script.awtrix_app
+    data:
+      app_id: lightstrip
+      show: "{{ active }}"
+      text: "Lichterkette"
+      icon: "66625"
+      progress: >-
+        {{ (100 - (remaining | float(0) / (total | float(1) or 1) * 100))
+          | round(0) | int }}
 mode: single
