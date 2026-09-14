@@ -22,4 +22,4 @@ action:
           app_id: lights
           text: "{{ states('number.count_lights_on') | int }}"
           icon: "1762"
-mode: single
+mode: restart
