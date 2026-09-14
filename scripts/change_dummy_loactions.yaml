@@ -1,4 +1,5 @@
 ---
+# Change dummy locations
 change_dummy_locations:
   alias: Dummy-Standort ändern
   icon: mdi:map-marker-account
@@ -7,57 +8,62 @@ change_dummy_locations:
   fields:
     who:
       name: Wer?
+      description: Change location of person
       required: true
       selector:
         select:
-          options: [milo, finn, maja]
+          multiple: false
+          options:
+            - milo
+            - finn
+            - maja
     target_zone:
-      name: Zone
-      description: Nur nötig wenn sync_with = alleine
+      name: "Zone"
+      description: "Ziel-Zone (nur nötig wenn sync_with = alleine)"
       required: false
       selector:
         entity:
           filter:
             - domain: zone
     sync_with:
-      name: Unterwegs mit
-      default: alleine
+      name: "Unterwegs mit"
+      description: "alleine = Zone verwenden"
       required: false
+      default: alleine
       selector:
         select:
-          options: [alleine, silke, miguel]
+          options:
+            - alleine
+            - silke
+            - miguel
   sequence:
     - variables:
         config:
           milo:
-            {
-              person_sync: input_select.milo_person_sync,
-              lat: input_number.milo_dummy_lat,
-              long: input_number.milo_dummy_long,
-            }
+            person_sync: input_select.milo_person_sync
+            long: input_number.milo_dummy_long
+            lat: input_number.milo_dummy_lat
           finn:
-            {
-              person_sync: input_select.finn_person_sync,
-              lat: input_number.finn_dummy_lat,
-              long: input_number.finn_dummy_long,
-            }
+            person_sync: input_select.finn_person_sync
+            long: input_number.finn_dummy_long
+            lat: input_number.finn_dummy_lat
           maja:
-            {
-              person_sync: input_select.maja_person_sync,
-              lat: input_number.maja_dummy_lat,
-              long: input_number.maja_dummy_long,
-            }
-        mode: "{{ sync_with | default('alleine') }}"
-        zone_lat: "{{ state_attr(target_zone, 'latitude') if target_zone is defined else none }}"
-        zone_lon: "{{ state_attr(target_zone, 'longitude') if target_zone is defined else none }}"
+            person_sync: input_select.maja_person_sync
+            long: input_number.maja_dummy_long
+            lat: input_number.maja_dummy_lat
+        sync_mode: "{{ sync_with | default('alleine') }}"
+        zone_lat: >-
+          {{ state_attr(target_zone, 'latitude') if target_zone is defined else none }}
+        zone_lon: >-
+          {{ state_attr(target_zone, 'longitude') if target_zone is defined else none }}
     - action: input_select.select_option
       target:
         entity_id: "{{ config[who].person_sync }}"
       data:
-        option: "{{ mode }}"
+        option: "{{ sync_mode }}"
     - if:
         - condition: template
-          value_template: "{{ mode == 'alleine' and zone_lat is not none }}"
+          value_template: "{{ sync_mode == 'alleine' and zone_lat is not none }}"
       then:
         - action: input_number.set_value
           target:
