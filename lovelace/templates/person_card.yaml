@@ -5,6 +5,8 @@ person_card_template:
     - title: Person Info
     - id: miguel
     - watch: default
+    - dummy: none
+    - work_zone: zone.home
     - watch_beacon: default
     - korbchen: default
     - beacon: default
@@ -22,7 +24,10 @@ person_card_template:
       {% set current_state = states("[[entity]]") | slugify %}
       {% set room_state = states("[[beacon]]") %}
       {% set floor_name = state_attr("[[beacon]]", "floor_name") %}
-      {% set time_str = "seit " ~ relative_time(states["[[entity]]"].last_changed) %}
+      {% set st = states["[[entity]]"] %}
+      {% set time_str = "seit " ~ relative_time(st.last_changed) if st else "" %}
+      {% set work_slug = "[[work_zone]]".split(".")[1] %}
+
       {% if current_state == "home" %}
         {%- if room_state not in ["unknown", "not_home"] %}
           {{ room_state }} - {{ floor_name }}
@@ -30,7 +35,7 @@ person_card_template:
           Körbchen
         {%- endif %}
         Zu Hause {{ time_str }}
-      {% elif current_state in ["work_silke", "work_miguel"] %}
+      {% elif current_state == work_slug %}
         Arbeiten {{ time_str }}
       {% elif "handball" in current_state %}
         Beim Handball {{ time_str }}
@@ -45,9 +50,11 @@ person_card_template:
       {% set current_activity = states("sensor.[[phone]]_detected_activity") %}
       {% set current_state = states("[[entity]]") | slugify %}
       {% set img_path = "/local/images/persons/[[id]]/" %}
+      {% set work_slug = "[[work_zone]]".split(".")[1] %}
+
       {% if is_driving == "on" or current_activity == "in_vehicle" %}
         {{ img_path }}auto.png
-      {% elif current_state in ["work_silke", "work_miguel"] %}
+      {% elif current_state == work_slug %}
         {{ img_path }}work.png
       {% elif "handball" in current_state %}
         {{ img_path }}sport.png
@@ -189,6 +196,64 @@ person_card_template:
                             {{ 'green' if bat >= 50 else 'orange' if bat >= 20 else 'red' if bat >= 0 else 'grey' }}
                           tap_action:
                             action: more-info
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: "device_tracker.[[dummy]]_dummy"
+                    state_not: unavailable
+                card:
+                  type: vertical-stack
+                  cards:
+                    - type: custom:mushroom-title-card
+                      subtitle: Standort setzen
+                    - type: custom:mushroom-chips-card
+                      alignment: center
+                      chips:
+                        - type: template
+                          content: Bei Silke
+                          icon: mdi:human-female-child
+                          icon_color: "{{ 'purple' if is_state('input_select.[[dummy]]_person_sync', 'silke') else 'disabled' }}"
+                          tap_action:
+                            action: perform-action
+                            perform_action: script.change_dummy_locations
+                            data:
+                              who: "[[dummy]]"
+                              sync_with: silke
+                        - type: template
+                          content: Bei Miguel
+                          icon: mdi:human-male-child
+                          icon_color: "{{ 'blue' if is_state('input_select.[[dummy]]_person_sync', 'miguel') else 'disabled' }}"
+                          tap_action:
+                            action: perform-action
+                            perform_action: script.change_dummy_locations
+                            data:
+                              who: "[[dummy]]"
+                              sync_with: miguel
+                    - type: custom:auto-entities
+                      card_param: cards
+                      card:
+                        type: grid
+                        columns: 3
+                        square: false
+                      filter:
+                        template: >
+                          {% set ns = namespace(cards=[]) %}
+                          {% for z in label_entities('[[dummy]]') | select('match', 'zone\.') | sort %}
+                            {% set zname = state_attr(z, 'friendly_name') %}
+                            {% set ns.cards = ns.cards + [{
+                              "type": "custom:mushroom-template-card",
+                              "primary": zname,
+                              "icon": state_attr(z, 'icon') or 'mdi:map-marker',
+                              "icon_color": "green" if states("[[entity]]") == zname else "disabled",
+                              "layout": "vertical",
+                              "tap_action": {
+                                "action": "perform-action",
+                                "perform_action": "script.change_dummy_locations",
+                                "data": {"who": "[[dummy]]", "target_zone": z}
+                              }
+                            }] %}
+                          {% endfor %}
+                          {{ ns.cards | tojson }}
               - type: map
                 entities:
                   - entity: "[[entity]]"
