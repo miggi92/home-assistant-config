@@ -1,46 +1,72 @@
 ---
-# Weather
-
-alias: Show weather on clock
+# Vorher: alle 5 Minuten 3 Pushes (≈864/Tag), egal ob sich was geändert hat,
+#         plus eine 15-stufige if/elif-Kette für das Icon.
+# Jetzt:  Trigger auf Änderung + stündlicher Refresh, Icon per Dict-Lookup.
+alias: AWTRIX · Wetter
 id: 17582ba9-526e-418c-88f9-520d6b36adb8
-description: "Show weather on clock"
-trigger:
-  - platform: time_pattern
-    minutes: /5
-condition: []
-action:
+description: "Temperatur, Luftfeuchte und Wind auf der Uhr"
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.temperatur
+      - sensor.luftfeuchtigkeit
+      - sensor.windgeschwindigkeit
+      - weather.home
+  - trigger: time_pattern
+    minutes: 30
+conditions: []
+actions:
   - variables:
-      weather_icon: >-
-        {% if is_state('weather.home', 'clear-night') %}12181
-        {% elif is_state('weather.home', 'cloudy') %}53384
-        {% elif is_state('weather.home', 'exceptional') %}56705
-        {% elif is_state('weather.home', 'fog') %}17055
-        {% elif is_state('weather.home', 'hail') %}53288
-        {% elif is_state('weather.home', 'lightning') %}50231
-        {% elif is_state('weather.home', 'lightning-rainy') %}49299
-        {% elif is_state('weather.home', 'partlycloudy') %}53802
-        {% elif is_state('weather.home', 'pouring') %}49300
-        {% elif is_state('weather.home', 'rainy') %}2284
-        {% elif is_state('weather.home', 'snowy') %}2289
-        {% elif is_state('weather.home', 'snowy-rainy') %}49301
-        {% elif is_state('weather.home', 'sunny') %}2282
-        {% elif is_state('weather.home', 'windy') %}55032
-        {% else %}2422
-        {% endif %}
+      weather_icons:
+        clear-night: "12181"
+        cloudy: "53384"
+        exceptional: "56705"
+        fog: "17055"
+        hail: "53288"
+        lightning: "50231"
+        lightning-rainy: "49299"
+        partlycloudy: "53802"
+        pouring: "49300"
+        rainy: "2284"
+        snowy: "2289"
+        snowy-rainy: "49301"
+        sunny: "2282"
+        windy: "55032"
+      weather_icon: "{{ weather_icons.get(states('weather.home'), '2422') }}"
+      # Overlay passend zum Wetter – kostet nichts und sieht gut aus
+      weather_overlay: >-
+        {{ {'rainy': 'rain', 'pouring': 'rain', 'snowy': 'snow',
+            'snowy-rainy': 'snow', 'lightning': 'thunder',
+            'lightning-rainy': 'storm', 'fog': 'frost'
+          }.get(states('weather.home'), '') }}
 
-  - action: script.awtrix3customapp
+  - action: script.awtrix_app
     data:
       app_id: weather_temp
-      text: "{{ states('sensor.temperatur') }} {{ state_attr('sensor.temperatur', 'unit_of_measurement') }}"
+      text: >-
+        {{ states('sensor.temperatur') | float(0) | round(1) }}{{
+          state_attr('sensor.temperatur', 'unit_of_measurement') }}
       icon: "{{ weather_icon }}"
-  - action: script.awtrix3customapp
+      overlay: "{{ weather_overlay }}"
+      # Wird nach 2 h stale markiert statt stumm falsche Werte zu zeigen
+      lifetime_ms: 7200000
+      lifetime_expiry: mark
+
+  - action: script.awtrix_app
     data:
       app_id: weather_humidity
-      text: "{{ states('sensor.luftfeuchtigkeit') }} %"
+      text: "{{ states('sensor.luftfeuchtigkeit') | float(0) | round(0) }} %"
       icon: "2423"
-  - action: script.awtrix3customapp
+      lifetime_ms: 7200000
+      lifetime_expiry: mark
+
+  - action: script.awtrix_app
     data:
       app_id: weather_wind
-      text: "{{ states('sensor.windgeschwindigkeit') }} {{ state_attr('sensor.windgeschwindigkeit', 'unit_of_measurement') }}"
+      text: >-
+        {{ states('sensor.windgeschwindigkeit') | float(0) | round(0) }} {{
+          state_attr('sensor.windgeschwindigkeit', 'unit_of_measurement') }}
       icon: "55032"
-mode: single
+      lifetime_ms: 7200000
+      lifetime_expiry: mark
+mode: restart

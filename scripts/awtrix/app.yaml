@@ -1,0 +1,165 @@
+---
+# AWTRIX NG – Pushed App (setzen ODER löschen)
+# Ersetzt awtrix3customapp + awtrix3delapp.
+# Doku: https://blueforcer.github.io/awtrix-ng/reference/payload/
+awtrix_app:
+  alias: AWTRIX · App
+  description: >-
+    Setzt oder löscht eine Pushed App. show=false (oder text/icon beide leer)
+    löscht die App. Alle Keys sind NG-Keys (camelCase, Dauern in ms).
+  mode: parallel
+  max: 25
+  fields:
+    app_id:
+      name: App ID
+      description: "Nur [A-Za-z0-9_-], max. 32 Zeichen"
+      required: true
+      selector:
+        text:
+    show:
+      name: Anzeigen
+      description: "false = App löschen"
+      default: true
+      selector:
+        boolean:
+    text:
+      name: Text
+      selector:
+        text:
+    icon:
+      name: Icon
+      description: "Icon-ID als Text (NG erlaubt auch nicht-numerische Dateinamen)"
+      selector:
+        text:
+    icon_mode:
+      name: Icon-Modus
+      default: fixed
+      selector:
+        select:
+          options: [fixed, pushOnce, push]
+    progress:
+      name: Fortschritt
+      description: "0-100, <0 = aus"
+      selector:
+        number:
+          min: -1
+          max: 100
+          step: 1
+    duration_ms:
+      name: Anzeigedauer (ms)
+      description: "0 = globale appDurationMs (7000)"
+      selector:
+        number:
+          min: 0
+          max: 120000
+          step: 500
+    lifetime_ms:
+      name: Lifetime (ms)
+      description: "Totmannschalter: App verschwindet/markiert sich ohne Update"
+      selector:
+        number:
+          min: 0
+          max: 86400000
+          step: 1000
+    lifetime_expiry:
+      name: Bei Ablauf
+      default: remove
+      selector:
+        select:
+          options: [remove, mark]
+    text_color:
+      name: Textfarbe
+      selector:
+        text:
+    overlay:
+      name: Overlay
+      description: "rain, snow, drizzle, storm, thunder, frost"
+      selector:
+        select:
+          options: ["", rain, snow, drizzle, storm, thunder, frost]
+    repeat:
+      name: Repeat
+      description: "Scroll-Durchläufe, 0 = aus (NG-Default!)"
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 1
+    device_prefix:
+      name: MQTT Prefix
+      description: "Leer lassen = automatisch aus dem Gerät"
+      selector:
+        text:
+  sequence:
+    - alias: Prefix + Payload bauen
+      variables:
+        prefix: >-
+          {{ device_prefix | default('', true)
+            or states('sensor.wohnzimmer_awtrix_ng_mqtt_prefix') }}
+        # show=false ODER weder Text noch Icon noch Chart -> löschen
+        do_delete: >-
+          {{ not (show | default(true))
+            or (text | default('', true) | trim == ''
+                and icon | default('', true) | string | trim == ''
+                and (progress | default(-1) | int(-1)) < 0) }}
+        payload: >-
+          {% set ns = namespace(p={}) %}
+          {% if text is defined and text is not none %}
+            {% set ns.p = dict(ns.p, text=text | string | trim) %}
+          {% endif %}
+          {% if icon is defined and icon is not none and (icon | string | trim) != '' %}
+            {% set ns.p = dict(ns.p, icon=icon | string | trim) %}
+            {% if icon_mode is defined and icon_mode != 'fixed' %}
+              {% set ns.p = dict(ns.p, iconMode=icon_mode | string) %}
+            {% endif %}
+          {% endif %}
+          {% if progress is defined and progress is not none %}
+            {% set ns.p = dict(ns.p, progress=progress | float(-1) | round(0) | int) %}
+          {% endif %}
+          {% if duration_ms is defined and (duration_ms | int(0)) > 0 %}
+            {% set ns.p = dict(ns.p, durationMs=duration_ms | int) %}
+          {% endif %}
+          {% if lifetime_ms is defined and (lifetime_ms | int(0)) > 0 %}
+            {% set ns.p = dict(ns.p,
+                lifetimeMs=lifetime_ms | int,
+                lifetimeExpiry=lifetime_expiry | default('remove', true)) %}
+          {% endif %}
+          {% if text_color is defined and (text_color | default('', true) | trim) != '' %}
+            {% set ns.p = dict(ns.p, textColor=text_color | string | trim) %}
+          {% endif %}
+          {% if overlay is defined and (overlay | default('', true) | trim) != '' %}
+            {% set ns.p = dict(ns.p, overlay=overlay | string | trim) %}
+          {% endif %}
+          {% if (repeat | default(0) | int(0)) > 0 %}
+            {% set ns.p = dict(ns.p, repeat=repeat | int) %}
+          {% endif %}
+          {{ ns.p | to_json }}
+
+    - alias: Ungültige App-ID abfangen
+      if:
+        - condition: template
+          value_template: "{{ app_id is not match('^[A-Za-z0-9_-]{1,32}$') }}"
+      then:
+        - action: system_log.write
+          data:
+            level: warning
+            logger: awtrix_app
+            message: >-
+              Ungültige AWTRIX App-ID "{{ app_id }}" – erlaubt ist nur
+              [A-Za-z0-9_-]{1,32}. Push wurde übersprungen.
+        - stop: "Ungültige App-ID"
+
+    - alias: Senden
+      choose:
+        - conditions: "{{ do_delete }}"
+          sequence:
+            - action: mqtt.publish
+              data:
+                topic: "{{ prefix }}/cmd/apps/pushed/{{ app_id }}"
+                payload: ""
+      default:
+        - action: mqtt.publish
+          data:
+            topic: "{{ prefix }}/cmd/apps/pushed/{{ app_id }}"
+            payload: "{{ payload }}"

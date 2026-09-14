@@ -1,0 +1,117 @@
+---
+# AWTRIX NG – Notification
+# Wichtig ggü. der alten Version: Zahlen MÜSSEN als JSON-Zahl raus.
+# NG ignoriert Keys mit falschem JSON-Typ still ({"repeat":"2"} -> Default).
+awtrix_notify:
+  alias: AWTRIX · Notify
+  description: "Einmalige Benachrichtigung auf der AWTRIX NG"
+  mode: queued
+  max: 10
+  fields:
+    text:
+      name: Text
+      required: true
+      selector:
+        text:
+    icon:
+      name: Icon
+      selector:
+        text:
+    repeat:
+      name: Repeat
+      description: "Scroll-Durchläufe, 0 = aus"
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 1
+    duration_ms:
+      name: Dauer (ms)
+      selector:
+        number:
+          min: 0
+          max: 120000
+          step: 500
+    name:
+      name: Name
+      description: "Optional – erlaubt gezieltes Zurückziehen der Notification"
+      selector:
+        text:
+    text_color:
+      name: Textfarbe
+      selector:
+        text:
+    overlay:
+      name: Overlay
+      selector:
+        select:
+          options: ["", rain, snow, drizzle, storm, thunder, frost]
+    sound:
+      name: Sound
+      description: "MP3-/Melodie-Name oder DFPlayer-Tracknummer"
+      selector:
+        text:
+    stack:
+      name: Anstellen
+      description: "false = ersetzt die aktuell angezeigte Notification"
+      default: true
+      selector:
+        boolean:
+    hold:
+      name: Halten
+      description: "Bleibt bis zum Wegdrücken stehen"
+      default: false
+      selector:
+        boolean:
+    wakeup:
+      name: Display wecken
+      default: false
+      selector:
+        boolean:
+    device_prefix:
+      name: MQTT Prefix
+      selector:
+        text:
+  sequence:
+    - variables:
+        prefix: >-
+          {{ device_prefix | default('', true)
+            or states('sensor.wohnzimmer_awtrix_ng_mqtt_prefix') }}
+        payload: >-
+          {% set ns = namespace(p={'text': text | string | trim}) %}
+          {% if icon is defined and (icon | default('', true) | string | trim) != '' %}
+            {% set ns.p = dict(ns.p, icon=icon | string | trim) %}
+          {% endif %}
+          {% if (repeat | default(1) | int(0)) > 0 %}
+            {% set ns.p = dict(ns.p, repeat=repeat | int) %}
+          {% endif %}
+          {% if duration_ms is defined and (duration_ms | int(0)) > 0 %}
+            {% set ns.p = dict(ns.p, durationMs=duration_ms | int) %}
+          {% endif %}
+          {% if name is defined and (name | default('', true) | trim) != '' %}
+            {% set ns.p = dict(ns.p, name=name | string | trim) %}
+          {% endif %}
+          {% if text_color is defined and (text_color | default('', true) | trim) != '' %}
+            {% set ns.p = dict(ns.p, textColor=text_color | string | trim) %}
+          {% endif %}
+          {% if overlay is defined and (overlay | default('', true) | trim) != '' %}
+            {% set ns.p = dict(ns.p, overlay=overlay | string | trim) %}
+          {% endif %}
+          {% if sound is defined and (sound | default('', true) | string | trim) != '' %}
+            {% set ns.p = dict(ns.p, sound=sound | string | trim) %}
+          {% endif %}
+          {% if not (stack | default(true)) %}
+            {% set ns.p = dict(ns.p, stack=false) %}
+          {% endif %}
+          {% if hold | default(false) %}
+            {% set ns.p = dict(ns.p, hold=true) %}
+          {% endif %}
+          {% if wakeup | default(false) %}
+            {% set ns.p = dict(ns.p, wakeup=true) %}
+          {% endif %}
+          {{ ns.p | to_json }}
+    - action: mqtt.publish
+      data:
+        topic: "{{ prefix }}/cmd/notify"
+        payload: "{{ payload }}"

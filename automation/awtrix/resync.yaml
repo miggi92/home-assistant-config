@@ -1,0 +1,42 @@
+---
+# Pushed Apps leben nur im RAM. Nach Stromausfall / Firmware-Update / Reboot
+# ist der Loop leer, bis zufällig ein Sensor wackelt. Diese Automation stößt
+# alle AWTRIX-Automationen neu an, sobald die Uhr wieder da ist.
+#
+# Voraussetzung: alle AWTRIX-Automationen tragen das Label "awtrix"
+#   (Einstellungen -> Automatisierungen -> Label vergeben)
+alias: AWTRIX · Resync nach Neustart
+id: 4f0a0b2c-8f1e-4d7a-9c33-1b6d2e5a7f10
+description: "Schiebt alle Pushed Apps neu, wenn die AWTRIX neu gebootet hat"
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.wohnzimmer_awtrix_ng_uptime
+    below: 300
+    id: awtrix_boot
+  - trigger: state
+    entity_id: sensor.wohnzimmer_awtrix_ng_version
+    from: "unavailable"
+    id: awtrix_online
+  - trigger: homeassistant
+    event: start
+    id: ha_start
+conditions: []
+actions:
+  - delay: "00:00:15"
+  - variables:
+      awtrix_automations: >-
+        {{ label_entities('awtrix')
+          | select('match', 'automation\.')
+          | reject('eq', this.entity_id)
+          | list }}
+  - repeat:
+      for_each: "{{ awtrix_automations }}"
+      sequence:
+        - action: automation.trigger
+          target:
+            entity_id: "{{ repeat.item }}"
+          data:
+            skip_condition: false
+        - delay:
+            milliseconds: 300
+mode: restart
