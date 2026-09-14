@@ -1,0 +1,72 @@
+---
+#####
+# Notify · Telegram
+# Text oder Foto (URL bzw. lokaler Pfad).
+#####
+notify_via_telegram:
+  alias: "Notify · Telegram"
+  icon: mdi:send
+  mode: parallel
+  max: 25
+  fields:
+    notifier:
+      required: true
+      description: "notify-Service, z. B. notify.telegram_bot_home"
+      selector:
+        text: null
+    chat_id:
+      selector:
+        text: null
+    config_entry_id:
+      selector:
+        text: null
+    title:
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        object: null
+  sequence:
+    - variables:
+        photo_path: "{{ (photo if photo is mapping else {}).get('path', '') }}"
+        photo_caption: >-
+          {{ (photo if photo is mapping else {}).get('caption', title | default('')) }}
+
+    - choose:
+        - alias: "Foto per URL"
+          conditions: "{{ photo_path.startswith(('http://', 'https://')) }}"
+          sequence:
+            - action: telegram_bot.send_photo
+              data:
+                verify_ssl: false
+                config_entry_id: "{{ config_entry_id }}"
+                caption: "{{ photo_caption }}"
+                url: "{{ photo_path }}"
+                chat_id:
+                  - "{{ chat_id }}"
+
+        - alias: "Foto per Dateipfad"
+          conditions: "{{ photo_path | length > 0 }}"
+          sequence:
+            - action: telegram_bot.send_photo
+              data:
+                verify_ssl: false
+                config_entry_id: "{{ config_entry_id }}"
+                caption: "{{ photo_caption }}"
+                file: "{{ photo_path }}"
+                chat_id:
+                  - "{{ chat_id }}"
+
+      default:
+        - alias: "Textnachricht"
+          action: notify.send_message
+          target:
+            entity_id: "{{ notifier }}"
+          data:
+            title: "{{ title | default('') }}"
+            message: "{{ message }}"

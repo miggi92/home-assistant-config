@@ -1,0 +1,134 @@
+---
+#####
+# Notify · Audio (Chime TTS)
+#
+# Echos bekommen eine fertige Audio-URL als SSML (<audio src="..."/>),
+# normale Media Player bekommen chime_tts.say direkt.
+#
+# Standalone nutzbar:
+#   - action: script.notify_audio
+#     data:
+#       message: "Die Waschmaschine ist fertig"
+#       chime: alert
+#####
+notify_audio:
+  alias: "Notify · Audio (Chime TTS)"
+  icon: mdi:bullhorn
+  description: "Sprachansage mit Chime auf Echos und Media Playern."
+  mode: queued
+  max: 10
+  fields:
+    message:
+      name: Nachricht
+      required: true
+      selector:
+        text:
+          multiline: true
+    title:
+      name: Titel
+      description: "Wird der Ansage vorangestellt"
+      selector:
+        text: null
+    chime:
+      name: Chime
+      description: "Profil (information/alert/none) oder direkter chime_path"
+      default: information
+      selector:
+        select:
+          custom_value: true
+          options:
+            - information
+            - alert
+            - none
+    alexa:
+      name: Echos
+      description: "notify-Entities der Echos"
+      selector:
+        entity:
+          multiple: true
+          domain: notify
+    speaker:
+      name: Media Player
+      description: "Normale Media Player"
+      selector:
+        entity:
+          multiple: true
+          domain: media_player
+    volume:
+      name: Lautstärke
+      selector:
+        number:
+          min: 0.1
+          max: 1.0
+          step: 0.05
+    language:
+      name: Sprache
+      default: de-DE
+      selector:
+        text: null
+
+  sequence:
+    - alias: "Nur wenn Audio-Benachrichtigungen erlaubt sind"
+      condition: state
+      entity_id: input_boolean.audible_notifications
+      state: "on"
+
+    - variables:
+        # ---- hier zentral anpassen ----
+        chime_profiles:
+          information: airport
+          alert: bells
+          none: ""
+        default_alexa:
+          - notify.wohnungsaudio
+        default_speaker: []
+        # -------------------------------
+        chime_key: "{{ chime | default('information') }}"
+        chime_path: "{{ chime_profiles.get(chime_key, chime_key) }}"
+        alexa_targets: >-
+          {{ alexa if alexa | default([]) | count > 0 else default_alexa }}
+        speaker_targets: >-
+          {{ speaker if speaker | default([]) | count > 0 else default_speaker }}
+        volume_level: >-
+          {% if volume is defined and volume %}
+            {{ volume | float }}
+          {% elif is_state('input_boolean.night_mode', 'on') %}
+            0.25
+          {% else %}
+            0.5
+          {% endif %}
+        spoken: >-
+          {{ (title ~ '. ' if title | default('') else '') ~ message }}
+
+    - parallel:
+        - alias: "Echos – Chime + TTS als Audio-URL"
+          if: "{{ alexa_targets | count > 0 }}"
+          then:
+            - action: chime_tts.say_url
+              response_variable: chime_audio
+              data:
+                message: "{{ spoken }}"
+                chime_path: "{{ chime_path }}"
+                audio_conversion: Alexa
+                language: "{{ language | default('de-DE') }}"
+                cache: true
+            - action: notify.send_message
+              target:
+                entity_id: "{{ alexa_targets }}"
+              data:
+                message: '<audio src="{{ chime_audio.url }}"/>'
+
+        - alias: "Media Player – Chime + TTS direkt"
+          if: "{{ speaker_targets | count > 0 }}"
+          then:
+            - action: chime_tts.say
+              target:
+                entity_id: "{{ speaker_targets }}"
+              data:
+                message: "{{ spoken }}"
+                chime_path: "{{ chime_path }}"
+                language: "{{ language | default('de-DE') }}"
+                volume_level: "{{ volume_level | float }}"
+                join_players: true
+                unjoin_players: true
+                cache: true

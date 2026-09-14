@@ -1,0 +1,47 @@
+---
+#####
+# Notify · Signal
+#####
+notify_via_signal:
+  alias: "Notify · Signal"
+  icon: mdi:message-text-lock
+  mode: parallel
+  max: 25
+  fields:
+    notifier:
+      required: true
+      description: "z. B. notify.signalhome"
+      selector:
+        text: null
+    title:
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        object: null
+  sequence:
+    - variables:
+        photo_path: "{{ (photo if photo is mapping else {}).get('path', '') }}"
+        # signal_messenger erwartet Pfade/URLs, kein Dict.
+        # urls = http(s), attachments = lokale Dateien
+        signal_data: >-
+          {% set base = {'text_mode': 'styled'} %}
+          {% if photo_path.startswith(('http://', 'https://')) %}
+            {{ dict(base, **{'urls': [photo_path]}) }}
+          {% elif photo_path | length > 0 %}
+            {{ dict(base, **{'attachments': [photo_path]}) }}
+          {% else %}
+            {{ base }}
+          {% endif %}
+    - action: "{{ notifier }}"
+      data:
+        message: >-
+          **{{ title | default('') }}**
+
+          {{ message }}
+        data: "{{ signal_data }}"

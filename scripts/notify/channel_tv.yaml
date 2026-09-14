@@ -1,0 +1,43 @@
+---
+#####
+# Notify · Google TV
+#####
+notify_via_tv:
+  alias: "Notify · TV"
+  icon: mdi:television
+  mode: queued
+  max: 10
+  fields:
+    notifier:
+      required: true
+      selector:
+        text: null
+    title:
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        object: null
+    position:
+      default: top-right
+      selector:
+        select:
+          options:
+            - top-right
+            - top-left
+            - bottom-right
+            - bottom-left
+  sequence:
+    - action: "{{ notifier }}"
+      data:
+        title: "{{ title | default('') }}"
+        message: "{{ message }}"
+        data:
+          position: "{{ position | default('top-right') }}"
+          image:
+            url: "{{ (photo if photo is mapping else {}).get('path', '') }}"

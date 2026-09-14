@@ -1,0 +1,44 @@
+---
+#####
+# Notify · TV Overlay
+#####
+notify_via_tv_overlay:
+  alias: "Notify · TV Overlay"
+  icon: mdi:television-play
+  mode: queued
+  max: 10
+  fields:
+    notifier:
+      default: notify.tvoverlaynotify
+      selector:
+        text: null
+    title:
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        object: null
+    group:
+      selector:
+        text: null
+    seconds:
+      default: 15
+      selector:
+        number:
+          min: 3
+          max: 60
+          step: 1
+  sequence:
+    - action: "{{ notifier | default('notify.tvoverlaynotify') }}"
+      data:
+        title: "{{ title | default('') }}"
+        message: "{{ message }}"
+        data:
+          appTitle: "{{ group | default('') }}"
+          seconds: "{{ seconds | default(15) | int }}"
+          image: "{{ (photo if photo is mapping else {}).get('path', '') }}"

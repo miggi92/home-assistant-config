@@ -1,0 +1,207 @@
+---
+#####
+# Notify · Engine (Dispatcher)
+#
+# Öffentliche API – bleibt kompatibel zu den bestehenden ~56 Aufrufen.
+# Aufgabe: normalisieren, Kanal auflösen, Mute prüfen, weiterreichen.
+# Es wird hier KEIN kanalspezifisches Payload mehr gebaut.
+#
+# Original-Idee: CCOSTAN – https://github.com/CCOSTAN/Home-AssistantConfig
+#####
+notify_engine:
+  alias: "Notify · Engine"
+  icon: mdi:bell-ring
+  description: "Zentraler Einstiegspunkt für alle Benachrichtigungen."
+  mode: parallel
+  max: 25
+  fields:
+    title:
+      name: Title
+      description: Titel der Benachrichtigung
+      required: true
+      selector:
+        text: null
+    value1:
+      name: Message part 1
+      description: Inhalt Teil 1
+      required: true
+      selector:
+        text:
+          multiline: true
+    value2:
+      name: Message part 2
+      description: Inhalt Teil 2
+      selector:
+        text:
+          multiline: true
+    value3:
+      name: Message part 3
+      description: Inhalt Teil 3
+      selector:
+        text:
+          multiline: true
+    who:
+      name: Who
+      description: Empfänger, kommasepariert
+      default: home
+      selector:
+        text: null
+    photo:
+      name: Foto
+      description: "{ path: <url|/config/...>, caption: <text> }"
+      selector:
+        object: null
+    group:
+      name: Group
+      selector:
+        text: null
+    tag_id:
+      name: Tag
+      default: information
+      selector:
+        select:
+          options:
+            - information
+            - alert
+    actions:
+      name: Actions
+      selector:
+        object: null
+    icon:
+      name: Icon
+      selector:
+        text: null
+    broadcast:
+      name: Broadcast
+      description: "Zusätzlich an anwesende Geräte (TV, Overlay, Work) spiegeln"
+      default: true
+      selector:
+        boolean: null
+
+  sequence:
+    - alias: "Routing-Tabelle laden"
+      action: script.notify_config
+      response_variable: cfg
+
+    - alias: "Eingaben normalisieren"
+      variables:
+        message: >-
+          {{ [value1 | default(''), value2 | default(''), value3 | default('')]
+            | map('trim') | select('ne', '') | join(' ') }}
+        # Immer ein Dict – verhindert den photo.path-Crash bei photo: ''
+        photo_data: >-
+          {{ photo if photo is mapping and photo.get('path') else {} }}
+        recipients: >-
+          {{ (who | default('home')).split(',')
+            | map('trim') | reject('eq', '') | list }}
+
+    - parallel:
+        - alias: "An alle Empfänger zustellen"
+          sequence:
+            - repeat:
+                for_each: "{{ recipients }}"
+                sequence:
+                  - alias: "Kanal auflösen"
+                    variables:
+                      channel_key: >-
+                        {% set sel = cfg.user_selectors.get(repeat.item) %}
+                        {{ states(sel) if sel else repeat.item }}
+                      channel: >-
+                        {{ cfg.channels.get(channel_key,
+                            cfg.channels[cfg.fallback]) }}
+                      allowed: >-
+                        {% if channel.type == 'audio' %}
+                          {{ is_state('input_boolean.audible_notifications', 'on') }}
+                        {% elif not is_state(
+                            'input_boolean.text_notifications', 'on') %}
+                          false
+                        {% elif channel_key in cfg.always_on %}
+                          true
+                        {% else %}
+                          {% set sw = 'input_boolean.notifications_' ~ repeat.item %}
+                          {{ is_state(sw, 'on') if has_value(sw) else true }}
+                        {% endif %}
+
+                  - alias: "Überspringen, wenn stummgeschaltet"
+                    if: "{{ allowed }}"
+                    then:
+                      - choose:
+                          - alias: "Telegram"
+                            conditions: "{{ channel.type == 'telegram' }}"
+                            sequence:
+                              - action: script.notify_via_telegram
+                                data:
+                                  notifier: "{{ channel.service }}"
+                                  chat_id: "{{ channel.chat_id }}"
+                                  config_entry_id: "{{ cfg.telegram_config_entry }}"
+                                  title: "{{ title }}"
+                                  message: "{{ message }}"
+                                  photo: "{{ photo_data }}"
+
+                          - alias: "Signal"
+                            conditions: "{{ channel.type == 'signal' }}"
+                            sequence:
+                              - action: script.notify_via_signal
+                                data:
+                                  notifier: "{{ channel.service }}"
+                                  title: "{{ title }}"
+                                  message: "{{ message }}"
+                                  photo: "{{ photo_data }}"
+
+                          - alias: "Google TV"
+                            conditions: "{{ channel.type == 'tv' }}"
+                            sequence:
+                              - action: script.notify_via_tv
+                                data:
+                                  notifier: "{{ channel.service }}"
+                                  title: "{{ title }}"
+                                  message: "{{ message }}"
+                                  photo: "{{ photo_data }}"
+
+                          - alias: "TV Overlay"
+                            conditions: "{{ channel.type == 'tv_overlay' }}"
+                            sequence:
+                              - action: script.notify_via_tv_overlay
+                                data:
+                                  notifier: "{{ channel.service }}"
+                                  title: "{{ title }}"
+                                  message: "{{ message }}"
+                                  photo: "{{ photo_data }}"
+                                  group: "{{ group | default('') }}"
+
+                          - alias: "Audio / Sprachansage"
+                            conditions: "{{ channel.type == 'audio' }}"
+                            sequence:
+                              - action: script.notify_audio
+                                data:
+                                  title: "{{ title }}"
+                                  message: "{{ message }}"
+                                  chime: "{{ tag_id | default('information') }}"
+                                  alexa: "{{ channel.get('alexa', []) }}"
+                                  speaker: "{{ channel.get('speaker', []) }}"
+
+                        default:
+                          - alias: "Companion App / HTML5"
+                            action: script.notify_via_mobile
+                            data:
+                              notifier: "{{ channel.service }}"
+                              title: "{{ title }}"
+                              message: "{{ message }}"
+                              photo: "{{ photo_data }}"
+                              group: "{{ group | default('') }}"
+                              tag_id: "{{ tag_id | default('') }}"
+                              icon: "{{ icon | default('') }}"
+                              actions: "{{ actions | default([]) }}"
+
+        - alias: "Spiegeln auf anwesende Geräte"
+          sequence:
+            - condition: template
+              value_template: "{{ broadcast | default(true) }}"
+            - action: script.notify_broadcast
+              data:
+                title: "{{ title }}"
+                message: "{{ message }}"
+                who: "{{ recipients }}"
+                photo: "{{ photo_data }}"
+                group: "{{ group | default('') }}"
+                tag_id: "{{ tag_id | default('') }}"

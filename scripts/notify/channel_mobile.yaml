@@ -1,0 +1,64 @@
+---
+#####
+# Notify · Companion App / HTML5
+# Baut das data-Payload der Companion-App auf.
+#####
+notify_via_mobile:
+  alias: "Notify · Mobile"
+  icon: mdi:cellphone-message
+  mode: parallel
+  max: 25
+  fields:
+    notifier:
+      required: true
+      selector:
+        text: null
+    title:
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        object: null
+    group:
+      selector:
+        text: null
+    tag_id:
+      selector:
+        text: null
+    icon:
+      selector:
+        text: null
+    actions:
+      selector:
+        object: null
+  sequence:
+    - variables:
+        photo_path: "{{ (photo if photo is mapping else {}).get('path', '') }}"
+        payload: >-
+          {% set ns = namespace(d={}) %}
+          {% if group | default('') %}
+            {% set ns.d = dict(ns.d, group=group) %}
+          {% endif %}
+          {% if tag_id | default('') %}
+            {% set ns.d = dict(ns.d, tag=tag_id) %}
+          {% endif %}
+          {% if icon | default('') %}
+            {% set ns.d = dict(ns.d, notification_icon=icon) %}
+          {% endif %}
+          {% if photo_path %}
+            {% set ns.d = dict(ns.d, image=photo_path) %}
+          {% endif %}
+          {% if actions | default([]) %}
+            {% set ns.d = dict(ns.d, actions=actions) %}
+          {% endif %}
+          {{ ns.d }}
+    - action: "{{ notifier }}"
+      data:
+        title: "{{ title | default('') }}"
+        message: "{{ message }}"
+        data: "{{ payload }}"

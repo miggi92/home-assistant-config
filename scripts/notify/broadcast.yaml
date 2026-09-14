@@ -1,0 +1,80 @@
+---
+#####
+# Notify · Broadcast
+#
+# Spiegelt eine Nachricht auf Geräte, die gerade anwesend/an sind.
+# Ruft notify_engine mit broadcast: false auf -> keine Endlos-Rekursion.
+#####
+notify_broadcast:
+  alias: "Notify · Broadcast"
+  icon: mdi:broadcast
+  description: "Spiegelt Nachrichten auf anwesende Geräte (TV, Overlay, Work)."
+  mode: parallel
+  max: 25
+  fields:
+    title:
+      required: true
+      selector:
+        text: null
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    who:
+      description: "Bereits bediente Empfänger (Liste oder kommasepariert)"
+      selector:
+        object: null
+    photo:
+      selector:
+        object: null
+    group:
+      selector:
+        text: null
+    tag_id:
+      selector:
+        text: null
+
+  sequence:
+    - variables:
+        targets:
+          - who: tv
+            device: device_tracker.gtv
+            media: media_player.gtv
+          - who: work
+            device: device_tracker.bcwmc5cg4100cy0
+          - who: tv_overlay
+            device: device_tracker.1und1_box
+            media: media_player.fernseher_im_wohnzimmer
+        already_served: >-
+          {% set w = who | default([]) %}
+          {{ w if w is iterable and w is not string
+            else w.split(',') | map('trim') | list }}
+
+    - repeat:
+        for_each: "{{ targets }}"
+        sequence:
+          - alias: "Nur wenn nicht schon bedient, Gerät da und Screen an"
+            if:
+              - condition: template
+                value_template: "{{ repeat.item.who not in already_served }}"
+              - condition: template
+                value_template: "{{ is_state(repeat.item.device, 'home') }}"
+              - condition: template
+                value_template: >-
+                  {% if repeat.item.media is defined %}
+                    {{ states(repeat.item.media)
+                      not in ['unavailable', 'unknown', 'off'] }}
+                  {% else %}
+                    true
+                  {% endif %}
+            then:
+              - action: script.notify_engine
+                data:
+                  title: "{{ title }}"
+                  value1: "{{ message }}"
+                  who: "{{ repeat.item.who }}"
+                  photo: "{{ photo | default({}) }}"
+                  group: "{{ group | default('') }}"
+                  tag_id: "{{ tag_id | default('') }}"
+                  broadcast: false

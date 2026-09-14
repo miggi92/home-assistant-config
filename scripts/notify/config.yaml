@@ -1,0 +1,83 @@
+---
+#####
+# Notify · Config
+#
+# Einzige Quelle der Wahrheit für das Routing. Wird von notify_engine und
+# notify_broadcast per response_variable gelesen:
+#
+#   - action: script.notify_config
+#     response_variable: cfg
+#
+# Neuer Kanal? Nur hier eintragen – sonst nirgends.
+#####
+notify_config:
+  alias: "Notify · Config"
+  icon: mdi:cog-outline
+  description: "Zentrale Routing-Tabelle der Notification-Engine."
+  mode: parallel
+  max: 25
+  sequence:
+    - variables:
+        config:
+          # type entscheidet, welches Kanal-Script die Engine aufruft
+          channels:
+            home:
+              type: telegram
+              service: notify.telegram_bot_home
+              chat_id: !secret telegram_home_group
+            telegram_miguel:
+              type: telegram
+              service: notify.telegram_bot_miguel
+              chat_id: !secret telegram_miguel
+            telegram_silke:
+              type: telegram
+              service: notify.telegram_bot_silke
+              chat_id: !secret telegram_silke
+            sig_home:
+              type: signal
+              service: notify.signalhome
+            family:
+              type: signal
+              service: notify.signalfamily
+            mobile_app_miguel:
+              type: mobile
+              service: notify.mobile_app_pixel_9_pro
+            mobile_app_silke:
+              type: mobile
+              service: notify.mobile_app_pixel_10_pro
+            work:
+              type: mobile
+              service: notify.html5_work_laptop_hp
+            tv:
+              type: tv
+              service: notify.gtv
+            tv_overlay:
+              type: tv_overlay
+              service: notify.tvoverlaynotify
+            home_audio:
+              type: audio
+              # Ziele stehen in notify_audio.yaml bzw. werden dort überschrieben
+              alexa:
+                - notify.wohnungsaudio
+              speaker: []
+
+          # Personen -> input_select, über das der aktive Kanal gewählt wird
+          user_selectors:
+            miguel: input_select.miguel_notification_channel
+            silke: input_select.silke_notification_channel
+
+          # Kanäle, die die input_boolean.notifications_* Mutes ignorieren
+          always_on:
+            - home
+            - sig_home
+            - family
+            - tv
+            - tv_overlay
+            - work
+
+          # Fallback, wenn ein unbekannter Empfänger reinkommt
+          fallback: telegram_miguel
+          telegram_config_entry: 01JZ6NS8C75P2K898VAJVFV86K
+
+    - stop: "config"
+      response_variable: config
