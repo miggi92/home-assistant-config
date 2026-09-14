@@ -27,7 +27,7 @@ actions:
       app_id: holiday
       show: "{{ holiday_entity != '' }}"
       text: >-
-        {% set unit = {{ state_attr(holiday_entity, 'unit_of_measurement') }} %}
+        {% set unit = state_attr(holiday_entity, 'unit_of_measurement') %}
         {%- if holiday_entity -%}
           {{ states(holiday_entity) }} - {{ unit }}
           {{ state_attr(holiday_entity, 'friendly_name') }}
