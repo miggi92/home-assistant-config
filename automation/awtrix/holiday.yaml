@@ -13,8 +13,6 @@ description: "Show holiday countdown on clock"
 triggers:
   - trigger: time
     at: "00:01:00"
-  - trigger: homeassistant
-    event: start
 conditions: []
 actions:
   - variables:
