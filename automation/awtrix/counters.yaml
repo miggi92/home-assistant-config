@@ -10,8 +10,6 @@ triggers:
       - number.count_doors_open
       - input_number.heissgetranke_zahler
       - binary_sensor.bett_tracker
-  - trigger: homeassistant
-    event: start
 conditions: []
 actions:
   - alias: Zaehler

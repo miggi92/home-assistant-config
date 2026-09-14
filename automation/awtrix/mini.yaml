@@ -8,8 +8,6 @@ triggers:
     at: "00:01:00"
   - trigger: state
     entity_id: input_boolean.holiday_mode
-  - trigger: homeassistant
-    event: start
 conditions: []
 actions:
   - variables:

@@ -15,8 +15,6 @@ triggers:
   - trigger: state
     entity_id: input_boolean.holiday_mode
     to: "off"
-  - trigger: homeassistant
-    event: start
 conditions:
   - condition: state
     entity_id: input_boolean.holiday_mode

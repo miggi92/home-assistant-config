@@ -11,8 +11,6 @@ triggers:
     id: "fasnacht"
   - trigger: state
     entity_id: sensor.special_day
-  - trigger: homeassistant
-    event: start
 conditions: []
 actions:
   - variables:
