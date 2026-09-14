@@ -37,7 +37,7 @@ change_dummy_locations:
             }
           finn:
             {
-              person_sync: input_select.finn_unterwegs,
+              person_sync: input_select.finn_person_sync,
               lat: input_number.finn_dummy_lat,
               long: input_number.finn_dummy_long,
             }
