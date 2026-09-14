@@ -200,7 +200,10 @@ person_card_template:
                 conditions:
                   - condition: state
                     entity: "device_tracker.[[dummy]]_dummy"
-                    state_not: unavailable
+                    state_not: "unknown"
+                  - condition: state
+                    entity: "device_tracker.[[dummy]]_dummy"
+                    state_not: "unavailable"
                 card:
                   type: vertical-stack
                   cards:
