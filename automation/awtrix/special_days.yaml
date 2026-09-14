@@ -3,14 +3,18 @@
 alias: Show special days on clock
 id: 10af4661-0fb0-4b0e-9b0d-e5ae7d251d93
 description: "Show special days on clock"
-trigger:
+triggers:
   - trigger: time
     at: "00:01:00"
   - trigger: time
     at: "11:11:00"
     id: "fasnacht"
-condition: []
-action:
+  - trigger: state
+    entity_id: sensor.special_day
+  - trigger: homeassistant
+    event: start
+conditions: []
+actions:
   - variables:
       max_apps: 5
       special_days: >-
@@ -22,36 +26,43 @@ action:
         {{ states('sensor.wohnzimmer_awtrix_ng_special_day_icon_awtrix').split(',')
           | map('trim')
           | list }}
-  # Alle aktiven Special Days anzeigen (app_id durchnummeriert)
-  - repeat:
-      for_each: "{{ special_days }}"
+
+  - alias: Aktive Special Days anzeigen
+    repeat:
+      for_each: "{{ special_days[:max_apps] }}"
       sequence:
-        - action: script.awtrix3customapp
+        - action: script.awtrix_app
           data:
             app_id: "special_day_{{ repeat.index }}"
             text: >-
-              {% if repeat.item == 'Stern' %}
+              {%- if repeat.item == 'Stern' -%}
                 {{ ' ' }}
-              {% elif repeat.item == 'Hochzeitstag' %}
+              {%- elif repeat.item == 'Hochzeitstag' -%}
                 {{ states('sensor.anniversaries_hochzeitstagsname') }}
-              {% else %}
+              {%- else -%}
                 {{ repeat.item }}
-              {% endif %}
+              {%- endif -%}
             icon: >-
               {{ icons[repeat.index - 1]
                 if icons | length >= repeat.index
                 else icons[0] | default('') }}
-  # Übrige (alte) Apps bis max_apps löschen
-  - repeat:
-      count: "{{ max_apps - special_days | length }}"
+            lifetime_ms: 90000000
+
+  - alias: Uebrige Apps aufraeumen
+    repeat:
+      count: "{{ [0, max_apps - (special_days | length)] | max }}"
       sequence:
-        - action: script.awtrix3delapp
+        - action: script.awtrix_app
           data:
-            app_id: "special_day_{{ special_days | length + repeat.index }}"
-  # Fasnacht-Sound
-  - if:
+            app_id: "special_day_{{ (special_days | length) + repeat.index }}"
+            show: false
+
+  - alias: Fasnacht-Sound
+    if:
       - condition: template
         value_template: "{{ 'Fasnachtszeit' in special_days }}"
+      - condition: trigger
+        id: "fasnacht"
     then:
       - action: script.spotify_audio
         data:

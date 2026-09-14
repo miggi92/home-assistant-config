@@ -3,12 +3,11 @@
 alias: UrlaubsModus
 id: 5899d18e-e2f3-4575-be82-4d81effc7293
 description: "Schaltet das Smart Home System in den Urlaubsmodus."
-trigger:
-  - platform: state
+triggers:
+  - trigger: state
     entity_id: input_boolean.holiday_mode
-
-condition: []
-action:
+conditions: []
+actions:
   - if:
       - condition: state
         entity_id: input_boolean.holiday_mode
@@ -23,21 +22,16 @@ action:
           tag_id: "information"
           group: "Urlaub"
       - action: light.turn_off
-        data: {}
         target:
           entity_id: light.kameralichter
-      - action: script.awtrix3delapp
-        data:
-          app_id: mini
-      - action: script.awtrix3delapp
-        data:
-          app_id: miguel
-      - action: script.awtrix3delapp
-        data:
-          app_id: silke
-      - action: script.awtrix3delapp
-        data:
-          app_id: milo
+      - alias: Personen- und Mini-Apps entfernen
+        repeat:
+          for_each: ["mini", "miguel", "silke", "milo", "finn", "maja"]
+          sequence:
+            - action: script.awtrix_app
+              data:
+                app_id: "{{ repeat.item }}"
+                show: false
     else:
       - action: script.notify_engine
         data:
@@ -48,7 +42,6 @@ action:
           tag_id: "information"
           group: "Urlaub"
       - action: light.turn_on
-        data: {}
         target:
           entity_id: light.kameralichter
 mode: single

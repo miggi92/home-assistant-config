@@ -1,47 +1,38 @@
 ---
-# Holiday automation (gehoert nach automation/utils/)
-alias: UrlaubsModus
-id: 5899d18e-e2f3-4575-be82-4d81effc7293
-description: "Schaltet das Smart Home System in den Urlaubsmodus."
+# Display holiday countdown
+alias: Show holiday countdown on clock
+id: 82d9f15e-5dae-4708-997f-6bae2bc337ee
+description: "Show holiday countdown on clock"
 triggers:
-  - trigger: state
-    entity_id: input_boolean.holiday_mode
+  - trigger: time
+    at: "00:01:00"
+  - trigger: homeassistant
+    event: start
 conditions: []
 actions:
-  - if:
-      - condition: state
-        entity_id: input_boolean.holiday_mode
-        state: "on"
-    then:
-      - action: script.notify_engine
-        data:
-          title: |
-            Urlaubsmodus eingeschaltet
-          value1: "🌴"
-          who: "home"
-          tag_id: "information"
-          group: "Urlaub"
-      - action: light.turn_off
-        target:
-          entity_id: light.kameralichter
-      - alias: Personen- und Mini-Apps entfernen
-        repeat:
-          for_each: ["mini", "miguel", "silke", "milo", "finn", "maja"]
-          sequence:
-            - action: script.awtrix_app
-              data:
-                app_id: "{{ repeat.item }}"
-                show: false
-    else:
-      - action: script.notify_engine
-        data:
-          title: |
-            Urlaubsmodus ausgeschaltet
-          value1: "🌴"
-          who: "home"
-          tag_id: "information"
-          group: "Urlaub"
-      - action: light.turn_on
-        target:
-          entity_id: light.kameralichter
+  - variables:
+      holiday_entity: >-
+        {% set ns = namespace(best='', days=99999) %}
+        {% for s in states.sensor
+          if s.entity_id is match('sensor\.anniversary_urlaub_') %}
+          {% set d = s.state | int(-1) %}
+          {% if d > 0 and d < ns.days %}
+            {% set ns.days = d %}
+            {% set ns.best = s.entity_id %}
+          {% endif %}
+        {% endfor %}
+        {{ ns.best }}
+  - action: script.awtrix_app
+    data:
+      app_id: holiday
+      show: "{{ holiday_entity != '' }}"
+      text: >-
+        {% set unit = {{ state_attr(holiday_entity, 'unit_of_measurement') }} %}
+        {%- if holiday_entity -%}
+          {{ states(holiday_entity) }} - {{ unit }}
+          {{ state_attr(holiday_entity, 'friendly_name') }}
+        {%- endif -%}
+      icon: "15644"
+      # Totmannschalter: faellt nach 25 h raus, falls HA den Refresh verpasst
+      lifetime_ms: 90000000
 mode: single
