@@ -58,11 +58,15 @@ text_sensor:
 
 sensor:
   - platform: uptime
-    name: "${node_friendly_name} Uptime"
-
+    name: "Uptime"
   - platform: wifi_signal
-    name: "${node_friendly_name} WiFi Signal"
+    name: "WiFi Signal"
     update_interval: 60s
+  - platform: debug
+    free:
+      name: "Free Heap"
+  - platform: internal_temperature
+    name: "Temperatur"
 
 button:
   - platform: restart
