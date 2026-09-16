@@ -70,3 +70,4 @@ button:
 ota:
   - platform: esphome
     password: !secret proxy_base_ota_password
+    allow_partition_access: true
