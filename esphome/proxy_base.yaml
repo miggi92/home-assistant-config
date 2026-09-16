@@ -26,9 +26,13 @@ api:
 web_server:
   port: 80
   version: 3
+
+debug:
+  update_interval: 60s
   
 logger:
-  level: INFO
+  level: WARN       
+  baud_rate: 0  
 
 improv_serial:
 
