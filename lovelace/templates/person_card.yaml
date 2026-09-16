@@ -213,6 +213,16 @@ person_card_template:
                       alignment: center
                       chips:
                         - type: template
+                          content: Alleine
+                          icon: mdi:human
+                          icon_color: "{{ 'orange' if is_state('input_select.[[dummy]]_person_sync', 'alleine') else 'grey' }}"
+                          tap_action:
+                            action: perform-action
+                            perform_action: script.change_dummy_locations
+                            data:
+                              who: "[[dummy]]"
+                              sync_with: alleine
+                        - type: template
                           content: Bei Silke
                           icon: mdi:human-female-boy
                           icon_color: "{{ 'purple' if is_state('input_select.[[dummy]]_person_sync', 'silke') else 'grey' }}"
