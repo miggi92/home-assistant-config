@@ -208,13 +208,17 @@ sections:
         conditions:
           - entity: sensor.home_aktuelle_warnstufe
             state_not: "0"
+          - entity: sensor.home_aktuelle_warnstufe
+            state_not: "unavailable"
+          - entity: sensor.home_vorwarnstufe
+            state_not: "unavailable"
         card:
           type: custom:mushroom-template-card
           icon: mdi:cloud-alert
           icon_color: red
           primary: Aktuelle Wetterwarnungen
           secondary: >-
-            {{ state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') + state_attr('sensor.home_vorwarnstufe', 'warning_count') }} Warnung(en)
+            {{ (state_attr('sensor.home_aktuelle_warnstufe', 'warning_count') | int(0)) + (state_attr('sensor.home_vorwarnstufe', 'warning_count') | int(0)) }} Warnung(en)
           tap_action:
             action: navigate
             navigation_path: dwd

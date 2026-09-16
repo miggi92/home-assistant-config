@@ -6,7 +6,12 @@ description: "Show dwd warning on clock"
 triggers:
   - trigger: state
     entity_id: sensor.home_aktuelle_warnstufe
-conditions: []
+conditions:
+  - alias: "Sensor-Ausfaelle ignorieren"
+    condition: template
+    value_template: >-
+      {{ trigger.to_state is not none
+        and trigger.to_state.state not in ['unavailable', 'unknown'] }}
 actions:
   - variables:
       max_apps: 5

@@ -12,11 +12,17 @@ condition:
   - condition: state
     entity_id: input_boolean.holiday_mode
     state: "off"
-  - condition: template
-    value_template: "{{ trigger.from_state.state != 'unavailable' }}"
+  - alias: "Nur echte Wechsel - keine unavailable/unknown-Flanken"
+    condition: template
+    value_template: >-
+      {{ trigger.from_state is not none and trigger.to_state is not none
+        and trigger.from_state.state not in ['unavailable', 'unknown']
+        and trigger.to_state.state not in ['unavailable', 'unknown'] }}
   - condition: template
     value_template: "{{ trigger.to_state.attributes.warning_count != trigger.from_state.attributes.warning_count }}"
 action:
+  - alias: "Beide Sensoren settlen lassen (entprellt die Doppelmeldung)"
+    delay: "00:00:05"
   - alias: "Evaluate weather warning data and format message"
     variables:
       current: "sensor.home_aktuelle_warnstufe"
@@ -77,4 +83,5 @@ action:
       photo:
         path: "https://www.dwd.de/DWD/warnungen/warnstatus/SchilderSU.jpg"
         caption: "{{ message }}"
-mode: parallel
+mode: single
+max_exceeded: silent
