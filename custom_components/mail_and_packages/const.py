@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Final
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
@@ -12,7 +13,8 @@ from .entity import MailandPackagesBinarySensorEntityDescription
 
 DOMAIN = "mail_and_packages"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.5.32"
+ASSET_ROOT: Final[Path] = Path(__file__).parent
+VERSION = "0.6.0"
 ISSUE_URL = "http://github.com/moralmunky/Home-Assistant-Mail-And-Packages"
 PLATFORM = "sensor"
 PLATFORMS = ["binary_sensor", "camera", "sensor"]
@@ -90,6 +92,7 @@ CONF_FORWARDED_EMAILS = "forwarded_emails"
 CONF_FORWARDING_HEADER = "forwarding_header"
 CONF_CUSTOM_DAYS = "custom_days"
 CONF_USPS_PLACEHOLDER = "usps_placeholder"
+CONF_EXCHANGE_MODE = "exchange_mode"
 
 # Defaults
 DEFAULT_CAMERA_NAME = "Mail USPS Camera"
@@ -143,6 +146,7 @@ DEFAULT_ALLOW_FORWARDED_EMAILS = False
 DEFAULT_FORWARDED_EMAILS = "(none)"
 DEFAULT_FORWARDING_HEADER = "(none)"
 DEFAULT_USPS_PLACEHOLDER = True
+DEFAULT_EXCHANGE_MODE = False
 
 # Amazon
 AMAZON_DOMAINS = [
@@ -532,6 +536,7 @@ SENSOR_DATA = {
             "scheduled for delivery TODAY",
             "zostanie dziś do Państwa doręczona",
             "wird Ihnen heute",
+            r"wird Ihnen\s+(?:<[^>]+>|\*+)?\s*heute",
             "wird Ihnen voraussichtlich",
             "heute zwischen",
             " - Shipment is out with courier for delivery - ",
@@ -952,7 +957,7 @@ SENSOR_DATA = {
             "delay",
         ],
     },
-    "home_depot_tracking": {"pattern": [r"\bWK\d{8}\b"]},
+    "home_depot_tracking": {"pattern": [r"\bW[KN]\d{8}\b"]},
     # Shopify (standard order-notification templates). Sender varies per
     # store; these cover Shopify's shared sending infrastructure. Stores
     # sending from their own domain need their sender added here.
@@ -976,6 +981,28 @@ SENSOR_DATA = {
     "shopify_tracking": {
         "pattern": ["shipment from order #?([A-Za-z0-9()\\-]+)"],
     },
+    # ButcherBox (subscription meat/seafood boxes, US). Sends its own
+    # notifications for the whole shipment lifecycle from one address; the
+    # "Your order has shipped!" notice is deliberately not configured here
+    # per the in-transit exclusion in docs/architecture.md.
+    "butcherbox_delivering": {
+        "email": ["support@butcherbox.com", "butcherbox.com"],
+        "subject": ["Your box is out for delivery"],
+    },
+    "butcherbox_delivered": {
+        "email": ["support@butcherbox.com", "butcherbox.com"],
+        # The real subject ends in a package emoji, which is MIME-encoded in
+        # the header. email_search() always sends charset=None, so only the
+        # ASCII portion may be used as a search term.
+        "subject": ["Your order is HERE"],
+    },
+    "butcherbox_packages": {},
+    # ButcherBox's own shipment id (AfterShip "tracking clip" links), stable
+    # across the out-for-delivery and delivered emails so delivered dedupes
+    # against delivering. The per-email "Order Number #..." is NOT usable as
+    # a key: the shipped notice reports a different id namespace (7 digits)
+    # than the later emails for the same shipment (9 digits).
+    "butcherbox_tracking": {"pattern": [r"\b(SH\d{14,22})\b"]},
     # BuildingLink
     "buildinglink_delivered": {
         "email": ["notify@buildinglink.com"],
@@ -1842,6 +1869,25 @@ SENSOR_TYPES: Final[dict[str, SensorEntityDescription]] = {
         icon="mdi:package-variant-closed",
         key="shopify_packages",
     ),
+    # ButcherBox
+    "butcherbox_delivered": SensorEntityDescription(
+        name="Mail ButcherBox Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant",
+        key="butcherbox_delivered",
+    ),
+    "butcherbox_delivering": SensorEntityDescription(
+        name="Mail ButcherBox Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="butcherbox_delivering",
+    ),
+    "butcherbox_packages": SensorEntityDescription(
+        name="Mail ButcherBox Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="butcherbox_packages",
+    ),
     # BuildingLink
     "buildinglink_delivered": SensorEntityDescription(
         name="Mail BuildingLink Delivered",
@@ -2070,6 +2116,63 @@ SENSOR_TYPES: Final[dict[str, SensorEntityDescription]] = {
         icon="mdi:package-variant-closed",
         key="burd_packages",
     ),
+    # PostNord
+    "postnord_delivered": SensorEntityDescription(
+        name="Mail PostNord Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="postnord_delivered",
+    ),
+    "postnord_delivering": SensorEntityDescription(
+        name="Mail PostNord Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="postnord_delivering",
+    ),
+    "postnord_packages": SensorEntityDescription(
+        name="Mail PostNord Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="postnord_packages",
+    ),
+    # Bring
+    "bring_delivered": SensorEntityDescription(
+        name="Mail Bring Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="bring_delivered",
+    ),
+    "bring_delivering": SensorEntityDescription(
+        name="Mail Bring Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="bring_delivering",
+    ),
+    "bring_packages": SensorEntityDescription(
+        name="Mail Bring Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="bring_packages",
+    ),
+    # DB Schenker
+    "db_schenker_delivered": SensorEntityDescription(
+        name="Mail DB Schenker Delivered",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="db_schenker_delivered",
+    ),
+    "db_schenker_delivering": SensorEntityDescription(
+        name="Mail DB Schenker Delivering",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:truck-delivery",
+        key="db_schenker_delivering",
+    ),
+    "db_schenker_packages": SensorEntityDescription(
+        name="Mail DB Schenker Packages",
+        native_unit_of_measurement="package(s)",
+        icon="mdi:package-variant-closed",
+        key="db_schenker_packages",
+    ),
     ###
     # !!! Insert new sensors above these summary sensors !!!
     ###
@@ -2173,63 +2276,6 @@ CAMERA_EXTRACTION_CONFIG = {
         "image_type": "jpeg",
         "attachment_filename_pattern": "delivery",
     },
-    # PostNord
-    "postnord_delivered": SensorEntityDescription(
-        name="Mail PostNord Delivered",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="postnord_delivered",
-    ),
-    "postnord_delivering": SensorEntityDescription(
-        name="Mail PostNord Delivering",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:truck-delivery",
-        key="postnord_delivering",
-    ),
-    "postnord_packages": SensorEntityDescription(
-        name="Mail PostNord Packages",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="postnord_packages",
-    ),
-    # Bring
-    "bring_delivered": SensorEntityDescription(
-        name="Mail Bring Delivered",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="bring_delivered",
-    ),
-    "bring_delivering": SensorEntityDescription(
-        name="Mail Bring Delivering",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:truck-delivery",
-        key="bring_delivering",
-    ),
-    "bring_packages": SensorEntityDescription(
-        name="Mail Bring Packages",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="bring_packages",
-    ),
-    # DB Schenker
-    "db_schenker_delivered": SensorEntityDescription(
-        name="Mail DB Schenker Delivered",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="db_schenker_delivered",
-    ),
-    "db_schenker_delivering": SensorEntityDescription(
-        name="Mail DB Schenker Delivering",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:truck-delivery",
-        key="db_schenker_delivering",
-    ),
-    "db_schenker_packages": SensorEntityDescription(
-        name="Mail DB Schenker Packages",
-        native_unit_of_measurement="package(s)",
-        icon="mdi:package-variant-closed",
-        key="db_schenker_packages",
-    ),
 }
 
 # Sensor Index
@@ -2284,6 +2330,7 @@ SHIPPERS = [
     "bring",
     "db_schenker",
     "shopify",
+    "butcherbox",
 ]
 
 # Authentication types

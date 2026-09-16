@@ -10081,6 +10081,12 @@
       "id": "ics_mein_abfallkalender_online"
     },
     {
+      "title": "Erlensee",
+      "module": "sperrmuell_erlensee_de",
+      "default_params": {},
+      "id": "sperrmuell_erlensee_de"
+    },
+    {
       "title": "Ertinghausen",
       "module": "nerdbridge_de",
       "default_params": {
@@ -21941,6 +21947,14 @@
       "id": "molndal_se"
     },
     {
+      "title": "Nodra (Norrk\u00f6ping)",
+      "module": "avfallsapp_se",
+      "default_params": {
+        "service_provider": "nodra"
+      },
+      "id": "avfallsapp_se"
+    },
+    {
       "title": "Norrtalje Vatten & Avfall",
       "module": "nvaa_se",
       "default_params": {},
@@ -22624,6 +22638,12 @@
         "municipality": "Gasel"
       },
       "id": "koeniz_ch"
+    },
+    {
+      "title": "Gemeinde Feuerthalen",
+      "module": "feuerthalen_ch",
+      "default_params": {},
+      "id": "feuerthalen_ch"
     },
     {
       "title": "Gemeinde Hochfelden",
@@ -26157,6 +26177,14 @@
       "module": "okc_gov",
       "default_params": {},
       "id": "okc_gov"
+    },
+    {
+      "title": "City of Orlando, FL",
+      "module": "ics",
+      "default_params": {
+        "split_at": "\\, (?:and )?|(?: and )"
+      },
+      "id": "ics_recollect"
     },
     {
       "title": "City of Philadelphia, PA",

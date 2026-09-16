@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import email
 import logging
 import re
@@ -12,9 +11,9 @@ from typing import Any
 
 import anyio
 from aioimaplib import IMAP4_SSL
-from bs4 import BeautifulSoup
 
 from custom_components.mail_and_packages.const import (
+    ASSET_ROOT,
     ATTR_COUNT,
     ATTR_EMAIL,
     ATTR_GRID_IMAGE_NAME,
@@ -31,6 +30,7 @@ from custom_components.mail_and_packages.const import (
     DEFAULT_CUSTOM_IMG_FILE,
     SENSOR_DATA,
 )
+from custom_components.mail_and_packages.shippers.base import Shipper
 from custom_components.mail_and_packages.utils.cache import EmailCache
 from custom_components.mail_and_packages.utils.date import get_formatted_date
 from custom_components.mail_and_packages.utils.image import (
@@ -39,13 +39,11 @@ from custom_components.mail_and_packages.utils.image import (
     copy_overlays,
     generate_delivery_gif,
     generate_grid_img,
-    io_save_file,
-    random_filename,
     resize_images,
 )
 from custom_components.mail_and_packages.utils.imap import email_fetch, email_search
 
-from .base import Shipper
+from .image import extract_jpeg_attachment, extract_usps_images
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,9 +105,7 @@ class USPSShipper(Shipper):
         # Generate filtered list for GIF/MP4/Grid
         gif_images = images.copy()
         if not config.get("usps_placeholder", True):
-            placeholder_str = str(
-                Path(__file__).parent.parent / "image-no-mailpieces700.jpg"
-            )
+            placeholder_str = str(ASSET_ROOT / "image-no-mailpieces700.jpg")
             if placeholder_str in gif_images:
                 gif_images.remove(placeholder_str)
 
@@ -192,7 +188,7 @@ class USPSShipper(Shipper):
         # Old USPS format: plain-text email body contained the filename as a reference.
         # New format is handled in _extract_usps_images on properly decoded HTML.
         if re.compile(r"\bimage-no-mailpieces?700\.jpg\b").search(content) is not None:
-            placeholder = Path(__file__).parent.parent / "image-no-mailpieces700.jpg"
+            placeholder = ASSET_ROOT / "image-no-mailpieces700.jpg"
             placeholder_str = str(placeholder)
             if placeholder.exists() and placeholder_str not in images:
                 images.append(placeholder_str)
@@ -261,7 +257,7 @@ class USPSShipper(Shipper):
             target = Path(path) / name
             if target.is_file():
                 cleanup_images(path, name)
-            src = custom_img or str(Path(__file__).parent.parent / "mail_none.gif")
+            src = custom_img or str(ASSET_ROOT / "mail_none.gif")
             if not Path(src).is_absolute():
                 src = self.hass.config.path(src)
             shutil.copyfile(src, str(target))
@@ -277,7 +273,7 @@ class USPSShipper(Shipper):
         return {
             "image_output_path": self.config.get("image_path"),
             "gif_duration": self.config.get(CONF_DURATION),
-            "image_name": self.config.get("usps_image"),
+            "image_name": self.config.get("usps_image") or "usps_deliveries.gif",
             "gen_mp4": self.config.get(CONF_GENERATE_MP4),
             "custom_img": self.config.get(CONF_CUSTOM_IMG_FILE)
             or DEFAULT_CUSTOM_IMG_FILE,
@@ -374,48 +370,9 @@ class USPSShipper(Shipper):
         images: list,
     ) -> tuple[int, list]:
         """Extract images from an email part (HTML/Base64)."""
-        payload = part.get_payload(decode=True)
-        content = (
-            payload.decode("utf-8", "ignore")
-            if isinstance(payload, (bytes, bytearray))
-            else str(payload)
+        return await extract_usps_images(
+            self.hass, part, image_output_path, image_count, images
         )
-
-        # New USPS format: unscanned mailpieces use a div with a specific id.
-        # Check here on properly decoded HTML — raw RFC822 content is
-        # quoted-printable encoded and soft line breaks could split the string.
-        if "mailpiece-with-no-image-id" in content:
-            placeholder = Path(__file__).parent.parent / "image-no-mailpieces700.jpg"
-            placeholder_str = str(placeholder)
-            if placeholder.exists() and placeholder_str not in images:
-                images.append(placeholder_str)
-                image_count += 1
-                _LOGGER.debug(
-                    "Placeholder image found using: image-no-mailpieces700.jpg.",
-                )
-
-        if "data:image/jpeg;base64" not in content:
-            return image_count, images
-
-        soup = BeautifulSoup(content, "html.parser")
-        found_images = soup.find_all(id="mailpiece-image-src-id")
-
-        for image in found_images:
-            filename = random_filename()
-            img_data = str(image["src"]).split(",")[1]
-            try:
-                target_path = Path(image_output_path) / filename
-                await self.hass.async_add_executor_job(
-                    io_save_file,
-                    target_path,
-                    base64.b64decode(img_data),
-                )
-                images.append(str(target_path))
-                image_count += 1
-            except (OSError, ValueError, TypeError) as err:
-                _LOGGER.error("Error extracting image: %s", err)
-
-        return image_count, images
 
     async def _extract_jpeg_attachment(
         self,
@@ -425,24 +382,6 @@ class USPSShipper(Shipper):
         images: list,
     ) -> tuple[int, list]:
         """Extract image from JPEG attachment."""
-        _LOGGER.debug("Extracting image from email attachment")
-        filename = part.get_filename()
-        junkmail = ["mailer", "content", "package"]
-        if filename is None:
-            return image_count, images
-        if any(junk in filename for junk in junkmail):
-            return image_count, images
-
-        try:
-            target_path = Path(image_output_path) / filename
-            await self.hass.async_add_executor_job(
-                io_save_file,
-                target_path,
-                part.get_payload(decode=True),
-            )
-            images.append(str(target_path))
-            image_count += 1
-        except OSError as err:
-            _LOGGER.critical("Error opening filepath: %s", err)
-
-        return image_count, images
+        return await extract_jpeg_attachment(
+            self.hass, part, image_output_path, image_count, images
+        )
