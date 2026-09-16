@@ -98,7 +98,7 @@ notify_audio:
             0.5
           {% endif %}
         spoken: >-
-          {{ (title ~ '. ' if title | default('') else '') ~ message }}
+          {{ message }}
 
     - parallel:
         - alias: "Echos – Chime + TTS als Audio-URL"
