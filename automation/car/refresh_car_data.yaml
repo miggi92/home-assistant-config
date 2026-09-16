@@ -1,107 +1,135 @@
 ---
 alias: "Check FordPass Last Refresh"
 id: af2a6157-b2f2-4b20-94cc-d2c6b8bc48f5
-mode: restart
+description: >
+  Adaptives FordPass-Polling. Das Intervall misst das Alter der Daten
+  (sensor.*_lastrefresh). Zusaetzlich verhindert ein Pending-Guard, dass
+  nachgedrueckt wird, solange eine Anfrage noch unterwegs ist - sonst
+  laeuft die Automation ins Dauerfeuer, wenn Ford nicht antwortet.
+mode: single
+max_exceeded: silent
 
-trigger:
-  - platform: time_pattern
-    seconds: "/15"
+triggers:
+  - trigger: time_pattern
+    minutes: "/1"
     id: "trigger_periodic"
-    alias: "Periodic background check every 15 seconds"
+    alias: "Hintergrund-Tick jede Minute"
 
-  - platform: state
+  - trigger: state
+    entity_id: sensor.fordpass_tourneo_ignitionstatus
+    to: "ON"
+    id: "trigger_car_active"
+    alias: "Zuendung an"
+
+  - trigger: state
     entity_id:
       - binary_sensor.pixel_9_pro_android_auto
       - binary_sensor.pixel_10_pro_android_auto
     to: "on"
     id: "trigger_car_active"
-    alias: "Immediate trigger when Android Auto connects"
+    alias: "Android Auto verbunden"
 
-  - platform: state
+  - trigger: state
     entity_id: group.parents
-    from: "2"
+    to: "not_home"
     id: "trigger_parent_left"
-    alias: "Immediate trigger when a parent leaves"
+    alias: "Eltern-Gruppe verlaesst home"
 
-condition:
-  - alias: "Check if battery has enough life"
+conditions:
+  - alias: "12V-Batterie hat genug Reserve"
     condition: numeric_state
     entity_id: sensor.fordpass_tourneo_battery
-    above: "70"
+    above: 70
 
-action:
-  - alias: "Define calculation variables"
+actions:
+  - alias: "Berechnungsvariablen"
     variables:
-      time_since_refresh: >
+      refresh_ts: >
         {% set dt = states('sensor.fordpass_tourneo_lastrefresh') | as_datetime %}
-        {% set last = dt if dt != None else (now() - timedelta(days=1)) %}
-        {{ (now() - last).total_seconds() }}
-      is_driving: "{{ is_state('binary_sensor.pixel_9_pro_android_auto', 'on') or is_state('binary_sensor.pixel_10_pro_android_auto', 'on') }}"
-      is_away: "{{ not is_state('device_tracker.fordpass_tourneo', 'home') }}"
-      is_charging: "{{ is_state('sensor.fordpass_tourneo_elvehcharging','IN_PROGRESS') }}"
-      interval_active: 15
-      interval_idle: 900
-      interval_charging: 60
+        {{ (dt | as_timestamp) | float(0) if dt else 0 }}
+      press_ts: >
+        {% set p = states('button.fordpass_tourneo_request_refresh') | as_datetime %}
+        {{ (p | as_timestamp) | float(0) if p else 0 }}
+      time_since_refresh: >
+        {{ (now().timestamp() - refresh_ts | float(0))
+          if refresh_ts | float(0) > 0 else 99999 }}
+      api_timeout: 120
+      request_pending: >
+        {{ press_ts | float(0) > refresh_ts | float(0)
+          and (now().timestamp() - press_ts | float(0)) < api_timeout | float(0) }}
+      is_away: >
+        {{ states('device_tracker.fordpass_tourneo_tracker')
+          not in ['home', 'unknown', 'unavailable'] }}
+      is_driving: >
+        {{ is_state('sensor.fordpass_tourneo_ignitionstatus', 'ON')
+          or is_state('binary_sensor.pixel_9_pro_android_auto', 'on')
+          or is_state('binary_sensor.pixel_10_pro_android_auto', 'on') }}
+      is_charging: "{{ is_state('sensor.fordpass_tourneo_elvehcharging', 'IN_PROGRESS') }}"
+      interval_driving: 60
+      interval_charging: 300
+      interval_parked_away: 900
+      interval_idle: 3600
+  - alias: "Sofort-Update, weil gerade ein Ereignis eingetreten ist"
+    if:
+      - condition: trigger
+        id:
+          - "trigger_car_active"
+          - "trigger_parent_left"
+    then:
+      - action: button.press
+        target:
+          entity_id: button.fordpass_tourneo_request_refresh
+        alias: "Refresh anfordern (sofort)"
+      - stop: "Sofort-Update ausgeloest, Intervall-Logik uebersprungen"
 
-  - alias: "Determine update strategy based on conditions"
+  - alias: "Abbrechen, solange eine Anfrage noch unterwegs ist"
+    condition: template
+    value_template: "{{ not request_pending }}"
+
+  - alias: "Intervall nach Fahrzeugzustand"
     choose:
-      - alias: "Force immediate update because an event happened right now"
+      - alias: "Fahrt - Zuendung an oder Android Auto verbunden"
         conditions:
-          - condition: trigger
-            id:
-              - "trigger_car_active"
-              - "trigger_parent_left"
-            alias: "Triggered by Android Auto or Parents Group"
+          - condition: template
+            value_template: "{{ is_driving }}"
+          - condition: template
+            value_template: "{{ time_since_refresh | float >= interval_driving }}"
         sequence:
           - action: button.press
             target:
               entity_id: button.fordpass_tourneo_request_refresh
-            alias: "Request FordPass Refresh (Immediate)"
+            alias: "Refresh anfordern (Fahrt)"
 
-      - alias: "Charging interval update (Car is charging)"
+      - alias: "Ladevorgang laeuft"
         conditions:
           - condition: template
             value_template: "{{ is_charging }}"
-            alias: "Check if car is charging"
           - condition: template
             value_template: "{{ time_since_refresh | float >= interval_charging }}"
-            alias: "Check if charging interval is reached"
         sequence:
           - action: button.press
             target:
               entity_id: button.fordpass_tourneo_request_refresh
-            alias: "Request FordPass Refresh (Charging)"
+            alias: "Refresh anfordern (Laden)"
 
-      - alias: "Active interval update (Car is away or driving)"
+      - alias: "Auswaerts geparkt - Zuendung aus, nicht zu Hause"
         conditions:
           - condition: template
-            value_template: "{{ not is_charging }}"
-            alias: "Check if not charging to prevent override"
+            value_template: "{{ is_away }}"
           - condition: template
-            value_template: "{{ is_driving or is_away }}"
-            alias: "Check if driving or away"
-          - condition: template
-            value_template: "{{ time_since_refresh | float >= interval_active }}"
-            alias: "Check if active interval is reached"
+            value_template: "{{ time_since_refresh | float >= interval_parked_away }}"
         sequence:
           - action: button.press
             target:
               entity_id: button.fordpass_tourneo_request_refresh
-            alias: "Request FordPass Refresh (Active)"
+            alias: "Refresh anfordern (auswaerts geparkt)"
 
-      - alias: "Idle interval update (Car is home and not driving)"
+      - alias: "Idle - steht zu Hause"
         conditions:
-          - condition: template
-            value_template: "{{ not is_charging }}"
-            alias: "Check if not charging to prevent override"
-          - condition: template
-            value_template: "{{ not is_driving and not is_away }}"
-            alias: "Check if not driving and not away"
           - condition: template
             value_template: "{{ time_since_refresh | float >= interval_idle }}"
-            alias: "Check if idle interval is reached"
         sequence:
           - action: button.press
             target:
               entity_id: button.fordpass_tourneo_request_refresh
-            alias: "Request FordPass Refresh (Idle)"
+            alias: "Refresh anfordern (Idle)"
