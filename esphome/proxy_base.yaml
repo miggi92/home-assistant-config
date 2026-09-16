@@ -46,16 +46,6 @@ wifi:
 
 captive_portal:
 
-text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "${node_friendly_name} IP Address"
-    mac_address:
-      name: "${node_friendly_name} MAC Address"
-
-  - platform: version
-    name: "${node_friendly_name} ESPHome Version"
-
 sensor:
   - platform: uptime
     name: "Uptime"
@@ -68,9 +58,18 @@ sensor:
   - platform: internal_temperature
     name: "Temperatur"
 
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+    mac_address:
+      name: "MAC Address"
+  - platform: version
+    name: "ESPHome Version"
+
 button:
   - platform: restart
-    name: "${node_friendly_name} Restart"
+    name: "Restart"
 
 ota:
   - platform: esphome
