@@ -1706,6 +1706,7 @@
         "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
         "data": {
           "calendar_title": "Titre du Calendrier",
+          "post_code": "Code postal",
           "street": "Rue",
           "suburb": "Suburb"
         },
@@ -1718,6 +1719,7 @@
         "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
         "data": {
           "calendar_title": "Titre du Calendrier",
+          "post_code": "Code postal",
           "street": "Rue",
           "suburb": "Suburb"
         },
@@ -11761,6 +11763,26 @@
         },
         "data_description": {}
       },
+      "args_sperrmuell_erlensee_de": {
+        "title": "Configurer la Source",
+        "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
+        "data": {
+          "calendar_title": "Titre du Calendrier",
+          "street": "Rue"
+        },
+        "data_description": {
+          "calendar_title": "Un nom plus lisible ou convivial pour le calendrier des déchets. Si aucun n'est fourni, le nom renvoyé par la source sera utilisé."
+        }
+      },
+      "reconfigure_sperrmuell_erlensee_de": {
+        "title": "Reconfigurer la Source",
+        "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
+        "data": {
+          "calendar_title": "Titre du Calendrier",
+          "street": "Rue"
+        },
+        "data_description": {}
+      },
       "args_ics_esg_soest_de": {
         "title": "Configurer la Source",
         "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
@@ -19341,7 +19363,8 @@
         "data": {
           "calendar_title": "Titre du Calendrier",
           "location": "Emplacement",
-          "location_id": "ID d'emplacement"
+          "location_id": "ID d'emplacement",
+          "property_type": "Property Type"
         },
         "data_description": {
           "calendar_title": "Un nom plus lisible ou convivial pour le calendrier des déchets. Si aucun n'est fourni, le nom renvoyé par la source sera utilisé."
@@ -19353,7 +19376,8 @@
         "data": {
           "calendar_title": "Titre du Calendrier",
           "location": "Emplacement",
-          "location_id": "ID d'emplacement"
+          "location_id": "ID d'emplacement",
+          "property_type": "Property Type"
         },
         "data_description": {}
       },
@@ -21426,6 +21450,24 @@
           "calendar_title": "Titre du Calendrier",
           "district": "District",
           "municipality": "Municipalité"
+        },
+        "data_description": {}
+      },
+      "args_feuerthalen_ch": {
+        "title": "Configurer la Source",
+        "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
+        "data": {
+          "calendar_title": "Titre du Calendrier"
+        },
+        "data_description": {
+          "calendar_title": "Un nom plus lisible ou convivial pour le calendrier des déchets. Si aucun n'est fourni, le nom renvoyé par la source sera utilisé."
+        }
+      },
+      "reconfigure_feuerthalen_ch": {
+        "title": "Reconfigurer la Source",
+        "description": "Configurez votre fournisseur de services. {howto}Plus de détails : {docs_url}.",
+        "data": {
+          "calendar_title": "Titre du Calendrier"
         },
         "data_description": {}
       },

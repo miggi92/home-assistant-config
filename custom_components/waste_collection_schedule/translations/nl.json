@@ -1700,6 +1700,7 @@
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
         "data": {
           "calendar_title": "Calendar Title",
+          "post_code": "Postcode",
           "street": "Street",
           "suburb": "Suburb"
         },
@@ -1712,6 +1713,7 @@
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
         "data": {
           "calendar_title": "Calendar Title",
+          "post_code": "Postcode",
           "street": "Street",
           "suburb": "Suburb"
         },
@@ -11629,6 +11631,26 @@
         },
         "data_description": {}
       },
+      "args_sperrmuell_erlensee_de": {
+        "title": "Configure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title",
+          "street": "Street"
+        },
+        "data_description": {
+          "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used."
+        }
+      },
+      "reconfigure_sperrmuell_erlensee_de": {
+        "title": "Reconfigure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title",
+          "street": "Street"
+        },
+        "data_description": {}
+      },
       "args_ics_esg_soest_de": {
         "title": "Configure Source",
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
@@ -19177,7 +19199,8 @@
         "data": {
           "calendar_title": "Calendar Title",
           "location": "Location",
-          "location_id": "Location Id"
+          "location_id": "Location Id",
+          "property_type": "Property Type"
         },
         "data_description": {
           "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used."
@@ -19189,7 +19212,8 @@
         "data": {
           "calendar_title": "Calendar Title",
           "location": "Location",
-          "location_id": "Location Id"
+          "location_id": "Location Id",
+          "property_type": "Property Type"
         },
         "data_description": {}
       },
@@ -21212,6 +21236,24 @@
           "calendar_title": "Calendar Title",
           "district": "District",
           "municipality": "Municipality"
+        },
+        "data_description": {}
+      },
+      "args_feuerthalen_ch": {
+        "title": "Configure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title"
+        },
+        "data_description": {
+          "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used."
+        }
+      },
+      "reconfigure_feuerthalen_ch": {
+        "title": "Reconfigure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title"
         },
         "data_description": {}
       },

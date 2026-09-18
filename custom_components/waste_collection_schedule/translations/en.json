@@ -1825,11 +1825,13 @@
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
         "data": {
           "calendar_title": "Calendar Title",
+          "post_code": "Post code",
           "street": "Street",
           "suburb": "Suburb"
         },
         "data_description": {
           "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used.",
+          "post_code": "Optional four-digit post code, e.g. 4301.",
           "street": "Street number and street name, e.g. 50 Brisbane Road.",
           "suburb": "Suburb name, e.g. Redbank."
         }
@@ -1839,10 +1841,12 @@
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
         "data": {
           "calendar_title": "Calendar Title",
+          "post_code": "Post code",
           "street": "Street",
           "suburb": "Suburb"
         },
         "data_description": {
+          "post_code": "Optional four-digit post code, e.g. 4301.",
           "street": "Street number and street name, e.g. 50 Brisbane Road.",
           "suburb": "Suburb name, e.g. Redbank."
         }
@@ -12254,6 +12258,29 @@
         },
         "data_description": {}
       },
+      "args_sperrmuell_erlensee_de": {
+        "title": "Configure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title",
+          "street": "Street"
+        },
+        "data_description": {
+          "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used.",
+          "street": "Street name as shown in the dropdown on the website."
+        }
+      },
+      "reconfigure_sperrmuell_erlensee_de": {
+        "title": "Reconfigure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title",
+          "street": "Street"
+        },
+        "data_description": {
+          "street": "Street name as shown in the dropdown on the website."
+        }
+      },
       "args_ics_esg_soest_de": {
         "title": "Configure Source",
         "description": "Configure your service provider. {howto}More details: {docs_url}.",
@@ -20246,12 +20273,14 @@
         "data": {
           "calendar_title": "Calendar Title",
           "location": "Location",
-          "location_id": "Location ID (obsolete)"
+          "location_id": "Location ID (obsolete)",
+          "property_type": "Property type"
         },
         "data_description": {
           "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used.",
           "location": "Locality or district URL slug from the COM-D schedule page",
-          "location_id": "No longer supported, use 'location' instead"
+          "location_id": "No longer supported, use 'location' instead",
+          "property_type": "all (default), single_family or multi_family; select the dwelling type when the provider publishes separate schedules"
         }
       },
       "reconfigure_gmina_sroda_slaska_pl": {
@@ -20260,11 +20289,13 @@
         "data": {
           "calendar_title": "Calendar Title",
           "location": "Location",
-          "location_id": "Location ID (obsolete)"
+          "location_id": "Location ID (obsolete)",
+          "property_type": "Property type"
         },
         "data_description": {
           "location": "Locality or district URL slug from the COM-D schedule page",
-          "location_id": "No longer supported, use 'location' instead"
+          "location_id": "No longer supported, use 'location' instead",
+          "property_type": "all (default), single_family or multi_family; select the dwelling type when the provider publishes separate schedules"
         }
       },
       "args_goap_poznan_pl": {
@@ -22479,6 +22510,24 @@
           "calendar_title": "Calendar Title",
           "district": "District",
           "municipality": "Municipality"
+        },
+        "data_description": {}
+      },
+      "args_feuerthalen_ch": {
+        "title": "Configure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title"
+        },
+        "data_description": {
+          "calendar_title": "A more readable, or user-friendly, name for the waste calendar. If nothing is provided, the name returned by the source will be used."
+        }
+      },
+      "reconfigure_feuerthalen_ch": {
+        "title": "Reconfigure Source",
+        "description": "Configure your service provider. {howto}More details: {docs_url}.",
+        "data": {
+          "calendar_title": "Calendar Title"
         },
         "data_description": {}
       },
