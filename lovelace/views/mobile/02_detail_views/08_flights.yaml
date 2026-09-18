@@ -39,12 +39,10 @@ sections:
             name: In area
           - entity: sensor.flightradar24_zusatzlich_verfolgt
             name: Additional tracked
-      - type: iframe
-        url: !secret flight_radar_map
-        aspect_ratio: 100%
-        grid_options:
-          columns: 12
-          rows: 6
+      - type: custom:flightradar24-card
+        entity: sensor.flightradar24_current_in_area
+        show_flights: true
+        show_tracks: true
       - type: conditional
         conditions:
           - condition: or
