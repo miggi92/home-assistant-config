@@ -1,0 +1,257 @@
+---
+# Gaming
+title: Gaming
+path: details-gaming
+icon: mdi:controller
+subview: true
+type: sections
+max_columns: 3
+header:
+  layout: center
+  badges_position: top
+badges:
+  - type: custom:mushroom-template-badge
+    entity: sensor.miggus
+    icon: mdi:steam
+    label: Steam
+    content: >-
+      {{ state_attr('sensor.miggus', 'game') or states('sensor.miggus') }}
+    color: >-
+      {{ 'green' if state_attr('sensor.miggus', 'game') else 'disabled' }}
+    tap_action:
+      action: more-info
+  - type: custom:mushroom-template-badge
+    entity: sensor.miggus_i_status
+    icon: mdi:microsoft-xbox
+    label: Xbox
+    content: "{{ states('sensor.miggus_i_status') }}"
+    color: >-
+      {% if is_state('binary_sensor.miggus_i_in_game', 'on') %}
+        green
+      {% elif is_state('binary_sensor.miggus_i', 'on') %}
+        blue
+      {% else %}
+        disabled
+      {% endif %}
+    tap_action:
+      action: more-info
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+      - type: heading
+        heading: Wer spielt gerade
+        heading_style: title
+        icon: mdi:account-group
+
+      - type: custom:decluttering-card
+        template: gaming_player_card_template
+        variables:
+          - entity: sensor.miggus
+          - title: Steam
+          - icon: mdi:steam
+
+      - type: custom:decluttering-card
+        template: gaming_player_card_template
+        variables:
+          - entity: sensor.miggus_i_status
+          - title: Xbox
+          - icon: mdi:microsoft-xbox
+          - in_game: binary_sensor.miggus_i_in_game
+          - image_entity: image.miggus_i_spielt_gerade
+
+      # Großes Cover, nur solange auf der Xbox wirklich etwas läuft.
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: binary_sensor.miggus_i_in_game
+            state: "on"
+        card:
+          type: picture
+          image_entity: image.miggus_i_spielt_gerade
+          tap_action:
+            action: more-info
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Accounts
+        heading_style: title
+        icon: mdi:account-details
+
+      - type: entities
+        state_color: true
+        entities:
+          - entity: sensor.miggus_level
+            name: Steam Level
+          - entity: sensor.miggus
+            name: Steam Status
+          - entity: binary_sensor.miggus_i
+            name: Xbox Online
+          - entity: sensor.miggus_i_status
+            name: Xbox Status
+
+      - type: logbook
+        target:
+          entity_id:
+            - sensor.miggus
+            - binary_sensor.miggus_i_in_game
+        hours_to_show: 12
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: WoW Realms
+        heading_style: title
+        icon: mdi:server-network
+
+      - type: custom:auto-entities
+        show_empty: false
+        card:
+          type: grid
+          columns: 1
+          square: false
+        card_param: cards
+        filter:
+          include:
+            - entity_id: /^sensor\..*_server_realm_status$/
+              options:
+                type: custom:mushroom-template-card
+                entity: this.entity_id
+                primary: "{{ state_attr(entity, 'realm') | title }}"
+                secondary: >-
+                  {% set base = entity | replace('_realm_status', '') %}
+                  {% set pop = states(base ~ '_bevolkerung') %}
+                  {% set q = states(base ~ '_wartezeit') | int(0) %}
+                  {{ states(entity) }} · {{ pop }}{% if q > 0 %} · Queue {{ q }}{% endif %}
+                icon: >-
+                  {{ 'mdi:server' if states(entity) == 'Verfügbar'
+                    else 'mdi:server-off' }}
+                icon_color: >-
+                  {% if states(entity) != 'Verfügbar' %}
+                    red
+                  {% else %}
+                    {% set pop = states(entity | replace('_realm_status', '')
+                                        ~ '_bevolkerung') | lower %}
+                    {% if pop == 'niedrig' %}green
+                    {% elif pop == 'mittel' %}yellow
+                    {% elif pop == 'hoch' %}red
+                    {% else %}blue{% endif %}
+                  {% endif %}
+                badge_icon: >-
+                  {% set q = states(entity | replace('_realm_status', '')
+                                    ~ '_wartezeit') | int(0) %}
+                  {{ 'mdi:timer-sand' if q > 0 else '' }}
+                badge_color: >-
+                  {% set q = states(entity | replace('_realm_status', '')
+                                    ~ '_wartezeit') | int(0) %}
+                  {{ 'red' if q >= 60 else 'orange' }}
+                multiline_secondary: false
+                fill_container: true
+                tap_action:
+                  action: more-info
+          exclude:
+            - state: unavailable
+            - state: unknown
+        sort:
+          method: entity_id
+      - type: heading
+        heading: WoW Characters
+        heading_style: title
+        icon: mdi:sword-cross
+
+      - type: custom:auto-entities
+        show_empty: false
+        card:
+          type: grid
+          columns: 2
+          square: false
+        card_param: cards
+        filter:
+          include:
+            - entity_id: /^sensor\..*_ausrustungsdetails$/
+              options:
+                type: custom:mushroom-template-card
+                entity: this.entity_id
+                primary: >-
+                  {{ state_attr(entity, 'character_name') }}
+                secondary: >-
+                  {% set base = entity | replace('_ausrustungsdetails', '') %}
+                  Lvl {{ states(base ~ '_stufe') }} ·
+                  iLvl {{ states(base ~ '_gegenstandsstufe') }} ·
+                  {{ state_attr(entity, 'active_spec') }}
+                  {{ state_attr(entity, 'character_class') }}
+                icon: mdi:shield-account
+                badge_icon: >-
+                  {{ 'mdi:sword-cross' if state_attr(entity, 'faction') == 'Horde'
+                    else 'mdi:shield-cross' }}
+                badge_color: >-
+                  {{ 'red' if state_attr(entity, 'faction') == 'Horde' else 'blue' }}
+                multiline_secondary: false
+                fill_container: true
+                tap_action:
+                  action: navigate
+                  navigation_path: "#this.entity_id"
+                card_mod:
+                  style: |
+                    {% set colors = {
+                      'Todesritter': '#C41E3A', 'Dämonenjäger': '#A330C9',
+                      'Druide': '#FF7C0A', 'Rufer': '#33937F',
+                      'Jäger': '#AAD372', 'Magier': '#3FC7EB',
+                      'Mönch': '#00FF98', 'Paladin': '#F48CBA',
+                      'Priester': '#FFFFFF', 'Schurke': '#FFF468',
+                      'Schamane': '#0070DD', 'Hexenmeister': '#8788EE',
+                      'Krieger': '#C69B6D' } %}
+                    {% set c = colors.get(
+                        state_attr(config.entity, 'character_class'), '#8E8E93') %}
+                    {% set img_e = 'image.' ~ (config.entity
+                        | replace('sensor.', '')
+                        | replace('_ausrustungsdetails', '')) ~ '_ganzkorper_render' %}
+                    {% set img = state_attr(img_e, 'entity_picture') %}
+                    ha-card {
+                      border-left: 4px solid {{ c }};
+                      --card-mod-icon-color: {{ c }};
+                      {% if img %}
+                      background-image:
+                        linear-gradient(to right,
+                          var(--card-background-color) 0%,
+                          var(--card-background-color) 45%,
+                          transparent 100%),
+                        url("{{ img }}");
+                      background-size: auto 150%;
+                      background-position: right center;
+                      background-repeat: no-repeat;
+                      {% endif %}
+                    }
+          exclude:
+            - state: unavailable
+            - state: unknown
+        sort:
+          method: attribute
+          attribute: character_level
+          numeric: true
+          reverse: true
+      - type: custom:auto-entities
+        show_empty: false
+        card:
+          type: grid
+          columns: 1
+          square: false
+        card_param: cards
+        filter:
+          include:
+            - entity_id: /^sensor\..*_ausrustungsdetails$/
+              options:
+                type: custom:decluttering-card
+                eval_js: true
+                template: wow_char_popup
+                variables:
+                  - hash: "#this.entity_id"
+                  - entity: this.entity_id
+                  - name: "${state.attributes.character_name}"
+                  - icon: mdi:shield-account
+          exclude:
+            - state: unavailable
+            - state: unknown
+        sort:
+          method: entity_id

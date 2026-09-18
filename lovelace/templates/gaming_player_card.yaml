@@ -1,0 +1,88 @@
+---
+# Gaming player card
+#
+# Zeigt pro Spieler/Plattform, ob und was gerade gespielt wird. Läuft ein
+# Spiel, wird das Cover als Kartenhintergrund eingeblendet.
+#
+# Deckt zwei Bauarten ab:
+#
+#   steam_online -> Spiel und Bild stehen als Attribute am Sensor selbst
+#                   entity: sensor.miggus
+#
+#   xbox         -> Spielname kommt als State des Status-Sensors, das Bild
+#                   aus einer eigenen image-Entity, "spielt" aus einem
+#                   binary_sensor
+#                   entity: sensor.miggus_i_status
+#                   in_game: binary_sensor.miggus_i_in_game
+#                   image_entity: image.miggus_i_spielt_gerade
+#
+# Variablen:
+#   entity        (Pflicht) Status-Entity
+#   title         (Pflicht) Anzeigename
+#   icon          Plattform-Icon, default mdi:controller
+#   game_attr     Attribut mit dem Spielnamen, default "game"
+#   image_attr    Attribut mit dem Cover, default "game_image_header"
+#   image_entity  Alternative: separate image-/camera-Entity mit dem Cover
+#   in_game       Alternative: binary_sensor, der "spielt gerade" abbildet
+gaming_player_card_template:
+  default:
+    icon: mdi:controller
+    game_attr: game
+    image_attr: game_image_header
+    image_entity: ""
+    in_game: ""
+  card:
+    type: custom:mushroom-template-card
+    entity: "[[entity]]"
+    primary: "[[title]]"
+    secondary: >-
+      {% set in_game = '[[in_game]]' %}
+      {% set attr_game = state_attr('[[entity]]', '[[game_attr]]') %}
+      {% set playing = is_state(in_game, 'on') if in_game
+                      else attr_game is not none %}
+      {% if playing and attr_game %}
+        {{ attr_game }}
+      {% else %}
+        {{ states('[[entity]]') }}
+      {% endif %}
+    icon: "[[icon]]"
+    icon_color: >-
+      {% set in_game = '[[in_game]]' %}
+      {% set attr_game = state_attr('[[entity]]', '[[game_attr]]') %}
+      {% set playing = is_state(in_game, 'on') if in_game
+                      else attr_game is not none %}
+      {% if playing %}
+        green
+      {% elif states('[[entity]]') in ['Offline', 'unavailable', 'unknown'] %}
+        grey
+      {% else %}
+        blue
+      {% endif %}
+    multiline_secondary: false
+    fill_container: true
+    tap_action:
+      action: more-info
+    card_mod:
+      style: |
+        {% set in_game = '[[in_game]]' %}
+        {% set attr_game = state_attr('[[entity]]', '[[game_attr]]') %}
+        {% set playing = is_state(in_game, 'on') if in_game
+                        else attr_game is not none %}
+        {% set img_entity = '[[image_entity]]' %}
+        {% set img = state_attr(img_entity, 'entity_picture') if img_entity
+                    else state_attr('[[entity]]', '[[image_attr]]') %}
+        {% if playing and img %}
+        ha-card {
+          background-image:
+            linear-gradient(to right,
+              rgba(0, 0, 0, 0.88) 0%,
+              rgba(0, 0, 0, 0.55) 55%,
+              rgba(0, 0, 0, 0.15) 100%),
+            url("{{ img }}");
+          background-size: cover;
+          background-position: center;
+          --primary-text-color: white;
+          --secondary-text-color: rgba(255, 255, 255, 0.85);
+          --card-mod-icon-color: white;
+        }
+        {% endif %}

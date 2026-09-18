@@ -1,0 +1,58 @@
+---
+wow_char_popup:
+  default:
+    - icon: mdi:shield-account
+    - name: Character
+  card:
+    type: custom:bubble-card
+    card_type: pop-up
+    hash: "[[hash]]"
+    name: "[[name]]"
+    icon: "[[icon]]"
+    cards:
+      - type: markdown
+        content: |
+          {%- set e = '[[entity]]' -%}
+          {%- set base = e | replace('_ausrustungsdetails', '') -%}
+          {%- set img_e = 'image.' ~ (base | replace('sensor.', ''))
+                          ~ '_ganzkorper_render' -%}
+          {%- set img = state_attr(img_e, 'entity_picture') -%}
+          {%- set items = state_attr(e, 'equipped_items_list') or [] -%}
+          {%- set klass = state_attr(e, 'character_class') -%}
+          {%- set colors = {
+            'Todesritter': '#C41E3A', 'Dämonenjäger': '#A330C9',
+            'Druide': '#FF7C0A', 'Rufer': '#33937F',
+            'Jäger': '#AAD372', 'Magier': '#3FC7EB',
+            'Mönch': '#00FF98', 'Paladin': '#F48CBA',
+            'Priester': '#FFFFFF', 'Schurke': '#FFF468',
+            'Schamane': '#0070DD', 'Hexenmeister': '#8788EE',
+            'Krieger': '#C69B6D' } -%}
+          {%- set c = colors.get(klass, '#8E8E93') -%}
+          {%- set gear = items
+                        | rejectattr('slot_type', 'in', ['SHIRT', 'TABARD'])
+                        | list -%}
+          {%- set lvls = gear | map(attribute='item_level') | list -%}
+
+          {% if img %}<img src="{{ img }}" style="float: right; height: 190px; margin: -12px -8px 4px 12px;">{% endif %}
+
+          ## <span style="color: {{ c }}">{{ state_attr(e, 'character_name') }}</span>
+
+          **{{ state_attr(e, 'active_spec') }} {{ klass }}**
+          · {{ state_attr(e, 'character_race') }}
+          · <span style="color: {{ '#C41E3A' if state_attr(e, 'faction') == 'Horde' else '#0070DD' }}">{{ state_attr(e, 'faction') }}</span>
+          · {{ state_attr(e, 'realm') | title }}
+
+          Stufe **{{ states(base ~ '_stufe') }}**
+          · iLvl **{{ states(base ~ '_gegenstandsstufe') }}**
+          · Ehre {{ states(base ~ '_ehrenstufe') }}
+          · {{ states(base ~ '_erfolgspunkte') }} Erfolgspunkte
+
+          {% if lvls | count > 0 %}Schwächster Slot: **{{ lvls | min }}** · Stärkster: **{{ lvls | max }}**{% endif %}
+
+          ***
+
+          | Slot | Gegenstand | iLvl |
+          | :--- | :--- | ---: |
+          {%- for i in gear %}
+          | {{ i.slot }} | <span style="color: {{ i.quality_color }}">{{ i.name }}</span> | <span style="{{ 'color: var(--error-color); font-weight: bold;' if i.item_level == lvls | min else '' }}">{{ i.item_level }}</span> |
+          {%- endfor %}

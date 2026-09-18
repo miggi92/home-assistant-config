@@ -6,8 +6,8 @@ routes:
     icon_selected: mdi:home
     icon: mdi:home-outline
     label: Startseite
-  - icon: mdi:home-floor-negative-1
-    label: "UG"
+  - label: "UG"
+    icon: mdi:home-floor-negative-1
     tap_action: { action: open-popup }
     popup: |
       [[[
@@ -38,14 +38,15 @@ routes:
       ]]]
     selected: |
       [[[
-        const path = window.location.pathname;
-        return path.startsWith('room-ug-');
+        return /\/room-ug-/.test(window.location.pathname);
       ]]]
     badge:
       show: |
         [[[ return states['number.count_lights_ug'].state > 0; ]]]
       count: |
         [[[  return Math.ceil(states['number.count_lights_ug'].state); ]]]
+    hidden: |
+      [[[ return !navbar.isDesktop; ]]]
   - icon: mdi:home-floor-g
     label: "EG"
     tap_action: { action: open-popup }
@@ -76,11 +77,7 @@ routes:
             }
           });
       ]]]
-    selected: |
-      [[[
-        const path = window.location.pathname;
-        return path.startsWith('room-eg-');
-      ]]]
+    selected: "[[[ return /\\/room-eg-/.test(window.location.pathname); ]]]"
     badge:
       show: |
         [[[ return states['number.count_lights_eg'].state > 0; ]]]
@@ -116,11 +113,7 @@ routes:
             }
           });
       ]]]
-    selected: |
-      [[[
-        const path = window.location.pathname;
-        return path.startsWith('room-1og-');
-      ]]]
+    selected: "[[[ return /\\/room-1og-/.test(window.location.pathname); ]]]"
     badge:
       show: |
         [[[ return states['number.count_lights_1_og'].state > 0; ]]]
@@ -130,9 +123,7 @@ routes:
     icon: mdi:cctv
     label: Kameras
     hidden: |
-      [[[
-        return window.innerWidth <= 768;
-      ]]]
+      [[[ return !navbar.isDesktop; ]]]
   - icon: mdi:devices
     tap_action: { action: open-popup }
     label: Details
@@ -143,11 +134,10 @@ routes:
       - icon: mdi:weather-partly-snowy-rainy
         url: details-weather
         label: Wetter
-    selected: |
-      [[[
-        const path = window.location.pathname;
-        return path.startsWith('details-');
-      ]]]
+      - icon: mdi:controller
+        label: Gaming
+        url: details-gaming
+    selected: "[[[ return /\\/details-/.test(window.location.pathname); ]]]"
     hidden: |
       [[[
         return window.innerWidth <= 768;
@@ -184,6 +174,11 @@ routes:
     tap_action:
       action: open-popup
     popup:
+      - icon: mdi:cctv
+        label: Kameras
+        url: cams
+        hidden: |
+          [[[ return navbar.isDesktop; ]]]
       - icon: mdi:account
         label: Profil
         url: /profile/general
