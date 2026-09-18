@@ -119,6 +119,11 @@ routes:
         [[[ return states['number.count_lights_1_og'].state > 0; ]]]
       count: |
         [[[  return Math.ceil(states['number.count_lights_1_og'].state); ]]]
+  - url: dg
+    icon: mdi:home-roof
+    label: "DG"
+    hidden: |
+      [[[ return !navbar.isDesktop; ]]]
   - url: cams
     icon: mdi:cctv
     label: Kameras

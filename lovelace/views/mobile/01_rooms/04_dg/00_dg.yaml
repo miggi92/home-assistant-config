@@ -1,0 +1,15 @@
+---
+title: Dachgeschoss
+path: dg
+icon: mdi:home-roof
+subview: true
+type: sections
+max_columns: 3
+header:
+  layout: center
+  badges_position: top
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../../cards/nav-bar.yaml
