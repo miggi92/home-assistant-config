@@ -137,6 +137,8 @@ routes:
       - icon: mdi:controller
         label: Gaming
         url: details-gaming
+        hidden: |
+          [[[ return user.name !== 'Miguel' ]]]
     selected: "[[[ return /\\/details-/.test(window.location.pathname); ]]]"
     hidden: |
       [[[
