@@ -146,31 +146,15 @@ routes:
       ]]]
   - icon: mdi:cog
     label: "Profil"
+    url: profil
     image: |
       [[[
-        return hass.states['person.miguel'].attributes.entity_picture;
+        const slug = user.name.toLowerCase();
+        return hass.states['person.' + slug]?.attributes.entity_picture
+            ?? hass.states['image.' + slug + '_picture']?.attributes.entity_picture;
       ]]]
-    url: miguel
     hidden: |
-      [[[ return user.name !== 'Miguel' ]]]
-  - icon: mdi:cog
-    label: "Profil"
-    image: |
-      [[[
-        return hass.states['person.silke'].attributes.entity_picture;
-      ]]]
-    url: silke
-    hidden: |
-      [[[ return user.name !== 'Silke' ]]]
-  - icon: mdi:cog
-    label: "Profil"
-    image: |
-      [[[
-        return hass.states['image.tablet_picture'].attributes.entity_picture;
-      ]]]
-    url: tablet
-    hidden: |
-      [[[ return user.name !== 'Tablet' ]]]
+      [[[ return !['Miguel', 'Silke', 'Tablet'].includes(user.name); ]]]
   - icon: mdi:dots-horizontal
     label: Mehr
     tap_action:

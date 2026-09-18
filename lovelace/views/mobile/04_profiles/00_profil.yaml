@@ -1,0 +1,132 @@
+---
+# Gemeinsame Profil-View.
+# Layout bleibt sections/max_columns wie in den alten Einzel-Views,
+# der Inhalt jeder Section wird per state-switch nach Nutzer umgeschaltet.
+title: Profil
+path: profil
+icon: mdi:cog
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  # --- Benachrichtigungen ------------------------------------------
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+      - type: custom:state-switch
+        entity: user
+        states:
+          Miguel:
+            type: vertical-stack
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.notifications_miguel
+              - type: custom:mushroom-select-card
+                entity: input_select.miguel_notification_channel
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.medi_notification_miguel
+                name: Medikamentenbenachrichtigung
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.miguel_has_swatch
+          Silke:
+            type: vertical-stack
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.notifications_silke
+              - type: custom:mushroom-select-card
+                entity: input_select.silke_notification_channel
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.medi_notification_silke
+                name: Medikamentenbenachrichtigung
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.silke_has_swatch
+
+  # --- Zeiten & Dashboard ------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:state-switch
+        entity: user
+        states:
+          Miguel:
+            type: vertical-stack
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: schedule.buro_tage
+              - type: custom:mushroom-entity-card
+                entity: input_datetime.miguel_wecker
+              - type: custom:mushroom-number-card
+                entity: input_number.wochenarbeitszeit_miguel
+                display_mode: buttons
+              - type: custom:mushroom-number-card
+                entity: input_number.miguel_arbeit_stundenkonto
+                display_mode: buttons
+          Silke:
+            type: vertical-stack
+            cards: []
+
+      - type: custom:state-switch
+        entity: user
+        states:
+          Miguel:
+            type: grid
+            title: Dashboard settings
+            square: false
+            columns: 2
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.miguel_kopfleiste_anzeigen
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.miguel_seitenleiste_anzeigen
+              - type: picture
+                image_entity: image.random_picsum_image
+                alt_text: Picsum Image
+              - type: picture
+                image_entity: image.random_unsplash_picture
+                alt_text: Unsplash Image
+              - type: custom:mushroom-select-card
+                entity: input_select.background_image_service
+                secondary_info: last-changed
+          Silke:
+            type: grid
+            title: Dashboard settings
+            square: false
+            columns: 2
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.silke_kopfleiste_anzeigen
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.silke_seitenleiste_anzeigen
+          Tablet:
+            type: grid
+            title: Dashboard settings
+            square: false
+            columns: 2
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.tablet_kopfleiste_anzeigen
+              - type: custom:mushroom-entity-card
+                entity: input_boolean.tablet_seitenleiste_anzeigen
+              - type: picture
+                image_entity: image.random_picsum_image
+                alt_text: Picsum Image
+              - type: picture
+                image_entity: image.random_unsplash_picture
+                alt_text: Unsplash Image
+              - type: custom:mushroom-select-card
+                entity: input_select.background_image_service
+                secondary_info: last-changed
+
+  # --- Familie (für alle gleich) -----------------------------------
+  - type: grid
+    cards:
+      - type: custom:mushroom-select-card
+        entity: input_select.milo_person_sync
+        secondary_info: last-changed
+      - type: custom:mushroom-select-card
+        entity: input_select.finn_person_sync
+        secondary_info: last-changed
+      - type: custom:mushroom-select-card
+        entity: input_select.maja_person_sync
+        secondary_info: last-changed
+      - !include ../../../cards/milo_locations.yaml
