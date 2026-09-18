@@ -1,0 +1,17 @@
+---
+# Klimatisierung
+title: Klimatisierung
+path: climate
+icon: mdi:thermometer
+subview: true
+type: sections
+max_columns: 3
+badges: []
+sections:
+  - type: grid
+    cards:
+      - !include ../../../cards/nav-bar.yaml
+  - type: grid
+    cards: []
+  - type: grid
+    cards: []

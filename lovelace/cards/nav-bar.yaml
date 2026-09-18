@@ -129,6 +129,11 @@ routes:
     label: Kameras
     hidden: |
       [[[ return !navbar.isDesktop; ]]]
+  - url: climate
+    icon: mdi:hvac
+    label: Klimatisierung
+    hidden: |
+      [[[ return !navbar.isDesktop; ]]]
   - icon: mdi:devices
     tap_action: { action: open-popup }
     label: Details
