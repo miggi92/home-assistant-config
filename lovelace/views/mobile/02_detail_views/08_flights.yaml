@@ -35,8 +35,6 @@ sections:
           - operator: "!="
             value: "0"
         entities:
-          - entity: sensor.flightradar24_current_in_area
-            name: In area
           - entity: sensor.flightradar24_zusatzlich_verfolgt
             name: Additional tracked
       - type: custom:flightradar24-card
